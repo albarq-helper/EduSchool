@@ -1,0 +1,119 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Teacher Dashboard</title><link rel="icon" href="assets/icons/brilliant.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<link rel="stylesheet" href="css/app.css">
+<script src="js/vendor/supabase.js"></script><script src="js/config.js"></script><script src="js/icons.js"></script><script src="js/app.js"></script><script src="js/words.js"></script>
+</head><body>
+<div class="wrap">
+  <div class="thead">
+    <div><span class="eyebrow">Teacher dashboard</span><h1 id="hello">Your classes</h1></div>
+    <form class="row" id="newClass"><input id="className" placeholder="New class name, e.g. Grade 5A" aria-label="New class name" maxlength="80" style="width:16rem"><button class="btn primary"><i data-i="plus"></i>Create class</button></form>
+  </div>
+  <div class="row" style="justify-content:space-between"><div class="tabs2" id="classes" role="group" aria-label="Classes"></div><span class="msg" id="classMsg" role="status"></span></div>
+
+  <div id="noClass" class="card" hidden><div class="empty-ill"><img src="assets/anims/create.gif" alt=""><div><b>Create your first class</b><br><span>Give it a name above. You'll get a 6-letter code for students to join.</span></div></div></div>
+
+  <section id="classView" hidden style="display:flex;flex-direction:column;gap:16px">
+    <div class="stats" aria-label="Class summary">
+      <div class="stat t-blue"><div class="ib" data-i="users"></div><div><b id="kStu">–</b><span>Students</span></div></div>
+      <div class="stat t-teal"><div class="ib" data-i="activity"></div><div><b id="kWeek">–</b><span>Activities, last 7 days</span></div></div>
+      <div class="stat t-sun"><div class="ib" data-i="chart-column"></div><div><b id="kAvg">–</b><span>Class average</span></div></div>
+      <div class="stat t-coral"><div class="ib" data-i="circle-alert"></div><div><b id="kMiss" style="font-size:1.15rem">–</b><span>Most-missed word</span></div></div>
+    </div>
+    <div class="card">
+      <div class="row" style="justify-content:space-between;align-items:center">
+        <h2 class="sec-title" id="cvName"></h2>
+        <div class="codebox"><span class="muted">Class code</span><span class="code" id="cvCode"></span><button class="btn small" id="copyCode"><i data-i="copy"></i>Copy</button></div></div>
+      <div class="tablewrap"><table><thead><tr><th>Student</th><th class="num">Activities</th><th class="num">Average</th><th>Last active</th><th>Recent scores</th></tr></thead><tbody id="students"></tbody></table></div>
+    </div>
+    <div class="card"><h2 class="sec-title"><i data-i="target"></i>Words the class misses most</h2><div class="words" id="classMissed"></div></div>
+  </section>
+
+  <section class="card" id="studentView" hidden>
+    <div class="row" style="justify-content:space-between"><div class="who-cell"><span class="avatar" id="svAv" style="width:44px;height:44px;font-size:1rem"></span><div><h2 id="svName"></h2><span class="muted" id="svSub"></span></div></div>
+      <button class="btn small" id="svClose"><i data-i="arrow-left"></i>Back to class</button></div>
+    <div class="stats" style="grid-template-columns:repeat(3,minmax(0,1fr))">
+      <div class="stat t-blue"><div class="ib" data-i="activity"></div><div><b id="sAct">–</b><span>Activities</span></div></div>
+      <div class="stat t-teal"><div class="ib" data-i="chart-column"></div><div><b id="sAvg">–</b><span>Average</span></div></div>
+      <div class="stat t-coral"><div class="ib" data-i="circle-alert"></div><div><b id="sMiss">–</b><span>Words to review</span></div></div>
+    </div>
+    <div><h3 class="sec-title" style="font-size:1rem;margin-bottom:8px"><i data-i="target"></i>Most-missed words</h3><div class="words" id="svMissed"></div></div>
+    <form class="row" id="assignForm" hidden><input id="listName" maxlength="100" style="flex:1 1 260px" aria-label="Practice list name">
+      <button class="btn primary"><i data-i="list-checks"></i>Assign as practice list</button><span class="msg" id="assignMsg"></span></form>
+    <div><h3 class="sec-title" style="font-size:1rem;margin-bottom:8px"><i data-i="list-checks"></i>Practice lists</h3><div id="svLists"></div></div>
+    <div class="tablewrap"><table><thead><tr><th>Date</th><th>Activity</th><th>Units</th><th class="num">Score</th><th>Mistakes</th></tr></thead><tbody id="svAttempts"></tbody></table></div>
+    <button class="btn small danger" id="removeStudent" style="align-self:flex-start"><i data-i="trash-2"></i><span>Remove from class</span></button>
+  </section>
+</div>
+<script>
+const $=id=>document.getElementById(id), esc=App.esc;
+function paintIcons(root=document){root.querySelectorAll("[data-i]").forEach(el=>{if(!el.dataset.done){el.insertAdjacentHTML("afterbegin",icon(el.dataset.i,el.classList.contains("ib")?22:16));el.dataset.done=1;}});}
+paintIcons();
+const ACT={"exam":"Exam","picture-match":"Picture match","definition-match":"Definition match","unscramble":"Unscramble","spell-look-cover":"Look, cover, write","spell-missing-letters":"Missing letters","spell-syllables":"Syllable builder","spell-test":"Spelling test"};
+const unitsText=u=>!u||!u.length?"—":u.length>=16?"All":u.filter(x=>x>0).join(", ")+(u.includes(0)?" + grammar":"");
+const pct=(s,t)=>Math.round(s/t*100), cls=p=>p>=80?"good":p>=50?"mid":"low";
+const pill=(s,t)=>`<span class="pill ${cls(pct(s,t))}">${s}/${t} · ${pct(s,t)}%</span>`;
+const fmt=d=>d?new Date(d).toLocaleString(undefined,{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}):"—";
+const ini=n=>n.split(/\s+/).filter(Boolean).slice(0,2).map(w=>w[0].toUpperCase()).join("");
+let C, ME, CLASSES=[], CUR=null, STU=[], ATT=[], ANS=[], SEL=null;
+function missedFrom(answers){const m={};answers.forEach(a=>{m[a.word]=m[a.word]||{w:a.word,miss:0,n:0};m[a.word].n++;if(!a.correct)m[a.word].miss++;});
+  return Object.values(m).filter(x=>x.miss).sort((a,b)=>b.miss-a.miss||a.w.localeCompare(b.w));}
+async function loadClasses(){const {data}=await C.from("classes").select("id,name,join_code,created_at").eq("teacher_id",ME.id).order("created_at");
+  CLASSES=data||[];$("noClass").hidden=!!CLASSES.length;
+  $("classes").innerHTML=CLASSES.map(c=>`<button type="button" data-c="${c.id}" aria-pressed="${CUR&&CUR.id===c.id}">${icon("school",15)}${esc(c.name)}</button>`).join("");
+  if(!CUR&&CLASSES.length)openClass(CLASSES[0].id);}
+$("classes").onclick=e=>{const b=e.target.closest("[data-c]");if(b)openClass(b.dataset.c);};
+$("newClass").onsubmit=async e=>{e.preventDefault();const name=$("className").value.trim();if(!name)return;
+  const {data,error}=await C.from("classes").insert({name,teacher_id:ME.id}).select("id").single();
+  $("classMsg").textContent=error?error.message:"Class created.";$("classMsg").className="msg "+(error?"err":"ok");
+  if(!error){$("className").value="";CUR={id:data.id};await loadClasses();openClass(data.id);}};
+async function openClass(id){CUR=CLASSES.find(c=>c.id===id)||{id};$("studentView").hidden=true;$("classView").hidden=false;
+  document.querySelectorAll("#classes [data-c]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.c===id));
+  $("cvName").innerHTML=icon("users",20)+esc(CUR.name||"");$("cvCode").textContent=CUR.join_code||"";
+  const {data:mem}=await C.from("class_members").select("student_id, joined_at, profiles(full_name)").eq("class_id",id);
+  STU=(mem||[]).map(m=>({id:m.student_id,name:m.profiles?.full_name||"(no name)",joined:m.joined_at}));
+  const ids=STU.map(s=>s.id);
+  ATT=ids.length?((await C.from("attempts").select("id,student_id,activity,detail,units,word_list,score,total,created_at").in("student_id",ids).order("created_at",{ascending:false}).limit(1000)).data||[]):[];
+  const aids=ATT.slice(0,400).map(a=>a.id);
+  ANS=[];for(let k=0;k<aids.length;k+=150){const {data}=await C.from("attempt_answers").select("attempt_id,word,correct,given").in("attempt_id",aids.slice(k,k+150));ANS=ANS.concat(data||[]);}
+  const week=Date.now()-7*864e5, cm=missedFrom(ANS);
+  $("kStu").textContent=STU.length; $("kWeek").textContent=ATT.filter(a=>new Date(a.created_at)>week).length;
+  $("kAvg").textContent=ATT.length?Math.round(ATT.reduce((t,a)=>t+a.score/a.total,0)/ATT.length*100)+"%":"—";
+  $("kMiss").textContent=cm[0]?cm[0].w:"—";
+  $("students").innerHTML=STU.length?STU.sort((a,b)=>a.name.localeCompare(b.name)).map(s=>{const a=ATT.filter(x=>x.student_id===s.id);
+      const avg=a.length?Math.round(a.reduce((t,x)=>t+x.score/x.total,0)/a.length*100):null, last=a.slice(0,10).reverse();
+      return `<tr class="click" data-s="${s.id}" tabindex="0"><td><div class="who-cell"><span class="avatar">${esc(ini(s.name))}</span><b>${esc(s.name)}</b></div></td><td class="num">${a.length}</td>
+        <td class="num">${avg===null?"—":`<span class="pill ${cls(avg)}">${avg}%</span>`}</td><td class="muted">${fmt(a[0]?.created_at)}</td>
+        <td><div class="spark" aria-label="Last ${last.length} scores">${last.map(x=>`<i style="height:${Math.max(4,Math.round(x.score/x.total*40))}px;background:var(--${pct(x.score,x.total)>=80?"good":pct(x.score,x.total)>=50?"sun":"coral"})" title="${x.score}/${x.total}"></i>`).join("")}</div></td></tr>`;}).join("")
+    :`<tr><td colspan="5"><div class="empty-ill"><img src="assets/anims/connect.gif" alt=""><span>No students yet. Share the class code above; students enter it when they create an account or on their home page.</span></div></td></tr>`;
+  $("classMissed").innerHTML=cm.length?cm.slice(0,25).map(x=>`<span class="wchip">${esc(x.w)} <small>×${x.miss}</small></span>`).join(""):'<p class="empty">No mistakes recorded yet.</p>';}
+$("students").onclick=e=>{const r=e.target.closest("[data-s]");if(r)openStudent(r.dataset.s);};
+$("students").onkeydown=e=>{if(e.key==="Enter"){const r=e.target.closest("[data-s]");if(r)openStudent(r.dataset.s);}};
+$("copyCode").onclick=()=>{navigator.clipboard?.writeText(CUR.join_code).then(()=>App.status("Code copied",true),()=>{});};
+async function openStudent(id){SEL=STU.find(s=>s.id===id);$("classView").hidden=true;$("studentView").hidden=false;
+  $("svName").textContent=SEL.name;$("svAv").textContent=ini(SEL.name);$("svSub").textContent="Joined "+new Date(SEL.joined).toLocaleDateString();
+  const a=ATT.filter(x=>x.student_id===id), ids=new Set(a.map(x=>x.id)), ans=ANS.filter(x=>ids.has(x.attempt_id));
+  const miss=missedFrom(ans);SEL.miss=miss;
+  $("sAct").textContent=a.length;$("sAvg").textContent=a.length?Math.round(a.reduce((t,x)=>t+x.score/x.total,0)/a.length*100)+"%":"—";$("sMiss").textContent=miss.length;
+  $("svMissed").innerHTML=miss.length?miss.slice(0,30).map(x=>`<span class="wchip">${esc(x.w)} <small>×${x.miss}</small></span>`).join(""):'<p class="empty">No mistakes recorded.</p>';
+  $("assignForm").hidden=!miss.length;$("listName").value=SEL.name.split(" ")[0]+"'s missed words ("+new Date().toLocaleDateString()+")";$("assignMsg").textContent="";
+  $("svAttempts").innerHTML=a.length?a.map(x=>{const wrong=ans.filter(y=>y.attempt_id===x.id&&!y.correct).map(y=>y.word);
+      return `<tr><td class="muted">${fmt(x.created_at)}</td><td>${esc(ACT[x.activity]||x.activity)}${x.detail?`<br><span class="muted">${esc(x.detail)}</span>`:""}</td><td>${unitsText(x.units)}</td><td class="num">${pill(x.score,x.total)}</td><td>${wrong.length?esc(wrong.join(", ")):'<span class="muted">none</span>'}</td></tr>`;}).join("")
+    :'<tr><td colspan="5" class="empty">No activities yet.</td></tr>';
+  const {data:lists}=await C.from("practice_lists").select("id,name,words,created_by,created_at").eq("student_id",id).order("created_at",{ascending:false});
+  $("svLists").innerHTML=lists&&lists.length?`<div class="lists">${lists.map(l=>`<div class="list"><div class="nm"><span class="ib">${icon("list-checks",18)}</span><div style="min-width:0"><b>${esc(l.name)}</b> <span class="muted">· ${l.words.length} words · ${l.created_by===ME.id?"assigned by you":"saved by student"}</span><br><span class="muted" style="font-size:.88rem">${esc(l.words.join(", "))}</span></div></div>
+      ${l.created_by===ME.id?`<button class="btn small danger" data-del="${l.id}">${icon("trash-2",15)}Delete</button>`:""}</div>`).join("")}</div>`:'<p class="empty">No practice lists.</p>';}
+$("svLists").onclick=async e=>{const b=e.target.closest("[data-del]");if(!b)return;b.disabled=true;await C.from("practice_lists").delete().eq("id",b.dataset.del);openStudent(SEL.id);};
+$("assignForm").onsubmit=async e=>{e.preventDefault();const name=$("listName").value.trim()||"Practice list";
+  const {error}=await C.from("practice_lists").insert({student_id:SEL.id,name,words:SEL.miss.slice(0,40).map(x=>x.w)});
+  if(!error)await openStudent(SEL.id);
+  $("assignMsg").textContent=error?error.message:"Assigned. "+SEL.name+" will see it on their home page.";$("assignMsg").className="msg "+(error?"err":"ok");};
+$("svClose").onclick=()=>{$("studentView").hidden=true;$("classView").hidden=false;};
+let confirmRm=false;
+$("removeStudent").onclick=async()=>{const sp=$("removeStudent").querySelector("span");
+  if(!confirmRm){confirmRm=true;sp.textContent="Click again to remove "+SEL.name;setTimeout(()=>{confirmRm=false;sp.textContent="Remove from class";},4000);return;}
+  await C.from("class_members").delete().eq("class_id",CUR.id).eq("student_id",SEL.id);confirmRm=false;sp.textContent="Remove from class";openClass(CUR.id);};
+App.requireUser({role:"teacher"}).then(p=>{ME=p;C=App.client;$("hello").textContent="Hello, "+((p.full_name||"").trim()||"teacher");loadClasses();}).catch(()=>{});
+</script>
+</body></html>

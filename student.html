@@ -1,0 +1,121 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>My Vocabulary</title><link rel="icon" href="assets/icons/brilliant.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=Noto+Naskh+Arabic:wght@600&display=swap">
+<link rel="stylesheet" href="css/app.css">
+<script src="js/vendor/supabase.js"></script><script src="js/config.js"></script><script src="js/icons.js"></script><script src="js/app.js"></script><script src="js/words.js"></script>
+</head><body>
+<div class="wrap">
+  <section class="hero">
+    <div>
+      <span class="eyebrow">Alhayah International School · Grade 5 ELA</span>
+      <h1 id="hello">Hello!</h1>
+      <p class="sub" id="heroSub">Ready to learn some new words today?</p>
+      <div class="chips" id="chips"></div>
+    </div>
+    <div class="pals" aria-hidden="true"><img src="assets/anims/delighted.gif" alt=""><img src="assets/anims/brilliant.gif" alt=""><img src="assets/anims/spunky.gif" alt=""></div>
+  </section>
+
+  <section class="stats" aria-label="My progress">
+    <div class="stat t-blue"><div class="ib" data-i="activity"></div><div><b id="stAct">–</b><span>Activities done</span></div></div>
+    <div class="stat t-teal"><div class="ib" data-i="target"></div><div><b id="stAvg">–</b><span>Average score</span></div></div>
+    <div class="stat t-sun"><div class="ib" data-i="star"></div><div><b id="stWords">–</b><span>Words you got right</span></div></div>
+    <div class="stat t-coral"><div class="ib" data-i="flame"></div><div><b id="stStreak">–</b><span>Day streak</span></div></div>
+  </section>
+
+  <section aria-label="Activities">
+    <div class="acts">
+      <a class="act a-blue" href="exam.html"><div class="top"><span class="badge" data-i="clipboard-check"></span><img src="assets/anims/brilliant.gif" alt=""></div>
+        <div class="body"><b>Vocabulary exam</b><p>Multiple choice. Pick your units and test yourself.</p><span class="go">Start <i data-i="arrow-right"></i></span></div></a>
+      <a class="act a-teal" href="games.html"><div class="top"><span class="badge" data-i="puzzle"></span><img src="assets/anims/toss.gif" alt=""></div>
+        <div class="body"><b>Word games</b><p>Match pictures and definitions, unscramble letters.</p><span class="go">Play <i data-i="arrow-right"></i></span></div></a>
+      <a class="act a-coral" href="spelling.html"><div class="top"><span class="badge" data-i="spell-check-2"></span><img src="assets/anims/create.gif" alt=""></div>
+        <div class="body"><b>Spelling studio</b><p>Look-cover-write, missing letters, syllables and a test.</p><span class="go">Practise <i data-i="arrow-right"></i></span></div></a>
+      <a class="act a-sun" href="act.html"><div class="top"><span class="badge" data-i="drama"></span><img src="assets/anims/exhilaration.gif" alt=""></div>
+        <div class="body"><b>Act it out</b><p>Watch the animation, say the word, act it out.</p><span class="go">Move <i data-i="arrow-right"></i></span></div></a>
+    </div>
+  </section>
+
+  <div class="two">
+    <section class="card"><h2 class="sec-title"><i data-i="sparkles"></i>Word of the day</h2>
+      <div class="wotd" id="wotd"></div></section>
+    <section class="card"><h2 class="sec-title"><i data-i="list-checks"></i>My practice lists</h2><div id="lists" class="lists"><p class="empty">Loading…</p></div></section>
+  </div>
+
+  <section class="card"><div class="row" style="justify-content:space-between"><h2 class="sec-title"><i data-i="target"></i>Words I miss most</h2><span class="muted" id="missNote"></span></div>
+    <div id="missed" class="words"><p class="empty">Loading…</p></div>
+    <div class="row"><button class="btn small" id="makeList" hidden><i data-i="plus"></i>Save these as a practice list</button><span class="msg" id="makeMsg"></span></div></section>
+
+  <section class="card"><h2 class="sec-title"><i data-i="clock"></i>My recent results</h2>
+    <div class="tablewrap"><table><thead><tr><th>Activity</th><th>Units</th><th>When</th><th class="num">Score</th></tr></thead><tbody id="results"><tr><td colspan="4" class="empty">Loading…</td></tr></tbody></table></div></section>
+
+  <section class="card" id="joinCard"><h2 class="sec-title"><i data-i="school"></i><span id="joinTitle">Join a class</span></h2>
+    <form class="row" id="joinForm"><input id="code" maxlength="6" placeholder="Class code" aria-label="Class code" style="text-transform:uppercase;letter-spacing:.15em;width:10rem">
+      <button class="btn primary"><i data-i="user-plus"></i>Join</button></form><p class="msg" id="joinMsg" role="status"></p></section>
+</div>
+<script>
+const $=id=>document.getElementById(id), esc=App.esc;
+const ACT={"exam":["Exam","clipboard-check","blue"],"picture-match":["Picture match","puzzle","teal"],"definition-match":["Definition match","puzzle","teal"],"unscramble":["Unscramble","puzzle","teal"],
+  "spell-look-cover":["Look, cover, write","spell-check-2","coral"],"spell-missing-letters":["Missing letters","spell-check-2","coral"],"spell-syllables":["Syllable builder","spell-check-2","coral"],"spell-test":["Spelling test","spell-check-2","coral"]};
+const SOFT={blue:"var(--sky-soft)",teal:"var(--teal-soft)",coral:"var(--coral-soft)"}, INK={blue:"var(--accent)",teal:"var(--teal)",coral:"var(--coral)"};
+function paintIcons(root=document){root.querySelectorAll("[data-i]").forEach(el=>{if(!el.dataset.done){el.insertAdjacentHTML("afterbegin",icon(el.dataset.i,el.classList.contains("ib")?22:18));el.dataset.done=1;}});}
+paintIcons();
+const unitsText=u=>!u||!u.length?"—":u.length>=16?"All units":u.filter(x=>x>0).join(", ")+(u.includes(0)?" + grammar":"");
+const pill=(s,t)=>{const p=Math.round(s/t*100);return `<span class="pill ${p>=80?"good":p>=50?"mid":"low"}">${s}/${t} · ${p}%</span>`;};
+const ago=d=>{const m=Math.round((Date.now()-new Date(d))/60000);return m<1?"just now":m<60?m+" min ago":m<1440?Math.round(m/60)+" h ago":new Date(d).toLocaleDateString(undefined,{day:"numeric",month:"short"});};
+// Word of the day (same word for everyone on a given date)
+(function(){const W=window.WORDS,day=Math.floor(Date.now()/864e5),w=W[(day*7919)%W.length];
+  $("wotd").innerHTML=`<img src="${w.img}" alt="${esc(w.w)}"><div style="display:flex;flex-direction:column;gap:6px;min-width:0">
+    <div class="row" style="gap:12px"><span class="w">${esc(w.w)}</span><button class="round" id="wotdSay" aria-label="Hear ${esc(w.w)}">${icon("volume-2",18)}</button></div>
+    <span class="ar" lang="ar" dir="rtl">${esc(w.ar)}</span><span>${esc(w.d)}</span>
+    <span class="muted" style="font-size:.92rem">${esc(w.s).replace(/\[([^\]]*)\]/,"<b>$1</b>")}</span>
+    <span class="chip" style="align-self:flex-start">${w.u?"Unit "+w.u:"Grammar"}</span></div>`;
+  $("wotdSay").onclick=()=>{try{new Audio(w.au).play();}catch(e){}};})();
+let MISSED=[];
+async function load(p){
+  const C=App.client, first=(p.full_name||"").trim().split(/\s+/)[0];
+  $("hello").textContent="Hello, "+(first||"there")+"!";
+  const [{data:cls},{data:atts},lists]=await Promise.all([
+    C.from("class_members").select("class_id, classes(name)").eq("student_id",p.id),
+    C.from("attempts").select("id,activity,detail,units,word_list,score,total,created_at").eq("student_id",p.id).order("created_at",{ascending:false}).limit(500),
+    App.myLists()]);
+  const A=atts||[], names=(cls||[]).map(c=>c.classes?.name).filter(Boolean);
+  $("chips").innerHTML=(names.length?names.map(n=>`<span class="chip">${icon("school",15)}${esc(n)}</span>`).join(""):`<span class="chip">${icon("circle-alert",15)}Not in a class yet</span>`)
+    +`<span class="chip">${icon("book-open-check",15)}${window.WORDS.length} words · 15 units</span>`;
+  $("joinTitle").textContent=names.length?"Join another class":"Join a class";
+  if(!names.length) $("joinCard").parentNode.insertBefore($("joinCard"),document.querySelector(".stats"));
+  // stats
+  $("stAct").textContent=A.length;
+  $("stAvg").textContent=A.length?Math.round(A.reduce((t,a)=>t+a.score/a.total,0)/A.length*100)+"%":"–";
+  const days=new Set(A.map(a=>new Date(a.created_at).toDateString()));let st=0,d=new Date();
+  if(!days.has(d.toDateString()))d.setDate(d.getDate()-1);
+  while(days.has(d.toDateString())){st++;d.setDate(d.getDate()-1);}
+  $("stStreak").textContent=st;
+  $("heroSub").textContent=!A.length?"Start with an exam or a game: your progress will show up here.":st>1?`You're on a ${st}-day streak. Keep it going!`:"Welcome back! Pick an activity below.";
+  // lists
+  $("lists").innerHTML=lists.length?lists.map(l=>`<div class="list"><div class="nm"><span class="ib">${icon("list-checks",18)}</span><div style="min-width:0"><b>${esc(l.name)}</b><br><span class="muted" style="font-size:.88rem">${l.words.length} words${l.created_by!==p.id?" · from your teacher":""}</span></div></div>
+     <div class="row" style="gap:6px"><a class="btn small primary" href="exam.html?list=${l.id}">Exam</a><a class="btn small" href="games.html?list=${l.id}">Games</a><a class="btn small" href="spelling.html?list=${l.id}">Spelling</a></div></div>`).join("")
+    :`<div class="empty-ill"><img src="assets/anims/estimate.gif" alt=""><span>No practice lists yet. After an exam, tick the words you missed and save them as a list.</span></div>`;
+  // results
+  $("results").innerHTML=A.length?A.slice(0,15).map(a=>{const [nm,ic,col]=ACT[a.activity]||[a.activity,"activity","blue"];
+      return `<tr><td><div class="ainfo"><span class="ib" style="background:${SOFT[col]};color:${INK[col]}">${icon(ic,16)}</span><div>${esc(nm)}${a.word_list?`<br><span class="muted" style="font-size:.85rem">${esc(a.word_list)}</span>`:""}</div></div></td><td>${unitsText(a.units)}</td><td class="muted">${ago(a.created_at)}</td><td class="num">${pill(a.score,a.total)}</td></tr>`;}).join("")
+    :`<tr><td colspan="4"><div class="empty-ill"><img src="assets/anims/launch.gif" alt=""><span>No results yet. Try an exam or a game to get started.</span></div></td></tr>`;
+  const ids=A.slice(0,60).map(a=>a.id);
+  if(!ids.length){$("missed").innerHTML='<p class="empty">Nothing yet.</p>';$("stWords").textContent="0";return;}
+  let ans=[];for(let k=0;k<ids.length;k+=30){const {data}=await C.from("attempt_answers").select("word,correct").in("attempt_id",ids.slice(k,k+30));ans=ans.concat(data||[]);}
+  $("stWords").textContent=new Set(ans.filter(a=>a.correct).map(a=>a.word)).size;
+  const m={};ans.forEach(a=>{m[a.word]=m[a.word]||{w:a.word,miss:0};if(!a.correct)m[a.word].miss++;});
+  MISSED=Object.values(m).filter(x=>x.miss).sort((a,b)=>b.miss-a.miss||a.w.localeCompare(b.w)).slice(0,20);
+  $("missNote").textContent=MISSED.length?"from your last "+ids.length+" activities":"";
+  $("missed").innerHTML=MISSED.length?MISSED.map(x=>`<span class="wchip">${esc(x.w)} <small>×${x.miss}</small></span>`).join(""):'<p class="empty">No mistakes in your recent activities. Great work!</p>';
+  $("makeList").hidden=!MISSED.length;
+}
+$("makeList").onclick=async()=>{const name="Words I miss ("+new Date().toLocaleDateString()+")";
+  const r=await App.saveList(name,MISSED.map(x=>x.w));$("makeMsg").textContent=r.error?r.error.message:"Saved as “"+name+"”.";$("makeMsg").className="msg "+(r.error?"err":"ok");if(!r.error)load(App.profile);};
+$("joinForm").onsubmit=async e=>{e.preventDefault();const code=$("code").value.trim().toUpperCase();if(!code)return;
+  const {data,error}=await App.client.rpc("join_class",{p_code:code});
+  $("joinMsg").textContent=error?(error.message.includes("No class")?"No class has that code. Check it with your teacher.":error.message):"You joined "+(data&&data[0]?data[0].class_name:"the class")+".";
+  $("joinMsg").className="msg "+(error?"err":"ok");if(!error){$("code").value="";load(App.profile);}};
+App.requireUser({role:"student"}).then(load).catch(()=>{});
+</script>
+</body></html>

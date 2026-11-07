@@ -1,0 +1,365 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Spelling Studio</title><link rel="icon" href="assets/icons/brilliant.png"><style>*,*::before,*::after{box-sizing:border-box}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style><script src="js/vendor/supabase.js"></script><script src="js/config.js"></script><script src="js/icons.js"></script><script src="js/app.js"></script><script src="js/words.js"></script></head><body><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=Noto+Naskh+Arabic:wght@600&display=swap">
+<style>
+/* Layout: one column. Steps 1-4 as tabs (learn → fill → build → test). A single word card is the stage; hints sit in a row under it. */
+:root{
+  --paper:#F7F8FB; --sheet:#FFFFFF; --ink:#1B2333; --muted:#5E6A80; --rule:#DCE1EA;
+  --accent:#2347C5; --accent-soft:#E6ECFB; --chip:#FFF3D6; --chip-edge:#E7B84A;
+  --s1:#2347C5; --s2:#B5532A; --s3:#1E7F4F; /* syllable colours */
+  --good:#1E7F4F; --good-soft:#E3F4EA; --bad:#B8322A; --bad-soft:#FBE7E5;
+  --f-display:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif;
+  --f-body:"Atkinson Hyperlegible",ui-sans-serif,system-ui,sans-serif;
+  --f-ar:"Noto Naskh Arabic","Geeza Pro",Arial,serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#11141B; --sheet:#181C25; --ink:#E7EAF1; --muted:#9AA4B8; --rule:#2B3140;
+  --accent:#7D9BFF; --accent-soft:#1F2846; --chip:#3A3020; --chip-edge:#B8913A;
+  --s1:#8FA8FF; --s2:#F0A070; --s3:#6FD8A0;
+  --good:#5FD196; --good-soft:#173326; --bad:#FF8A80; --bad-soft:#3A1D1B; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#11141B; --sheet:#181C25; --ink:#E7EAF1; --muted:#9AA4B8; --rule:#2B3140;
+  --accent:#7D9BFF; --accent-soft:#1F2846; --chip:#3A3020; --chip-edge:#B8913A;
+  --s1:#8FA8FF; --s2:#F0A070; --s3:#6FD8A0;
+  --good:#5FD196; --good-soft:#173326; --bad:#FF8A80; --bad-soft:#3A1D1B; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font:16px/1.5 var(--f-body);padding-inline:16px;padding-block:24px 48px}
+.wrap{max-width:820px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+h1{font:800 clamp(1.7rem,4.5vw,2.4rem)/1.1 var(--f-display);margin:0}
+.eyebrow{font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700}
+header{display:flex;flex-direction:column;gap:8px;padding-bottom:14px;border-bottom:2px solid var(--ink)}
+.tabs{display:flex;gap:8px;flex-wrap:wrap}
+.tab{font:700 .95rem var(--f-body);padding:9px 13px;border-radius:10px;border:1.5px solid var(--rule);background:var(--sheet);color:var(--ink);cursor:pointer;display:flex;gap:8px;align-items:center}
+.tab .n{font:800 .85rem var(--f-display);width:22px;height:22px;border-radius:50%;display:grid;place-items:center;border:1.5px solid currentColor}
+.tab[aria-selected="true"]{border-color:var(--accent);background:var(--accent);color:var(--sheet)}
+.bar{display:flex;gap:10px 16px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+.bar .left{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+select{font:inherit;padding:8px 10px;border:1px solid var(--rule);border-radius:8px;background:var(--sheet);color:var(--ink);max-width:100%}
+.btn{font:700 .95rem var(--f-body);border-radius:8px;padding:9px 15px;cursor:pointer;border:1.5px solid var(--accent);background:transparent;color:var(--accent)}
+.btn.primary{background:var(--accent);color:var(--sheet)}
+.btn.small{padding:6px 11px;font-size:.88rem}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.hint{color:var(--muted);font-size:.93rem;margin:0}
+
+.stage{background:var(--sheet);border:1px solid var(--rule);border-radius:14px;padding:18px;display:grid;grid-template-columns:150px 1fr;gap:18px}
+@media (max-width:560px){.stage{grid-template-columns:1fr}.stage>img{max-width:150px}}
+.stage>img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;display:block}
+.col{display:flex;flex-direction:column;gap:12px;min-width:0}
+.prog{color:var(--muted);font-variant-numeric:tabular-nums;font-size:.9rem}
+.big{font:800 clamp(2rem,7vw,3.2rem)/1.1 var(--f-display);letter-spacing:.02em;overflow-wrap:anywhere}
+.syl span:nth-child(3n+1){color:var(--s1)} .syl span:nth-child(3n+2){color:var(--s2)} .syl span:nth-child(3n){color:var(--s3)}
+.syl i{font-style:normal;color:var(--muted);font-weight:500;margin:0 .08em}
+.covered{display:inline-block;background:var(--rule);color:transparent;border-radius:8px;user-select:none}
+.clue{font-size:1rem} .ar{font:600 1.05rem var(--f-ar);color:var(--muted)}
+.sent u{font-weight:700;text-decoration-thickness:2px}
+.hints{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.hintout{min-height:1.5em;color:var(--muted);font-size:.95rem}
+.type{display:flex;gap:8px;flex-wrap:wrap}
+.type input{font:700 1.4rem var(--f-display);letter-spacing:.06em;padding:8px 12px;border:2px solid var(--rule);border-radius:10px;background:var(--paper);color:var(--ink);flex:1 1 220px;min-width:0}
+.type input:focus{outline:none;border-color:var(--accent)}
+.diff{font:800 1.6rem var(--f-display);letter-spacing:.06em;display:flex;flex-wrap:wrap;gap:2px}
+.diff b{padding:0 3px;border-radius:4px}
+.diff .ok{color:var(--good)} .diff .bad{background:var(--bad-soft);color:var(--bad)} .diff .miss{color:var(--bad);text-decoration:underline;opacity:.75}
+.diffkey{font-size:.82rem;color:var(--muted)}
+.msg{font-weight:700} .msg.ok{color:var(--good)} .msg.no{color:var(--bad)}
+.gaps{display:flex;flex-wrap:wrap;gap:4px}
+.g{width:42px;height:50px;border-radius:8px;display:grid;place-items:center;font:800 1.4rem var(--f-display);text-transform:lowercase}
+.g.fixed{background:transparent;border:1.5px solid var(--rule)}
+.g.hole{border:2px dashed var(--accent);background:var(--accent-soft);cursor:pointer}
+.g.hole.cur{border-style:solid;box-shadow:0 0 0 3px var(--accent-soft)}
+.g.hole.right{border:2px solid var(--good);background:var(--good-soft)} .g.hole.wrong{border:2px solid var(--bad);background:var(--bad-soft)}
+.keys{display:flex;flex-wrap:wrap;gap:6px}
+.key{width:44px;height:46px;border-radius:8px;border:1.5px solid var(--chip-edge);background:var(--chip);color:var(--ink);font:800 1.2rem var(--f-display);cursor:pointer}
+.tiles{display:flex;flex-wrap:wrap;gap:8px;min-height:52px}
+.tile{font:800 1.3rem var(--f-display);padding:8px 14px;border-radius:10px;border:1.5px solid var(--chip-edge);background:var(--chip);color:var(--ink);cursor:pointer}
+.built{display:flex;flex-wrap:wrap;gap:6px;min-height:56px;padding:6px;border-bottom:3px solid var(--ink)}
+.built .tile{background:var(--accent-soft);border-color:var(--accent)}
+.level{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.score{display:flex;gap:14px;align-items:center;flex-wrap:wrap;background:var(--sheet);border:2px solid var(--ink);border-radius:12px;padding:14px 16px}
+.score b{font:800 2.2rem/1 var(--f-display);font-variant-numeric:tabular-nums}
+.rev{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.rev li{background:var(--sheet);border:1px solid var(--rule);border-radius:10px;padding:10px 12px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.rev li img{width:48px;height:48px;object-fit:cover;border-radius:6px}
+.rev .w{font:800 1.15rem var(--f-display);min-width:8ch}
+.rev .yours{min-width:0;flex:1 1 200px}
+.pill{font-size:.8rem;font-weight:700;padding:2px 9px;border-radius:999px}
+.pill.ok{background:var(--good-soft);color:var(--good)} .pill.no{background:var(--bad-soft);color:var(--bad)}
+
+.unitpick{position:relative}
+.unitpick summary{list-style:none;cursor:pointer;font:inherit;padding:8px 30px 8px 10px;border:1px solid var(--rule);border-radius:8px;background:var(--sheet);color:var(--ink);min-width:12rem;max-width:100%;position:relative}
+.unitpick summary::-webkit-details-marker{display:none}
+.unitpick summary::after{content:"\25BE";position:absolute;right:10px;top:50%;transform:translateY(-50%);color:var(--muted)}
+.unitpick[open] summary{border-color:var(--accent)}
+.unitpick .ubox{position:absolute;z-index:20;top:calc(100% + 4px);left:0;width:min(23rem,calc(100vw - 32px));max-height:min(60vh,26rem);overflow:auto;background:var(--sheet);border:1px solid var(--rule);border-radius:10px;padding:10px;box-shadow:0 10px 24px rgba(0,0,0,.18);display:flex;flex-direction:column;gap:4px}
+.unitpick .uquick{display:flex;flex-wrap:wrap;gap:6px;padding-bottom:8px;margin-bottom:4px;border-bottom:1px solid var(--rule)}
+.unitpick .uquick button{font:700 .82rem var(--f-body);padding:5px 10px;border-radius:999px;border:1px solid var(--accent);background:transparent;color:var(--accent);cursor:pointer}
+.unitpick label{display:flex;gap:8px;align-items:flex-start;padding:5px 4px;border-radius:6px;cursor:pointer;font-size:.92rem;line-height:1.3}
+.unitpick label:hover{background:var(--accent-soft)}
+.unitpick input{width:18px;height:18px;flex:none;margin-top:1px;accent-color:var(--accent)}
+.unitpick .uc{margin-left:auto;color:var(--muted);font-variant-numeric:tabular-nums;padding-left:8px}
+.unitpick .uwarn{color:var(--bad);font-size:.85rem;font-weight:700;padding:4px}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header>
+    <span class="eyebrow">Alhayah International School · Grade 5 ELA</span>
+    <h1>Spelling Studio</h1>
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" data-m="learn" aria-selected="true"><span class="n">1</span>Look, cover, write</button>
+      <button class="tab" role="tab" data-m="gaps" aria-selected="false"><span class="n">2</span>Missing letters</button>
+      <button class="tab" role="tab" data-m="build" aria-selected="false"><span class="n">3</span>Syllable builder</button>
+      <button class="tab" role="tab" data-m="test" aria-selected="false"><span class="n">4</span>Spelling test</button>
+    </div>
+  </header>
+  <div class="bar">
+    <div class="left"><span class="eyebrow">Units</span>
+      <details class="unitpick" id="unitPick"><summary id="unitSum">All units</summary><div class="ubox" id="unitBox"></div></details>
+      <label for="wordSet" class="eyebrow">Practise</label><select id="wordSet"><option value="all">Words in the ticked units</option></select>
+      <span id="testLenBox" hidden><label for="testLen" class="eyebrow">Test length</label> <select id="testLen"><option>10</option><option selected>20</option><option value="999">All</option></select></span>
+    </div>
+    <button class="btn" id="restart">Start again</button>
+  </div>
+  <main id="app"></main>
+</div>
+
+<script>
+const DATA = window.WORDS;
+const UNITS = window.UNITS_LIST;
+const AU={};function playWord(i){const v=DATA[i];if(!v||!v.au)return false;try{const a=AU[i]||(AU[i]=new Audio(v.au));a.currentTime=0;a.play();return true;}catch(e){return false;}}
+const unitLabel=u=>{const x=UNITS.find(y=>y.u===u);return x?(u?`Unit ${u} · ${x.name}`:x.name):'';};
+const SYL = {"Lethargic":"le-thar-gic","Ailing":"ail-ing","Glance":"glance","Unpalatable":"un-pal-at-a-ble","Insisted":"in-sist-ed","Behead":"be-head","Aroma":"a-ro-ma","Fantastic":"fan-tas-tic","Exhilaration":"ex-hil-a-ra-tion","Beverage":"bev-er-age","Impact":"im-pact","Tonic":"ton-ic","Distant":"dis-tant","Concord":"con-cord","Addicting":"ad-dict-ing","Region":"re-gion","Exotic":"ex-ot-ic","Blend":"blend","Traditional":"tra-di-tion-al","Reside":"re-side","Life-threatening":"life-threat-en-ing","Crucial":"cru-cial","Nicknamed":"nick-named","Moist":"moist","Species":"spe-cies","Appearance":"ap-pear-ance","Allergic":"al-ler-gic","Organism":"or-gan-ism","Ecological":"e-co-log-i-cal","Molting":"molt-ing","Entomologist":"en-to-mol-o-gist","Crustacean":"crus-ta-cean","Nocturnal":"noc-tur-nal","Bookkeeper":"book-keep-er","Monotonous":"mo-not-o-nous","Published":"pub-lished","Pseudonym":"pseu-do-nym","Pension":"pen-sion","Rejuvenated":"re-ju-ve-nat-ed","Casements":"case-ments","Thatch":"thatch","Couched":"couched","Kennel":"ken-nel","Shadowy":"shad-ow-y","Harvest":"har-vest","Scampering":"scam-per-ing","Gleam":"gleam","Reeds":"reeds","Department (Dept.)":"de-part-ment","Abbreviation":"ab-bre-vi-a-tion","Shoon":"shoon","Peers":"peers","Cote":"cote","Flowing":"flow-ing","Withdrew":"with-drew","Relentlessly":"re-lent-less-ly","Starving":"starv-ing","Nervous":"ner-vous","Ferocious":"fe-ro-cious","Deliberately":"de-lib-er-ate-ly","Brilliant":"bril-liant","Rustled":"rus-tled","Sigh":"sigh","Swayed":"swayed","Precarious":"pre-car-i-ous","Stooping":"stoop-ing","Boughs":"boughs","Fern":"fern","Moss":"moss","Rover":"rov-er","Wren":"wren","Affluent":"af-flu-ent","Majority":"ma-jor-i-ty","Simultaneously":"si-mul-ta-ne-ous-ly","Renowned":"re-nowned","Deteriorating":"de-te-ri-o-rat-ing","Rifle":"ri-fle","Admire":"ad-mire","Gigantic":"gi-gan-tic","Pretended":"pre-tend-ed","Windowsill":"win-dow-sill","Gust":"gust","Fellow":"fel-low","Unique":"u-nique","Stomped":"stomped","Clashing":"clash-ing","Appreciate":"ap-pre-ci-ate","Pace":"pace","Apologize":"a-pol-o-gize","Lark":"lark","Futile":"fu-tile","Dozed":"dozed","Spunky":"spunk-y","Company":"com-pa-ny","Whipped":"whipped","Depressed":"de-pressed","Torture":"tor-ture","Devout":"de-vout","Stable":"sta-ble","Empathy":"em-pa-thy","Dependent":"de-pend-ent","Horrific":"hor-rif-ic","Inspired":"in-spired","Regarded":"re-gard-ed","Consistently":"con-sist-ent-ly","Bestowed":"be-stowed","Colloquial":"col-lo-qui-al","Weathered":"weath-ered","Precinct":"pre-cinct","Ratified":"rat-i-fied","Chieftainship":"chief-tain-ship","Insolence":"in-so-lence","Pique":"pique","Insubordination":"in-sub-or-di-na-tion","Commemorate":"com-mem-o-rate","Senator":"sen-a-tor","Landfill":"land-fill","Decompose":"de-com-pose","Estimate":"es-ti-mate","Toss":"toss","Beast":"beast","Significant":"sig-nif-i-cant","Well-known":"well-known","Classics":"clas-sics","Delighted":"de-light-ed","Relocated":"re-lo-cat-ed","Unfinished":"un-fin-ished","Frustrated":"frus-trat-ed","Exhaustion":"ex-haus-tion","Familiar":"fa-mil-iar","Annoy":"an-noy","Heroic":"he-ro-ic","Smart":"smart","Filthy":"filth-y","Connect":"con-nect","Assist":"as-sist","Serene":"se-rene","Create":"cre-ate","Fabulous":"fab-u-lous","Rescue":"res-cue","Hazardous":"haz-ard-ous","Launch":"launch","Watch":"watch","Error":"er-ror","Selfish":"sel-fish","Fortunate":"for-tu-nate","Obvious":"ob-vi-ous","Enormous":"e-nor-mous","Silent":"si-lent","Narrow":"nar-row","Elegant":"el-e-gant","Permit":"per-mit","Unusual":"un-u-su-al","Purchase":"pur-chase","Intriguing":"in-tri-guing","Crave":"crave","Curiosity":"cu-ri-os-i-ty","Concoction":"con-coc-tion","Apparently":"ap-par-ent-ly","Peep":"peep","Beam":"beam","Beneath":"be-neath","Faraway":"far-a-way","Observed":"ob-served","Separated":"sep-a-rat-ed","Symbolized":"sym-bol-ized"};
+const SETS={};
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const spell=i=>SYL[DATA[i].w].replace(/-/g,"").replace(/(life)(threat)/,"$1-$2"); // target spelling, lower case
+const syls=i=>SYL[DATA[i].w].split("-").map((s,k,a)=>DATA[i].w==="Life-threatening"&&k===0?s+"-":s);
+const sylHTML=i=>`<span class="syl">${syls(i).map(s=>`<span>${esc(s)}</span>`).join("<i>·</i>")}</span>`;
+const sentBlank=i=>esc(DATA[i].s).replace(/\[[^\]]*\]/,"_______");
+const norm=s=>s.toLowerCase().trim().replace(/\s+/g," ").replace(/[‐–—]/g,"-");
+let mode="learn", missed=[];
+Object.entries(SETS).forEach(([k,s])=>$("#wordSet").insertAdjacentHTML("beforeend",`<option value="${k}">${esc(s.name)}</option>`));
+$("#wordSet").insertAdjacentHTML("beforeend",`<option value="missed" disabled>Missed this session (0)</option>`);
+function pool(){const v=$("#wordSet").value;
+  if(String(v).startsWith("list:")){const L=(window.MY_LISTS||[]).find(x=>"list:"+x.id===v);return L?L.words.map(w=>DATA.findIndex(d=>d.w===w)).filter(i=>i>=0):[];}if(v==="missed")return missed.slice();
+  if(v==="all"){const x=unitIdx();return x.length?x:DATA.map((_,i)=>i);}
+  if(SETS[v])return SETS[v].words.map(w=>DATA.findIndex(d=>d.w===w)).filter(i=>i>=0);
+  return DATA.map((_,i)=>i);}
+function setMissed(i,wrong){const k=missed.indexOf(i);if(wrong&&k<0)missed.push(i);if(!wrong&&k>=0)missed.splice(k,1);
+  const o=$('#wordSet option[value="missed"]');o.disabled=!missed.length;o.textContent=`Missed this session (${missed.length})`;}
+
+/* speech */
+const canSpeak="speechSynthesis" in window;
+function say(text,rate=.8){if(!canSpeak)return;try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang="en-GB";u.rate=rate;speechSynthesis.speak(u);}catch(e){}}
+const sayWord=i=>{if(!playWord(i))say(DATA[i].w.replace(/\s*\(.*\)/,""));};
+const spellOut=i=>say(spell(i).split("").map(c=>c==="-"?"hyphen":c).join(", "),.7);
+const hearBtns=i=>(canSpeak||DATA[i].au)?`<button class="btn small" data-act="hear">🔊 Hear it</button>`:"";
+
+/* letter-by-letter comparison (edit-distance alignment) */
+function diff(typed,target){
+  const a=typed,b=target,n=a.length,m=b.length,D=[...Array(n+1)].map(()=>Array(m+1).fill(0));
+  for(let i=0;i<=n;i++)D[i][0]=i;for(let j=0;j<=m;j++)D[0][j]=j;
+  for(let i=1;i<=n;i++)for(let j=1;j<=m;j++)D[i][j]=Math.min(D[i-1][j]+1,D[i][j-1]+1,D[i-1][j-1]+(a[i-1]===b[j-1]?0:1));
+  const out=[];let i=n,j=m;
+  while(i>0||j>0){
+    if(i>0&&j>0&&D[i][j]===D[i-1][j-1]+(a[i-1]===b[j-1]?0:1)){out.unshift(a[i-1]===b[j-1]?`<b class="ok">${esc(b[j-1])}</b>`:`<b class="bad" title="you wrote ${esc(a[i-1])}">${esc(b[j-1])}</b>`);i--;j--;}
+    else if(j>0&&D[i][j]===D[i][j-1]+1){out.unshift(`<b class="miss" title="missing">${esc(b[j-1])}</b>`);j--;}
+    else {i--;} // extra letter typed: dropped from the correct spelling view
+  }
+  return `<div class="diff" aria-label="Correct spelling ${esc(target)}">${out.join("")}</div><div class="diffkey">Green = right · red = wrong letter · underlined = letter you missed</div>`;
+}
+
+/* shared hint row */
+function hintRow(i,{word=true}={}){
+  return `<div class="hints">${hearBtns(i)}<button class="btn small" data-act="first">First letter</button><button class="btn small" data-act="count">How many letters?</button><button class="btn small" data-act="sylls">Syllables</button><button class="btn small" data-act="arabic">Arabic</button></div><div class="hintout" id="hintout" aria-live="polite"></div>`;
+}
+function wireHints(i,onUse){
+  document.querySelectorAll(".hints [data-act]").forEach(b=>b.onclick=()=>{
+    const t=spell(i),o=$("#hintout");onUse&&onUse(b.dataset.act);
+    if(b.dataset.act==="hear")sayWord(i);
+    if(b.dataset.act==="first")o.textContent=`It starts with “${t[0]}”.`;
+    if(b.dataset.act==="count")o.textContent=`${t.replace(/-/g,"").length} letters.`;
+    if(b.dataset.act==="sylls")o.textContent=`${syls(i).length} syllable${syls(i).length>1?"s":""}: ${syls(i).map(s=>s.replace(/[a-z]/g,"_")).join(" · ")}`;
+    if(b.dataset.act==="arabic")o.innerHTML=`<span class="ar" lang="ar" dir="rtl">${esc(DATA[i].ar)}</span>`;
+  });
+}
+function finish(title,rows){
+  {const act=title.startsWith("Look")?"spell-look-cover":title.startsWith("Missing")?"spell-missing-letters":title.startsWith("Syllable")?"spell-syllables":"spell-test";
+   App.saveAttempt({activity:act,detail:title.includes("level")?title.split("· ").pop():"",units:selUnits(),word_list:listName(),score:rows.filter(r=>r.ok).length,total:rows.length,
+     answers:rows.map(r=>({word:DATA[r.i].w,unit:DATA[r.i].u,given:r.typed||"",correct:!!r.ok}))})
+   .then(r=>{if(r.error)App.status("Result not saved: "+r.error.message,false);else if(r.id)App.status("Result saved",true);});}
+  const right=rows.filter(r=>r.ok).length,n=rows.length;
+  $("#app").innerHTML=`<div class="score" role="status"><b>${right} / ${n}</b><span>${title} · ${Math.round(right/n*100)}% · ${right===n?"Perfect!":right/n>=.75?"Great work!":"Keep practising the red ones."}</span>
+    <button class="btn primary" id="again">Go again</button>${right<n?`<button class="btn" id="redo">Practise missed words</button>`:""}</div>
+    <ul class="rev">${rows.map(r=>`<li><img src="${DATA[r.i].img}" alt=""><span class="w">${esc(DATA[r.i].w.replace(/\s*\(.*\)/,""))}</span>
+      <span class="yours">${r.ok?`<span class="pill ok">Correct</span>`:`<span class="pill no">You wrote: ${esc(r.typed||"(blank)")}</span>`}</span>
+      <span class="ar" lang="ar" dir="rtl">${esc(DATA[r.i].ar)}</span></li>`).join("")}</ul>`;
+  $("#again").onclick=start; const rd=$("#redo"); if(rd) rd.onclick=()=>{$("#wordSet").value="missed";start();};
+}
+
+/* 1. Look – say – cover – write – check */
+let L=null;
+function learn(){L={items:shuffle(pool()),k:0,rows:[]};learnShow();}
+function learnShow(){
+  const i=L.items[L.k];L.stage="look";
+  $("#app").innerHTML=`<p class="hint">Look at the word and say it out loud. Notice the coloured syllables. Then press <b>Cover</b> and write it from memory.</p>
+  <div class="stage"><img src="${DATA[i].img}" alt=""><div class="col">
+   <span class="prog">Word ${L.k+1} of ${L.items.length}</span>
+   <div class="big" id="lw">${sylHTML(i)}</div>
+   <div class="clue">${esc(DATA[i].d)} <span class="ar" lang="ar" dir="rtl">${esc(DATA[i].ar)}</span></div>
+   <div class="hints">${hearBtns(i)}${canSpeak?`<button class="btn small" data-act="spell">🔤 Spell it out</button>`:""}</div>
+   <div id="lstep"><button class="btn primary" id="cover">Cover and write</button></div>
+  </div></div>`;
+  document.querySelector('[data-act="hear"]')?.addEventListener("click",()=>sayWord(i));
+  document.querySelector('[data-act="spell"]')?.addEventListener("click",()=>spellOut(i));
+  $("#cover").onclick=()=>{
+    $("#lw").innerHTML=`<span class="covered">${esc(spell(i))}</span>`;
+    $("#lstep").innerHTML=`<form class="type" id="lf"><input id="lin" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Type the word"><button class="btn primary">Check</button></form><div id="lres"></div>`;
+    $("#lin").focus();
+    $("#lf").onsubmit=e=>{e.preventDefault();const typed=norm($("#lin").value);if(!typed)return;const ok=typed===spell(i);
+      $("#lw").innerHTML=sylHTML(i);
+      $("#lres").innerHTML=`<p class="msg ${ok?"ok":"no"}">${ok?"Correct! Well done.":"Almost. Compare your letters:"}</p>${ok?"":diff(typed,spell(i))}
+        <div class="hints">${ok?"":`<button class="btn" id="retry">Try this word again</button>`}<button class="btn primary" id="lnext">${L.k+1<L.items.length?"Next word":"Finish"}</button></div>`;
+      $("#lin").disabled=true; if(!L.rows.find(r=>r.i===i)) L.rows.push({i,ok,typed}); setMissed(i,!ok);
+      const r=$("#retry"); if(r) r.onclick=learnShow;
+      $("#lnext").onclick=()=>{L.k++; L.k<L.items.length?learnShow():finish("Look, cover, write",L.rows);}; $("#lnext").focus();
+    };
+  };
+}
+
+/* 2. Missing letters with levels */
+let G=null;
+function gaps(){G={items:shuffle(pool()),k:0,rows:[],level:G?.level||1};gapsShow();}
+function holesFor(t,level){
+  const idx=[...t].map((c,j)=>j).filter(j=>/[a-z]/.test(t[j]));
+  const n=level===1?Math.max(1,Math.round(idx.length*.25)):level===2?Math.round(idx.length*.5):idx.length-1;
+  const pick=level===3?idx.slice(1):shuffle(idx).slice(0,n);
+  return new Set(pick);
+}
+function gapsShow(){
+  const i=G.items[G.k],t=spell(i),H=holesFor(t,G.level);G.cur={i,t,H,fill:{},order:[...H].sort((a,b)=>a-b)};
+  const pool=shuffle([...G.cur.order.map(j=>t[j]),...shuffle("aeioulnrst".split("")).slice(0,Math.min(4,8-Math.min(8,H.size)+2))]);
+  $("#app").innerHTML=`<div class="level"><span class="eyebrow">Level</span>${[1,2,3].map(l=>`<button class="btn small ${G.level===l?"primary":""}" data-l="${l}">${l===1?"1 · Few gaps":l===2?"2 · Half":"3 · Only first letter"}</button>`).join("")}</div>
+  <div class="stage"><img src="${DATA[i].img}" alt=""><div class="col">
+   <span class="prog">Word ${G.k+1} of ${G.items.length}</span>
+   <div class="clue">${esc(DATA[i].d)}</div>
+   <div class="gaps" id="gw">${[...t].map((c,j)=>H.has(j)?`<button type="button" class="g hole" data-j="${j}" aria-label="Missing letter"></button>`:`<span class="g fixed">${esc(c)}</span>`).join("")}</div>
+   <div class="keys" id="keys">${pool.map(c=>`<button type="button" class="key">${c}</button>`).join("")}</div>
+   ${hintRow(i)}
+   <div class="hints"><button class="btn" id="gclear">Clear</button><button class="btn primary" id="gcheck" disabled>Check</button></div><div id="gres"></div>
+  </div></div>`;
+  wireHints(i);
+  document.querySelectorAll("[data-l]").forEach(b=>b.onclick=()=>{G.level=+b.dataset.l;gapsShow();});
+  const holes=[...document.querySelectorAll(".g.hole")];let cur=0;
+  const mark=()=>{holes.forEach((h,k)=>h.classList.toggle("cur",k===cur));$("#gcheck").disabled=holes.some(h=>!h.textContent);};
+  holes.forEach((h,k)=>h.onclick=()=>{if(G.cur.done)return;cur=k;mark();});
+  $("#keys").onclick=e=>{const b=e.target.closest(".key");if(!b||G.cur.done)return;holes[cur].textContent=b.textContent;
+    const nx=holes.findIndex((h,k)=>k>cur&&!h.textContent);cur=nx>=0?nx:holes.findIndex(h=>!h.textContent);if(cur<0)cur=holes.length-1;mark();};
+  if(window.gapKD)document.removeEventListener("keydown",window.gapKD);
+  document.addEventListener("keydown",window.gapKD=e=>{if(mode!=="gaps"||G.cur.done||!/^[a-z]$/i.test(e.key)||e.target.tagName==="INPUT")return;holes[cur].textContent=e.key.toLowerCase();const nx=holes.findIndex(h=>!h.textContent);cur=nx>=0?nx:cur;mark();},{once:false});
+  $("#gclear").onclick=()=>{if(G.cur.done)return;holes.forEach(h=>h.textContent="");cur=0;mark();};
+  mark();
+  $("#gcheck").onclick=()=>{G.cur.done=true;let ok=true;
+    holes.forEach(h=>{const r=h.textContent===t[+h.dataset.j];h.classList.add(r?"right":"wrong");if(!r){ok=false;h.title="Should be "+t[+h.dataset.j];}});
+    const typed=[...t].map((c,j)=>G.cur.H.has(j)?(holes.find(h=>+h.dataset.j===j).textContent||"_"):c).join("");
+    G.rows.push({i,ok,typed});setMissed(i,!ok);
+    $("#gres").innerHTML=`<p class="msg ${ok?"ok":"no"}">${ok?"Correct!":"Not quite. The word is:"}</p>${ok?"":`<div class="big">${sylHTML(i)}</div>`}<button class="btn primary" id="gnext">${G.k+1<G.items.length?"Next word":"Finish"}</button>`;
+    $("#gnext").onclick=()=>{G.k++;G.k<G.items.length?gapsShow():finish("Missing letters · level "+G.level,G.rows);};$("#gnext").focus();
+  };
+}
+
+/* 3. Syllable builder */
+let B=null;
+function build(){B={items:shuffle(pool()).filter(i=>syls(i).length>1),k:0,rows:[]};if(!B.items.length){$("#app").innerHTML='<p class="hint">These words have only one syllable each. Choose another word list.</p>';return;}buildShow();}
+function buildShow(){
+  const i=B.items[B.k],S=syls(i);let order;do{order=shuffle(S.map((_,k)=>k))}while(S.length>1&&order.every((v,k)=>v===k));
+  B.cur={i,S,built:[]};
+  $("#app").innerHTML=`<p class="hint">Put the syllables in order to build the word. Say each part as you tap it.</p>
+  <div class="stage"><img src="${DATA[i].img}" alt=""><div class="col">
+   <span class="prog">Word ${B.k+1} of ${B.items.length} · ${S.length} syllables</span>
+   <div class="clue">${esc(DATA[i].d)}</div>
+   <div class="built" id="bb" aria-live="polite"></div>
+   <div class="tiles" id="bt">${order.map(k=>`<button type="button" class="tile" data-k="${k}">${esc(S[k])}</button>`).join("")}</div>
+   ${hintRow(i)}
+   <div class="hints"><button class="btn" id="bundo">Undo</button><button class="btn primary" id="bcheck" disabled>Check</button></div><div id="bres"></div>
+  </div></div>`;
+  wireHints(i);
+  const draw=()=>{$("#bb").innerHTML=B.cur.built.map(k=>`<span class="tile">${esc(S[k])}</span>`).join("");$("#bcheck").disabled=B.cur.built.length!==S.length;};
+  $("#bt").onclick=e=>{const t=e.target.closest(".tile");if(!t||B.cur.done)return;t.hidden=true;B.cur.built.push(+t.dataset.k);draw();};
+  $("#bundo").onclick=()=>{if(B.cur.done)return;const k=B.cur.built.pop();if(k!==undefined)$(`#bt .tile[data-k="${k}"]`).hidden=false;draw();};
+  $("#bcheck").onclick=()=>{B.cur.done=true;const typed=B.cur.built.map(k=>S[k]).join(""),ok=typed===S.join("");
+    B.rows.push({i,ok,typed});setMissed(i,!ok);
+    $("#bres").innerHTML=`<p class="msg ${ok?"ok":"no"}">${ok?"Correct!":"Not quite. The word is:"}</p><div class="big">${sylHTML(i)}</div><button class="btn primary" id="bnext">${B.k+1<B.items.length?"Next word":"Finish"}</button>`;
+    if(ok)sayWord(i);
+    $("#bnext").onclick=()=>{B.k++;B.k<B.items.length?buildShow():finish("Syllable builder",B.rows);};$("#bnext").focus();
+  };
+}
+
+/* 4. Spelling test */
+let T=null;
+function test(){const n=+$("#testLen").value;T={items:shuffle(pool()).slice(0,n),k:0,rows:[]};testShow();}
+function testShow(){
+  const i=T.items[T.k];
+  $("#app").innerHTML=`<p class="hint">Spelling test: no hints. ${canSpeak?"Press <b>Hear it</b> to listen to the word, then type it.":"Use the picture, meaning and sentence, then type the word."} Answers are shown at the end.</p>
+  <div class="stage"><img src="${DATA[i].img}" alt=""><div class="col">
+   <span class="prog">Question ${T.k+1} of ${T.items.length}</span>
+   <div class="clue"><b>Meaning:</b> ${esc(DATA[i].d)}</div>
+   <div class="clue sent"><b>Sentence:</b> ${sentBlank(i)}</div>
+   <div class="hints">${hearBtns(i)}</div>
+   <form class="type" id="tf"><input id="tin" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Type the word"><button class="btn primary">${T.k+1<T.items.length?"Next":"Finish test"}</button></form>
+  </div></div>`;
+  document.querySelector('[data-act="hear"]')?.addEventListener("click",()=>sayWord(i));
+  $("#tin").focus();
+  $("#tf").onsubmit=e=>{e.preventDefault();const typed=norm($("#tin").value);const ok=typed===spell(i);T.rows.push({i,ok,typed});setMissed(i,!ok);T.k++;
+    T.k<T.items.length?testShow():testDone();};
+}
+function testDone(){
+  finish("Spelling test",T.rows);
+  document.querySelectorAll(".rev li").forEach((li,k)=>{const r=T.rows[k];if(!r.ok&&r.typed){li.querySelector(".yours").insertAdjacentHTML("beforeend",diff(r.typed,spell(r.i)));}});
+}
+
+/* shell */
+function start(){if(!pool().length)$("#wordSet").value="all";$("#testLenBox").hidden=mode!=="test";
+  ({learn,gaps,build,test})[mode]();window.scrollTo({top:0});}
+document.querySelector(".tabs").onclick=e=>{const t=e.target.closest(".tab");if(!t)return;mode=t.dataset.m;document.querySelectorAll(".tab").forEach(x=>x.setAttribute("aria-selected",x===t));start();};
+
+var UKEY="vocabUnitsSel";
+function selUnits(){return [...document.querySelectorAll('#unitBox input[type=checkbox]:checked')].map(c=>+c.value);}
+function inUnits(i,S){return S.includes(DATA[i].u)||(DATA[i].also||[]).some(u=>S.includes(u));}
+function unitIdx(){const S=selUnits();return DATA.map((_,i)=>i).filter(i=>inUnits(i,S));}
+function rangeText(S){const n=S.filter(u=>u>0).sort((a,b)=>a-b),out=[];for(let k=0;k<n.length;){let j=k;while(j+1<n.length&&n[j+1]===n[j]+1)j++;out.push(j>k?`${n[k]}–${n[j]}`:`${n[k]}`);k=j+1;}
+  let t=out.length?(n.length>1?"Units ":"Unit ")+out.join(", "):"";if(S.includes(0))t+=(t?" + ":"")+"grammar";return t;}
+function unitText(){const S=selUnits();if(!S.length)return "No units selected";if(S.length===UNITS.length)return "All units";return rangeText(S);}
+function unitSummary(){const S=selUnits(),n=unitIdx().length;
+  document.getElementById("unitSum").textContent=S.length?`${unitText()} (${n} words)`:"Choose at least one unit";
+  const w=document.getElementById("unitWarn");if(w)w.hidden=!!S.length;
+  try{localStorage.setItem(UKEY,JSON.stringify(S));}catch(e){}}
+function buildUnitBox(onChange){
+  let saved=null;try{saved=JSON.parse(localStorage.getItem(UKEY)||"null");}catch(e){}
+  const box=document.getElementById("unitBox");
+  box.innerHTML=`<div class="uquick"><button type="button" data-q="all">All</button><button type="button" data-q="none">None</button><button type="button" data-q="1-5">Units 1–5</button><button type="button" data-q="6-10">Units 6–10</button><button type="button" data-q="11-15">Units 11–15</button></div>`+
+    UNITS.map(x=>`<label><input type="checkbox" value="${x.u}" ${!saved||saved.includes(x.u)?"checked":""}><span>${esc(x.u?`Unit ${x.u} · ${x.name}`:x.name)}</span><span class="uc">${x.n}</span></label>`).join("")+
+    `<div class="uwarn" id="unitWarn" hidden>Tick at least one unit.</div>`;
+  if(saved&&!selUnits().length) box.querySelectorAll("input").forEach(c=>c.checked=true);
+  box.addEventListener("click",e=>{const b=e.target.closest("[data-q]");if(!b)return;const q=b.dataset.q;
+    box.querySelectorAll("input[type=checkbox]").forEach(c=>{const u=+c.value;c.checked=q==="all"?true:q==="none"?false:(()=>{const[a,z]=q.split("-").map(Number);return u>=a&&u<=z;})();});
+    unitSummary();if(selUnits().length)onChange();});
+  box.addEventListener("change",()=>{unitSummary();if(selUnits().length)onChange();});
+  document.addEventListener("click",e=>{const d=document.getElementById("unitPick");if(d.open&&!d.contains(e.target))d.open=false;});
+  unitSummary();
+}
+
+buildUnitBox(()=>{$("#wordSet").value="all";start();});
+$("#restart").onclick=start;$("#wordSet").onchange=start;$("#testLen").onchange=start;
+start();
+</script>
+<script>
+async function loadMyLists(){const L=await App.myLists();window.MY_LISTS=L;const sel=document.getElementById("wordSet");
+  sel.querySelectorAll('option[value^="list:"]').forEach(o=>o.remove());
+  const miss=sel.querySelector('option[value="missed"]');
+  L.forEach(l=>{const o=document.createElement("option");o.value="list:"+l.id;o.textContent="Practice list: "+l.name+" ("+l.words.length+")";sel.insertBefore(o,miss);});
+  const want=new URLSearchParams(location.search).get("list");if(want&&L.some(l=>l.id===want)){sel.value="list:"+want;start();}}
+function listName(){const v=document.getElementById("wordSet").value;const o=document.getElementById("wordSet").selectedOptions[0];return v==="all"?"":(o?o.textContent:"");}
+App.requireUser().then(()=>loadMyLists()).catch(()=>{});
+</script></body></html>
