@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Vocabulary Word Games · Albarq Education Center</title><link rel="icon" href="assets/icons/brilliant.png"><style>*,*::before,*::after{box-sizing:border-box}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style><script src="js/vendor/supabase.js"></script><script src="js/config.js"></script><script src="js/icons.js"></script><script src="js/app.js"></script><script src="js/words.js"></script></head><body><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=Noto+Naskh+Arabic:wght@600&display=swap">
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Word Games · Albarq Education Center</title><link rel="icon" href="assets/icons/brilliant.png"><style>*,*::before,*::after{box-sizing:border-box}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style><script src="js/vendor/supabase.js"></script><script src="js/config.js"></script><script src="js/icons.js"></script><script src="js/app.js"></script><script src="js/sets.js"></script></head><body><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=Noto+Naskh+Arabic:wght@600&display=swap">
 <style>
 /* Layout: one column; game tabs; a board of target cards above a sticky word tray. Same ink-and-paper tokens as the exam page. */
 :root{
@@ -104,8 +104,8 @@ select{font:inherit;padding:8px 10px;border:1px solid var(--rule);border-radius:
 
 <div class="wrap">
   <header>
-    <span class="eyebrow">Alhayah International School · Grade 5 ELA</span>
-    <h1>Vocabulary Word Games</h1>
+    <span class="eyebrow" id="setEyebrow">&nbsp;</span>
+    <h1>Word games</h1>
     <div class="tabs" role="tablist">
       <button class="tab" role="tab" data-g="pics" aria-selected="true">Picture match</button>
       <button class="tab" role="tab" data-g="defs" aria-selected="false">Definition match</button>
@@ -125,11 +125,11 @@ select{font:inherit;padding:8px 10px;border:1px solid var(--rule);border-radius:
   <main id="game"></main>
 </div>
 
-<script>
+<script type="text/x-app">
 const DATA = window.WORDS;
 const UNITS = window.UNITS_LIST;
-const AU={};function playWord(i){const v=DATA[i];if(!v||!v.au)return false;try{const a=AU[i]||(AU[i]=new Audio(v.au));a.currentTime=0;a.play();return true;}catch(e){return false;}}
-const unitLabel=u=>{const x=UNITS.find(y=>y.u===u);return x?(u?`Unit ${u} · ${x.name}`:x.name):'';};
+const AU={};function playWord(i){const v=DATA[i];if(!v)return false;if(!v.au||v.au==="tts")return window.Sets.speak(v.w);try{const a=AU[i]||(AU[i]=new Audio(v.au));a.currentTime=0;a.play();return true;}catch(e){return false;}}
+const unitLabel=u=>{const x=UNITS.find(y=>y.u===u);return x?(u?(x.name?`Unit ${u} · ${x.name}`:`Unit ${u}`):(x.name||'General')):'';};
 const SETS = {};
 const ROUND = 6;
 let game="pics", lastMissed=[];
@@ -180,7 +180,7 @@ function checkMatch(items){
     const i=+card.dataset.i, chip=card.querySelector(".slot .chip"), ok=chip&&+chip.dataset.i===i; ANSW.push({word:DATA[i].w,unit:DATA[i].u,given:chip?DATA[+chip.dataset.i].w:"",correct:!!ok});
     card.dataset.done="1"; card.classList.add(ok?"ok":"no");
     if(ok){right++;markRight(i);} else missed.push(i);
-    card.insertAdjacentHTML("beforeend",`<div class="fix">${ok?"✓ ":"Answer: "}${esc(DATA[i].w)}<span class="ar" lang="ar" dir="rtl">${esc(DATA[i].ar)}</span>${DATA[i].au?` <button type="button" class="say" data-say="${i}" aria-label="Hear ${esc(DATA[i].w)}">🔊</button>`:""}</div>`);
+    card.insertAdjacentHTML("beforeend",`<div class="fix">${ok?"✓ ":"Answer: "}${esc(DATA[i].w)}<span class="ar" dir="auto">${esc(DATA[i].ar)}</span>${DATA[i].au?` <button type="button" class="say" data-say="${i}" aria-label="Hear ${esc(DATA[i].w)}">🔊</button>`:""}</div>`);
   });
   addMissed(missed);
   saveGame(game==="pics"?"picture-match":"definition-match",right,items.length,ANSW);
@@ -269,7 +269,7 @@ function unsShow(){
   $("#lts").onclick=e=>{const b=e.target.closest(".lt");if(!b||U.cur.done)return;b.disabled=true;U.cur.built.push(+b.dataset.j);drawAns();};
   $("#undo").onclick=()=>{if(U.cur.done)return;const j=U.cur.built.pop();if(j!==undefined)$(`#lts .lt[data-j="${j}"]`).disabled=false;drawAns();};
   $("#clear").onclick=()=>{if(U.cur.done)return;U.cur.built=[];document.querySelectorAll("#lts .lt").forEach(b=>b.disabled=false);drawAns();};
-  $("#hintBtn").onclick=()=>{if(U.cur.done)return;U.cur.hinted=true;$("#umsg").innerHTML=`<span class="msg">Starts with “${sc.target[0].toUpperCase()}”. Arabic: <span class="ar" lang="ar" dir="rtl" style="font-family:var(--f-ar)">${esc(v.ar)}</span></span>`;};
+  $("#hintBtn").onclick=()=>{if(U.cur.done)return;U.cur.hinted=true;$("#umsg").innerHTML=`<span class="msg">Starts with “${sc.target[0].toUpperCase()}”. Translation: <span class="ar" dir="auto" style="font-family:var(--f-ar)">${esc(v.ar)}</span></span>`;};
   $("#ucheck").onclick=unsCheck;
 }
 function drawAns(){
@@ -281,7 +281,7 @@ function unsCheck(){
   c.done=true; $("#unsBox").classList.add(ok?"ok":"no");
   if(ok){U.right++;markRight(c.i);} else U.missed.push(c.i); U.ans.push({word:v.w,unit:v.u,given:word,correct:ok});
   $("#umsg").innerHTML=`<div class="review"><span class="msg ${ok?"ok":"no"}">${ok?"Correct!":"Not quite. The word is"} <b>${esc(v.w)}</b> ${v.au?`<button type="button" class="say" data-say="${c.i}">🔊</button>`:""}</span>
-    <span class="ar" lang="ar" dir="rtl">${esc(v.ar)}</span><span>${esc(v.s).replace(/\[([^\]]*)\]/,"<u><b>$1</b></u>")}</span>
+    <span class="ar" dir="auto">${esc(v.ar)}</span><span>${esc(v.s).replace(/\[([^\]]*)\]/,"<u><b>$1</b></u>")}</span>
     <div><button class="btn primary" id="unext">${U.k+1<U.items.length?"Next word":"See score"}</button></div></div>`;
   $("#ucheck").disabled=true;
   $("#unext").onclick=()=>{U.k++; if(U.k<U.items.length) unsShow(); else {addMissed(U.missed);saveGame("unscramble",U.right,U.items.length,U.ans);$("#game").innerHTML='<div id="result"></div>';showScore(U.right,U.items.length,U.missed);}};
@@ -309,8 +309,8 @@ function unitSummary(){const S=selUnits(),n=unitIdx().length;
 function buildUnitBox(onChange){
   let saved=null;try{saved=JSON.parse(localStorage.getItem(UKEY)||"null");}catch(e){}
   const box=document.getElementById("unitBox");
-  box.innerHTML=`<div class="uquick"><button type="button" data-q="all">All</button><button type="button" data-q="none">None</button><button type="button" data-q="1-5">Units 1–5</button><button type="button" data-q="6-10">Units 6–10</button><button type="button" data-q="11-15">Units 11–15</button></div>`+
-    UNITS.map(x=>`<label><input type="checkbox" value="${x.u}" ${!saved||saved.includes(x.u)?"checked":""}><span>${esc(x.u?`Unit ${x.u} · ${x.name}`:x.name)}</span><span class="uc">${x.n}</span></label>`).join("")+
+  box.innerHTML=`<div class="uquick"><button type="button" data-q="all">All</button><button type="button" data-q="none">None</button></div>`+
+    UNITS.map(x=>`<label><input type="checkbox" value="${x.u}" ${!saved||saved.includes(x.u)?"checked":""}><span>${esc(x.u?(x.name?`Unit ${x.u} · ${x.name}`:`Unit ${x.u}`):(x.name||"General"))}</span><span class="uc">${x.n}</span></label>`).join("")+
     `<div class="uwarn" id="unitWarn" hidden>Tick at least one unit.</div>`;
   if(saved&&!selUnits().length) box.querySelectorAll("input").forEach(c=>c.checked=true);
   box.addEventListener("click",e=>{const b=e.target.closest("[data-q]");if(!b)return;const q=b.dataset.q;
@@ -325,7 +325,7 @@ buildUnitBox(()=>{$("#wordSet").value="all";start();});
 $("#wordSet").onchange=start;
 start();
 </script>
-<script>
+<script type="text/x-app">
 async function loadMyLists(){const L=await App.myLists();window.MY_LISTS=L;const sel=document.getElementById("wordSet");
   sel.querySelectorAll('option[value^="list:"]').forEach(o=>o.remove());
   const miss=sel.querySelector('option[value="missed"]');
@@ -334,6 +334,7 @@ async function loadMyLists(){const L=await App.myLists();window.MY_LISTS=L;const
 function listName(){const v=document.getElementById("wordSet").value;const o=document.getElementById("wordSet").selectedOptions[0];return v==="all"?"":(o?o.textContent:"");}
 App.requireUser().then(()=>loadMyLists()).catch(()=>{});
 
+if(!window.HAS_PICS){const tp=document.querySelector('[data-g="pics"]');if(tp){tp.hidden=true;const td=document.querySelector('[data-g="defs"]');if(td)td.click();}}
 function saveGame(activity,score,total,answers){App.saveAttempt({activity,units:selUnits(),word_list:listName(),score,total,answers})
   .then(r=>{if(r.error)App.status("Result not saved: "+r.error.message,false);else if(r.id)App.status("Result saved",true);});}
-</script></body></html>
+</script><script>Sets.boot({min:4})</script></body></html>

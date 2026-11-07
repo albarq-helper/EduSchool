@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Vocabulary Exam · Albarq Education Center</title><link rel="icon" href="assets/icons/brilliant.png"><style>*,*::before,*::after{box-sizing:border-box}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style><script src="js/vendor/supabase.js"></script><script src="js/config.js"></script><script src="js/icons.js"></script><script src="js/app.js"></script><script src="js/words.js"></script></head><body><link rel="preconnect" href="https://fonts.googleapis.com">
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Exam · Albarq Education Center</title><link rel="icon" href="assets/icons/brilliant.png"><style>*,*::before,*::after{box-sizing:border-box}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style><script src="js/vendor/supabase.js"></script><script src="js/config.js"></script><script src="js/icons.js"></script><script src="js/app.js"></script><script src="js/sets.js"></script></head><body><link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Noto+Naskh+Arabic:wght@500;700&display=swap">
 <style>
 /* Layout: a single exam paper column; options drawn as answer-sheet bubbles; sticky progress strip; results replace the paper header in place. */
@@ -130,8 +130,8 @@ input:checked+.opt .bub{background:var(--ink);border-color:var(--ink);color:var(
 
 <div class="wrap">
   <header class="paper">
-    <span class="eyebrow">Alhayah International School · Grade 5 ELA</span>
-    <h1>Vocabulary Mastery Exam</h1>
+    <span class="eyebrow" id="setEyebrow">&nbsp;</span>
+    <h1>Mastery exam</h1>
     <div class="meta"><span id="metaCount">65 questions</span><span id="metaMode">Word meanings</span><span>Answer every question, then submit</span></div>
     <div class="namebox"><label for="studentName">Name</label><input id="studentName" type="text" autocomplete="off" placeholder="Student name"></div>
   </header>
@@ -170,11 +170,11 @@ input:checked+.opt .bub{background:var(--ink);border-color:var(--ink);color:var(
   <button type="button" class="btn primary" id="retryBtn" hidden>Try a new exam</button>
 </div></div>
 
-<script>
+<script type="text/x-app">
 const DATA = window.WORDS;
 const UNITS = window.UNITS_LIST;
-const AU={};function playWord(i){const v=DATA[i];if(!v||!v.au)return false;try{const a=AU[i]||(AU[i]=new Audio(v.au));a.currentTime=0;a.play();return true;}catch(e){return false;}}
-const unitLabel=u=>{const x=UNITS.find(y=>y.u===u);return x?(u?`Unit ${u} · ${x.name}`:x.name):'';};
+const AU={};function playWord(i){const v=DATA[i];if(!v)return false;if(!v.au||v.au==="tts")return window.Sets.speak(v.w);try{const a=AU[i]||(AU[i]=new Audio(v.au));a.currentTime=0;a.play();return true;}catch(e){return false;}}
+const unitLabel=u=>{const x=UNITS.find(y=>y.u===u);return x?(u?(x.name?`Unit ${u} · ${x.name}`:`Unit ${u}`):(x.name||'General')):'';};
 const L = "ABCD";
 let mode="def", len=999, qs=[], graded=false;
 
@@ -265,7 +265,7 @@ function grade(){
     const v=DATA[q.idx];
     const sent=esc(v.s).replace(/\[([^\]]*)\]/,"<u>$1</u>");
     li.insertAdjacentHTML("beforeend",`<div class="review"><img src="${v.img}" alt="${esc(v.w)}">${v.photo?`<img src="${v.photo}" alt="">`:""}<div class="body">
-      <div><span class="word">${L[q.ans]}. ${esc(v.w)}</span> ${v.au?`<button type="button" class="say" data-say="${q.idx}" aria-label="Hear ${esc(v.w)}">🔊</button>`:""} &nbsp;<span class="ar" lang="ar" dir="rtl">${esc(v.ar)}</span></div>
+      <div><span class="word">${L[q.ans]}. ${esc(v.w)}</span> ${v.au?`<button type="button" class="say" data-say="${q.idx}" aria-label="Hear ${esc(v.w)}">🔊</button>`:""} &nbsp;<span class="ar" dir="auto">${esc(v.ar)}</span></div>
       <div><b>Definition:</b> ${esc(v.d)}</div><div><b>Sentence:</b> ${sent}</div></div></div>`);
   });
   const right=qs.filter(q=>q.chosen===q.ans).length, n=qs.length, wrong=n-right, pct=Math.round(right/n*100);
@@ -283,7 +283,7 @@ function grade(){
     <div class="filters"><span class="eyebrow">Show</span><div class="seg" id="filtSeg">
       <button type="button" data-f="all" aria-pressed="true">All</button><button type="button" data-f="wrong" aria-pressed="false">Mistakes (${wrong})</button><button type="button" data-f="right" aria-pressed="false">Correct (${right})</button></div>
       <div class="acts"><button type="button" class="btn primary" id="practiceBtn">Practice selected (<span id="pCount">${wrong}</span>)</button><button type="button" class="btn" id="exportBtn">Export results (CSV)</button></div><span class="legend" id="exportMsg" role="status"></span>
-      <div class="saveprof"><label for="profName">Save ticked words as a practice list</label><div class="prow"><input id="profName" type="text" autocomplete="off" value="${esc(name?name+"'s exam result":"")}" placeholder="e.g. Reem's second exam result"><button type="button" class="btn" id="saveProfBtn">Save list</button></div></div></div></div>`;
+      <div class="saveprof"><label for="profName">Save ticked words as a practice list</label><div class="prow"><input id="profName" type="text" autocomplete="off" value="${esc(name?name+"'s exam result":"")}" placeholder="e.g. Second exam result"><button type="button" class="btn" id="saveProfBtn">Save list</button></div></div></div></div>`;
   box.hidden=false;
   document.getElementById("submitBtn").hidden=true;
   document.getElementById("retryBtn").hidden=false;
@@ -330,8 +330,8 @@ function unitSummary(){const S=selUnits(),n=unitIdx().length;
 function buildUnitBox(onChange){
   let saved=null;try{saved=JSON.parse(localStorage.getItem(UKEY)||"null");}catch(e){}
   const box=document.getElementById("unitBox");
-  box.innerHTML=`<div class="uquick"><button type="button" data-q="all">All</button><button type="button" data-q="none">None</button><button type="button" data-q="1-5">Units 1–5</button><button type="button" data-q="6-10">Units 6–10</button><button type="button" data-q="11-15">Units 11–15</button></div>`+
-    UNITS.map(x=>`<label><input type="checkbox" value="${x.u}" ${!saved||saved.includes(x.u)?"checked":""}><span>${esc(x.u?`Unit ${x.u} · ${x.name}`:x.name)}</span><span class="uc">${x.n}</span></label>`).join("")+
+  box.innerHTML=`<div class="uquick"><button type="button" data-q="all">All</button><button type="button" data-q="none">None</button></div>`+
+    UNITS.map(x=>`<label><input type="checkbox" value="${x.u}" ${!saved||saved.includes(x.u)?"checked":""}><span>${esc(x.u?(x.name?`Unit ${x.u} · ${x.name}`:`Unit ${x.u}`):(x.name||"General"))}</span><span class="uc">${x.n}</span></label>`).join("")+
     `<div class="uwarn" id="unitWarn" hidden>Tick at least one unit.</div>`;
   if(saved&&!selUnits().length) box.querySelectorAll("input").forEach(c=>c.checked=true);
   box.addEventListener("click",e=>{const b=e.target.closest("[data-q]");if(!b)return;const q=b.dataset.q;
@@ -384,7 +384,7 @@ async function exportCSV(name,right,n,pct){
   const c=v=>'"'+String(v).replace(/"/g,'""')+'"';
   const when=new Date();
   const rows=[["Student",name||""],["Date",when.toLocaleString()],["Question type",{def:"Word meanings",fill:"Fill the blank",mix:"Mixed"}[mode]],["Score",right+" / "+n],["Percent",pct+"%"],[],
-    ["#","Unit","Question","Your answer","Correct answer","Result","Arabic"]];
+    ["#","Unit","Question","Your answer","Correct answer","Result","Translation"]];
   qs.forEach((q,k)=>{const v=DATA[q.idx];
     const prompt=q.type==="def"?v.d:v.s.replace(/\[[^\]]*\]/,"_____");
     rows.push([k+1,v.u?("Unit "+v.u):"Grammar",prompt,q.chosen===null?"(blank)":L[q.chosen]+". "+DATA[q.opts[q.chosen]].w,L[q.ans]+". "+v.w,q.chosen===q.ans?"Correct":(q.chosen===null?"No answer":"Incorrect"),v.ar]);});
@@ -397,10 +397,10 @@ async function exportCSV(name,right,n,pct){
 document.addEventListener("click",e=>{const b=e.target.closest("[data-say]");if(b)playWord(+b.dataset.say);});
 build();
 </script>
-<script>
+<script type="text/x-app">
 async function refreshLists(){DBPROFS=(await App.myLists()).map(l=>({id:l.id,name:l.name,words:l.words,score:l.score,total:l.total,createdAt:l.created_at}));renderProfs();
   if(!DBPROFS.length)document.getElementById("profMsg").textContent="No practice lists yet. After an exam, save your wrong words as a list.";}
 App.requireUser().then(async p=>{const nm=document.getElementById("studentName");if(nm&&!nm.value)nm.value=p.full_name||"";
   await refreshLists();const want=new URLSearchParams(location.search).get("list");
   if(want&&PROFS.some(x=>x.id===want)){document.getElementById("profSel").value=want;profPick();document.getElementById("profWrong").click();}}).catch(()=>{});
-</script></body></html>
+</script><script>Sets.boot({min:4})</script></body></html>

@@ -1,0 +1,86 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Study set · Albarq Education Center</title><link rel="icon" href="assets/icons/brilliant.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=Noto+Naskh+Arabic:wght@600&display=swap">
+<link rel="stylesheet" href="css/app.css">
+<script src="js/vendor/supabase.js"></script><script src="js/config.js"></script><script src="js/icons.js"></script><script src="js/app.js"></script><script src="js/sets.js"></script>
+</head><body>
+<div class="wrap" id="page"><p class="muted">Loading…</p></div>
+<script>
+const $=id=>document.getElementById(id), esc=App.esc, qp=new URLSearchParams(location.search), ID=qp.get("id");
+const I=(n,s)=>icon(n,s||16);
+let SET, ME, LK, MAP;
+const ACTS=[["cards.html","layers","Flashcards","Look, listen, flip, or guess from the picture.","a-sun",m=>m.words.length>0],
+  ["exam.html","clipboard-check","Exam","Multiple choice by unit, with a score.","a-blue",m=>m.words.length>=4],
+  ["games.html","puzzle","Games","Match pictures and meanings, unscramble.","a-teal",m=>m.words.length>=4],
+  ["spelling.html","spell-check-2","Spelling","Look-cover-write, missing letters, test.","a-coral",m=>m.words.length>=2],
+  ["quiz.html","circle-help","Quiz","Multiple-choice and true/false questions.","a-blue",m=>m.questions.length>0]];
+async function render(){
+  const got=await Sets.load(ID);
+  if(!got){$("page").innerHTML=`<div class="card"><h1>Set not available</h1><p>This study set doesn't exist any more, or it hasn't been shared with you.</p><a class="btn" href="library.html">${I("library")}Open the library</a></div>`;return;}
+  SET=got.set; MAP=Sets.mapItems(SET,got.items); document.title=SET.title+" · Albarq Education Center";
+  try{localStorage.setItem("lastSet",SET.id);}catch(e){}
+  const owner=SET.owner_id===ME.id||ME.is_admin, teacher=ME.role==="teacher", inst=LK.inst(SET.institution_id);
+  const named=new Map((SET.units||[]).map(u=>[Number(u.u),u.name||""]));
+  const units=[...new Set(got.items.map(x=>x.unit))].sort((a,b)=>(a===0)-(b===0)||a-b);
+  const uname=u=>u?(named.get(u)?`Unit ${u} · ${named.get(u)}`:`Unit ${u}`):(named.get(0)||"General");
+  const acts=ACTS.filter(a=>a[5](MAP)), pics=MAP.words.filter(w=>w.real).map(w=>w.img);
+  const topArt=(a,k)=>pics.length?`<img src="${esc(pics[(k*7)%pics.length])}" alt="" loading="lazy">`:`<span style="width:72px;height:72px;border-radius:18px;display:grid;place-items:center;background:var(--sheet);box-shadow:var(--shadow)">${I(a[1],34)}</span>`;
+  $("page").innerHTML=`
+  <section class="hero" style="grid-template-columns:1fr auto">
+    <div><span class="eyebrow">${esc(LK.subject(SET.subject_id).name)} · ${esc(LK.level(SET.level_code).name||"All levels")}</span>
+      <h1>${esc(SET.title)}</h1>${SET.description?`<p class="sub">${esc(SET.description)}</p>`:""}
+      <div class="chips">${SET.visibility==="public"?`<span class="chip">${I("globe",15)}Public</span>`:`<span class="chip">${I("lock",15)}Private</span>`}
+        ${inst?`<span class="chip">${I(inst.kind==="university"?"landmark":"school",15)}${esc(inst.name)}</span>`:""}
+        ${SET.author_name?`<span class="chip">${I("pencil",15)}${esc(SET.author_name)}</span>`:""}
+        <span class="chip">${I("languages",15)}${esc(Sets.LANGS[SET.language]||SET.language)}${SET.translation_lang?" → "+esc(Sets.LANGS[SET.translation_lang]||SET.translation_lang):""}</span></div></div>
+    ${SET.cover_url?`<div class="pals" aria-hidden="true"><img src="${esc(SET.cover_url)}" alt=""></div>`:""}
+  </section>
+  <section class="stats">
+    <div class="stat t-blue"><div class="ib">${I("layers",22)}</div><div><b>${MAP.words.length}</b><span>Terms</span></div></div>
+    <div class="stat t-sun"><div class="ib">${I("circle-help",22)}</div><div><b>${MAP.questions.length}</b><span>Questions</span></div></div>
+    <div class="stat t-teal"><div class="ib">${I("list-checks",22)}</div><div><b>${units.length}</b><span>Units</span></div></div>
+    <div class="stat t-coral"><div class="ib">${I("calendar-days",22)}</div><div><b style="font-size:1.05rem">${new Date(SET.updated_at).toLocaleDateString(undefined,{day:"numeric",month:"short",year:"numeric"})}</b><span>Last updated</span></div></div>
+  </section>
+  ${acts.length?`<section class="acts" aria-label="Activities" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr))">${acts.map((a,k)=>`<a class="act ${a[4]}" href="${a[0]}?set=${SET.id}"><div class="top" style="height:104px">${pics.length?`<span class="badge">${I(a[1],20)}</span>`:""}${topArt(a,k)}</div><div class="body"><b>${a[2]}</b><p>${a[3]}</p><span class="go">Start ${I("arrow-right")}</span></div></a>`).join("")}</section>`
+    :`<div class="card"><p class="empty">This set is empty.${owner?" Add terms or questions to start.":""}</p></div>`}
+  ${teacher?`<section class="card"><h2 class="sec-title">${I("presentation",20)}Teacher tools</h2>
+    <form class="row" id="assignForm"><select id="cls" aria-label="Class" style="min-width:14rem"></select><button class="btn primary">${I("send")}Assign to class</button><span class="msg" id="assignMsg" role="status"></span></form>
+    <div id="assigned" class="words"></div>
+    <div class="row">${owner?`<a class="btn" href="edit.html?id=${SET.id}">${I("pencil")}Edit set</a>
+      <button class="btn" id="vis" type="button">${SET.visibility==="public"?I("lock")+"Make private":I("globe")+"Publish to library"}</button>`:""}
+      <button class="btn" id="copy" type="button">${I("copy-plus")}Make my own copy</button>
+      ${owner?`<button class="btn danger" id="del" type="button">${I("trash-2")}<span>Delete set</span></button>`:""}<span class="msg" id="toolMsg" role="status"></span></div></section>`:""}
+  <section class="card"><h2 class="sec-title">${I("list-checks",20)}What's inside</h2>
+    ${units.map(u=>{const it=got.items.filter(x=>x.unit===u);return `<details ${units.length<=3?"open":""}><summary style="cursor:pointer;font-weight:700;padding:6px 0">${esc(uname(u))} <span class="muted">· ${it.length}</span></summary>
+      <div class="items" style="margin-top:8px">${it.slice(0,200).map(x=>x.kind==="term"?`<div class="item"><img src="${esc(x.image_url||x.anim_url||Sets.tile(x.term))}" alt="" loading="lazy"><div><b>${esc(x.term)}</b> <span class="muted">— ${esc(x.meaning)}</span>${x.translation?`<br><span dir="auto" style="font-family:var(--f-ar)">${esc(x.translation)}</span>`:""}</div></div>`
+        :`<div class="item" style="grid-template-columns:auto 1fr"><span class="tag" style="background:var(--sun-soft);color:#8A6100">${x.kind==="tf"?"True/False":"Choice"}</span><div dir="auto"><b>${esc(x.term)}</b></div></div>`).join("")}</div></details>`;}).join("")||'<p class="empty">No items yet.</p>'}
+  </section>`;
+  if(teacher)wireTeacher(owner);
+}
+async function wireTeacher(owner){
+  const C=App.client;
+  const [{data:cls},{data:asg}]=await Promise.all([C.from("classes").select("id,name").eq("teacher_id",ME.id).order("created_at"),C.from("class_sets").select("class_id").eq("set_id",SET.id)]);
+  const mine=cls||[], on=new Set((asg||[]).map(a=>a.class_id));
+  const free=mine.filter(c=>!on.has(c.id));
+  $("cls").innerHTML=free.length?free.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join(""):`<option value="">${mine.length?"All your classes already have this set":"Create a class first (Home page)"}</option>`;
+  $("cls").disabled=!!mine.length&&!free.length; $("assignForm").querySelector("button").disabled=!!mine.length&&!free.length;
+  $("assigned").innerHTML=mine.filter(c=>on.has(c.id)).map(c=>`<span class="chip">${I("school",14)}${esc(c.name)} <button class="btn small" style="border:0;padding:0 4px" data-un="${c.id}" aria-label="Unassign from ${esc(c.name)}">${I("x",14)}</button></span>`).join("")||'<span class="muted">Not assigned to any of your classes yet.</span>';
+  $("assignForm").onsubmit=async e=>{e.preventDefault();const id=$("cls").value;if(!id){location.href="teacher.html";return;}
+    const {error}=await C.from("class_sets").insert({class_id:id,set_id:SET.id});
+    $("assignMsg").textContent=error?error.message:"Assigned. Students in the class will see it on their home page.";$("assignMsg").className="msg "+(error?"err":"ok");if(!error)wireTeacher(owner);};
+  $("assigned").onclick=async e=>{const b=e.target.closest("[data-un]");if(!b)return;await C.from("class_sets").delete().eq("class_id",b.dataset.un).eq("set_id",SET.id);wireTeacher(owner);};
+  $("copy").onclick=async()=>{$("copy").disabled=true;const {data,error}=await C.rpc("copy_set",{p_set:SET.id});
+    if(error){$("toolMsg").textContent=error.message;$("toolMsg").className="msg err";$("copy").disabled=false;return;} location.href="edit.html?id="+data;};
+  if(!owner)return;
+  $("vis").onclick=async()=>{const v=SET.visibility==="public"?"private":"public";
+    const {error}=await C.from("study_sets").update({visibility:v}).eq("id",SET.id);
+    if(error){$("toolMsg").textContent=error.message;$("toolMsg").className="msg err";return;} App.status(v==="public"?"Published to the library":"Now private",true);render();};
+  let sure=false;
+  $("del").onclick=async()=>{const sp=$("del").querySelector("span");if(!sure){sure=true;sp.textContent="Click again to delete for everyone";setTimeout(()=>{sure=false;sp.textContent="Delete set";},4000);return;}
+    const {error}=await C.from("study_sets").delete().eq("id",SET.id);if(error){$("toolMsg").textContent=error.message;$("toolMsg").className="msg err";return;}
+    try{localStorage.removeItem("lastSet");}catch(e){} location.href="mysets.html";};
+}
+App.requireUser().then(async p=>{ME=p;LK=await App.lookups();if(!ID){location.replace("library.html");return;}render();}).catch(()=>{});
+</script>
+</body></html>

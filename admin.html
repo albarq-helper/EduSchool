@@ -1,0 +1,57 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Admin · Albarq Education Center</title><link rel="icon" href="assets/icons/brilliant.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<link rel="stylesheet" href="css/app.css">
+<script src="js/vendor/supabase.js"></script><script src="js/config.js"></script><script src="js/icons.js"></script><script src="js/app.js"></script>
+</head><body>
+<div class="wrap" style="max-width:1120px">
+  <div><span class="eyebrow">Site admin</span><h1>Admin</h1></div>
+  <section class="card"><div class="row" style="justify-content:space-between"><h2 class="sec-title"><i data-i="school"></i>Schools and universities <span class="muted" id="nInst"></span></h2>
+    <input id="iq" type="search" placeholder="Filter" aria-label="Filter schools" style="width:14rem"></div>
+    <p class="muted" style="margin:0;font-size:.9rem">Teachers and students add their own school when they sign up. Fix spelling here, or merge a duplicate into the correct entry: everyone and everything linked to it moves across.</p>
+    <div class="tablewrap"><table><thead><tr><th>Name</th><th>Type</th><th>Country</th><th>City</th><th>Merge into</th><th></th></tr></thead><tbody id="inst"></tbody></table></div>
+    <span class="msg" id="instMsg" role="status"></span></section>
+  <section class="card"><h2 class="sec-title"><i data-i="book-open"></i>Subjects</h2>
+    <div class="words" id="subs"></div>
+    <form class="row" id="subForm"><input id="subName" maxlength="60" placeholder="New subject, e.g. Nursing" aria-label="New subject"><button class="btn primary"><i data-i="plus"></i>Add subject</button><span class="msg" id="subMsg"></span></form></section>
+  <section class="card"><h2 class="sec-title"><i data-i="globe"></i>Public study sets <span class="muted" id="nSets"></span></h2>
+    <div class="tablewrap"><table><thead><tr><th>Title</th><th>Author</th><th>Subject · level</th><th class="num">Items</th><th></th></tr></thead><tbody id="sets"></tbody></table></div></section>
+</div>
+<script>
+const $=id=>document.getElementById(id), esc=App.esc, C=App.client;
+document.querySelectorAll("[data-i]").forEach(el=>el.insertAdjacentHTML("afterbegin",icon(el.dataset.i,16)));
+let LK, INST=[];
+const KINDS=["school","university","college","institute","other"];
+async function loadInst(){const {data}=await C.from("institutions").select("id,name,kind,country,city,created_at").order("name");INST=data||[];drawInst();}
+function drawInst(){const q=$("iq").value.trim().toLowerCase(), L=INST.filter(i=>!q||(i.name+" "+i.country+" "+i.city).toLowerCase().includes(q));
+  $("nInst").textContent="· "+INST.length;
+  $("inst").innerHTML=L.map(i=>`<tr data-id="${i.id}"><td><input data-f="name" value="${esc(i.name)}" maxlength="120" style="width:100%;min-width:12rem"></td>
+    <td><select data-f="kind">${KINDS.map(k=>`<option ${k===i.kind?"selected":""}>${k}</option>`).join("")}</select></td>
+    <td><input data-f="country" value="${esc(i.country)}" maxlength="60" style="width:8rem"></td><td><input data-f="city" value="${esc(i.city)}" maxlength="60" style="width:8rem"></td>
+    <td><select data-merge><option value="">—</option>${INST.filter(x=>x.id!==i.id).map(x=>`<option value="${x.id}">${esc(x.name)}</option>`).join("")}</select></td>
+    <td><div class="row" style="flex-wrap:nowrap"><button class="btn small" data-save type="button">${icon("save",14)}Save</button><button class="btn small danger" data-del type="button" aria-label="Delete ${esc(i.name)}">${icon("trash-2",14)}</button></div></td></tr>`).join("")||'<tr><td colspan="6" class="empty">None.</td></tr>';}
+$("iq").oninput=drawInst;
+const say=(id,t,ok)=>{$(id).textContent=t;$(id).className="msg "+(ok?"ok":"err");};
+$("inst").onclick=async e=>{const tr=e.target.closest("tr[data-id]");if(!tr)return;const id=tr.dataset.id;
+  if(e.target.closest("[data-save]")){const v={};tr.querySelectorAll("[data-f]").forEach(el=>v[el.dataset.f]=el.value.trim());
+    const into=tr.querySelector("[data-merge]").value;
+    if(into){const {error}=await C.rpc("merge_institutions",{p_from:id,p_into:into});say("instMsg",error?error.message:"Merged.",!error);}
+    else{const {error}=await C.from("institutions").update(v).eq("id",id);say("instMsg",error?error.message:"Saved.",!error);}
+    loadInst();}
+  const d=e.target.closest("[data-del]");
+  if(d){if(!d.dataset.sure){d.dataset.sure=1;d.textContent="Sure?";setTimeout(()=>{if(d.isConnected){delete d.dataset.sure;d.innerHTML=icon("trash-2",14);}},4000);return;}
+    const {error}=await C.from("institutions").delete().eq("id",id);say("instMsg",error?error.message:"Deleted. People and sets linked to it are now unlinked.",!error);loadInst();}};
+async function loadSubs(){const {data}=await C.from("subjects").select("id,name,sort").order("sort");$("subs").innerHTML=(data||[]).map(s=>`<span class="chip">${esc(s.name)}</span>`).join("");}
+$("subForm").onsubmit=async e=>{e.preventDefault();const name=$("subName").value.trim();if(!name)return;
+  const {error}=await C.from("subjects").insert({name,sort:500});say("subMsg",error?error.message:"Added.",!error);if(!error){$("subName").value="";loadSubs();}};
+async function loadSets(){const {data}=await C.from("study_sets").select("id,title,author_name,subject_id,level_code,term_count,question_count,visibility").eq("visibility","public").order("created_at",{ascending:false}).limit(1000);
+  const L=data||[];$("nSets").textContent="· "+L.length;
+  $("sets").innerHTML=L.map(s=>`<tr data-id="${s.id}"><td><a href="set.html?id=${s.id}">${esc(s.title)}</a></td><td>${esc(s.author_name||"—")}</td><td>${esc(LK.subject(s.subject_id).name)} · ${esc(LK.level(s.level_code).name)}</td><td class="num">${s.term_count+s.question_count}</td>
+    <td><button class="btn small" data-unpub type="button">${icon("lock",14)}Unpublish</button></td></tr>`).join("")||'<tr><td colspan="5" class="empty">None.</td></tr>';}
+$("sets").onclick=async e=>{const b=e.target.closest("[data-unpub]");if(!b)return;const id=b.closest("tr").dataset.id;
+  const {error}=await C.from("study_sets").update({visibility:"private"}).eq("id",id);App.status(error?error.message:"Unpublished",!error);loadSets();};
+App.requireUser().then(async p=>{if(!p.is_admin){document.querySelector(".wrap").innerHTML='<div class="card"><h1>Admins only</h1><p>This page is for the site administrator.</p></div>';return;}
+  LK=await App.lookups();loadInst();loadSubs();loadSets();}).catch(()=>{});
+</script>
+</body></html>

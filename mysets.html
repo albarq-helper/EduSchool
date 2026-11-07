@@ -1,0 +1,27 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>My sets · Albarq Education Center</title><link rel="icon" href="assets/icons/brilliant.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<link rel="stylesheet" href="css/app.css">
+<script src="js/vendor/supabase.js"></script><script src="js/config.js"></script><script src="js/icons.js"></script><script src="js/app.js"></script>
+</head><body>
+<div class="wrap" style="max-width:1120px">
+  <div class="head2">
+    <div><span class="eyebrow">Teacher</span><h1>My study sets</h1>
+      <p class="muted" style="margin:4px 0 0">Create terms and quizzes for any subject. Keep them private for your classes, or publish them to the library.</p></div>
+    <a class="btn primary" href="edit.html"><i data-i="plus"></i>Create a study set</a>
+  </div>
+  <div class="sets" id="grid"><p class="muted">Loading…</p></div>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+document.querySelectorAll("[data-i]").forEach(el=>el.insertAdjacentHTML("afterbegin",icon(el.dataset.i,16)));
+App.requireUser({role:"teacher"}).then(async p=>{
+  const LK=await App.lookups();
+  const {data}=await App.client.from("study_sets").select("id,owner_id,author_name,institution_id,subject_id,level_code,title,visibility,term_count,question_count,cover_url,updated_at").eq("owner_id",p.id).order("updated_at",{ascending:false});
+  const L=data||[];
+  $("grid").innerHTML=L.length?L.map(s=>App.setCard(s,LK,{mine:true})).join("")
+    :`<div class="card" style="grid-column:1/-1"><div class="empty-ill"><img src="assets/anims/create.gif" alt=""><div><b>No study sets yet</b><br><span>Create one from scratch, paste a spreadsheet of terms, or open a set in the <a href="library.html">library</a> and make your own copy.</span></div></div></div>`;
+}).catch(()=>{});
+</script>
+</body></html>

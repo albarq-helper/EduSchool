@@ -1,0 +1,182 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Edit study set · Albarq Education Center</title><link rel="icon" href="assets/icons/brilliant.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=Noto+Naskh+Arabic:wght@600&display=swap">
+<link rel="stylesheet" href="css/app.css">
+<script src="js/vendor/supabase.js"></script><script src="js/config.js"></script><script src="js/icons.js"></script><script src="js/app.js"></script><script src="js/sets.js"></script>
+</head><body>
+<div class="wrap" style="max-width:1000px;padding-bottom:0">
+  <div class="head2"><div><span class="eyebrow">Teacher</span><h1 id="h">New study set</h1></div>
+    <a class="btn small" id="back" href="mysets.html"><i data-i="arrow-left"></i>My sets</a></div>
+
+  <section class="card"><h2 class="sec-title"><i data-i="settings"></i>About this set</h2>
+    <div class="form2">
+      <label class="f wide">Title<input id="title" maxlength="120" required placeholder="e.g. Grade 8 Biology · Cells and organisms"></label>
+      <label class="f">Subject<select id="subject"></select></label>
+      <label class="f">Grade / level<select id="level"></select></label>
+      <label class="f">Language of the terms<select id="lang"></select></label>
+      <label class="f">Translation shown (optional)<select id="tlang"></select></label>
+      <label class="f">School or university<select id="inst"></select></label>
+      <label class="f" id="newInstBox" hidden>New school / university name<span class="row" style="flex-wrap:nowrap"><input id="newInst" maxlength="120" style="flex:1"><select id="newKind" aria-label="Type"><option value="school">School</option><option value="university">University</option><option value="college">College</option><option value="institute">Institute</option></select></span><input id="newCountry" maxlength="60" placeholder="Country"></label>
+      <label class="f">Who can see it<select id="vis"><option value="private">Private: me and the classes I assign it to</option><option value="public">Public: shared in the library</option></select></label>
+      <label class="f wide">Description (optional)<textarea id="desc" maxlength="1000" placeholder="What is this set for? Which book, chapter or course?"></textarea></label>
+    </div>
+  </section>
+
+  <section class="card"><div class="row" style="justify-content:space-between"><h2 class="sec-title"><i data-i="list-checks"></i>Units</h2><button class="btn small" id="addUnit" type="button"><i data-i="plus"></i>Add unit</button></div>
+    <p class="muted" style="margin:0;font-size:.9rem">Group terms and questions into units or chapters. Students can practise one unit or several.</p>
+    <div id="units" style="display:grid;gap:6px"></div></section>
+
+  <section class="card"><div class="row" style="justify-content:space-between"><h2 class="sec-title"><i data-i="file-spreadsheet"></i>Paste from a spreadsheet</h2><button class="btn small" id="tmpl" type="button"><i data-i="file-up"></i>Download template</button></div>
+    <p class="muted" style="margin:0;font-size:.9rem">Copy rows from Excel or Google Sheets and paste here. <b>Terms:</b> term · meaning · example · translation · unit · picture link. <b>Questions:</b> start the row with <code>Q</code> then question · choice A · choice B · choice C · choice D · correct letter · explanation · unit. <b>True/false:</b> start with <code>TF</code> then statement · TRUE or FALSE · explanation · unit.</p>
+    <textarea id="paste" placeholder="Photosynthesis	How plants make food from sunlight	Leaves use [photosynthesis] to make sugar.		1"></textarea>
+    <div class="row"><button class="btn" id="doPaste" type="button"><i data-i="upload"></i>Add these rows</button><label class="btn small" style="cursor:pointer"><i data-i="file-up"></i>Open a CSV file<input type="file" id="csvFile" accept=".csv,.tsv,.txt" hidden></label><span class="msg" id="pasteMsg" role="status"></span></div></section>
+
+  <section class="card"><div class="row" style="justify-content:space-between"><h2 class="sec-title"><i data-i="layers"></i>Terms and questions <span class="muted" id="nItems"></span></h2>
+    <div class="row"><button class="btn small" data-add="term" type="button"><i data-i="plus"></i>Term</button><button class="btn small" data-add="mcq" type="button"><i data-i="plus"></i>Multiple choice</button><button class="btn small" data-add="tf" type="button"><i data-i="plus"></i>True / false</button></div></div>
+    <div id="rows" style="display:grid;gap:10px"></div>
+    <div class="row"><button class="btn small" data-add="term" type="button"><i data-i="plus"></i>Term</button><button class="btn small" data-add="mcq" type="button"><i data-i="plus"></i>Multiple choice</button><button class="btn small" data-add="tf" type="button"><i data-i="plus"></i>True / false</button></div>
+  </section>
+
+  <div class="sticky-save"><button class="btn primary" id="save" type="button"><i data-i="save"></i>Save set</button><span class="msg" id="saveMsg" role="status"></span></div>
+</div>
+<script>
+const $=id=>document.getElementById(id), esc=App.esc, ID=new URLSearchParams(location.search).get("id");
+const paint=(r=document)=>r.querySelectorAll("[data-i]").forEach(el=>{if(!el.dataset.done){el.insertAdjacentHTML("afterbegin",icon(el.dataset.i,16));el.dataset.done=1;}});
+paint();
+const LANGS=Sets.LANGS;
+let ME, LK, SET=null, UNITS=[{u:1,name:""}], ROWS=[], ORIG=new Set(), dirty=false;
+const uid=()=>(crypto.randomUUID?crypto.randomUUID():"xxxxxxxx-xxxx-4xxx-8xxx-xxxxxxxxxxxx".replace(/x/g,()=>(Math.random()*16|0).toString(16)));
+const blank=kind=>({id:uid(),kind,unit:(UNITS[UNITS.length-1]||{u:1}).u,term:"",meaning:"",example:"",translation:"",syllables:"",image_url:"",anim_url:"",audio_url:"",choices:kind==="mcq"?["","","",""]:[],answer:kind==="tf"?1:0,also_units:[]});
+// ---------- units ----------
+function drawUnits(){$("units").innerHTML=UNITS.map((u,k)=>`<div class="row" style="flex-wrap:nowrap"><span class="tag" style="min-width:4.5rem;justify-content:center">${u.u?"Unit "+u.u:"General"}</span>
+  <input data-un="${k}" value="${esc(u.name)}" maxlength="80" placeholder="Unit name (optional)" style="flex:1" aria-label="Name of unit ${u.u}">
+  ${UNITS.length>1?`<button class="btn small danger" data-ud="${k}" type="button" aria-label="Remove unit ${u.u}">${icon("x",14)}</button>`:""}</div>`).join("");}
+$("units").oninput=e=>{const k=e.target.dataset.un;if(k!==undefined){UNITS[k].name=e.target.value;dirty=true;}};
+$("units").onclick=e=>{const b=e.target.closest("[data-ud]");if(!b)return;const u=UNITS[b.dataset.ud].u;
+  if(ROWS.some(r=>r.unit===u)){$("saveMsg").textContent=`Move or remove the items in Unit ${u} first.`;$("saveMsg").className="msg err";return;}
+  UNITS.splice(b.dataset.ud,1);drawUnits();drawRows();dirty=true;};
+$("addUnit").onclick=()=>{const n=Math.max(0,...UNITS.map(u=>u.u))+1;UNITS.push({u:n,name:""});drawUnits();drawRows();dirty=true;};
+const unitSel=(r,k)=>`<select data-f="unit" data-k="${k}" aria-label="Unit">${UNITS.map(u=>`<option value="${u.u}" ${u.u===r.unit?"selected":""}>${u.u?"Unit "+u.u:"General"}${u.name?" · "+esc(u.name):""}</option>`).join("")}</select>`;
+// ---------- rows ----------
+const media=(r,k,f,label,accept)=>`<label class="f" style="font-weight:600">${label}<span class="row" style="flex-wrap:nowrap;gap:6px">${f==="image_url"?`<img class="thumb" src="${esc(r.image_url||r.anim_url||Sets.tile(r.term||"?"))}" alt="">`:""}
+  <input data-f="${f}" data-k="${k}" value="${esc(r[f])}" placeholder="https://… or upload" style="flex:1">
+  <label class="btn small" style="cursor:pointer" title="Upload">${icon("upload",14)}<input type="file" data-up="${f}" data-k="${k}" accept="${accept}" hidden></label></span></label>`;
+function rowHTML(r,k){
+  const kindLab=r.kind==="term"?"Term":r.kind==="mcq"?"Multiple choice":"True / false";
+  const head=`<div class="top"><span class="kind ${r.kind==="term"?"":"q"}">${kindLab}</span><span class="muted">#${k+1}</span>${unitSel(r,k)}
+    <span style="margin-left:auto" class="row"><button class="btn small" data-mv="-1" data-k="${k}" type="button" aria-label="Move up">↑</button><button class="btn small" data-mv="1" data-k="${k}" type="button" aria-label="Move down">↓</button>
+    <button class="btn small danger" data-del="${k}" type="button" aria-label="Remove item ${k+1}">${icon("trash-2",14)}</button></span></div>`;
+  if(r.kind==="term") return `<div class="erow">${head}<div class="g">
+    <label class="f">Term<input data-f="term" data-k="${k}" value="${esc(r.term)}" maxlength="500" dir="auto"></label>
+    <label class="f">Meaning / definition<input data-f="meaning" data-k="${k}" value="${esc(r.meaning)}" maxlength="1500" dir="auto"></label>
+    <label class="f">Example sentence (optional)<input data-f="example" data-k="${k}" value="${esc(r.example)}" maxlength="600" dir="auto" placeholder="Put [brackets] round the term"></label>
+    <label class="f">Translation (optional)<input data-f="translation" data-k="${k}" value="${esc(r.translation)}" maxlength="300" dir="auto"></label>
+    ${media(r,k,"image_url","Picture (optional)","image/*")}${media(r,k,"audio_url","Audio (optional, otherwise read aloud)","audio/*")}</div></div>`;
+  const qtop=`<label class="f">${r.kind==="tf"?"Statement":"Question"}<textarea data-f="term" data-k="${k}" maxlength="500" dir="auto" style="min-height:52px">${esc(r.term)}</textarea></label>`;
+  const body=r.kind==="mcq"?`<div style="display:grid;gap:6px"><span class="muted" style="font-size:.85rem;font-weight:700">Choices: tick the correct one</span>${r.choices.map((c,j)=>`<div class="choice"><input type="radio" name="ans${k}" data-ans="${j}" data-k="${k}" ${r.answer===j?"checked":""} aria-label="Choice ${"ABCDEF"[j]} is correct"><b>${"ABCDEF"[j]}</b><input type="text" data-ch="${j}" data-k="${k}" value="${esc(c)}" maxlength="300" dir="auto">${r.choices.length>2?`<button class="btn small" data-rmch="${j}" data-k="${k}" type="button" aria-label="Remove choice">${icon("x",12)}</button>`:""}</div>`).join("")}
+      ${r.choices.length<6?`<button class="btn small" data-addch="${k}" type="button" style="justify-self:start">${icon("plus",14)}Add choice</button>`:""}</div>`
+    :`<div class="row"><label class="row" style="gap:6px;font-weight:700"><input type="radio" name="ans${k}" data-tf="1" data-k="${k}" ${r.answer===1?"checked":""}>True</label><label class="row" style="gap:6px;font-weight:700"><input type="radio" name="ans${k}" data-tf="0" data-k="${k}" ${r.answer===0?"checked":""}>False</label></div>`;
+  return `<div class="erow">${head}${qtop}${body}<div class="g"><label class="f">Explanation shown after answering (optional)<input data-f="meaning" data-k="${k}" value="${esc(r.meaning)}" maxlength="1500" dir="auto"></label>${media(r,k,"image_url","Picture (optional)","image/*")}</div></div>`;
+}
+function drawRows(){$("rows").innerHTML=ROWS.length?ROWS.map(rowHTML).join(""):'<p class="empty">No items yet. Add a term or a question, or paste rows from a spreadsheet above.</p>';
+  const t=ROWS.filter(r=>r.kind==="term").length;$("nItems").textContent=`· ${t} terms, ${ROWS.length-t} questions`;}
+$("rows").oninput=e=>{const el=e.target,k=+el.dataset.k;if(isNaN(k))return;const r=ROWS[k];dirty=true;
+  if(el.dataset.f){r[el.dataset.f]=el.dataset.f==="unit"?+el.value:el.value;if(el.dataset.f==="image_url"){const th=el.parentNode.querySelector(".thumb");if(th)th.src=el.value||Sets.tile(r.term||"?");}}
+  else if(el.dataset.ch!==undefined)r.choices[+el.dataset.ch]=el.value;
+  else if(el.dataset.ans!==undefined)r.answer=+el.dataset.ans;
+  else if(el.dataset.tf!==undefined)r.answer=+el.dataset.tf;};
+$("rows").onchange=$("rows").oninput;
+$("rows").onclick=e=>{const b=e.target.closest("button");if(!b)return;const k=+b.dataset.k;
+  if(b.dataset.del!==undefined){ROWS.splice(+b.dataset.del,1);}
+  else if(b.dataset.mv){const j=k+ +b.dataset.mv;if(j<0||j>=ROWS.length)return;[ROWS[k],ROWS[j]]=[ROWS[j],ROWS[k]];}
+  else if(b.dataset.addch!==undefined){ROWS[+b.dataset.addch].choices.push("");}
+  else if(b.dataset.rmch!==undefined){const r=ROWS[k],j=+b.dataset.rmch;r.choices.splice(j,1);if(r.answer>=r.choices.length||r.answer===j)r.answer=0;else if(r.answer>j)r.answer--;}
+  else return; dirty=true; drawRows();};
+document.querySelectorAll("[data-add]").forEach(b=>b.onclick=()=>{ROWS.push(blank(b.dataset.add));dirty=true;drawRows();const last=$("rows").lastElementChild;last.scrollIntoView({behavior:"smooth",block:"center"});last.querySelector("input[type=text],input:not([type]),textarea")?.focus();});
+// uploads to the media bucket
+$("rows").addEventListener("change",async e=>{const el=e.target;if(!el.dataset.up||!el.files[0])return;const f=el.files[0],k=+el.dataset.k;
+  if(f.size>5*1024*1024){App.status("That file is bigger than 5 MB",false);return;}
+  App.status("Uploading…",true);
+  const path=`${ME.id}/${Date.now()}-${f.name.replace(/[^\w.-]+/g,"_").slice(-60)}`;
+  const {error}=await App.client.storage.from("media").upload(path,f,{contentType:f.type,upsert:false});
+  if(error){App.status("Upload failed: "+error.message,false);return;}
+  ROWS[k][el.dataset.up]=App.client.storage.from("media").getPublicUrl(path).data.publicUrl;dirty=true;drawRows();App.status("Uploaded",true);});
+// ---------- paste / CSV ----------
+function parseTable(txt){const rows=[];let row=[],cell="",q=false;const sep=txt.includes("\t")?"\t":",";
+  for(let i=0;i<txt.length;i++){const c=txt[i];
+    if(q){if(c==='"'){if(txt[i+1]==='"'){cell+='"';i++;}else q=false;}else cell+=c;}
+    else if(c==='"'&&cell==="")q=true; else if(c===sep){row.push(cell);cell="";} else if(c==="\n"||c==="\r"){if(c==="\r"&&txt[i+1]==="\n")i++;row.push(cell);rows.push(row);row=[];cell="";} else cell+=c;}
+  if(cell!==""||row.length){row.push(cell);rows.push(row);} return rows.map(r=>r.map(x=>x.trim())).filter(r=>r.some(Boolean));}
+function addFromTable(txt){const T=parseTable(txt);let n=0,bad=0;const unitOf=v=>{const u=parseInt(v,10);if(isNaN(u))return (UNITS[UNITS.length-1]||{u:1}).u;if(!UNITS.some(x=>x.u===u)){UNITS.push({u,name:""});UNITS.sort((a,b)=>(a.u===0)-(b.u===0)||a.u-b.u);}return u;};
+  const url=v=>/^https:\/\//.test(v||"")?v:"";
+  for(const r of T){const h=(r[0]||"").toUpperCase();
+    if(/^(term|word|q|tf|type)$/i.test(r[0])&&/^(meaning|definition|question|statement)/i.test(r[1]||""))continue;   // header row
+    if(h==="Q"){const ch=r.slice(2,6).filter(Boolean),L="ABCD".indexOf((r[6]||"A").toUpperCase());if(!r[1]||ch.length<2||L<0||L>=ch.length){bad++;continue;}
+      ROWS.push({...blank("mcq"),term:r[1],choices:ch,answer:L,meaning:r[7]||"",unit:unitOf(r[8])});n++;}
+    else if(h==="TF"){const v=(r[2]||"").toUpperCase();if(!r[1]||!/^(TRUE|FALSE|T|F|YES|NO)$/.test(v)){bad++;continue;}
+      ROWS.push({...blank("tf"),term:r[1],answer:/^(TRUE|T|YES)$/.test(v)?1:0,meaning:r[3]||"",unit:unitOf(r[4])});n++;}
+    else{if(!r[0]||!r[1]){bad++;continue;}ROWS.push({...blank("term"),term:r[0],meaning:r[1],example:r[2]||"",translation:r[3]||"",unit:unitOf(r[4]),image_url:url(r[5])});n++;}}
+  drawUnits();drawRows();dirty=true;
+  $("pasteMsg").textContent=`Added ${n} item${n===1?"":"s"}.`+(bad?` ${bad} row${bad===1?" was":"s were"} skipped (missing a term, meaning, or choices).`:"");$("pasteMsg").className="msg "+(n?"ok":"err");}
+$("doPaste").onclick=()=>{if($("paste").value.trim()){addFromTable($("paste").value);$("paste").value="";}};
+$("csvFile").onchange=async e=>{const f=e.target.files[0];if(f)addFromTable(await f.text());e.target.value="";};
+$("tmpl").onclick=()=>{const csv=["term,meaning,example,translation,unit,picture link",
+  'Photosynthesis,How green plants make food using sunlight,"Leaves use [photosynthesis] to make sugar.",,1,',
+  'Q,Which gas do plants take in?,Oxygen,Carbon dioxide,Nitrogen,Helium,B,Plants take in carbon dioxide and release oxygen.,1',
+  'TF,The Sun is a star.,TRUE,It is the closest star to Earth.,1'].join("\n");
+  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["﻿"+csv],{type:"text/csv"}));a.download="study-set-template.csv";document.body.appendChild(a);a.click();a.remove();};
+// ---------- meta ----------
+function fillMeta(){
+  $("subject").innerHTML=App.subjectOptions(LK.subjects,SET?.subject_id||"","Choose a subject");
+  $("level").innerHTML=App.levelOptions(LK.levels,SET?.level_code||ME.level_code||"any");
+  const langOpts=(sel,none)=>(none?`<option value="">None</option>`:"")+Object.entries(LANGS).map(([c,n])=>`<option value="${c}" ${c===sel?"selected":""}>${n}</option>`).join("");
+  $("lang").innerHTML=langOpts(SET?.language||"en");$("tlang").innerHTML=langOpts(SET?SET.translation_lang:"",true);
+  const instSel=SET?SET.institution_id:ME.institution_id;
+  $("inst").innerHTML=`<option value="">Not linked to a school</option>`+LK.institutions.map(i=>`<option value="${i.id}" ${i.id===instSel?"selected":""}>${esc(i.name)}${i.country?" · "+esc(i.country):""}</option>`).join("")+`<option value="__new">+ Add a school or university…</option>`;
+  $("inst").onchange=()=>$("newInstBox").hidden=$("inst").value!=="__new";
+  if(SET){$("title").value=SET.title;$("vis").value=SET.visibility;$("desc").value=SET.description;}
+  ["title","subject","level","lang","tlang","inst","vis","desc"].forEach(id=>$(id).addEventListener("input",()=>dirty=true));
+}
+// ---------- save ----------
+function validate(){
+  if($("title").value.trim().length<2)return "Give the set a title.";
+  if(!$("subject").value)return "Choose a subject.";
+  for(const [k,r] of ROWS.entries()){const n=`Item #${k+1}`;
+    if(!r.term.trim())return `${n}: ${r.kind==="term"?"type the term":"type the question"}.`;
+    if(r.kind==="term"&&!r.meaning.trim())return `${n} (${r.term}): add a meaning.`;
+    if(r.kind==="mcq"){const filled=r.choices.map(c=>c.trim()).filter(Boolean);if(filled.length<2)return `${n}: add at least two choices.`;if(!(r.choices[r.answer]||"").trim())return `${n}: tick a correct choice that has text.`;}
+    for(const f of ["image_url","audio_url","anim_url"])if(r[f]&&!/^(https:\/\/|assets\/)/.test(r[f]))return `${n}: links must start with https://`;}
+  return "";}
+$("save").onclick=async()=>{const m=$("saveMsg"),err=validate();if(err){m.textContent=err;m.className="msg err";return;}
+  $("save").disabled=true;m.textContent="Saving…";m.className="msg ok";const C=App.client;
+  try{
+    let inst=$("inst").value||null;
+    if(inst==="__new"){const nm=$("newInst").value.trim();if(nm.length<2)throw new Error("Type the new school or university name.");
+      const r=await C.rpc("add_institution",{p_name:nm,p_kind:$("newKind").value,p_country:$("newCountry").value.trim(),p_city:""});if(r.error)throw r.error;inst=r.data;}
+    const meta={title:$("title").value.trim(),subject_id:+$("subject").value,level_code:$("level").value||"any",language:$("lang").value,translation_lang:$("tlang").value,
+      institution_id:inst,visibility:$("vis").value,description:$("desc").value.trim(),units:UNITS.map(u=>({u:u.u,name:u.name.trim()}))};
+    let sid=SET&&SET.id;
+    if(sid){const r=await C.from("study_sets").update(meta).eq("id",sid);if(r.error)throw r.error;}
+    else{const r=await C.from("study_sets").insert({...meta,owner_id:ME.id}).select("id").single();if(r.error)throw r.error;sid=r.data.id;}
+    const rows=ROWS.map((r,k)=>{const o={id:r.id,set_id:sid,position:k+1,kind:r.kind,unit:r.unit,also_units:r.also_units||[],term:r.term.trim(),meaning:r.meaning.trim(),example:(r.example||"").trim(),
+      translation:(r.translation||"").trim(),syllables:r.syllables||"",image_url:(r.image_url||"").trim(),anim_url:r.anim_url||"",audio_url:(r.audio_url||"").trim(),choices:[],answer:null};
+      if(r.kind==="mcq"){const keep=r.choices.map((c,j)=>[c.trim(),j]).filter(x=>x[0]);o.choices=keep.map(x=>x[0]);o.answer=keep.findIndex(x=>x[1]===r.answer);}
+      if(r.kind==="tf")o.answer=r.answer;return o;});
+    const gone=[...ORIG].filter(id=>!rows.some(r=>r.id===id));
+    for(let k=0;k<gone.length;k+=100){const r=await C.from("set_items").delete().in("id",gone.slice(k,k+100));if(r.error)throw r.error;}
+    for(let k=0;k<rows.length;k+=200){const r=await C.from("set_items").upsert(rows.slice(k,k+200));if(r.error)throw r.error;}
+    dirty=false; location.href="set.html?id="+sid;
+  }catch(e){m.textContent="Not saved: "+(e.message||e);m.className="msg err";$("save").disabled=false;}};
+window.addEventListener("beforeunload",e=>{if(dirty){e.preventDefault();e.returnValue="";}});
+App.requireUser({role:"teacher"}).then(async p=>{ME=p;LK=await App.lookups();
+  if(ID){const got=await Sets.load(ID);
+    if(!got||(got.set.owner_id!==p.id&&!p.is_admin)){document.querySelector(".wrap").innerHTML=`<div class="card"><h1>You can't edit this set</h1><p>Only its author can change it. You can open it and choose “Make my own copy”.</p><a class="btn" href="set.html?id=${esc(ID)}">Open the set</a></div>`;return;}
+    SET=got.set;UNITS=(SET.units&&SET.units.length?SET.units:[{u:1,name:""}]).map(u=>({u:+u.u,name:u.name||""}));
+    got.items.forEach(x=>{if(!UNITS.some(u=>u.u===x.unit))UNITS.push({u:x.unit,name:""});});UNITS.sort((a,b)=>(a.u===0)-(b.u===0)||a.u-b.u);
+    ROWS=got.items.map(x=>({...x,choices:Array.isArray(x.choices)?x.choices.slice():[],answer:x.answer??0}));ORIG=new Set(ROWS.map(r=>r.id));
+    $("h").textContent="Edit study set";$("back").href="set.html?id="+SET.id;document.title="Edit: "+SET.title+" · Albarq Education Center";}
+  fillMeta();drawUnits();drawRows();
+}).catch(()=>{});
+</script>
+</body></html>

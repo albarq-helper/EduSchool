@@ -1,0 +1,68 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Quiz · Albarq Education Center</title><link rel="icon" href="assets/icons/brilliant.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=Noto+Naskh+Arabic:wght@600&display=swap">
+<link rel="stylesheet" href="css/app.css">
+<script src="js/vendor/supabase.js"></script><script src="js/config.js"></script><script src="js/icons.js"></script><script src="js/app.js"></script><script src="js/sets.js"></script>
+</head><body>
+<div class="wrap" style="max-width:760px">
+  <div><span class="eyebrow" id="setEyebrow">&nbsp;</span><h1>Quiz</h1></div>
+  <section class="card" id="setup">
+    <div class="form2">
+      <label class="f">Unit<select id="unit"></select></label>
+      <label class="f">Questions<select id="howMany"><option value="10">10</option><option value="20">20</option><option value="0" selected>All</option></select></label>
+      <label class="f">Order<select id="order"><option value="shuffle">Shuffled</option><option value="set">As in the set</option></select></label>
+    </div>
+    <div class="row"><button class="btn primary" id="start" type="button"><i data-i="circle-help"></i>Start quiz</button><span class="muted" id="avail"></span></div>
+  </section>
+  <section id="play" hidden style="display:flex;flex-direction:column;gap:12px">
+    <div class="row" style="justify-content:space-between"><span class="muted" id="qnum"></span><span class="pill good" id="qscore"></span></div>
+    <div class="bar" aria-hidden="true"><i id="prog" style="width:0"></i></div>
+    <div class="qcard" id="qcard"></div>
+  </section>
+  <section class="card" id="done" hidden></section>
+</div>
+<script type="text/x-app">
+const $=id=>document.getElementById(id), esc=App.esc, Q=window.QUESTIONS, SET=window.CURRENT_SET;
+document.querySelectorAll("[data-i]").forEach(el=>el.insertAdjacentHTML("afterbegin",icon(el.dataset.i,16)));
+const named=new Map((SET.units||[]).map(u=>[Number(u.u),u.name||""]));
+const units=[...new Set(Q.map(q=>q.unit))].sort((a,b)=>(a===0)-(b===0)||a-b);
+const uname=u=>u?(named.get(u)?`Unit ${u} · ${named.get(u)}`:`Unit ${u}`):(named.get(0)||"General");
+$("unit").innerHTML=`<option value="all">All units</option>`+units.map(u=>`<option value="${u}">${esc(uname(u))} (${Q.filter(q=>q.unit===u).length})</option>`).join("");
+const pool=()=>Q.filter(q=>$("unit").value==="all"||q.unit===+$("unit").value);
+const upd=()=>$("avail").textContent=pool().length+" questions available";upd();$("unit").onchange=upd;
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
+const opts=q=>q.kind==="tf"?["True","False"]:q.choices;
+const correctIdx=q=>q.kind==="tf"?(q.answer===1?0:1):q.answer;
+let run=[], k=0, right=0, log=[];
+function start(list){run=list;k=0;right=0;log=[];$("setup").hidden=true;$("done").hidden=true;$("play").hidden=false;show();}
+$("start").onclick=()=>{let p=pool();if(!p.length)return;if($("order").value==="shuffle")p=shuffle(p);const n=+$("howMany").value;start(n?p.slice(0,n):p);};
+function show(){const q=run[k];
+  $("qnum").textContent=`Question ${k+1} of ${run.length}`;$("qscore").textContent=`${right} correct`;$("prog").style.width=(k/run.length*100)+"%";
+  $("qcard").innerHTML=`<div class="prompt" dir="auto">${esc(q.term)}</div>${q.image_url?`<img class="qi" src="${esc(q.image_url)}" alt="">`:""}
+    <div class="opts">${opts(q).map((o,i)=>`<button class="opt" type="button" data-i="${i}"><span class="L">${q.kind==="tf"?(i?"✗":"✓"):"ABCDEF"[i]}</span><span dir="auto">${esc(o)}</span></button>`).join("")}</div>
+    <div id="fb"></div>`;
+  $("qcard").querySelector(".opt").focus();
+  $("qcard").querySelectorAll(".opt").forEach(b=>b.onclick=()=>answer(+b.dataset.i));}
+function answer(i){const q=run[k], c=correctIdx(q), ok=i===c;if(ok)right++;
+  log.push({q,given:opts(q)[i],ok});
+  $("qcard").querySelectorAll(".opt").forEach(b=>{const j=+b.dataset.i;b.disabled=true;if(j===c)b.classList.add("right");else if(j===i)b.classList.add("wrong");});
+  $("qscore").textContent=`${right} correct`;
+  $("fb").innerHTML=`<p class="msg ${ok?"ok":"err"}" style="margin-bottom:8px">${ok?"Correct!":"Not quite. The answer is: "+esc(opts(q)[c])}</p>${q.meaning?`<div class="explain" dir="auto">${esc(q.meaning)}</div>`:""}
+    <div class="row" style="margin-top:12px"><button class="btn primary" id="nx" type="button">${k+1<run.length?"Next question":"See my result"}${icon("arrow-right",16)}</button></div>`;
+  $("nx").focus();$("nx").onclick=()=>{k++;k<run.length?show():finish();};}
+function finish(){$("play").hidden=true;const n=run.length,pct=Math.round(right/n*100);
+  App.saveAttempt({activity:"quiz",detail:$("unit").value==="all"?"All units":uname(+$("unit").value),units:[...new Set(run.map(q=>q.unit))],score:right,total:n,
+    answers:log.map(x=>({word:x.q.term.slice(0,200),unit:x.q.unit,given:x.given,correct:x.ok}))})
+    .then(r=>{if(r.error)App.status("Result not saved: "+r.error.message,false);else if(r.id)App.status("Result saved",true);});
+  const wrong=log.filter(x=>!x.ok);
+  $("done").hidden=false;
+  $("done").innerHTML=`<h2 class="sec-title">${icon(pct>=80?"trophy":"target",22)} You scored ${right} out of ${n} (${pct}%)</h2>
+    <p class="muted" style="margin:0">${pct>=80?"Excellent work!":pct>=50?"Good effort. Review the ones you missed and try again.":"Keep practising: try the questions you missed."}</p>
+    ${wrong.length?`<div class="items">${wrong.map(x=>`<div class="item" style="grid-template-columns:1fr"><div><b dir="auto">${esc(x.q.term)}</b><br><span class="msg err">Your answer: ${esc(x.given)}</span><br><span class="msg ok">Correct: ${esc(opts(x.q)[correctIdx(x.q)])}</span>${x.q.meaning?`<div class="muted" dir="auto">${esc(x.q.meaning)}</div>`:""}</div></div>`).join("")}</div>`:""}
+    <div class="row">${wrong.length?`<button class="btn primary" id="again" type="button">${icon("rotate-ccw",16)}Retry the ${wrong.length} I missed</button>`:""}<button class="btn" id="newq" type="button">New quiz</button></div>`;
+  if($("again"))$("again").onclick=()=>start(wrong.map(x=>x.q));
+  $("newq").onclick=()=>{$("done").hidden=true;$("setup").hidden=false;};}
+</script>
+<script>Sets.boot({min:1,questions:true})</script>
+</body></html>

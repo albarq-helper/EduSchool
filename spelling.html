@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Spelling Studio · Albarq Education Center</title><link rel="icon" href="assets/icons/brilliant.png"><style>*,*::before,*::after{box-sizing:border-box}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style><script src="js/vendor/supabase.js"></script><script src="js/config.js"></script><script src="js/icons.js"></script><script src="js/app.js"></script><script src="js/words.js"></script></head><body><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=Noto+Naskh+Arabic:wght@600&display=swap">
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Spelling Studio · Albarq Education Center</title><link rel="icon" href="assets/icons/brilliant.png"><style>*,*::before,*::after{box-sizing:border-box}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style><script src="js/vendor/supabase.js"></script><script src="js/config.js"></script><script src="js/icons.js"></script><script src="js/app.js"></script><script src="js/sets.js"></script></head><body><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=Noto+Naskh+Arabic:wght@600&display=swap">
 <style>
 /* Layout: one column. Steps 1-4 as tabs (learn → fill → build → test). A single word card is the stage; hints sit in a row under it. */
 :root{
@@ -103,7 +103,7 @@ select{font:inherit;padding:8px 10px;border:1px solid var(--rule);border-radius:
 
 <div class="wrap">
   <header>
-    <span class="eyebrow">Alhayah International School · Grade 5 ELA</span>
+    <span class="eyebrow" id="setEyebrow">&nbsp;</span>
     <h1>Spelling Studio</h1>
     <div class="tabs" role="tablist">
       <button class="tab" role="tab" data-m="learn" aria-selected="true"><span class="n">1</span>Look, cover, write</button>
@@ -123,12 +123,12 @@ select{font:inherit;padding:8px 10px;border:1px solid var(--rule);border-radius:
   <main id="app"></main>
 </div>
 
-<script>
+<script type="text/x-app">
 const DATA = window.WORDS;
 const UNITS = window.UNITS_LIST;
-const AU={};function playWord(i){const v=DATA[i];if(!v||!v.au)return false;try{const a=AU[i]||(AU[i]=new Audio(v.au));a.currentTime=0;a.play();return true;}catch(e){return false;}}
-const unitLabel=u=>{const x=UNITS.find(y=>y.u===u);return x?(u?`Unit ${u} · ${x.name}`:x.name):'';};
-const SYL = {"Lethargic":"le-thar-gic","Ailing":"ail-ing","Glance":"glance","Unpalatable":"un-pal-at-a-ble","Insisted":"in-sist-ed","Behead":"be-head","Aroma":"a-ro-ma","Fantastic":"fan-tas-tic","Exhilaration":"ex-hil-a-ra-tion","Beverage":"bev-er-age","Impact":"im-pact","Tonic":"ton-ic","Distant":"dis-tant","Concord":"con-cord","Addicting":"ad-dict-ing","Region":"re-gion","Exotic":"ex-ot-ic","Blend":"blend","Traditional":"tra-di-tion-al","Reside":"re-side","Life-threatening":"life-threat-en-ing","Crucial":"cru-cial","Nicknamed":"nick-named","Moist":"moist","Species":"spe-cies","Appearance":"ap-pear-ance","Allergic":"al-ler-gic","Organism":"or-gan-ism","Ecological":"e-co-log-i-cal","Molting":"molt-ing","Entomologist":"en-to-mol-o-gist","Crustacean":"crus-ta-cean","Nocturnal":"noc-tur-nal","Bookkeeper":"book-keep-er","Monotonous":"mo-not-o-nous","Published":"pub-lished","Pseudonym":"pseu-do-nym","Pension":"pen-sion","Rejuvenated":"re-ju-ve-nat-ed","Casements":"case-ments","Thatch":"thatch","Couched":"couched","Kennel":"ken-nel","Shadowy":"shad-ow-y","Harvest":"har-vest","Scampering":"scam-per-ing","Gleam":"gleam","Reeds":"reeds","Department (Dept.)":"de-part-ment","Abbreviation":"ab-bre-vi-a-tion","Shoon":"shoon","Peers":"peers","Cote":"cote","Flowing":"flow-ing","Withdrew":"with-drew","Relentlessly":"re-lent-less-ly","Starving":"starv-ing","Nervous":"ner-vous","Ferocious":"fe-ro-cious","Deliberately":"de-lib-er-ate-ly","Brilliant":"bril-liant","Rustled":"rus-tled","Sigh":"sigh","Swayed":"swayed","Precarious":"pre-car-i-ous","Stooping":"stoop-ing","Boughs":"boughs","Fern":"fern","Moss":"moss","Rover":"rov-er","Wren":"wren","Affluent":"af-flu-ent","Majority":"ma-jor-i-ty","Simultaneously":"si-mul-ta-ne-ous-ly","Renowned":"re-nowned","Deteriorating":"de-te-ri-o-rat-ing","Rifle":"ri-fle","Admire":"ad-mire","Gigantic":"gi-gan-tic","Pretended":"pre-tend-ed","Windowsill":"win-dow-sill","Gust":"gust","Fellow":"fel-low","Unique":"u-nique","Stomped":"stomped","Clashing":"clash-ing","Appreciate":"ap-pre-ci-ate","Pace":"pace","Apologize":"a-pol-o-gize","Lark":"lark","Futile":"fu-tile","Dozed":"dozed","Spunky":"spunk-y","Company":"com-pa-ny","Whipped":"whipped","Depressed":"de-pressed","Torture":"tor-ture","Devout":"de-vout","Stable":"sta-ble","Empathy":"em-pa-thy","Dependent":"de-pend-ent","Horrific":"hor-rif-ic","Inspired":"in-spired","Regarded":"re-gard-ed","Consistently":"con-sist-ent-ly","Bestowed":"be-stowed","Colloquial":"col-lo-qui-al","Weathered":"weath-ered","Precinct":"pre-cinct","Ratified":"rat-i-fied","Chieftainship":"chief-tain-ship","Insolence":"in-so-lence","Pique":"pique","Insubordination":"in-sub-or-di-na-tion","Commemorate":"com-mem-o-rate","Senator":"sen-a-tor","Landfill":"land-fill","Decompose":"de-com-pose","Estimate":"es-ti-mate","Toss":"toss","Beast":"beast","Significant":"sig-nif-i-cant","Well-known":"well-known","Classics":"clas-sics","Delighted":"de-light-ed","Relocated":"re-lo-cat-ed","Unfinished":"un-fin-ished","Frustrated":"frus-trat-ed","Exhaustion":"ex-haus-tion","Familiar":"fa-mil-iar","Annoy":"an-noy","Heroic":"he-ro-ic","Smart":"smart","Filthy":"filth-y","Connect":"con-nect","Assist":"as-sist","Serene":"se-rene","Create":"cre-ate","Fabulous":"fab-u-lous","Rescue":"res-cue","Hazardous":"haz-ard-ous","Launch":"launch","Watch":"watch","Error":"er-ror","Selfish":"sel-fish","Fortunate":"for-tu-nate","Obvious":"ob-vi-ous","Enormous":"e-nor-mous","Silent":"si-lent","Narrow":"nar-row","Elegant":"el-e-gant","Permit":"per-mit","Unusual":"un-u-su-al","Purchase":"pur-chase","Intriguing":"in-tri-guing","Crave":"crave","Curiosity":"cu-ri-os-i-ty","Concoction":"con-coc-tion","Apparently":"ap-par-ent-ly","Peep":"peep","Beam":"beam","Beneath":"be-neath","Faraway":"far-a-way","Observed":"ob-served","Separated":"sep-a-rat-ed","Symbolized":"sym-bol-ized"};
+const AU={};function playWord(i){const v=DATA[i];if(!v)return false;if(!v.au||v.au==="tts")return window.Sets.speak(v.w);try{const a=AU[i]||(AU[i]=new Audio(v.au));a.currentTime=0;a.play();return true;}catch(e){return false;}}
+const unitLabel=u=>{const x=UNITS.find(y=>y.u===u);return x?(u?(x.name?`Unit ${u} · ${x.name}`:`Unit ${u}`):(x.name||'General')):'';};
+const SYL = window.SYL_MAP;
 const SETS={};
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -151,7 +151,7 @@ function setMissed(i,wrong){const k=missed.indexOf(i);if(wrong&&k<0)missed.push(
 
 /* speech */
 const canSpeak="speechSynthesis" in window;
-function say(text,rate=.8){if(!canSpeak)return;try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang="en-GB";u.rate=rate;speechSynthesis.speak(u);}catch(e){}}
+function say(text,rate=.8){if(!canSpeak)return;try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang=window.SET_LANG||"en-GB";u.rate=rate;speechSynthesis.speak(u);}catch(e){}}
 const sayWord=i=>{if(!playWord(i))say(DATA[i].w.replace(/\s*\(.*\)/,""));};
 const spellOut=i=>say(spell(i).split("").map(c=>c==="-"?"hyphen":c).join(", "),.7);
 const hearBtns=i=>(canSpeak||DATA[i].au)?`<button class="btn small" data-act="hear">🔊 Hear it</button>`:"";
@@ -172,7 +172,7 @@ function diff(typed,target){
 
 /* shared hint row */
 function hintRow(i,{word=true}={}){
-  return `<div class="hints">${hearBtns(i)}<button class="btn small" data-act="first">First letter</button><button class="btn small" data-act="count">How many letters?</button><button class="btn small" data-act="sylls">Syllables</button><button class="btn small" data-act="arabic">Arabic</button></div><div class="hintout" id="hintout" aria-live="polite"></div>`;
+  return `<div class="hints">${hearBtns(i)}<button class="btn small" data-act="first">First letter</button><button class="btn small" data-act="count">How many letters?</button><button class="btn small" data-act="sylls">Syllables</button><button class="btn small" data-act="arabic">Translation</button></div><div class="hintout" id="hintout" aria-live="polite"></div>`;
 }
 function wireHints(i,onUse){
   document.querySelectorAll(".hints [data-act]").forEach(b=>b.onclick=()=>{
@@ -181,7 +181,7 @@ function wireHints(i,onUse){
     if(b.dataset.act==="first")o.textContent=`It starts with “${t[0]}”.`;
     if(b.dataset.act==="count")o.textContent=`${t.replace(/-/g,"").length} letters.`;
     if(b.dataset.act==="sylls")o.textContent=`${syls(i).length} syllable${syls(i).length>1?"s":""}: ${syls(i).map(s=>s.replace(/[a-z]/g,"_")).join(" · ")}`;
-    if(b.dataset.act==="arabic")o.innerHTML=`<span class="ar" lang="ar" dir="rtl">${esc(DATA[i].ar)}</span>`;
+    if(b.dataset.act==="arabic")o.innerHTML=`<span class="ar" dir="auto">${esc(DATA[i].ar)}</span>`;
   });
 }
 function finish(title,rows){
@@ -194,7 +194,7 @@ function finish(title,rows){
     <button class="btn primary" id="again">Go again</button>${right<n?`<button class="btn" id="redo">Practise missed words</button>`:""}</div>
     <ul class="rev">${rows.map(r=>`<li><img src="${DATA[r.i].img}" alt=""><span class="w">${esc(DATA[r.i].w.replace(/\s*\(.*\)/,""))}</span>
       <span class="yours">${r.ok?`<span class="pill ok">Correct</span>`:`<span class="pill no">You wrote: ${esc(r.typed||"(blank)")}</span>`}</span>
-      <span class="ar" lang="ar" dir="rtl">${esc(DATA[r.i].ar)}</span></li>`).join("")}</ul>`;
+      <span class="ar" dir="auto">${esc(DATA[r.i].ar)}</span></li>`).join("")}</ul>`;
   $("#again").onclick=start; const rd=$("#redo"); if(rd) rd.onclick=()=>{$("#wordSet").value="missed";start();};
 }
 
@@ -207,7 +207,7 @@ function learnShow(){
   <div class="stage"><img src="${DATA[i].img}" alt=""><div class="col">
    <span class="prog">Word ${L.k+1} of ${L.items.length}</span>
    <div class="big" id="lw">${sylHTML(i)}</div>
-   <div class="clue">${esc(DATA[i].d)} <span class="ar" lang="ar" dir="rtl">${esc(DATA[i].ar)}</span></div>
+   <div class="clue">${esc(DATA[i].d)} <span class="ar" dir="auto">${esc(DATA[i].ar)}</span></div>
    <div class="hints">${hearBtns(i)}${canSpeak?`<button class="btn small" data-act="spell">🔤 Spell it out</button>`:""}</div>
    <div id="lstep"><button class="btn primary" id="cover">Cover and write</button></div>
   </div></div>`;
@@ -338,8 +338,8 @@ function unitSummary(){const S=selUnits(),n=unitIdx().length;
 function buildUnitBox(onChange){
   let saved=null;try{saved=JSON.parse(localStorage.getItem(UKEY)||"null");}catch(e){}
   const box=document.getElementById("unitBox");
-  box.innerHTML=`<div class="uquick"><button type="button" data-q="all">All</button><button type="button" data-q="none">None</button><button type="button" data-q="1-5">Units 1–5</button><button type="button" data-q="6-10">Units 6–10</button><button type="button" data-q="11-15">Units 11–15</button></div>`+
-    UNITS.map(x=>`<label><input type="checkbox" value="${x.u}" ${!saved||saved.includes(x.u)?"checked":""}><span>${esc(x.u?`Unit ${x.u} · ${x.name}`:x.name)}</span><span class="uc">${x.n}</span></label>`).join("")+
+  box.innerHTML=`<div class="uquick"><button type="button" data-q="all">All</button><button type="button" data-q="none">None</button></div>`+
+    UNITS.map(x=>`<label><input type="checkbox" value="${x.u}" ${!saved||saved.includes(x.u)?"checked":""}><span>${esc(x.u?(x.name?`Unit ${x.u} · ${x.name}`:`Unit ${x.u}`):(x.name||"General"))}</span><span class="uc">${x.n}</span></label>`).join("")+
     `<div class="uwarn" id="unitWarn" hidden>Tick at least one unit.</div>`;
   if(saved&&!selUnits().length) box.querySelectorAll("input").forEach(c=>c.checked=true);
   box.addEventListener("click",e=>{const b=e.target.closest("[data-q]");if(!b)return;const q=b.dataset.q;
@@ -354,7 +354,7 @@ buildUnitBox(()=>{$("#wordSet").value="all";start();});
 $("#restart").onclick=start;$("#wordSet").onchange=start;$("#testLen").onchange=start;
 start();
 </script>
-<script>
+<script type="text/x-app">
 async function loadMyLists(){const L=await App.myLists();window.MY_LISTS=L;const sel=document.getElementById("wordSet");
   sel.querySelectorAll('option[value^="list:"]').forEach(o=>o.remove());
   const miss=sel.querySelector('option[value="missed"]');
@@ -362,4 +362,4 @@ async function loadMyLists(){const L=await App.myLists();window.MY_LISTS=L;const
   const want=new URLSearchParams(location.search).get("list");if(want&&L.some(l=>l.id===want)){sel.value="list:"+want;start();}}
 function listName(){const v=document.getElementById("wordSet").value;const o=document.getElementById("wordSet").selectedOptions[0];return v==="all"?"":(o?o.textContent:"");}
 App.requireUser().then(()=>loadMyLists()).catch(()=>{});
-</script></body></html>
+</script><script>Sets.boot({min:2})</script></body></html>

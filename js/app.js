@@ -44,10 +44,10 @@
       #appbar button{display:inline-flex;align-items:center;gap:6px;font:700 .85rem var(--f-body,system-ui);color:var(--muted,#5E6A80);background:none;border:1px solid var(--rule,#DCE1EA);border-radius:9px;cursor:pointer;padding:6px 10px}
       @media (max-width:760px){#appbar nav a span{display:none}#appbar .nm{display:none}}`;
     document.head.insertAdjacentHTML("beforeend", `<style>${css}</style>`);
-    document.body.insertAdjacentHTML("afterbegin", `<header id="appbar"><a class="brand" href="${home}"><i>${I("book-open-check")}</i>Albarq Education Center</a>
-      <nav aria-label="Main">${link(home, "house", "Home")}${link("exam.html", "clipboard-check", "Exam")}${link("games.html", "puzzle", "Games")}${link("spelling.html", "spell-check-2", "Spelling")}${link("act.html", "drama", "Act it out")}</nav>
+    document.body.insertAdjacentHTML("afterbegin", `<div id="appbar" role="banner"><a class="brand" href="${home}"><i>${I("book-open-check")}</i>Albarq Education Center</a>
+      <nav aria-label="Main">${link(home, "house", "Home")}${link("library.html", "library", "Library")}${profile.role === "teacher" ? link("mysets.html", "layers", "My sets") : ""}${profile.is_admin ? link("admin.html", "shield-check", "Admin") : ""}</nav>
       <span class="me"><span class="av" aria-hidden="true">${esc(initials)}</span><span class="nm">${esc(name)}</span>${profile.role === "teacher" ? '<span class="role">Teacher</span>' : ""}
-      <button type="button" id="signOut">${I("log-out")}<span>Sign out</span></button></span></header>`);
+      <button type="button" id="signOut">${I("log-out")}<span>Sign out</span></button></span></div>`);
     document.getElementById("signOut").onclick = async () => { await client.auth.signOut(); location.href = "index.html"; };
   }
 
@@ -64,7 +64,7 @@
   // Save one finished activity. answers: [{word, unit, given, correct}]
   async function saveAttempt(a) {
     if (!client || !profile || profile.role !== "student") return { skipped: true };
-    const row = { activity: a.activity, detail: a.detail || "", units: a.units || [], word_list: a.word_list || "", score: a.score, total: a.total };
+    const row = { activity: a.activity, detail: a.detail || "", units: a.units || [], word_list: a.word_list || "", score: a.score, total: a.total, set_id: a.set_id || (window.CURRENT_SET ? window.CURRENT_SET.id : null) };
     const { data, error } = await client.from("attempts").insert(row).select("id").single();
     if (error) return { error };
     const ans = (a.answers || []).map((x, k) => ({ attempt_id: data.id, position: k + 1, word: x.word, unit: x.unit, given: String(x.given ?? ""), correct: !!x.correct }));
@@ -72,13 +72,14 @@
     return { id: data.id };
   }
 
-  async function myLists() {
+  async function myLists(setId) {
     if (!client || !profile) return [];
-    const { data } = await client.from("practice_lists").select("id,name,words,score,total,created_at,created_by").eq("student_id", profile.id).order("created_at", { ascending: false });
-    return data || [];
+    const { data } = await client.from("practice_lists").select("id,name,words,score,total,created_at,created_by,set_id").eq("student_id", profile.id).order("created_at", { ascending: false });
+    const sid = setId === undefined ? (window.CURRENT_SET ? window.CURRENT_SET.id : null) : setId;
+    return (data || []).filter(l => !sid || l.set_id === sid || (!l.set_id && sid === G5));
   }
   async function saveList(name, words, score, total) {
-    return client.from("practice_lists").insert({ student_id: profile.id, name, words, score: score ?? null, total: total ?? null }).select("id").single();
+    return client.from("practice_lists").insert({ student_id: profile.id, name, words, score: score ?? null, total: total ?? null, set_id: window.CURRENT_SET ? window.CURRENT_SET.id : null }).select("id").single();
   }
   function status(msg, ok) {
     let el = document.getElementById("appToast");
@@ -86,5 +87,39 @@
     el.textContent = msg; el.style.background = ok ? "#1E7F4F" : "#B8322A"; el.style.color = "#fff"; el.hidden = false;
     clearTimeout(el._t); el._t = setTimeout(() => el.hidden = true, 3500);
   }
-  window.App = { client, configured, requireUser, saveAttempt, myLists, saveList, status, esc, get profile() { return profile; }, get user() { return user; } };
+  // Subjects, levels and schools (cached for the page).
+  let LK = null;
+  async function lookups() {
+    if (LK) return LK;
+    const [s, l, i] = await Promise.all([
+      client.from("subjects").select("id,name,icon,sort").order("sort", { ascending: true }),
+      client.from("levels").select("code,name,stage,sort").order("sort", { ascending: true }),
+      client.from("institutions").select("id,name,kind,country,city").order("name", { ascending: true }).limit(5000)]);
+    LK = { subjects: s.data || [], levels: l.data || [], institutions: i.data || [] };
+    LK.subject = id => LK.subjects.find(x => x.id === id) || { name: "", icon: "book-open" };
+    LK.level = c => LK.levels.find(x => x.code === c) || { name: "" };
+    LK.inst = id => LK.institutions.find(x => x.id === id) || null;
+    return LK;
+  }
+  const LEVEL_GROUPS = { early: "Kindergarten", primary: "Primary school", middle: "Middle school", secondary: "High school", university: "University", adult: "Adults", any: "Any" };
+  function levelOptions(levels, sel, blank) {
+    const g = {}; levels.forEach(l => (g[l.stage] = g[l.stage] || []).push(l));
+    return (blank ? `<option value="">${esc(blank)}</option>` : "") + Object.keys(g).map(k => `<optgroup label="${esc(LEVEL_GROUPS[k] || k)}">${g[k].map(l => `<option value="${l.code}" ${l.code === sel ? "selected" : ""}>${esc(l.name)}</option>`).join("")}</optgroup>`).join("");
+  }
+  function subjectOptions(subjects, sel, blank) {
+    return (blank ? `<option value="">${esc(blank)}</option>` : "") + subjects.map(s => `<option value="${s.id}" ${s.id === Number(sel) ? "selected" : ""}>${esc(s.name)}</option>`).join("");
+  }
+  const G5 = "00000000-0000-4000-8000-000000000005";
+  // A study-set card for the library and home pages. s: study_sets row (+ optional cover image url).
+  function setCard(s, LK, opts = {}) {
+    const sub = LK.subject(s.subject_id), lvl = LK.level(s.level_code), inst = LK.inst(s.institution_id);
+    let h = 0; for (const c of String(s.id)) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+    const I = (n, z) => window.icon(n, z || 14);
+    return `<a class="setcard" href="set.html?id=${s.id}"><div class="cv cv-${h % 5}">${s.cover_url ? `<img src="${esc(s.cover_url)}" alt="" loading="lazy">` : ""}<span class="sub">${I(sub.icon || "book-open", 20)}</span></div>
+      <div class="bd"><div class="row" style="gap:6px">${opts.mine ? (s.visibility === "public" ? `<span class="tag pub">${I("globe", 12)}Public</span>` : `<span class="tag priv">${I("lock", 12)}Private</span>`) : `<span class="tag">${esc(sub.name)}</span>`}${opts.assigned ? `<span class="tag" style="background:var(--sun-soft);color:#8A6100">${I("school", 12)}${esc(opts.assigned)}</span>` : ""}</div>
+      <b>${esc(s.title)}</b>
+      <div class="mt"><span>${I("graduation-cap")}${esc(lvl.name || "All levels")}</span><span>${I("layers")}${s.term_count} terms${s.question_count ? " · " + s.question_count + " questions" : ""}</span></div>
+      <div class="mt">${inst ? `<span>${I(inst.kind === "university" ? "landmark" : "school")}${esc(inst.name)}</span>` : ""}${s.author_name ? `<span>${I("pencil")}${esc(s.author_name)}</span>` : ""}</div></div></a>`;
+  }
+  window.App = { lookups, levelOptions, subjectOptions, G5, setCard, client, configured, requireUser, saveAttempt, myLists, saveList, status, esc, get profile() { return profile; }, get user() { return user; } };
 })();
