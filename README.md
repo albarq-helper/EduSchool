@@ -1,4 +1,4 @@
-# Grade 5 Vocabulary
+# Albarq Education Center
 
 Practice website for the Grade 5 ELA vocabulary (Units 1–15): exams, word games, spelling practice and act-it-out animations, with student and teacher accounts.
 

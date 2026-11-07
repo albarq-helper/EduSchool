@@ -44,7 +44,7 @@
       #appbar button{display:inline-flex;align-items:center;gap:6px;font:700 .85rem var(--f-body,system-ui);color:var(--muted,#5E6A80);background:none;border:1px solid var(--rule,#DCE1EA);border-radius:9px;cursor:pointer;padding:6px 10px}
       @media (max-width:760px){#appbar nav a span{display:none}#appbar .nm{display:none}}`;
     document.head.insertAdjacentHTML("beforeend", `<style>${css}</style>`);
-    document.body.insertAdjacentHTML("afterbegin", `<header id="appbar"><a class="brand" href="${home}"><i>${I("book-open-check")}</i>Grade 5 Vocabulary</a>
+    document.body.insertAdjacentHTML("afterbegin", `<header id="appbar"><a class="brand" href="${home}"><i>${I("book-open-check")}</i>Albarq Education Center</a>
       <nav aria-label="Main">${link(home, "house", "Home")}${link("exam.html", "clipboard-check", "Exam")}${link("games.html", "puzzle", "Games")}${link("spelling.html", "spell-check-2", "Spelling")}${link("act.html", "drama", "Act it out")}</nav>
       <span class="me"><span class="av" aria-hidden="true">${esc(initials)}</span><span class="nm">${esc(name)}</span>${profile.role === "teacher" ? '<span class="role">Teacher</span>' : ""}
       <button type="button" id="signOut">${I("log-out")}<span>Sign out</span></button></span></header>`);
