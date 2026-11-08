@@ -1,6 +1,6 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Albarq Education Center</title><link rel="icon" href="assets/icons/brilliant.png">
+<title>Helper Academy</title><link rel="icon" href="assets/icons/brilliant.png">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
 <link rel="stylesheet" href="css/app.css">
 <style>
@@ -35,10 +35,10 @@
 </head><body>
 <div class="split">
   <aside class="side">
-    <div class="logo"><i data-i="book-open-check"></i>Albarq Education Center</div>
+    <div class="logo"><i data-i="book-open-check"></i>Helper Academy</div>
     <div>
       <h2>Learn any subject with pictures, sound and play.</h2>
-      <p>For schools and universities, from kindergarten to postgraduate. Teachers build study sets and quizzes for any subject; students practise with flashcards, exams, games and spelling.</p>
+      <p>For schools and universities, from kindergarten to postgraduate, on any curriculum: Ministry of Education, American, British, IB and more. Teachers build study sets and quizzes for any subject; students practise with flashcards, exams, games and spelling.</p>
     </div>
     <div class="collage" aria-hidden="true">
       <figure><img src="assets/anims/ferocious.gif" alt=""></figure><figure><img src="assets/photos/wren.jpg" alt=""></figure>
@@ -54,7 +54,7 @@
     </ul>
   </aside>
   <main class="main"><div class="auth">
-    <div class="mobile-head"><img src="assets/anims/brilliant.gif" alt=""><div><span class="eyebrow">Every subject · every grade</span><h1 style="font-size:1.6rem">Albarq Education Center</h1></div></div>
+    <div class="mobile-head"><img src="assets/anims/brilliant.gif" alt=""><div><span class="eyebrow">Every subject · every grade</span><h1 style="font-size:1.6rem">Helper Academy</h1></div></div>
     <div><h1 id="formTitle" style="font-size:1.9rem">Welcome back</h1><p class="muted" style="margin:4px 0 0" id="formSub">Sign in to continue learning.</p></div>
     <div class="tabs" role="tablist">
       <button type="button" role="tab" id="tabIn" aria-selected="true">Sign in</button>
@@ -78,6 +78,7 @@
       <label class="f">School or university<span class="field"><i data-i="school"></i><input id="upInst" list="instList" autocomplete="organization" maxlength="120" placeholder="Start typing the name"></span><datalist id="instList"></datalist></label>
       <div class="row" id="newInst" hidden style="flex-wrap:nowrap"><select id="upKind" aria-label="Type" style="flex:1"><option value="school">School</option><option value="university">University</option><option value="college">College</option><option value="institute">Institute</option></select><input id="upCountry" maxlength="60" placeholder="Country" aria-label="Country" style="flex:1"></div>
       <p class="muted" id="newInstNote" hidden style="margin:-6px 0 0;font-size:.85rem">New here: it will be added when you create your account.</p>
+      <label class="f" id="currField">Curriculum<select id="upCurr"></select></label>
       <label class="f" id="levelField">Grade or level<select id="upLevel"></select></label>
       <label class="f" id="codeField">Class code from your teacher (optional)<input id="upCode" maxlength="6" autocapitalize="characters" style="text-transform:uppercase;letter-spacing:.15em"></label>
       <button class="btn primary" type="submit">Create account <i data-i="arrow-right"></i></button>
@@ -99,10 +100,13 @@ function setMsg(id,t,ok){const m=$(id);m.textContent=t;m.className="msg "+(ok?"o
 function show(which){$("formTitle").textContent=which==="up"?"Create your account":which==="reset"?"Reset password":"Welcome back";$("formSub").textContent=which==="up"?"Students and teachers, from any school or university.":which==="reset"?"":"Sign in to continue learning.";$("formIn").hidden=which!=="in";$("formUp").hidden=which!=="up";$("formReset").hidden=which!=="reset";
   $("tabIn").setAttribute("aria-selected",which==="in");$("tabUp").setAttribute("aria-selected",which==="up");}
 $("tabIn").onclick=()=>show("in"); $("tabUp").onclick=()=>show("up");
-document.querySelectorAll('input[name=role]').forEach(r=>r.onchange=()=>{const t=document.querySelector('input[name=role]:checked').value==="teacher";$("codeField").hidden=t;$("levelField").firstChild.textContent=t?"Main level you teach (optional)":"Grade or level";});
+document.querySelectorAll('input[name=role]').forEach(r=>r.onchange=()=>{const t=document.querySelector('input[name=role]:checked').value==="teacher";$("codeField").hidden=t;$("levelField").firstChild.textContent=t?"Main level you teach (optional)":"Grade or level";$("currField").firstChild.textContent=t?"Curriculum you teach":"Curriculum";});
+let CURR=[],LINKS=[];
+function fillCurr(){const m=instMatch(),keep=$("upCurr").value;$("upCurr").innerHTML=App.curriculumOptions(CURR,keep,"Choose… (or skip)",m?LINKS.filter(x=>x.institution_id===m.id).map(x=>x.curriculum_id):[]);}
 let INST=[];const instLabel=i=>i.name+(i.country?" — "+i.country:"");
 const instMatch=()=>{const v=$("upInst").value.trim().toLowerCase();return INST.find(i=>instLabel(i).toLowerCase()===v||i.name.toLowerCase()===v)||null;};
-$("upInst").oninput=()=>{const v=$("upInst").value.trim(), m=instMatch();$("newInst").hidden=$("newInstNote").hidden=!v||!!m;};
+$("upInst").oninput=()=>{const v=$("upInst").value.trim(), m=instMatch();$("newInst").hidden=$("newInstNote").hidden=!v||!!m;fillCurr();
+  if(m){const own=LINKS.filter(x=>x.institution_id===m.id);if(own.length===1)$("upCurr").value=own[0].curriculum_id;}};
 async function goHome(){const {data:{session}}=await C.auth.getSession();
   const p=session?(await C.from("profiles").select("role").eq("id",session.user.id).maybeSingle()).data:null;
   const home=(p&&p.role==="teacher")?"teacher.html":"student.html";
@@ -112,7 +116,9 @@ async function joinPending(){const code=localStorage.getItem("pendingClassCode")
 if(!C){document.querySelector(".tabs").hidden=true;$("formIn").hidden=true;
   document.querySelector(".auth").insertAdjacentHTML("beforeend",'<div class="card"><b>Setup needed</b><span class="muted">Add the Supabase Project URL and publishable key to js/config.js.</span></div>');}
 else{
-  Promise.all([C.from("institutions").select("id,name,country,kind").order("name").limit(5000),C.from("levels").select("code,name,stage,sort").order("sort")]).then(([i,l])=>{
+  Promise.all([C.from("institutions").select("id,name,country,kind").order("name").limit(5000),C.from("levels").select("code,name,stage,sort").order("sort"),
+    C.from("curricula").select("id,name,short_name,sort").order("sort"),C.from("institution_curricula").select("institution_id,curriculum_id").limit(20000)]).then(([i,l,c,ic])=>{
+    CURR=c.data||[];LINKS=ic.data||[];fillCurr();
     INST=i.data||[];$("instList").innerHTML=INST.map(x=>`<option value="${App.esc(instLabel(x))}"></option>`).join("");
     $("upLevel").innerHTML=App.levelOptions(l.data||[],"","Choose…");}).catch(()=>{});
   C.auth.onAuthStateChange((ev)=>{if(ev==="PASSWORD_RECOVERY")show("reset");});
@@ -127,7 +133,7 @@ else{
     if(pass.length<8){setMsg("msgUp","The password needs at least 8 characters.",false);return;}
     if(role==="student"&&code)try{localStorage.setItem("pendingClassCode",code);}catch(e){}
     setMsg("msgUp","Creating your account…",true);
-    const meta={full_name:name,role,level_code:$("upLevel").value||null}, im=instMatch(), iv=$("upInst").value.trim();
+    const meta={full_name:name,role,level_code:$("upLevel").value||null,curriculum_id:$("upCurr").value||null}, im=instMatch(), iv=$("upInst").value.trim();
     if(im)meta.institution_id=im.id; else if(iv){meta.institution_name=iv;meta.institution_kind=$("upKind").value;meta.institution_country=$("upCountry").value.trim();}
     const {data,error}=await C.auth.signUp({email,password:pass,options:{data:meta,emailRedirectTo:location.origin+location.pathname}});
     if(error){setMsg("msgUp",error.message,false);return;}

@@ -44,7 +44,7 @@
       #appbar button{display:inline-flex;align-items:center;gap:6px;font:700 .85rem var(--f-body,system-ui);color:var(--muted,#5E6A80);background:none;border:1px solid var(--rule,#DCE1EA);border-radius:9px;cursor:pointer;padding:6px 10px}
       @media (max-width:760px){#appbar nav a span{display:none}#appbar .nm{display:none}}`;
     document.head.insertAdjacentHTML("beforeend", `<style>${css}</style>`);
-    document.body.insertAdjacentHTML("afterbegin", `<div id="appbar" role="banner"><a class="brand" href="${home}"><i>${I("book-open-check")}</i>Albarq Education Center</a>
+    document.body.insertAdjacentHTML("afterbegin", `<div id="appbar" role="banner"><a class="brand" href="${home}"><i>${I("book-open-check")}</i>Helper Academy</a>
       <nav aria-label="Main">${link(home, "house", "Home")}${link("library.html", "library", "Library")}${profile.role === "teacher" ? link("mysets.html", "layers", "My sets") : ""}${profile.is_admin ? link("admin.html", "shield-check", "Admin") : ""}</nav>
       <span class="me"><span class="av" aria-hidden="true">${esc(initials)}</span><span class="nm">${esc(name)}</span>${profile.role === "teacher" ? '<span class="role">Teacher</span>' : ""}
       <button type="button" id="signOut">${I("log-out")}<span>Sign out</span></button></span></div>`);
@@ -91,11 +91,15 @@
   let LK = null;
   async function lookups() {
     if (LK) return LK;
-    const [s, l, i] = await Promise.all([
+    const [s, l, i, c, ic] = await Promise.all([
       client.from("subjects").select("id,name,icon,sort").order("sort", { ascending: true }),
       client.from("levels").select("code,name,stage,sort").order("sort", { ascending: true }),
-      client.from("institutions").select("id,name,kind,country,city").order("name", { ascending: true }).limit(5000)]);
-    LK = { subjects: s.data || [], levels: l.data || [], institutions: i.data || [] };
+      client.from("institutions").select("id,name,kind,country,city").order("name", { ascending: true }).limit(5000),
+      client.from("curricula").select("id,code,name,short_name,country,sort").order("sort", { ascending: true }),
+      client.from("institution_curricula").select("institution_id,curriculum_id").limit(20000)]);
+    LK = { subjects: s.data || [], levels: l.data || [], institutions: i.data || [], curricula: c.data || [], links: ic.data || [] };
+    LK.curr = id => LK.curricula.find(x => x.id === id) || null;
+    LK.instCurr = inst => LK.links.filter(x => x.institution_id === inst).map(x => x.curriculum_id);
     LK.subject = id => LK.subjects.find(x => x.id === id) || { name: "", icon: "book-open" };
     LK.level = c => LK.levels.find(x => x.code === c) || { name: "" };
     LK.inst = id => LK.institutions.find(x => x.id === id) || null;
@@ -110,16 +114,25 @@
     return (blank ? `<option value="">${esc(blank)}</option>` : "") + subjects.map(s => `<option value="${s.id}" ${s.id === Number(sel) ? "selected" : ""}>${esc(s.name)}</option>`).join("");
   }
   const G5 = "00000000-0000-4000-8000-000000000005";
+  // Curriculum dropdown: the school's own curricula first, then all the others.
+  function curriculumOptions(curricula, sel, blank, schoolIds) {
+    const o = c => `<option value="${c.id}" ${c.id === Number(sel) ? "selected" : ""}>${esc(c.name)}</option>`;
+    const mine = (schoolIds || []).length ? curricula.filter(c => schoolIds.includes(c.id)) : [];
+    const rest = curricula.filter(c => !mine.includes(c));
+    return (blank ? `<option value="">${esc(blank)}</option>` : "") + (mine.length
+      ? `<optgroup label="This school's curricula">${mine.map(o).join("")}</optgroup><optgroup label="Other curricula">${rest.map(o).join("")}</optgroup>`
+      : curricula.map(o).join(""));
+  }
   // A study-set card for the library and home pages. s: study_sets row (+ optional cover image url).
   function setCard(s, LK, opts = {}) {
-    const sub = LK.subject(s.subject_id), lvl = LK.level(s.level_code), inst = LK.inst(s.institution_id);
+    const sub = LK.subject(s.subject_id), lvl = LK.level(s.level_code), inst = LK.inst(s.institution_id), cur = LK.curr && LK.curr(s.curriculum_id);
     let h = 0; for (const c of String(s.id)) h = (h * 31 + c.charCodeAt(0)) >>> 0;
     const I = (n, z) => window.icon(n, z || 14);
     return `<a class="setcard" href="set.html?id=${s.id}"><div class="cv cv-${h % 5}">${s.cover_url ? `<img src="${esc(s.cover_url)}" alt="" loading="lazy">` : ""}<span class="sub">${I(sub.icon || "book-open", 20)}</span></div>
       <div class="bd"><div class="row" style="gap:6px">${opts.mine ? (s.visibility === "public" ? `<span class="tag pub">${I("globe", 12)}Public</span>` : `<span class="tag priv">${I("lock", 12)}Private</span>`) : `<span class="tag">${esc(sub.name)}</span>`}${opts.assigned ? `<span class="tag" style="background:var(--sun-soft);color:#8A6100">${I("school", 12)}${esc(opts.assigned)}</span>` : ""}</div>
       <b>${esc(s.title)}</b>
-      <div class="mt"><span>${I("graduation-cap")}${esc(lvl.name || "All levels")}</span><span>${I("layers")}${s.term_count} terms${s.question_count ? " · " + s.question_count + " questions" : ""}</span></div>
+      <div class="mt"><span>${I("graduation-cap")}${esc(lvl.name || "All levels")}</span>${cur ? `<span>${I("book-open")}${esc(cur.short_name)}</span>` : ""}<span>${I("layers")}${s.term_count} terms${s.question_count ? " · " + s.question_count + " questions" : ""}</span></div>
       <div class="mt">${inst ? `<span>${I(inst.kind === "university" ? "landmark" : "school")}${esc(inst.name)}</span>` : ""}${s.author_name ? `<span>${I("pencil")}${esc(s.author_name)}</span>` : ""}</div></div></a>`;
   }
-  window.App = { lookups, levelOptions, subjectOptions, G5, setCard, client, configured, requireUser, saveAttempt, myLists, saveList, status, esc, get profile() { return profile; }, get user() { return user; } };
+  window.App = { lookups, levelOptions, subjectOptions, curriculumOptions, G5, setCard, client, configured, requireUser, saveAttempt, myLists, saveList, status, esc, get profile() { return profile; }, get user() { return user; } };
 })();

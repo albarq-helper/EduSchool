@@ -1,6 +1,6 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Edit study set · Albarq Education Center</title><link rel="icon" href="assets/icons/brilliant.png">
+<title>Edit study set · Helper Academy</title><link rel="icon" href="assets/icons/brilliant.png">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=Noto+Naskh+Arabic:wght@600&display=swap">
 <link rel="stylesheet" href="css/app.css">
 <script src="js/vendor/supabase.js"></script><script src="js/config.js"></script><script src="js/icons.js"></script><script src="js/app.js"></script><script src="js/sets.js"></script>
@@ -13,6 +13,7 @@
     <div class="form2">
       <label class="f wide">Title<input id="title" maxlength="120" required placeholder="e.g. Grade 8 Biology · Cells and organisms"></label>
       <label class="f">Subject<select id="subject"></select></label>
+      <label class="f">Curriculum<select id="curr"></select></label>
       <label class="f">Grade / level<select id="level"></select></label>
       <label class="f">Language of the terms<select id="lang"></select></label>
       <label class="f">Translation shown (optional)<select id="tlang"></select></label>
@@ -134,9 +135,11 @@ function fillMeta(){
   $("lang").innerHTML=langOpts(SET?.language||"en");$("tlang").innerHTML=langOpts(SET?SET.translation_lang:"",true);
   const instSel=SET?SET.institution_id:ME.institution_id;
   $("inst").innerHTML=`<option value="">Not linked to a school</option>`+LK.institutions.map(i=>`<option value="${i.id}" ${i.id===instSel?"selected":""}>${esc(i.name)}${i.country?" · "+esc(i.country):""}</option>`).join("")+`<option value="__new">+ Add a school or university…</option>`;
-  $("inst").onchange=()=>$("newInstBox").hidden=$("inst").value!=="__new";
+  const fillCurr=()=>{const i=$("inst").value;$("curr").innerHTML=App.curriculumOptions(LK.curricula,$("curr").value||(SET?SET.curriculum_id:ME.curriculum_id)||"","Any curriculum",i&&i!=="__new"?LK.instCurr(i):[]);};
+  fillCurr();
+  $("inst").onchange=()=>{$("newInstBox").hidden=$("inst").value!=="__new";fillCurr();};
   if(SET){$("title").value=SET.title;$("vis").value=SET.visibility;$("desc").value=SET.description;}
-  ["title","subject","level","lang","tlang","inst","vis","desc"].forEach(id=>$(id).addEventListener("input",()=>dirty=true));
+  ["title","subject","curr","level","lang","tlang","inst","vis","desc"].forEach(id=>$(id).addEventListener("input",()=>dirty=true));
 }
 // ---------- save ----------
 function validate(){
@@ -154,8 +157,10 @@ $("save").onclick=async()=>{const m=$("saveMsg"),err=validate();if(err){m.textCo
     let inst=$("inst").value||null;
     if(inst==="__new"){const nm=$("newInst").value.trim();if(nm.length<2)throw new Error("Type the new school or university name.");
       const r=await C.rpc("add_institution",{p_name:nm,p_kind:$("newKind").value,p_country:$("newCountry").value.trim(),p_city:""});if(r.error)throw r.error;inst=r.data;}
-    const meta={title:$("title").value.trim(),subject_id:+$("subject").value,level_code:$("level").value||"any",language:$("lang").value,translation_lang:$("tlang").value,
+    const meta={title:$("title").value.trim(),subject_id:+$("subject").value,curriculum_id:+$("curr").value||null,level_code:$("level").value||"any",language:$("lang").value,translation_lang:$("tlang").value,
       institution_id:inst,visibility:$("vis").value,description:$("desc").value.trim(),units:UNITS.map(u=>({u:u.u,name:u.name.trim()}))};
+    if(meta.curriculum_id&&inst&&!LK.instCurr(inst).includes(meta.curriculum_id)&&(ME.is_admin||ME.institution_id===inst))
+      await C.from("institution_curricula").insert({institution_id:inst,curriculum_id:meta.curriculum_id});   // the school now follows it too
     let sid=SET&&SET.id;
     if(sid){const r=await C.from("study_sets").update(meta).eq("id",sid);if(r.error)throw r.error;}
     else{const r=await C.from("study_sets").insert({...meta,owner_id:ME.id}).select("id").single();if(r.error)throw r.error;sid=r.data.id;}
@@ -175,7 +180,7 @@ App.requireUser({role:"teacher"}).then(async p=>{ME=p;LK=await App.lookups();
     SET=got.set;UNITS=(SET.units&&SET.units.length?SET.units:[{u:1,name:""}]).map(u=>({u:+u.u,name:u.name||""}));
     got.items.forEach(x=>{if(!UNITS.some(u=>u.u===x.unit))UNITS.push({u:x.unit,name:""});});UNITS.sort((a,b)=>(a.u===0)-(b.u===0)||a.u-b.u);
     ROWS=got.items.map(x=>({...x,choices:Array.isArray(x.choices)?x.choices.slice():[],answer:x.answer??0}));ORIG=new Set(ROWS.map(r=>r.id));
-    $("h").textContent="Edit study set";$("back").href="set.html?id="+SET.id;document.title="Edit: "+SET.title+" · Albarq Education Center";}
+    $("h").textContent="Edit study set";$("back").href="set.html?id="+SET.id;document.title="Edit: "+SET.title+" · Helper Academy";}
   fillMeta();drawUnits();drawRows();
 }).catch(()=>{});
 </script>

@@ -1,19 +1,20 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Library · Albarq Education Center</title><link rel="icon" href="assets/icons/brilliant.png">
+<title>Library · Helper Academy</title><link rel="icon" href="assets/icons/brilliant.png">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
 <link rel="stylesheet" href="css/app.css">
 <script src="js/vendor/supabase.js"></script><script src="js/config.js"></script><script src="js/icons.js"></script><script src="js/app.js"></script>
 </head><body>
 <div class="wrap" style="max-width:1120px">
   <div class="head2">
-    <div><span class="eyebrow">All schools · all subjects · all levels</span><h1>Study library</h1>
+    <div><span class="eyebrow">All schools · all curricula · all subjects · all levels</span><h1>Study library</h1>
       <p class="muted" style="margin:4px 0 0">Study sets and quizzes shared by teachers. Open one to practise, or assign it to your class.</p></div>
     <a class="btn primary" href="edit.html" id="newSet" hidden><i data-i="plus"></i>Create a study set</a>
   </div>
   <div class="filters card">
     <label class="q"><i data-i="search"></i><input id="q" type="search" placeholder="Search titles, schools, teachers" aria-label="Search"></label>
     <select id="fSubject" aria-label="Subject"></select>
+    <select id="fCurr" aria-label="Curriculum"></select>
     <select id="fLevel" aria-label="Level"></select>
     <select id="fInst" aria-label="School or university"></select>
     <select id="fType" aria-label="Content type"><option value="">Any content</option><option value="terms">Has terms</option><option value="questions">Has questions</option></select>
@@ -27,30 +28,31 @@ const $=id=>document.getElementById(id), esc=App.esc;
 document.querySelectorAll("[data-i]").forEach(el=>el.insertAdjacentHTML("afterbegin",icon(el.dataset.i,16)));
 let ALL=[], LK;
 function render(){
-  const q=$("q").value.trim().toLowerCase(), su=$("fSubject").value, lv=$("fLevel").value, ins=$("fInst").value, ty=$("fType").value;
-  let L=ALL.filter(s=>(!su||s.subject_id===+su)&&(!lv||s.level_code===lv)&&(!ins||s.institution_id===ins)
+  const q=$("q").value.trim().toLowerCase(), cu=$("fCurr").value, su=$("fSubject").value, lv=$("fLevel").value, ins=$("fInst").value, ty=$("fType").value;
+  let L=ALL.filter(s=>(!cu||s.curriculum_id===+cu||(cu==="none"&&!s.curriculum_id))&&(!su||s.subject_id===+su)&&(!lv||s.level_code===lv)&&(!ins||s.institution_id===ins)
     &&(!ty||(ty==="terms"?s.term_count>0:s.question_count>0))
-    &&(!q||[s.title,s.description,s.author_name,LK.inst(s.institution_id)?.name,LK.subject(s.subject_id).name].join(" ").toLowerCase().includes(q)));
+    &&(!q||[s.title,s.description,s.author_name,LK.inst(s.institution_id)?.name,LK.subject(s.subject_id).name,LK.curr(s.curriculum_id)?.name].join(" ").toLowerCase().includes(q)));
   const so=$("sort").value, lvSort=c=>LK.level(c).sort||999;
   L.sort(so==="title"?(a,b)=>a.title.localeCompare(b.title):so==="level"?(a,b)=>lvSort(a.level_code)-lvSort(b.level_code):so==="big"?(a,b)=>b.term_count+b.question_count-a.term_count-a.question_count:(a,b)=>b.created_at.localeCompare(a.created_at));
   $("count").textContent=L.length+(L.length===1?" study set":" study sets");
   $("grid").innerHTML=L.length?L.map(s=>App.setCard(s,LK)).join(""):`<div class="card" style="grid-column:1/-1"><div class="empty-ill"><img src="assets/anims/estimate.gif" alt=""><span>No study sets match. Try clearing a filter${App.profile.role==="teacher"?", or create the first one for your subject":""}.</span></div></div>`;
-  try{localStorage.setItem("libFilters",JSON.stringify({su,lv,ins,ty}));}catch(e){}
+  try{localStorage.setItem("libFilters",JSON.stringify({su,cu,lv,ins,ty}));}catch(e){}
 }
 App.requireUser().then(async p=>{
   LK=await App.lookups();
   $("newSet").hidden=p.role!=="teacher";
   $("fSubject").innerHTML=App.subjectOptions(LK.subjects,"","All subjects");
   $("fLevel").innerHTML=App.levelOptions(LK.levels,"","All levels");
-  const {data}=await App.client.from("study_sets").select("id,owner_id,author_name,institution_id,subject_id,level_code,title,description,visibility,term_count,question_count,cover_url,created_at").eq("visibility","public").order("created_at",{ascending:false}).limit(1000);
+  $("fCurr").innerHTML=App.curriculumOptions(LK.curricula,"","All curricula")+`<option value="none">Not tied to a curriculum</option>`;
+  const {data}=await App.client.from("study_sets").select("id,owner_id,author_name,institution_id,subject_id,level_code,curriculum_id,title,description,visibility,term_count,question_count,cover_url,created_at").eq("visibility","public").order("created_at",{ascending:false}).limit(1000);
   ALL=data||[];
   const used=new Set(ALL.map(s=>s.institution_id).filter(Boolean));
   $("fInst").innerHTML=`<option value="">All schools & universities</option>`+LK.institutions.filter(i=>used.has(i.id)).map(i=>`<option value="${i.id}">${esc(i.name)}</option>`).join("");
   let f={};try{f=JSON.parse(localStorage.getItem("libFilters")||"{}");}catch(e){}
   const qp=new URLSearchParams(location.search);
-  if(f.su)$("fSubject").value=f.su; if(f.lv)$("fLevel").value=f.lv; if(f.ins&&used.has(f.ins))$("fInst").value=f.ins; if(f.ty)$("fType").value=f.ty;
+  if(f.su)$("fSubject").value=f.su; if(f.cu)$("fCurr").value=f.cu; if(f.lv)$("fLevel").value=f.lv; if(f.ins&&used.has(f.ins))$("fInst").value=f.ins; if(f.ty)$("fType").value=f.ty;
   if(qp.get("subject"))$("fSubject").value=qp.get("subject");
-  ["q","fSubject","fLevel","fInst","fType","sort"].forEach(id=>$(id).addEventListener("input",render));
+  ["q","fSubject","fCurr","fLevel","fInst","fType","sort"].forEach(id=>$(id).addEventListener("input",render));
   render();
 }).catch(()=>{});
 </script>

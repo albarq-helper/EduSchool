@@ -1,5 +1,5 @@
 -- =====================================================================
--- Albarq Education Center — v2: global platform
+-- Helper Academy — v2: global platform
 -- Run AFTER supabase_setup.sql (safe to run more than once).
 -- Adds schools/universities, subjects, levels (KG → postgraduate),
 -- study sets made by teachers (terms + multiple-choice / true-false

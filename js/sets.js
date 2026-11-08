@@ -55,7 +55,7 @@
   async function load(id) {
     const C = App.client;
     const [{ data: set, error }, { data: items }] = await Promise.all([
-      C.from("study_sets").select("*, subjects(name,icon), levels(name)").eq("id", id).maybeSingle(),
+      C.from("study_sets").select("*, subjects(name,icon), levels(name), curricula(short_name,name)").eq("id", id).maybeSingle(),
       C.from("set_items").select("*").eq("set_id", id).order("position", { ascending: true }).limit(5000)
     ]);
     if (error || !set) return null;
@@ -90,7 +90,7 @@
       #setbar nav a:hover{background:rgba(255,255,255,.1)}#setbar nav a.on{background:var(--sun,#FFC94D);color:#1B2333;border-color:transparent}
       @media (max-width:600px){#setbar nav a span{display:none}}`;
     document.head.insertAdjacentHTML("beforeend", `<style>${css}</style>`);
-    const meta = [set.subjects?.name, set.levels?.name, `${words.length} terms`, questions.length ? `${questions.length} questions` : ""].filter(Boolean).join(" · ");
+    const meta = [set.subjects?.name, set.levels?.name, set.curricula?.short_name, `${words.length} terms`, questions.length ? `${questions.length} questions` : ""].filter(Boolean).join(" · ");
     const nav = acts.filter(a => a[3]).map(a => `<a href="${a[0]}?${a[0] === "set.html" ? "id" : "set"}=${set.id}" class="${here === a[0] ? "on" : ""}">${I(a[1])}<span>${a[2]}</span></a>`).join("");
     const bar = `<div id="setbar"><div class="t"><b>${esc(set.title)}</b><span>${esc(meta)}</span></div><nav aria-label="Activities for this set">${nav}</nav></div>`;
     const ab = document.getElementById("appbar");
@@ -126,7 +126,7 @@
     document.documentElement.lang = set.language || "en";
     setBar(set, words, questions);
     const eb = document.getElementById("setEyebrow");
-    if (eb) eb.textContent = [set.subjects?.name, set.levels?.name].filter(Boolean).join(" · ");
+    if (eb) eb.textContent = [set.subjects?.name, set.levels?.name, set.curricula?.short_name].filter(Boolean).join(" · ");
     const need = opts.min || 0, have = opts.questions ? questions.length : words.length;
     if (have < need) {
       blocker(opts.questions ? "No questions in this set yet" : "Not enough terms for this activity",

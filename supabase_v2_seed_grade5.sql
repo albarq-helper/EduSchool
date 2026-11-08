@@ -1,7 +1,7 @@
 -- Seed: the first public set — Grade 5 ELA vocabulary (166 words). Run after supabase_v2_global.sql. Safe to re-run.
 insert into public.institutions (id, name, kind) values ('00000000-0000-4000-8000-0000000000a1','Alhayah International School','school') on conflict do nothing;
 insert into public.study_sets (id, owner_id, author_name, institution_id, subject_id, level_code, title, description, language, translation_lang, units, visibility)
-select '00000000-0000-4000-8000-000000000005', null, 'Albarq Education Center', (select id from public.institutions where lower(name)='alhayah international school' limit 1),
+select '00000000-0000-4000-8000-000000000005', null, 'Helper Academy', (select id from public.institutions where lower(name)='alhayah international school' limit 1),
   (select id from public.subjects where name='English'), 'g5', 'Grade 5 ELA Vocabulary · Units 1–15',
   '166 words from the Grade 5 ELA book at Alhayah International School, with pictures, animations, audio and Arabic meanings.',
   'en', 'ar', '[{"u": 1, "name": "An Accidental Breakthrough"}, {"u": 2, "name": "Wildlife Conservation"}, {"u": 3, "name": "Colors of the World"}, {"u": 4, "name": "Cooperation and Teamwork"}, {"u": 5, "name": "The Changing Seasons"}, {"u": 6, "name": "Family Relations and Filial Piety"}, {"u": 7, "name": "Overcoming Challenges"}, {"u": 8, "name": "Build Up or Tear Down"}, {"u": 9, "name": "Silly Tales"}, {"u": 10, "name": "Love Animals"}, {"u": 11, "name": "Autobiography"}, {"u": 12, "name": "Earth Day"}, {"u": 13, "name": "Love for Nature"}, {"u": 14, "name": "Connecting People"}, {"u": 15, "name": "World Food Day"}, {"u": 0, "name": "Grammar words (unit to confirm)"}]'::jsonb, 'public'

@@ -1,6 +1,6 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>My learning · Albarq Education Center</title><link rel="icon" href="assets/icons/brilliant.png">
+<title>My learning · Helper Academy</title><link rel="icon" href="assets/icons/brilliant.png">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=Noto+Naskh+Arabic:wght@600&display=swap">
 <link rel="stylesheet" href="css/app.css">
 <script src="js/vendor/supabase.js"></script><script src="js/config.js"></script><script src="js/icons.js"></script><script src="js/app.js"></script>
@@ -53,13 +53,13 @@ function paintIcons(root=document){root.querySelectorAll("[data-i]").forEach(el=
 paintIcons();
 const pill=(s,t)=>{const p=Math.round(s/t*100);return `<span class="pill ${p>=80?"good":p>=50?"mid":"low"}">${s}/${t} · ${p}%</span>`;};
 const ago=d=>{const m=Math.round((Date.now()-new Date(d))/60000);return m<1?"just now":m<60?m+" min ago":m<1440?Math.round(m/60)+" h ago":new Date(d).toLocaleDateString(undefined,{day:"numeric",month:"short"});};
-const SETCOLS="id,owner_id,author_name,institution_id,subject_id,level_code,title,visibility,term_count,question_count,cover_url,created_at";
+const SETCOLS="id,owner_id,author_name,institution_id,subject_id,level_code,curriculum_id,title,visibility,term_count,question_count,cover_url,created_at";
 let MISSED={}, LK, SETS={};
 async function load(p){
   const C=App.client, first=(p.full_name||"").trim().split(/\s+/)[0];
   LK=await App.lookups();
   $("hello").textContent="Hello, "+(first||"there")+"!";
-  $("eyebrow").textContent=[LK.inst(p.institution_id)?.name, LK.level(p.level_code).name].filter(Boolean).join(" · ")||"Albarq Education Center";
+  $("eyebrow").textContent=[LK.inst(p.institution_id)?.name, LK.curr(p.curriculum_id)?.short_name, LK.level(p.level_code).name].filter(Boolean).join(" · ")||"Helper Academy";
   const [{data:cls},{data:atts},lists,{data:asg}]=await Promise.all([
     C.from("class_members").select("class_id, classes(name)").eq("student_id",p.id),
     C.from("attempts").select("id,activity,detail,units,word_list,score,total,created_at,set_id").eq("student_id",p.id).order("created_at",{ascending:false}).limit(500),

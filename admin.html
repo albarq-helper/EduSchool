@@ -1,6 +1,6 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Admin · Albarq Education Center</title><link rel="icon" href="assets/icons/brilliant.png">
+<title>Admin · Helper Academy</title><link rel="icon" href="assets/icons/brilliant.png">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
 <link rel="stylesheet" href="css/app.css">
 <script src="js/vendor/supabase.js"></script><script src="js/config.js"></script><script src="js/icons.js"></script><script src="js/app.js"></script>
@@ -10,8 +10,12 @@
   <section class="card"><div class="row" style="justify-content:space-between"><h2 class="sec-title"><i data-i="school"></i>Schools and universities <span class="muted" id="nInst"></span></h2>
     <input id="iq" type="search" placeholder="Filter" aria-label="Filter schools" style="width:14rem"></div>
     <p class="muted" style="margin:0;font-size:.9rem">Teachers and students add their own school when they sign up. Fix spelling here, or merge a duplicate into the correct entry: everyone and everything linked to it moves across.</p>
-    <div class="tablewrap"><table><thead><tr><th>Name</th><th>Type</th><th>Country</th><th>City</th><th>Merge into</th><th></th></tr></thead><tbody id="inst"></tbody></table></div>
+    <div class="tablewrap"><table><thead><tr><th>Name</th><th>Type</th><th>Country</th><th>Curricula</th><th>Merge into</th><th></th></tr></thead><tbody id="inst"></tbody></table></div>
     <span class="msg" id="instMsg" role="status"></span></section>
+  <section class="card"><h2 class="sec-title"><i data-i="book-open"></i>Curricula</h2>
+    <p class="muted" style="margin:0;font-size:.9rem">Schools pick one or more of these. Classes, study sets and students each follow one.</p>
+    <div class="tablewrap"><table><thead><tr><th>Name</th><th>Short name</th><th>Country</th><th class="num">Schools</th><th></th></tr></thead><tbody id="curr"></tbody></table></div>
+    <form class="row" id="currForm"><input id="cName" maxlength="100" placeholder="Full name, e.g. Kenyan CBC" aria-label="Curriculum name" style="flex:2 1 220px"><input id="cShort" maxlength="30" placeholder="Short name" aria-label="Short name" style="flex:1 1 120px"><input id="cCountry" maxlength="60" placeholder="Country (optional)" aria-label="Country" style="flex:1 1 140px"><button class="btn primary"><i data-i="plus"></i>Add curriculum</button><span class="msg" id="currMsg" role="status"></span></form></section>
   <section class="card"><h2 class="sec-title"><i data-i="book-open"></i>Subjects</h2>
     <div class="words" id="subs"></div>
     <form class="row" id="subForm"><input id="subName" maxlength="60" placeholder="New subject, e.g. Nursing" aria-label="New subject"><button class="btn primary"><i data-i="plus"></i>Add subject</button><span class="msg" id="subMsg"></span></form></section>
@@ -21,19 +25,33 @@
 <script>
 const $=id=>document.getElementById(id), esc=App.esc, C=App.client;
 document.querySelectorAll("[data-i]").forEach(el=>el.insertAdjacentHTML("afterbegin",icon(el.dataset.i,16)));
-let LK, INST=[];
+let LK, INST=[], CURR=[], LINKS=[];
 const KINDS=["school","university","college","institute","other"];
-async function loadInst(){const {data}=await C.from("institutions").select("id,name,kind,country,city,created_at").order("name");INST=data||[];drawInst();}
+async function loadInst(){const [a,b,c]=await Promise.all([C.from("institutions").select("id,name,kind,country,city,created_at").order("name"),C.from("curricula").select("id,code,name,short_name,country,sort").order("sort"),C.from("institution_curricula").select("institution_id,curriculum_id")]);
+  INST=a.data||[];CURR=b.data||[];LINKS=c.data||[];drawInst();drawCurr();}
+function drawCurr(){$("curr").innerHTML=CURR.map(c=>`<tr data-cid="${c.id}"><td><input data-cf="name" value="${esc(c.name)}" maxlength="100" style="width:100%;min-width:14rem"></td><td><input data-cf="short_name" value="${esc(c.short_name)}" maxlength="30" style="width:8rem"></td><td><input data-cf="country" value="${esc(c.country)}" maxlength="60" style="width:9rem"></td>
+  <td class="num">${LINKS.filter(l=>l.curriculum_id===c.id).length}</td><td><button class="btn small" data-csave type="button">${icon("save",14)}Save</button></td></tr>`).join("");}
+$("curr").onclick=async e=>{const b=e.target.closest("[data-csave]");if(!b)return;const tr=b.closest("tr"),v={};tr.querySelectorAll("[data-cf]").forEach(el=>v[el.dataset.cf]=el.value.trim());
+  const {error}=await C.from("curricula").update(v).eq("id",+tr.dataset.cid);say("currMsg",error?error.message:"Saved.",!error);loadInst();};
+$("currForm").onsubmit=async e=>{e.preventDefault();const name=$("cName").value.trim(),short=$("cShort").value.trim()||name.slice(0,30);if(name.length<2)return;
+  const code=(name.toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,24)||"c")+"-"+Math.random().toString(36).slice(2,5);
+  const {error}=await C.from("curricula").insert({code,name,short_name:short,country:$("cCountry").value.trim(),sort:500});
+  say("currMsg",error?error.message:"Added.",!error);if(!error){$("cName").value=$("cShort").value=$("cCountry").value="";loadInst();}};
 function drawInst(){const q=$("iq").value.trim().toLowerCase(), L=INST.filter(i=>!q||(i.name+" "+i.country+" "+i.city).toLowerCase().includes(q));
   $("nInst").textContent="· "+INST.length;
   $("inst").innerHTML=L.map(i=>`<tr data-id="${i.id}"><td><input data-f="name" value="${esc(i.name)}" maxlength="120" style="width:100%;min-width:12rem"></td>
     <td><select data-f="kind">${KINDS.map(k=>`<option ${k===i.kind?"selected":""}>${k}</option>`).join("")}</select></td>
-    <td><input data-f="country" value="${esc(i.country)}" maxlength="60" style="width:8rem"></td><td><input data-f="city" value="${esc(i.city)}" maxlength="60" style="width:8rem"></td>
+    <td><input data-f="country" value="${esc(i.country)}" maxlength="60" style="width:8rem"></td>
+    <td><div class="row" style="gap:4px">${LINKS.filter(l=>l.institution_id===i.id).map(l=>`<span class="tag">${esc(CURR.find(c=>c.id===l.curriculum_id)?.short_name||"")}<button type="button" data-unlink="${l.curriculum_id}" style="border:0;background:none;cursor:pointer;padding:0 0 0 2px;color:inherit" aria-label="Remove">×</button></span>`).join("")}
+      <select data-link style="max-width:8rem"><option value="">+ Add</option>${CURR.filter(c=>!LINKS.some(l=>l.institution_id===i.id&&l.curriculum_id===c.id)).map(c=>`<option value="${c.id}">${esc(c.short_name)}</option>`).join("")}</select></div></td>
     <td><select data-merge><option value="">—</option>${INST.filter(x=>x.id!==i.id).map(x=>`<option value="${x.id}">${esc(x.name)}</option>`).join("")}</select></td>
     <td><div class="row" style="flex-wrap:nowrap"><button class="btn small" data-save type="button">${icon("save",14)}Save</button><button class="btn small danger" data-del type="button" aria-label="Delete ${esc(i.name)}">${icon("trash-2",14)}</button></div></td></tr>`).join("")||'<tr><td colspan="6" class="empty">None.</td></tr>';}
 $("iq").oninput=drawInst;
 const say=(id,t,ok)=>{$(id).textContent=t;$(id).className="msg "+(ok?"ok":"err");};
+$("inst").onchange=async e=>{const s=e.target.closest("[data-link]");if(!s||!s.value)return;const id=s.closest("tr").dataset.id;
+  const {error}=await C.from("institution_curricula").insert({institution_id:id,curriculum_id:+s.value});say("instMsg",error?error.message:"Curriculum added.",!error);loadInst();};
 $("inst").onclick=async e=>{const tr=e.target.closest("tr[data-id]");if(!tr)return;const id=tr.dataset.id;
+  const u=e.target.closest("[data-unlink]");if(u){const {error}=await C.from("institution_curricula").delete().eq("institution_id",id).eq("curriculum_id",+u.dataset.unlink);say("instMsg",error?error.message:"Curriculum removed.",!error);loadInst();return;}
   if(e.target.closest("[data-save]")){const v={};tr.querySelectorAll("[data-f]").forEach(el=>v[el.dataset.f]=el.value.trim());
     const into=tr.querySelector("[data-merge]").value;
     if(into){const {error}=await C.rpc("merge_institutions",{p_from:id,p_into:into});say("instMsg",error?error.message:"Merged.",!error);}

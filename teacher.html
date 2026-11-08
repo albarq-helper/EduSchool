@@ -1,6 +1,6 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Teacher Dashboard · Albarq Education Center</title><link rel="icon" href="assets/icons/brilliant.png">
+<title>Teacher Dashboard · Helper Academy</title><link rel="icon" href="assets/icons/brilliant.png">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
 <link rel="stylesheet" href="css/app.css">
 <script src="js/vendor/supabase.js"></script><script src="js/config.js"></script><script src="js/icons.js"></script><script src="js/app.js"></script>
@@ -8,8 +8,11 @@
 <div class="wrap">
   <div class="thead">
     <div><span class="eyebrow" id="eyebrow">Teacher dashboard</span><h1 id="hello">Your classes</h1></div>
-    <form class="row" id="newClass"><input id="className" placeholder="New class name, e.g. Biology 101" aria-label="New class name" maxlength="80" style="width:14rem"><select id="classSubject" aria-label="Subject"></select><select id="classLevel" aria-label="Level"></select><button class="btn primary"><i data-i="plus"></i>Create class</button></form>
+    <form class="row" id="newClass"><input id="className" placeholder="New class name, e.g. Biology 101" aria-label="New class name" maxlength="80" style="width:14rem"><select id="classSubject" aria-label="Subject"></select><select id="classCurr" aria-label="Curriculum"></select><select id="classLevel" aria-label="Level"></select><button class="btn primary"><i data-i="plus"></i>Create class</button></form>
   </div>
+  <div class="card" id="schoolCard" hidden><div class="row" style="justify-content:space-between"><h2 class="sec-title"><i data-i="school"></i><span id="schoolName"></span></h2><span class="muted" style="font-size:.9rem">Curricula your school follows</span></div>
+    <div class="row" id="schoolCurr"></div>
+    <form class="row" id="addCurr"><select id="currPick" aria-label="Add a curriculum"></select><button class="btn small"><i data-i="plus"></i>Add curriculum</button><span class="msg" id="currMsg" role="status"></span></form></div>
   <div class="row" style="justify-content:space-between"><div class="tabs2" id="classes" role="group" aria-label="Classes"></div><span class="msg" id="classMsg" role="status"></span></div>
 
   <div id="noClass" class="card" hidden><div class="empty-ill"><img src="assets/anims/create.gif" alt=""><div><b>Create your first class</b><br><span>Give it a name, subject and level above. You'll get a 6-letter code for students to join. Then assign study sets from <a href="mysets.html">My sets</a> or the <a href="library.html">library</a>.</span></div></div></div>
@@ -69,7 +72,7 @@ async function loadClasses(){const {data}=await C.from("classes").select("id,nam
   if(!CUR&&CLASSES.length)openClass(CLASSES[0].id);}
 $("classes").onclick=e=>{const b=e.target.closest("[data-c]");if(b)openClass(b.dataset.c);};
 $("newClass").onsubmit=async e=>{e.preventDefault();const name=$("className").value.trim();if(!name)return;
-  const {data,error}=await C.from("classes").insert({name,teacher_id:ME.id,subject_id:+$("classSubject").value||null,level_code:$("classLevel").value||null,institution_id:ME.institution_id||null}).select("id").single();
+  const {data,error}=await C.from("classes").insert({name,teacher_id:ME.id,subject_id:+$("classSubject").value||null,curriculum_id:+$("classCurr").value||null,level_code:$("classLevel").value||null,institution_id:ME.institution_id||null}).select("id").single();
   $("classMsg").textContent=error?error.message:"Class created.";$("classMsg").className="msg "+(error?"err":"ok");
   if(!error){$("className").value="";CUR={id:data.id};await loadClasses();openClass(data.id);}};
 async function openClass(id){CUR=CLASSES.find(c=>c.id===id)||{id};$("studentView").hidden=true;$("classView").hidden=false;
@@ -85,7 +88,7 @@ async function openClass(id){CUR=CLASSES.find(c=>c.id===id)||{id};$("studentView
   const {data:cs}=await C.from("class_sets").select("set_id,assigned_at").eq("class_id",id).order("assigned_at",{ascending:false});
   CUR.sets=(cs||[]).map(x=>x.set_id);
   const need=[...new Set([...CUR.sets,...ATT.map(a=>a.set_id||G5)])].filter(x=>!SETS[x]);
-  if(need.length){const {data}=await C.from("study_sets").select("id,owner_id,author_name,institution_id,subject_id,level_code,title,visibility,term_count,question_count,cover_url,created_at").in("id",need);(data||[]).forEach(s=>SETS[s.id]=s);}
+  if(need.length){const {data}=await C.from("study_sets").select("id,owner_id,author_name,institution_id,subject_id,level_code,curriculum_id,title,visibility,term_count,question_count,cover_url,created_at").in("id",need);(data||[]).forEach(s=>SETS[s.id]=s);}
   drawClassSets();
   const week=Date.now()-7*864e5, cm=missedFrom(ANS);
   $("kStu").textContent=STU.length; $("kWeek").textContent=ATT.filter(a=>new Date(a.created_at)>week).length;
@@ -136,10 +139,23 @@ let confirmRm=false;
 $("removeStudent").onclick=async()=>{const sp=$("removeStudent").querySelector("span");
   if(!confirmRm){confirmRm=true;sp.textContent="Click again to remove "+SEL.name;setTimeout(()=>{confirmRm=false;sp.textContent="Remove from class";},4000);return;}
   await C.from("class_members").delete().eq("class_id",CUR.id).eq("student_id",SEL.id);confirmRm=false;sp.textContent="Remove from class";openClass(CUR.id);};
+// The teacher's school and the curricula it follows (teachers of that school can edit the list).
+function drawSchool(){const inst=LK.inst(ME.institution_id);$("schoolCard").hidden=!inst;if(!inst)return;
+  $("schoolName").textContent=inst.name;const ids=LK.instCurr(inst.id);
+  $("schoolCurr").innerHTML=ids.length?ids.map(id=>`<span class="chip">${icon("book-open",14)}${esc(LK.curr(id)?.name||"")} <button class="btn small" style="border:0;padding:0 4px" data-rmc="${id}" type="button" aria-label="Remove ${esc(LK.curr(id)?.name||"")}">${icon("x",13)}</button></span>`).join(""):'<span class="muted">No curriculum recorded yet. Add the one(s) your school follows.</span>';
+  const free=LK.curricula.filter(c=>!ids.includes(c.id));$("currPick").innerHTML=free.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join("");}
+$("addCurr").onsubmit=async e=>{e.preventDefault();const cid=+$("currPick").value;if(!cid)return;
+  const {error}=await C.from("institution_curricula").insert({institution_id:ME.institution_id,curriculum_id:cid});
+  $("currMsg").textContent=error?error.message:"Added.";$("currMsg").className="msg "+(error?"err":"ok");if(!error){LK.links.push({institution_id:ME.institution_id,curriculum_id:cid});drawSchool();}};
+$("schoolCurr").onclick=async e=>{const b=e.target.closest("[data-rmc]");if(!b)return;const cid=+b.dataset.rmc;
+  const {error}=await C.from("institution_curricula").delete().eq("institution_id",ME.institution_id).eq("curriculum_id",cid);
+  if(!error){LK.links=LK.links.filter(x=>!(x.institution_id===ME.institution_id&&x.curriculum_id===cid));drawSchool();}};
 App.requireUser({role:"teacher"}).then(async p=>{ME=p;C=App.client;LK=await App.lookups();$("hello").textContent="Hello, "+((p.full_name||"").trim()||"teacher");
   $("eyebrow").textContent="Teacher dashboard"+(LK.inst(p.institution_id)?" · "+LK.inst(p.institution_id).name:"");
+  drawSchool();
   $("classSubject").innerHTML=App.subjectOptions(LK.subjects,"","Subject (optional)");$("classLevel").innerHTML=App.levelOptions(LK.levels,"","Level (optional)");
-  const {data:ms}=await C.from("study_sets").select("id,owner_id,author_name,institution_id,subject_id,level_code,title,visibility,term_count,question_count,cover_url,created_at").eq("owner_id",p.id).order("updated_at",{ascending:false});
+  $("classCurr").innerHTML=App.curriculumOptions(LK.curricula,p.curriculum_id||"","Curriculum (optional)",p.institution_id?LK.instCurr(p.institution_id):[]);
+  const {data:ms}=await C.from("study_sets").select("id,owner_id,author_name,institution_id,subject_id,level_code,curriculum_id,title,visibility,term_count,question_count,cover_url,created_at").eq("owner_id",p.id).order("updated_at",{ascending:false});
   MYSETS=ms||[];MYSETS.forEach(s=>SETS[s.id]=s);loadClasses();}).catch(()=>{});
 </script>
 </body></html>
