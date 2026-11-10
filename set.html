@@ -10,7 +10,8 @@
 const $=id=>document.getElementById(id), esc=App.esc, qp=new URLSearchParams(location.search), ID=qp.get("id");
 const I=(n,s)=>icon(n,s||16);
 let SET, ME, LK, MAP;
-const ACTS=[["cards.html","layers","Flashcards","Look, listen, flip, or guess from the picture.","a-sun",m=>m.words.length>0],
+const ACTS=[["list.html","list-checks","Word list","All words together: picture, syllables, sound, meaning. Cover to practise.","a-teal",m=>m.words.length>0],
+  ["cards.html","layers","Flashcards","Look, listen, flip, or guess from the picture.","a-sun",m=>m.words.length>0],
   ["exam.html","clipboard-check","Exam","Multiple choice by unit, with a score.","a-blue",m=>m.words.length>=4],
   ["games.html","puzzle","Games","Match pictures and meanings, unscramble.","a-teal",m=>m.words.length>=4],
   ["spelling.html","spell-check-2","Spelling","Look-cover-write, missing letters, test.","a-coral",m=>m.words.length>=2],

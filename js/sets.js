@@ -80,7 +80,7 @@
   function setBar(set, words, questions) {
     const here = location.pathname.split("/").pop();
     const I = n => (window.icon ? window.icon(n, 16) : "");
-    const acts = [["set.html", "layout-grid", "Overview", true], ["cards.html", "layers", "Flashcards", words.length > 0],
+    const acts = [["set.html", "layout-grid", "Overview", true], ["list.html", "list-checks", "Word list", words.length > 0], ["cards.html", "layers", "Flashcards", words.length > 0],
       ["exam.html", "clipboard-check", "Exam", words.length >= 4], ["games.html", "puzzle", "Games", words.length >= 4],
       ["spelling.html", "spell-check-2", "Spelling", words.length >= 2], ["quiz.html", "circle-help", "Quiz", questions.length > 0]];
     const css = `#setbar{background:var(--ink,#1B2333);color:#fff;padding:10px 16px;display:flex;gap:10px 18px;align-items:center;flex-wrap:wrap;font:14px var(--f-body,system-ui)}

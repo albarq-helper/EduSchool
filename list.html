@@ -1,0 +1,211 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Word list · Helper Academy</title><link rel="icon" href="assets/icons/brilliant.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=Noto+Naskh+Arabic:wght@600&display=swap">
+<link rel="stylesheet" href="css/app.css">
+<style>
+:root{--s1:#2347C5;--s2:#C2410C;--s3:#0F766E;--s4:#7C3AED}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--s1:#8FA8FF;--s2:#FF9F6B;--s3:#4FD1C0;--s4:#C4A5FF}}
+:root[data-theme="dark"]{--s1:#8FA8FF;--s2:#FF9F6B;--s3:#4FD1C0;--s4:#C4A5FF}
+.tools{display:flex;flex-direction:column;gap:10px}
+.tools .r{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.tools .q{position:relative;flex:1 1 260px}.tools .q .ico{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--muted)}.tools .q input{width:100%;padding-left:36px}
+.seg{display:inline-flex;border:1px solid var(--rule);border-radius:12px;overflow:hidden;background:var(--paper)}
+.seg button{border:0;background:transparent;font:700 .9rem var(--f-body);color:var(--muted);padding:9px 14px;cursor:pointer;display:inline-flex;gap:6px;align-items:center}
+.seg button{white-space:nowrap}
+@media (max-width:600px){.seg button{padding:8px 9px;font-size:.84rem}#modes svg{display:none}}
+.seg button[aria-pressed="true"]{background:var(--sheet);color:var(--ink);box-shadow:inset 0 0 0 2px var(--accent);border-radius:11px}
+.toggles{display:flex;gap:6px;flex-wrap:wrap}
+.toggles label{display:inline-flex;gap:6px;align-items:center;font-weight:700;font-size:.86rem;padding:6px 10px;border:1px solid var(--rule);border-radius:999px;cursor:pointer;background:var(--paper)}
+.toggles label:has(input:checked){background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.toggles input{accent-color:var(--accent)}
+.score{font-weight:700;font-variant-numeric:tabular-nums}
+.syl{font:800 1em var(--f-display);letter-spacing:.01em}
+.c0{color:var(--s1)}.c1{color:var(--s2)}.c2{color:var(--s3)}.c3{color:var(--s4)}
+.syl .dot{color:var(--muted)!important;font-weight:400;margin:0 1px}
+.pills{display:flex;gap:4px;flex-wrap:wrap}
+.pills span{font:700 .78rem var(--f-body);padding:2px 8px;border-radius:999px;border:1.5px solid currentColor}
+
+.pic{background:#fff;border:1px solid var(--rule);border-radius:14px;object-fit:contain;display:block}
+.covered{display:flex;align-items:center;justify-content:center;gap:6px;background:repeating-linear-gradient(45deg,var(--paper),var(--paper) 8px,var(--sheet) 8px,var(--sheet) 16px);border:1.5px dashed var(--rule);border-radius:12px;color:var(--muted);font-weight:700;font-size:.85rem;cursor:pointer}
+.boxes{display:inline-flex;gap:3px;flex-wrap:wrap}.boxes i{width:14px;height:20px;border-bottom:2.5px solid var(--muted);display:inline-block}.boxes i.sp{border:0;width:8px}
+.ans{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.ans input{flex:1 1 160px;min-width:0;font:700 1.05rem var(--f-display)}
+.ans textarea{min-height:56px;flex:1 1 220px}
+.res{font-weight:700;font-size:.9rem}.res.ok{color:var(--good)}.res.no{color:var(--bad)}
+input.ok,textarea.ok{border-color:var(--good)!important;background:var(--good-soft)!important}input.no{border-color:var(--bad)!important;background:var(--bad-soft)!important}
+.mean{line-height:1.45}.ex{color:var(--muted);font-size:.93rem}.tr{font-family:var(--f-ar);font-size:1.12rem;align-self:flex-start;unicode-bidi:plaintext;text-align:start}
+.utag{font:700 .75rem var(--f-body);padding:3px 9px;border-radius:999px;background:var(--accent-soft);color:var(--accent);white-space:nowrap}
+/* Detail */
+.v-detail{display:flex;flex-direction:column;gap:12px}
+.d{display:grid;grid-template-columns:150px 1fr auto;gap:18px;align-items:start;background:var(--sheet);border:1px solid var(--rule);border-radius:18px;padding:16px;box-shadow:var(--shadow)}
+.d .pic,.d .covered{width:150px;height:120px}
+.d .w{font-size:1.6rem;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.d .body{display:flex;flex-direction:column;gap:8px;min-width:0}
+.d .side{display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+@media (max-width:640px){.d{grid-template-columns:90px 1fr}.d .pic,.d .covered{width:90px;height:80px}.d .side{grid-column:1/-1;flex-direction:row;justify-content:space-between;align-items:center}.d .w{font-size:1.3rem}}
+/* Grid */
+.v-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+.g{background:var(--sheet);border:1px solid var(--rule);border-radius:16px;padding:12px;display:flex;flex-direction:column;gap:8px;box-shadow:var(--shadow)}
+.g .pic,.g .covered{width:100%;height:140px}
+.g .w{font-size:1.25rem;display:flex;justify-content:space-between;align-items:center;gap:6px}
+.g .mean{font-size:.92rem}
+/* List */
+.v-list table{width:100%}.v-list td{vertical-align:middle}
+.v-list .pic,.v-list .covered{width:48px;height:48px;border-radius:10px}
+.v-list .w{font-size:1.1rem}
+/* Blocks */
+.v-blocks{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.b{background:var(--sheet);border:1px solid var(--rule);border-radius:16px;padding:10px;display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;cursor:pointer;box-shadow:var(--shadow)}
+.b:hover{border-color:var(--accent)}
+.b .pic,.b .covered{width:100%;aspect-ratio:1;height:auto}
+.b .w{font-size:1.1rem}
+.empty-l{padding:30px;text-align:center;color:var(--muted)}
+@media print{#appbar,#setbar,.tools,.no-print,button.round{display:none!important}.d,.g,.b{box-shadow:none;break-inside:avoid}body{background:#fff}}
+</style>
+<script src="js/vendor/supabase.js"></script><script src="js/config.js"></script><script src="js/icons.js"></script><script src="js/app.js"></script><script src="js/sets.js"></script>
+</head><body>
+<div class="wrap" style="max-width:1180px">
+  <div class="head2">
+    <div><span class="eyebrow" id="setEyebrow">&nbsp;</span><h1>Word list</h1>
+      <p class="muted" style="margin:4px 0 0">All the words together: picture, syllables, sound and meaning. Cover a part to practise.</p></div>
+    <button class="btn small no-print" id="print" type="button"><i data-i="file-up"></i>Print</button>
+  </div>
+
+  <section class="card tools no-print">
+    <div class="r">
+      <label class="q"><i data-i="search"></i><input id="q" type="search" placeholder="Filter words or meanings…" aria-label="Filter words"></label>
+      <select id="unit" aria-label="Unit"></select>
+      <div class="seg" role="group" aria-label="View" id="views">
+        <button type="button" data-v="detail" aria-pressed="true">Detail</button><button type="button" data-v="grid" aria-pressed="false">Grid</button><button type="button" data-v="list" aria-pressed="false">List</button><button type="button" data-v="blocks" aria-pressed="false">Blocks</button>
+      </div>
+    </div>
+    <div class="r">
+      <div class="seg" role="group" aria-label="Practice mode" id="modes">
+        <button type="button" data-m="show" aria-pressed="true"><i data-i="eye"></i>Show all</button>
+        <button type="button" data-m="word" aria-pressed="false"><i data-i="spell-check-2"></i>Cover word</button>
+        <button type="button" data-m="meaning" aria-pressed="false"><i data-i="pencil"></i>Cover meaning</button>
+      </div>
+      <div class="toggles" id="toggles" aria-label="Show">
+        <label><input type="checkbox" data-t="pic" checked>Picture</label>
+        <label><input type="checkbox" data-t="syl" checked>Syllables</label>
+        <label><input type="checkbox" data-t="mean" checked>Meaning</label>
+        <label><input type="checkbox" data-t="ex" checked>Example</label>
+        <label><input type="checkbox" data-t="tr" checked>Translation</label>
+      </div>
+    </div>
+    <div class="r" id="practiceBar" hidden>
+      <span class="score" id="score"></span>
+      <button class="btn small primary" id="checkAll" type="button"><i data-i="check"></i>Check all</button>
+      <button class="btn small" id="shuffle" type="button"><i data-i="shuffle"></i>Shuffle</button>
+      <button class="btn small" id="reset" type="button"><i data-i="rotate-ccw"></i>Start again</button>
+      <span class="muted" id="hint" style="font-size:.88rem"></span>
+    </div>
+  </section>
+
+  <div id="count" class="muted"></div>
+  <div id="out"></div>
+</div>
+<script type="text/x-app">
+const $=id=>document.getElementById(id), esc=App.esc, D=window.WORDS, U=window.UNITS_LIST;
+document.querySelectorAll("[data-i]").forEach(el=>el.insertAdjacentHTML("afterbegin",icon(el.dataset.i,16)));
+const store={get(k,d){try{const v=localStorage.getItem("wl_"+k);return v===null?d:JSON.parse(v);}catch(e){return d;}},set(k,v){try{localStorage.setItem("wl_"+k,JSON.stringify(v));}catch(e){}}};
+const uname=x=>x.u?(x.name?`Unit ${x.u} · ${x.name}`:`Unit ${x.u}`):(x.name||"General");
+$("unit").innerHTML=`<option value="all">All units (${D.length})</option>`+U.map(x=>`<option value="${x.u}">${esc(uname(x))} (${x.n})</option>`).join("");
+let VIEW=store.get("view","detail"), MODE="show", SHOW=store.get("show",{pic:true,syl:true,mean:true,ex:true,tr:true});
+let ORDER=D.map((v,i)=>i), ST={};   // ST[i] = {typed, ok, revealed, self}
+document.querySelectorAll("#toggles input").forEach(c=>c.checked=SHOW[c.dataset.t]!==false);
+if(!D.some(v=>v.ar))document.querySelector('[data-t="tr"]').closest("label").hidden=true;
+
+// ---- syllables: split the word as written, using the stored syllable pattern ----
+function parts(v){const syl=(v.syl||"").split("-").filter(Boolean),w=v.w;
+  if(syl.length<2)return [w];
+  const out=[];let k=0;
+  for(const p of syl){let s="",n=0;while(k<w.length&&n<p.length){const c=w[k];s+=c;if(/[\p{L}\p{N}']/u.test(c))n++;k++;}out.push(s);}
+  if(k<w.length)out[out.length-1]+=w.slice(k);
+  return out.join("").toLowerCase()===w.toLowerCase()&&out.every(Boolean)?out:[w];}
+const sylHTML=v=>{const p=parts(v);return `<span class="syl">${SHOW.syl&&p.length>1?p.map((s,k)=>`<span class="c${k%4}">${esc(s)}</span>`).join('<span class="dot">·</span>'):`<span>${esc(v.w)}</span>`}</span>`;};
+const pillsHTML=v=>{const p=parts(v);return SHOW.syl&&p.length>1?`<div class="pills" aria-label="${p.length} syllables">${p.map((s,k)=>`<span class="c${k%4}">${esc(s.replace(/-$/,""))}</span>`).join("")}<span style="border:0;color:var(--muted)">${p.length} syllables</span></div>`:"";};
+// ---- audio ----
+const AU={};
+function hear(i){const v=D[i];if(v.au&&v.au!=="tts"){try{const a=AU[i]||(AU[i]=new Audio(v.au));a.currentTime=0;a.play();return;}catch(e){}}Sets.speak(v.w);}
+const hearBtn=(i,v)=>`<button class="round" type="button" data-hear="${i}" aria-label="Hear ${MODE==="word"?"the word":esc(v.w)}">${icon("volume-2",18)}</button>`;
+// ---- pieces ----
+const picHTML=(i,v)=>SHOW.pic?`<img class="pic" src="${esc(v.img)}" alt="${MODE==="word"?"":esc(v.w)}" loading="lazy">`:"";
+const exHTML=v=>{if(!SHOW.ex||!v.s||/^\[[^\]]*\]$/.test(v.s))return "";
+  const t=MODE==="word"?esc(v.s).replace(/\[([^\]]*)\]/,(m,x)=>"_".repeat(Math.max(4,x.length))):esc(v.s).replace(/\[([^\]]*)\]/,"<b>$1</b>");return `<div class="ex">${t}</div>`;};
+const trHTML=v=>SHOW.tr&&v.ar&&MODE!=="meaning"?`<div class="tr" dir="auto">${esc(v.ar)}</div>`:"";
+function wordHTML(i,v,big){
+  if(MODE!=="word")return sylHTML(v);
+  const s=ST[i]||{};
+  if(s.revealed||s.ok!==undefined)return `${sylHTML(v)}`;
+  return `<span class="boxes" aria-label="${v.w.length} letters">${[...v.w].map(c=>c===" "?'<i class="sp"></i>':"<i></i>").join("")}</span>`;}
+function answerHTML(i,v){const s=ST[i]||{};
+  if(MODE==="word")return `<div class="ans"><input type="text" data-spell="${i}" value="${esc(s.typed||"")}" placeholder="Type the word" autocomplete="off" autocapitalize="off" spellcheck="false" class="${s.ok===true?"ok":s.ok===false?"no":""}" aria-label="Spell the word">
+    <button class="btn small" type="button" data-check="${i}">Check</button>${s.ok===undefined&&!s.revealed?`<button class="btn small" type="button" data-reveal="${i}">Show</button>`:""}
+    ${s.ok===true?`<span class="res ok">${icon("check",15)} Correct</span>`:s.ok===false?`<span class="res no">${icon("x",15)} It's “${esc(v.w)}”</span>`:""}</div>`;
+  if(MODE==="meaning"){
+    if(s.revealed)return `<div class="ans"><textarea data-mean="${i}" aria-label="Your meaning" ${s.self?`class="ok"`:""}>${esc(s.typed||"")}</textarea></div>
+      <div class="mean"><b>Meaning:</b> ${esc(v.d)}</div>${SHOW.tr&&v.ar?`<div class="tr" dir="auto">${esc(v.ar)}</div>`:""}
+      <div class="ans">${s.self===undefined?`<span class="muted" style="font-size:.88rem">Did you get it?</span><button class="btn small" type="button" data-self="${i}" data-val="1">${icon("check",14)}I got it</button><button class="btn small" type="button" data-self="${i}" data-val="0">${icon("x",14)}Not yet</button>`
+        :s.self?`<span class="res ok">${icon("check",15)} Got it</span>`:`<span class="res no">${icon("rotate-ccw",15)} Practise again</span>`}</div>`;
+    return `<div class="ans"><textarea data-mean="${i}" placeholder="Write what it means, in your own words" aria-label="Write the meaning">${esc(s.typed||"")}</textarea><button class="btn small" type="button" data-show="${i}">${icon("eye",14)}Show meaning</button></div>`;}
+  return "";}
+const meanHTML=(i,v)=>MODE==="meaning"?"":SHOW.mean?`<div class="mean">${esc(v.d)}</div>`:"";
+const unitTag=v=>{const x=U.find(u=>u.u===v.u);return `<span class="utag">${esc(x?uname(x):"")}</span>`;};
+
+// ---- views ----
+function card(i,view){const v=D[i];
+  if(view==="detail")return `<article class="d" data-i="${i}">${SHOW.pic?picHTML(i,v):"<span></span>"}
+    <div class="body"><div class="w">${wordHTML(i,v)}</div>${MODE!=="word"?pillsHTML(v):""}${meanHTML(i,v)}${exHTML(v)}${trHTML(v)}${answerHTML(i,v)}</div>
+    <div class="side">${unitTag(v)}${hearBtn(i,v)}</div></article>`;
+  if(view==="grid")return `<article class="g" data-i="${i}">${picHTML(i,v)}<div class="w">${wordHTML(i,v)}${hearBtn(i,v)}</div>${MODE!=="word"?pillsHTML(v):""}${meanHTML(i,v)}${trHTML(v)}${answerHTML(i,v)}</article>`;
+  if(view==="blocks")return `<article class="b" data-i="${i}" ${MODE==="show"?`data-hear="${i}" role="button" tabindex="0" aria-label="Hear ${esc(v.w)}"`:""}>${picHTML(i,v)}<div class="w">${wordHTML(i,v)}</div>${MODE!=="show"?answerHTML(i,v):""}</article>`;
+  return `<tr data-i="${i}">${SHOW.pic?`<td>${picHTML(i,v)}</td>`:""}<td><div class="w">${wordHTML(i,v)}</div></td><td>${hearBtn(i,v)}</td>
+    <td>${MODE==="meaning"||!SHOW.mean?"":esc(v.d)}${MODE!=="show"?answerHTML(i,v):""}</td>${SHOW.tr&&D.some(x=>x.ar)?`<td class="tr" dir="auto">${MODE==="meaning"?"":esc(v.ar)}</td>`:""}<td>${unitTag(v)}</td></tr>`;}
+function visible(){const q=$("q").value.trim().toLowerCase(),u=$("unit").value;
+  return ORDER.filter(i=>{const v=D[i];return (u==="all"||v.u===+u||(v.also||[]).includes(+u))&&(!q||(MODE==="word"?v.d:v.w+" "+v.d+" "+v.ar).toLowerCase().includes(q));});}
+function render(){const L=visible();
+  $("count").textContent=L.length+(L.length===1?" word":" words");
+  if(!L.length){$("out").innerHTML='<div class="card empty-l">No words match.</div>';score();return;}
+  if(VIEW==="list")$("out").innerHTML=`<div class="card v-list" style="padding:0"><div class="tablewrap"><table><thead><tr>${SHOW.pic?"<th></th>":""}<th>Word</th><th></th><th>${MODE==="meaning"?"Write the meaning":MODE==="word"?"Meaning · spell it":"Meaning"}</th>${SHOW.tr&&D.some(x=>x.ar)?`<th>${esc(window.TL_NAME||"Translation")}</th>`:""}<th>Unit</th></tr></thead><tbody>${L.map(i=>card(i,"list")).join("")}</tbody></table></div></div>`;
+  else $("out").innerHTML=`<div class="v-${VIEW}">${L.map(i=>card(i,VIEW)).join("")}</div>`;
+  if(MODE==="word"){$("out").querySelectorAll(".pic").forEach(p=>p.alt="");}
+  score();}
+function rerender(i){const el=$("out").querySelector(`[data-i="${i}"]`);if(!el){render();return;}
+  const t=document.createElement(VIEW==="list"?"tbody":"div");t.innerHTML=card(i,VIEW);el.replaceWith(t.firstElementChild);score();}
+function score(){const L=visible();$("practiceBar").hidden=MODE==="show";
+  if(MODE==="word"){const done=L.filter(i=>ST[i]&&ST[i].ok!==undefined),r=done.filter(i=>ST[i].ok).length;$("score").textContent=`${r} correct · ${done.length} of ${L.length} checked`;
+    $("hint").textContent="Look at the picture and meaning, press the speaker to hear it, then type the word. Enter checks it.";$("checkAll").hidden=false;}
+  else if(MODE==="meaning"){const done=L.filter(i=>ST[i]&&ST[i].self!==undefined),r=done.filter(i=>ST[i].self).length;$("score").textContent=`${r} got it · ${done.length} of ${L.length} marked`;
+    $("hint").textContent="Write the meaning, press “Show meaning”, then mark yourself honestly.";$("checkAll").hidden=true;}}
+// ---- events ----
+const norm=s=>String(s).trim().toLowerCase().replace(/[’']/g,"'").replace(/\s+/g," ");
+function check(i){const inp=$("out").querySelector(`[data-spell="${i}"]`);const typed=inp?inp.value:"";if(!typed.trim())return false;
+  ST[i]={typed,ok:norm(typed)===norm(D[i].w)};rerender(i);return true;}
+$("out").addEventListener("click",e=>{const b=e.target.closest("[data-hear],[data-check],[data-reveal],[data-show],[data-self]");if(!b)return;
+  if(b.dataset.hear!==undefined&&!e.target.closest("input,textarea,button:not([data-hear])")){hear(+b.dataset.hear);return;}
+  if(b.dataset.check!==undefined){check(+b.dataset.check);}
+  if(b.dataset.reveal!==undefined){const i=+b.dataset.reveal;ST[i]={...(ST[i]||{}),revealed:true,ok:false,typed:(ST[i]||{}).typed||""};rerender(i);}
+  if(b.dataset.show!==undefined){const i=+b.dataset.show,t=$("out").querySelector(`[data-mean="${i}"]`);ST[i]={typed:t?t.value:"",revealed:true};rerender(i);}
+  if(b.dataset.self!==undefined){const i=+b.dataset.self;ST[i].self=b.dataset.val==="1";rerender(i);}});
+$("out").addEventListener("keydown",e=>{
+  if(e.key==="Enter"&&e.target.dataset.spell!==undefined){e.preventDefault();const i=+e.target.dataset.spell;if(check(i)){const all=[...$("out").querySelectorAll("[data-spell]")];const nx=all.find(x=>+x.dataset.spell!==i&&!(ST[+x.dataset.spell]&&ST[+x.dataset.spell].ok!==undefined));if(nx)nx.focus();}}
+  if((e.key==="Enter"||e.key===" ")&&e.target.classList.contains("b")&&e.target.dataset.hear!==undefined){e.preventDefault();hear(+e.target.dataset.hear);}});
+$("out").addEventListener("input",e=>{const t=e.target;if(t.dataset.spell!==undefined){const i=+t.dataset.spell;ST[i]={...(ST[i]||{}),typed:t.value};}if(t.dataset.mean!==undefined){const i=+t.dataset.mean;ST[i]={...(ST[i]||{}),typed:t.value};}});
+const press=(grp,attr,val)=>document.querySelectorAll(`#${grp} button`).forEach(b=>b.setAttribute("aria-pressed",b.dataset[attr]===val));
+$("views").onclick=e=>{const b=e.target.closest("[data-v]");if(!b)return;VIEW=b.dataset.v;store.set("view",VIEW);press("views","v",VIEW);render();};
+$("modes").onclick=e=>{const b=e.target.closest("[data-m]");if(!b)return;MODE=b.dataset.m;ST={};press("modes","m",MODE);render();};
+$("toggles").onchange=e=>{SHOW[e.target.dataset.t]=e.target.checked;store.set("show",SHOW);render();};
+$("q").oninput=render;$("unit").onchange=render;
+$("shuffle").onclick=()=>{for(let a=ORDER.length-1;a>0;a--){const b=Math.floor(Math.random()*(a+1));[ORDER[a],ORDER[b]]=[ORDER[b],ORDER[a]];}render();};
+$("reset").onclick=()=>{ST={};ORDER=D.map((v,i)=>i);render();};
+$("print").onclick=()=>window.print();
+$("checkAll").onclick=()=>{const L=visible();L.forEach(i=>{const inp=$("out").querySelector(`[data-spell="${i}"]`);const typed=inp?inp.value:(ST[i]||{}).typed||"";ST[i]={typed,ok:norm(typed)===norm(D[i].w)};});render();
+  const n=L.length,r=L.filter(i=>ST[i].ok).length;
+  App.saveAttempt({activity:"spell-test",detail:"Word list",units:[...new Set(L.map(i=>D[i].u))],score:r,total:n,answers:L.map(i=>({word:D[i].w,unit:D[i].u,given:ST[i].typed,correct:ST[i].ok}))})
+    .then(x=>{if(x.error)App.status("Result not saved: "+x.error.message,false);else if(x.id)App.status(`Result saved: ${r} of ${n}`,true);});};
+press("views","v",VIEW);render();
+</script>
+<script>Sets.boot({min:1})</script>
+</body></html>
