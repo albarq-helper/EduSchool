@@ -48,7 +48,7 @@ paint();
 const LANGS=Sets.LANGS;
 let ME, LK, SET=null, UNITS=[{u:1,name:""}], ROWS=[], ORIG=new Set(), dirty=false;
 const uid=()=>(crypto.randomUUID?crypto.randomUUID():"xxxxxxxx-xxxx-4xxx-8xxx-xxxxxxxxxxxx".replace(/x/g,()=>(Math.random()*16|0).toString(16)));
-const blank=kind=>({id:uid(),kind,unit:(UNITS[UNITS.length-1]||{u:1}).u,term:"",meaning:"",example:"",translation:"",syllables:"",image_url:"",anim_url:"",audio_url:"",choices:kind==="mcq"?["","","",""]:[],answer:kind==="tf"?1:0,also_units:[]});
+const blank=kind=>({id:uid(),kind,unit:(UNITS[UNITS.length-1]||{u:1}).u,term:"",meaning:"",example:"",translation:"",syllables:"",pronunciation:"",sound_hint:"",image_url:"",anim_url:"",audio_url:"",choices:kind==="mcq"?["","","",""]:[],answer:kind==="tf"?1:0,also_units:[]});
 // ---------- units ----------
 function drawUnits(){$("units").innerHTML=UNITS.map((u,k)=>`<div class="row" style="flex-wrap:nowrap"><span class="tag" style="min-width:4.5rem;justify-content:center">${u.u?"Unit "+u.u:"General"}</span>
   <input data-un="${k}" value="${esc(u.name)}" maxlength="80" placeholder="Unit name (optional)" style="flex:1" aria-label="Name of unit ${u.u}">
@@ -73,6 +73,9 @@ function rowHTML(r,k){
     <label class="f">Meaning / definition<input data-f="meaning" data-k="${k}" value="${esc(r.meaning)}" maxlength="1500" dir="auto"></label>
     <label class="f">Example sentence (optional)<input data-f="example" data-k="${k}" value="${esc(r.example)}" maxlength="600" dir="auto" placeholder="Put [brackets] round the term"></label>
     <label class="f">Translation (optional)<input data-f="translation" data-k="${k}" value="${esc(r.translation)}" maxlength="300" dir="auto"></label>
+    <label class="f">Syllables (optional)<input data-f="syllables" data-k="${k}" value="${esc(r.syllables)}" maxlength="200" placeholder="e.g. pho-to-syn-the-sis"></label>
+    <label class="f">Say it (optional)<input data-f="pronunciation" data-k="${k}" value="${esc(r.pronunciation||"")}" maxlength="120" placeholder="e.g. foh-toh-SIN-thuh-sis (stress in CAPITALS)"></label>
+    <label class="f">Sounds like (optional)<input data-f="sound_hint" data-k="${k}" value="${esc(r.sound_hint||"")}" maxlength="300" placeholder="e.g. SIN ~ tin | foh ≈ go  (~ sounds like, ≈ rhymes with)"></label>
     ${media(r,k,"image_url","Picture (optional)","image/*")}${media(r,k,"audio_url","Audio (optional, otherwise read aloud)","audio/*")}</div></div>`;
   const qtop=`<label class="f">${r.kind==="tf"?"Statement":"Question"}<textarea data-f="term" data-k="${k}" maxlength="500" dir="auto" style="min-height:52px">${esc(r.term)}</textarea></label>`;
   const body=r.kind==="mcq"?`<div style="display:grid;gap:6px"><span class="muted" style="font-size:.85rem;font-weight:700">Choices: tick the correct one</span>${r.choices.map((c,j)=>`<div class="choice"><input type="radio" name="ans${k}" data-ans="${j}" data-k="${k}" ${r.answer===j?"checked":""} aria-label="Choice ${"ABCDEF"[j]} is correct"><b>${"ABCDEF"[j]}</b><input type="text" data-ch="${j}" data-k="${k}" value="${esc(c)}" maxlength="300" dir="auto">${r.choices.length>2?`<button class="btn small" data-rmch="${j}" data-k="${k}" type="button" aria-label="Remove choice">${icon("x",12)}</button>`:""}</div>`).join("")}
@@ -165,7 +168,7 @@ $("save").onclick=async()=>{const m=$("saveMsg"),err=validate();if(err){m.textCo
     if(sid){const r=await C.from("study_sets").update(meta).eq("id",sid);if(r.error)throw r.error;}
     else{const r=await C.from("study_sets").insert({...meta,owner_id:ME.id}).select("id").single();if(r.error)throw r.error;sid=r.data.id;}
     const rows=ROWS.map((r,k)=>{const o={id:r.id,set_id:sid,position:k+1,kind:r.kind,unit:r.unit,also_units:r.also_units||[],term:r.term.trim(),meaning:r.meaning.trim(),example:(r.example||"").trim(),
-      translation:(r.translation||"").trim(),syllables:r.syllables||"",image_url:(r.image_url||"").trim(),anim_url:r.anim_url||"",audio_url:(r.audio_url||"").trim(),choices:[],answer:null};
+      translation:(r.translation||"").trim(),syllables:(r.syllables||"").trim(),pronunciation:(r.pronunciation||"").trim(),sound_hint:(r.sound_hint||"").trim(),image_url:(r.image_url||"").trim(),anim_url:r.anim_url||"",audio_url:(r.audio_url||"").trim(),choices:[],answer:null};
       if(r.kind==="mcq"){const keep=r.choices.map((c,j)=>[c.trim(),j]).filter(x=>x[0]);o.choices=keep.map(x=>x[0]);o.answer=keep.findIndex(x=>x[1]===r.answer);}
       if(r.kind==="tf")o.answer=r.answer;return o;});
     const gone=[...ORIG].filter(id=>!rows.some(r=>r.id===id));

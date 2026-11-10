@@ -15,7 +15,8 @@ Hosted on GitHub Pages; data and sign-in on Supabase.
 2. `supabase_v2_global.sql`: schools, subjects, levels, study sets, questions, library, media uploads
 3. `supabase_v2_seed_grade5.sql`: the first public set (Grade 5 ELA, 166 words)
 4. `supabase_v3_curricula.sql`: curricula, and which curricula each school follows
-5. Make yourself admin: run the last line of `supabase_v2_global.sql` with your email.
+5. `supabase_v4_pronunciation.sql`: “Say it” respelling and sounds-like hints (fills them in for the Grade 5 set)
+6. Make yourself admin: run the last line of `supabase_v2_global.sql` with your email.
 
 If you ever re-run step 2, run step 4 again afterwards (it updates the sign-up function).
 
