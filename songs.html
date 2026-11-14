@@ -57,6 +57,15 @@ input.gap.ok{border-color:var(--good);background:var(--good-soft)}input.gap.no{b
 #pop img{width:100%;height:150px;object-fit:contain;background:#fff;border-radius:10px;border:1px solid var(--rule)}
 #pop .t{display:flex;justify-content:space-between;align-items:center;gap:8px;font:800 1.2rem var(--f-display)}
 #pop .tr{font-family:var(--f-ar);font-size:1.1rem}
+.script .para{margin:0 0 6px;color:var(--ink);max-width:70ch}
+table.guide{width:100%;font-size:.95rem}table.guide td{vertical-align:top}
+table.guide td:nth-child(3){text-align:center;font-weight:800;color:var(--accent)}
+mark.vw.chunks{background:var(--sun-soft)}
+.c0{color:var(--s1,#2347C5)}.c1{color:var(--s2,#C2410C)}.c2{color:var(--s3,#0F766E)}.c3{color:var(--s4,#7C3AED)}
+.dot{color:var(--muted);font-weight:400;margin:0 1px}
+:root{--s1:#2347C5;--s2:#C2410C;--s3:#0F766E;--s4:#7C3AED}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--s1:#8FA8FF;--s2:#FF9F6B;--s3:#4FD1C0;--s4:#C4A5FF}}
+:root[data-theme="dark"]{--s1:#8FA8FF;--s2:#FF9F6B;--s3:#4FD1C0;--s4:#C4A5FF}
 .empty-s{padding:40px 20px;text-align:center}
 </style>
 <script src="js/vendor/supabase.js"></script><script src="js/config.js"></script><script src="js/icons.js"></script><script src="js/app.js"></script><script src="js/sets.js"></script>
@@ -84,38 +93,51 @@ function vocabFor(unit){
 const reEsc=s=>s.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
 function vocabRegex(unit){const V=vocabFor(unit);if(!V.length)return null;
   return {re:new RegExp(`(?<![\\p{L}])(${V.map(x=>reEsc(x.v.w)).join("|")})(?![\\p{L}])`,"giu"),find:w=>V.find(x=>x.v.w.toLowerCase()===w.toLowerCase())};}
-// Spelled-out letters: "R-U-S-T-L-E-D" or "R U S T L E D"
-const SPELL=/\b([A-Z](?:[- ][A-Z]){2,})\b/g;
+// Spelled-out letters: "R-U-S-T-L-E-D", "O-B", or "R U S T L E D"
+const SPELL=/(?<![\p{L}])([A-Z](?:-[A-Z])+|[A-Z](?: [A-Z]){2,})(?![\p{L}])/gu;
+// Syllable chunks: "Rus-tled", "Pre • car • i • ous"
+const CHUNK=/(?<![\p{L}])(\p{L}+(?:(?:-| ?• ?)\p{L}+)+)(?![\p{L}])/gu;
+const inline=h=>h.replace(/\*\*(.+?)\*\*/g,"<b>$1</b>").replace(/(^|[^*\w])\*([^*\s][^*]*?)\*(?![*\w])/g,"$1<i>$2</i>");
 // Turn one line into HTML. fill = replace vocabulary with typing gaps.
 function lineHTML(text,unit,fill,key,gapCounter){
-  const VR=vocabRegex(unit);let out="",last=0;const src=String(text);
-  const tokens=[];
-  if(VR){src.replace(VR.re,(m,w,off)=>{tokens.push({off,len:m.length,kind:"w",m,idx:VR.find(m)?.i});return m;});}
-  src.replace(SPELL,(m,g,off)=>{if(!tokens.some(t=>off<t.off+t.len&&t.off<off+m.length))tokens.push({off,len:m.length,kind:"s",m});return m;});
+  const VR=vocabRegex(unit);let out="",last=0;const src=String(text);const tokens=[];
+  const free=(off,len)=>!tokens.some(t=>off<t.off+t.len&&t.off<off+len);
+  if(VR){src.replace(CHUNK,(m,g,off)=>{const parts=m.split(/-| ?• ?/);if(parts.every(s=>s.length===1))return m;const f=VR.find(parts.join(""));if(f)tokens.push({off,len:m.length,kind:"c",m,parts,word:f.v.w,idx:f.i});return m;});
+    src.replace(VR.re,(m,w,off)=>{if(free(off,m.length))tokens.push({off,len:m.length,kind:"w",m,word:m,idx:VR.find(m)?.i});return m;});}
+  src.replace(SPELL,(m,g,off)=>{if(free(off,m.length))tokens.push({off,len:m.length,kind:"s",m});return m;});
   tokens.sort((a,b)=>a.off-b.off);
   for(const t of tokens){out+=esc(src.slice(last,t.off));
-    if(t.kind==="w"){
+    if(t.kind==="w"||t.kind==="c"){
       if(fill){const g=gapCounter.n++;const st=(STATE[key]||{})[g]||{};
-        out+=`<input class="gap ${st.ok===true?"ok":st.ok===false?"no":""}" data-key="${key}" data-g="${g}" data-ans="${esc(t.m)}" value="${esc(st.v||"")}" size="${Math.max(4,t.m.length)}" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Missing word, ${t.m.length} letters">${st.ok===false?`<span class="fix">${esc(t.m)}</span>`:""}`;}
+        out+=`<input class="gap ${st.ok===true?"ok":st.ok===false?"no":""}" data-key="${key}" data-g="${g}" data-ans="${esc(t.word)}" value="${esc(st.v||"")}" size="${Math.max(4,t.word.length)}" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Missing word, ${t.word.length} letters">${st.ok===false?`<span class="fix">${esc(t.word)}</span>`:""}`;}
+      else if(t.kind==="c")out+=`<mark class="vw chunks" tabindex="0" data-w="${t.idx}" aria-label="${esc(t.word)}, ${t.parts.length} syllables">${t.parts.map((s,k)=>`<span class="c${k%4}">${esc(s)}</span>`).join('<span class="dot">·</span>')}</mark>`;
       else out+=`<mark class="vw" tabindex="0" data-w="${t.idx}">${esc(t.m)}</mark>`;}
     else{const ls=t.m.split(/[- ]/);out+=`<span class="letters${fill?" hide":""}" aria-label="${fill?ls.length+" hidden letters":"spelled "+ls.join(" ")}">${ls.map(c=>`<b>${esc(c)}</b>`).join("")}</span>`;}
     last=t.off+t.len;}
-  return out+esc(src.slice(last));}
+  return inline(out+esc(src.slice(last)));}
 
-// ---------- text (script) ----------
-function textHTML(t,fill){const lines=t.body.split(/\r?\n/), roles=[];let html="",gc={n:0},inCast=false;
+// ---------- text (script, poem, reading) ----------
+function textHTML(t,fill){const lines=t.body.split(/\r?\n/), roles=[];let html="",gc={n:0},inCast=false,script=false,table=null;
   const role=n=>{const k=n.replace(/\s*\(.*$/,"").trim();let i=roles.indexOf(k);if(i<0){roles.push(k);i=roles.length-1;}return i%4;};
-  for(let raw of lines){const l=raw.trim();if(!l){if(inCast){html+="</div>";inCast=false;}continue;}
-    if(/^title\s*:/i.test(l))continue;
-    if(/^(characters|singers|cast)\b.*:\s*$/i.test(l)){inCast=true;html+=`<div class="muted" style="font-weight:700;font-size:.85rem;text-transform:uppercase;letter-spacing:.06em">${esc(l.replace(/:$/,""))}</div><div class="cast">`;continue;}
-    if(inCast&&/^[*•-]\s+/.test(l)){const n=l.replace(/^[*•-]\s+/,"");html+=`<span class="r${role(n)}">${icon("user",14)}${esc(n)}</span>`;continue;}
+  const L=s=>lineHTML(s,t.unit,fill,"t"+t.id,gc);
+  const flushTable=()=>{if(!table)return;const [h,...rows]=table;
+    html+=`<div class="tablewrap"><table class="guide"><thead><tr>${h.map(c=>`<th>${inline(esc(c))}</th>`).join("")}</tr></thead><tbody>${rows.map(r=>`<tr>${r.map(c=>`<td>${L(c)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;table=null;};
+  for(let raw of lines){let l=raw.trim();
+    if(l.startsWith("|")){const cells=l.replace(/^\||\|$/g,"").split("|").map(c=>c.trim());if(cells.every(c=>/^:?-{2,}:?$/.test(c)))continue;(table=table||[]).push(cells);continue;}
+    flushTable();
+    if(!l){if(inCast){html+="</div>";inCast=false;}continue;}
+    if(/^-{3,}$/.test(l)||/^title\s*:/i.test(l)||/^#\s*title\s*:/i.test(l))continue;
+    const plain=l.replace(/^#+\s*/,"").replace(/^\*\*(.*)\*\*$/,"$1").trim();
+    if(/^(characters|singers|cast)\b.*:\s*$/i.test(plain)){inCast=true;script=true;html+=`<div class="muted" style="font-weight:700;font-size:.85rem;text-transform:uppercase;letter-spacing:.06em">${esc(plain.replace(/:$/,""))}</div><div class="cast">`;continue;}
+    if(inCast&&/^[*•-]\s+/.test(l)){const n=l.replace(/^[*•-]\s+/,"").replace(/\*\*/g,"");html+=`<span class="r${role(n)}">${icon("user",14)}${esc(n)}</span>`;continue;}
     if(inCast){html+="</div>";inCast=false;}
     let m;
-    if((m=l.match(/^part\s*(\d+)\s*[:.-]\s*(.*)$/i))){html+=`<h3>${icon("music",18)}Part ${esc(m[1])}${m[2]?" · "+esc(m[2]):""}</h3>`;continue;}
-    if((m=l.match(/^\((.+?)\)\s*:?\s*$/))){const [who,...act]=m[1].split(/\s+[-–—]\s+/);html+=`<div class="who"><span class="nm r${role(who)}">${esc(who)}</span>${act.length?`<i>${esc(act.join(" – "))}</i>`:""}</div>`;continue;}
-    if((m=l.match(/^\(([^)]+)\)$/))){html+=`<div class="ln"><i class="muted">${esc(m[1])}</i></div>`;continue;}
-    html+=`<div class="ln">${lineHTML(l,t.unit,fill,"t"+t.id,gc)}</div>`;}
-  if(inCast)html+="</div>";
+    if((m=plain.match(/^part\s*(\d+)\s*[:.-]\s*(.*)$/i))){script=true;html+=`<h3>${icon("music",18)}Part ${esc(m[1])}${m[2]?" · "+esc(m[2]):""}</h3>`;continue;}
+    if(/^#{2,}\s/.test(l)){html+=`<h3>${icon(script?"music":"lightbulb",18)}${inline(esc(plain))}</h3>`;continue;}
+    if((m=plain.match(/^\((.+?)\)\s*:?\s*$/))&&/[:)]\s*$/.test(plain)&&/^\(/.test(plain)&&(plain.endsWith(":")||/ - |kid|chorus|everyone|singer/i.test(m[1]))){script=true;const [who,...act]=m[1].split(/\s+[-–—]\s+/);html+=`<div class="who"><span class="nm r${role(who)}">${esc(who)}</span>${act.length?`<i>${esc(act.join(" – "))}</i>`:""}</div>`;continue;}
+    if((m=plain.match(/^\(([^)]+)\)$/))){html+=`<div class="ln"><i class="muted">${esc(m[1])}</i></div>`;continue;}
+    html+=script?`<div class="ln">${L(l)}</div>`:`<p class="para">${L(l)}</p>`;}
+  flushTable();if(inCast)html+="</div>";
   return `<div class="script">${html}</div>`;}
 
 // ---------- song ----------
