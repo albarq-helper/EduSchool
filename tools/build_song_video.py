@@ -14,6 +14,7 @@ S=[(0,12,'cover',None),(12,30,'clip','rustled'),(30,43.5,'clip','sigh'),(43.5,54
 SYL={'rustled':['Rus','tled'],'sigh':['Sigh'],'swayed':['Swayed'],'precarious':['Pre','car','i','ous'],'faraway':['Far','a','way'],
      'observed':['Ob','served'],'separated':['Sep','a','rat','ed'],'symbolized':['Sym','bol','ized']}
 OFFSET={'sigh':2.25}
+TITLE_Y={'faraway':360}   # move the title down when the top of the clip matters (the sailboat)
 ORDER=['rustled','sigh','swayed','precarious','faraway','observed','separated','symbolized']
 def run(cmd): subprocess.run(cmd,check=True)
 enc=['-c:v','libx264','-preset','veryfast','-crf','18','-pix_fmt','yuv420p','-r',str(FPS)]
@@ -64,8 +65,9 @@ for (s,e,kind,w) in S:
     if kind!='clip': continue
     parts=SYL[w]; title='{\\c&H00331B1B&} · '.join(f'{{\\c{COLS[j%4]}}}{p}' for j,p in enumerate(parts))
     n=len(parts); beats=f"{n} beat{'s' if n>1 else ''}  ·  "+'-'.join(w.upper())
-    ass.append(f"Dialogue: 3,{ts(s+0.3)},{ts(e-0.2)},Word,,0,0,0,,{{\\fad(300,200)}}{title}")
-    ass.append(f"Dialogue: 3,{ts(s+0.6)},{ts(e-0.2)},Beats,,0,0,0,,{{\\fad(300,200)}}{beats}")
+    y=TITLE_Y.get(w); p1=f"\\an8\\pos({W//2},{y})" if y else ""; p2=f"\\an8\\pos({W//2},{y+134})" if y else ""
+    ass.append(f"Dialogue: 3,{ts(s+0.3)},{ts(e-0.2)},Word,,0,0,0,,{{\\fad(300,200){p1}}}{title}")
+    ass.append(f"Dialogue: 3,{ts(s+0.6)},{ts(e-0.2)},Beats,,0,0,0,,{{\\fad(300,200){p2}}}{beats}")
 # finale grid labels
 gs=S[-1][0]; c=341
 tiles=ORDER[:4]+[None]+ORDER[4:]
