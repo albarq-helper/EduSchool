@@ -1,0 +1,14 @@
+{
+  "style": "Bright, soft 3D cartoon animation for children, warm autumn colours, simple clean background, gentle camera movement, no text, no letters, no words on screen, no speech, only soft natural sound effects.",
+  "settings": { "duration": "5", "resolution": "720p", "aspect_ratio": "1:1", "generate_audio": true },
+  "words": [
+    { "term": "Rustled",    "slug": "rustled",    "scene": "A cute cartoon fox walks slowly through an autumn forest; dry orange and yellow leaves in a low bush shiver and swish softly as a breeze passes, a few leaves lifting and settling." },
+    { "term": "Sigh",       "slug": "sigh",       "scene": "A cartoon girl at a desk finishes a tall pile of homework, drops her shoulders, closes her eyes and lets out one long relieved breath, then smiles." },
+    { "term": "Swayed",     "slug": "swayed",     "scene": "Tall cartoon trees and long grass on a hill sway gently from side to side in the wind, while a child on a rope swing beneath them sways along." },
+    { "term": "Precarious", "slug": "precarious", "scene": "A nervous cartoon squirrel wobbles on the very tip of a thin, bending twig high up in a tree, arms out for balance, the twig dipping under its weight." },
+    { "term": "Faraway",    "slug": "faraway",    "scene": "A cartoon boy standing on a beach shades his eyes with his hand, looking at a tiny sailboat on the faraway horizon across a wide blue sea; the camera slowly pulls back to show the great distance." },
+    { "term": "Observed",   "slug": "observed",   "scene": "A cartoon girl kneels in a garden holding a magnifying glass, carefully watching a red ladybug crawl along a green leaf, eyes wide with curiosity." },
+    { "term": "Separated",  "slug": "separated",  "scene": "Two cartoon autumn leaves hang side by side on a branch; a gust of wind pulls them apart and they float away in opposite directions." },
+    { "term": "Symbolized", "slug": "symbolized", "scene": "A single glowing golden leaf floats down into a child's open hands; soft warm light spreads and the child smiles peacefully, as if the leaf stands for hope and peace." }
+  ]
+}

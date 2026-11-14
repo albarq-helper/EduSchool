@@ -1,0 +1,4 @@
+# never commit API keys
+*fal_key*
+*.key
+.env
