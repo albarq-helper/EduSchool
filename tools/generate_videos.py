@@ -49,10 +49,21 @@ def tokens(settings):
     w, h = (side, side) if settings.get("aspect_ratio") == "1:1" else (side * 16 // 9, side)
     return w * h * int(settings.get("duration", "5")) * 24 / 1024
 
-def generate(key, prompt, settings, out_path, log):
-    # 1. submit
-    job = call("POST", QUEUE + MODEL, key, {"prompt": prompt, **settings})
-    log(f"   queued  request_id={job['request_id']}")
+APP = "/".join(MODEL.split("/")[:2])          # queue URLs use owner/app, e.g. bytedance/seedance-2.0
+
+def job_urls(request_id):
+    base = f"{QUEUE}{APP}/requests/{request_id}"
+    return {"request_id": request_id, "status_url": base + "/status", "response_url": base}
+
+def generate(key, prompt, settings, out_path, log, jobs, slug, jobs_file):
+    # 1. submit (or resume a job submitted earlier, so we never pay twice)
+    if slug in jobs:
+        job = jobs[slug]; log(f"   resuming request_id={job['request_id']}")
+    else:
+        job = call("POST", QUEUE + MODEL, key, {"prompt": prompt, **settings})
+        jobs[slug] = {k: job[k] for k in ("request_id", "status_url", "response_url")}
+        json.dump(jobs, open(jobs_file, "w"), indent=1)
+        log(f"   queued  request_id={job['request_id']}")
     # 2. poll
     t0 = time.time()
     while True:
@@ -86,6 +97,8 @@ def main():
     print(f"{len(words)} clips x ~${cost_each:.2f} = ~${cost_each * len(words):.2f}")
     log = lambda s: print(s, flush=True)
     report = []
+    jobs_file = os.path.join(a.out, "_jobs.json")
+    jobs = json.load(open(jobs_file)) if os.path.exists(jobs_file) else {}
     for w in words:
         prompt = f"{w['scene']} {P['style']}"
         out = os.path.join(a.out, w["slug"] + ".raw.mp4")
@@ -96,8 +109,9 @@ def main():
             print("   already done, skipping (use --force to redo)"); continue
         key = read_key(a.key_file)
         try:
-            generate(key, prompt, P["settings"], out, log)
-            report.append({"slug": w["slug"], "ok": True})
+            generate(key, prompt, P["settings"], out, log, jobs, w["slug"], jobs_file)
+            report.append({"slug": w["slug"], "ok": True}); jobs.pop(w["slug"], None)
+            json.dump(jobs, open(jobs_file, "w"), indent=1)
             print(f"   saved {out}")
         except Exception as e:
             report.append({"slug": w["slug"], "ok": False, "error": str(e)})

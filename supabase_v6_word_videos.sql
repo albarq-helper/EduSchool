@@ -29,3 +29,9 @@ begin
   select nid, null, unit, title, media_url, lines, position from set_songs where set_id = p_set and text_id is null;
   return nid;
 end $$;
+
+-- ---------- Grade 5 set, Unit 5: Seedance cartoon clips (generated with tools/generate_videos.py) ----------
+update public.set_items s set video_url = 'assets/videos/' || v.slug || '.mp4'
+from (values ('Rustled','rustled'),('Sigh','sigh'),('Swayed','swayed'),('Precarious','precarious'),
+             ('Faraway','faraway'),('Observed','observed'),('Separated','separated'),('Symbolized','symbolized')) as v(term, slug)
+where s.set_id = '00000000-0000-4000-8000-000000000005' and s.term = v.term and s.video_url = '';
