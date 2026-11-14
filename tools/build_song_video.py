@@ -1,6 +1,7 @@
 import json, subprocess, re, os
 # Builds the 'Across the Blue Sea' video: song cover + each word's clip while it is sung (crossfades),
-# word titles with coloured syllables, burned-in karaoke lyrics (ASS/libass), finale 3x3 grid. Free: ffmpeg only.
+# word titles with coloured syllables, burned-in karaoke lyrics (ASS/libass), finale 3x3 grid,
+# and the clips' real sounds (rustling leaves, the sigh) mixed in with the song gently ducked. Free: ffmpeg only.
 W=1024; FPS=30; D=0.5   # crossfade seconds
 SRC='/home/claude/songs/across-the-blue-sea.mp4'
 CL='/mnt/user-data/uploads/Reem/Website/assets/videos/{}.raw.mp4'
@@ -12,6 +13,7 @@ S=[(0,12,'cover',None),(12,30,'clip','rustled'),(30,43.5,'clip','sigh'),(43.5,54
    (68.6,81,'clip','faraway'),(81,93,'clip','observed'),(93,114,'cover',None),(114,129,'clip','separated'),(129,141,'clip','symbolized'),(141,TOTAL,'grid',None)]
 SYL={'rustled':['Rus','tled'],'sigh':['Sigh'],'swayed':['Swayed'],'precarious':['Pre','car','i','ous'],'faraway':['Far','a','way'],
      'observed':['Ob','served'],'separated':['Sep','a','rat','ed'],'symbolized':['Sym','bol','ized']}
+OFFSET={'sigh':2.25}
 ORDER=['rustled','sigh','swayed','precarious','faraway','observed','separated','symbolized']
 def run(cmd): subprocess.run(cmd,check=True)
 enc=['-c:v','libx264','-preset','veryfast','-crf','18','-pix_fmt','yuv420p','-r',str(FPS)]
@@ -25,7 +27,7 @@ for k,(s,e,kind,w) in enumerate(S):
     if kind=='cover':
         run(['ffmpeg','-v','error','-y','-loop','1','-i',cover,'-t',f'{L:.3f}','-vf',f'scale={W}:{W},setsar=1',*enc,f])
     elif kind=='clip':
-        run(['ffmpeg','-v','error','-y','-stream_loop','-1','-i',CL.format(w),'-t',f'{L:.3f}','-an','-vf',f'scale={W}:{W}:flags=lanczos,setsar=1',*enc,f])
+        run(['ffmpeg','-v','error','-y','-stream_loop','-1','-ss',str(OFFSET.get(w,0)),'-i',CL.format(w),'-t',f'{L:.3f}','-an','-vf',f'scale={W}:{W}:flags=lanczos,setsar=1',*enc,f])
     else:   # 3x3 grid: 8 clips around the cover
         c=341; ins=[]; fl=[]
         tiles=ORDER[:4]+['__cover']+ORDER[4:]
@@ -80,6 +82,14 @@ for k in range(1,len(segs)):
     off+=segs[k-1][1]-D
     lab=f'[x{k}]'; fl.append(f'{prev}[{k}:v]xfade=transition=fade:duration={D}:offset={off:.3f}{lab}'); prev=lab
 fl.append(f"{prev}ass={OUT}/lyrics.ass:fontsdir=/root/.fonts,format=yuv420p[v]")
-run(['ffmpeg','-v','error','-y',*ins,'-i',SRC,'-filter_complex',';'.join(fl),'-map','[v]','-map',f'{len(segs)}:a',
+N=len(segs)
+# (song start, song end, level) — the song dips to this level while the real sound plays; 0.35 s ramps
+DUCKS=[(12.0,17.0,0.62),(29.95,31.35,0.30)]
+g='*'.join(f"(1-{1-l}*clip((t-{a})/0.35,0,1)*clip(({b}-t)/0.35,0,1))" for a,b,l in DUCKS)
+fl.append(f"[{N}:a]volume=eval=frame:volume='{g}'[song]")
+fl.append(f"[{N+1}:a]atrim=0:5.0,asetpts=PTS-STARTPTS,aresample=48000,dynaudnorm=f=150:g=15,volume=1.25,afade=t=in:d=0.3,afade=t=out:st=4.4:d=0.6,adelay=12000|12000[rus]")
+fl.append(f"[{N+2}:a]atrim=2.3:3.75,asetpts=PTS-STARTPTS,aresample=48000,dynaudnorm=f=75:g=9,volume=2.2,afade=t=out:st=1.0:d=0.45,adelay=30050|30050[sig]")
+fl.append("[song]aresample=48000[s48];[s48][rus][sig]amix=inputs=3:normalize=0:duration=first,alimiter=limit=0.95[a]")
+run(['ffmpeg','-v','error','-y',*ins,'-i',SRC,'-i',CL.format('rustled'),'-i',CL.format('sigh'),'-filter_complex',';'.join(fl),'-map','[v]','-map','[a]',
      '-c:v','libx264','-preset','slow','-crf','28','-tune','animation','-r',str(FPS),'-pix_fmt','yuv420p','-c:a','aac','-b:a','160k','-movflags','+faststart','-shortest',f'{OUT}/across-the-blue-sea-words.mp4'])
 print('done')
