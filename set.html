@@ -15,11 +15,12 @@ const ACTS=[["list.html","list-checks","Word list","All words together: picture,
   ["exam.html","clipboard-check","Exam","Multiple choice by unit, with a score.","a-blue",m=>m.words.length>=4],
   ["games.html","puzzle","Games","Match pictures and meanings, unscramble.","a-teal",m=>m.words.length>=4],
   ["spelling.html","spell-check-2","Spelling","Look-cover-write, missing letters, test.","a-coral",m=>m.words.length>=2],
-  ["quiz.html","circle-help","Quiz","Multiple-choice and true/false questions.","a-blue",m=>m.questions.length>0]];
+  ["quiz.html","circle-help","Quiz","Multiple-choice and true/false questions.","a-blue",m=>m.questions.length>0],
+  ["songs.html","music","Songs","Sing along with the lyrics, read the text, fill in the words.","a-coral",m=>m.hasSongs]];
 async function render(){
   const got=await Sets.load(ID);
   if(!got){$("page").innerHTML=`<div class="card"><h1>Set not available</h1><p>This study set doesn't exist any more, or it hasn't been shared with you.</p><a class="btn" href="library.html">${I("library")}Open the library</a></div>`;return;}
-  SET=got.set; MAP=Sets.mapItems(SET,got.items); document.title=SET.title+" · Helper Academy";
+  SET=got.set; MAP=Sets.mapItems(SET,got.items); MAP.hasSongs=got.hasSongs; document.title=SET.title+" · Helper Academy";
   try{localStorage.setItem("lastSet",SET.id);}catch(e){}
   const owner=SET.owner_id===ME.id||ME.is_admin, teacher=ME.role==="teacher", inst=LK.inst(SET.institution_id);
   const named=new Map((SET.units||[]).map(u=>[Number(u.u),u.name||""]));

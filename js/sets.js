@@ -54,12 +54,14 @@
 
   async function load(id) {
     const C = App.client;
-    const [{ data: set, error }, { data: items }] = await Promise.all([
+    const [{ data: set, error }, { data: items }, { data: songs }, { data: texts }] = await Promise.all([
       C.from("study_sets").select("*, subjects(name,icon), levels(name), curricula(short_name,name)").eq("id", id).maybeSingle(),
-      C.from("set_items").select("*").eq("set_id", id).order("position", { ascending: true }).limit(5000)
+      C.from("set_items").select("*").eq("set_id", id).order("position", { ascending: true }).limit(5000),
+      C.from("set_songs").select("id").eq("set_id", id).limit(1),
+      C.from("set_texts").select("id").eq("set_id", id).limit(1)
     ]);
     if (error || !set) return null;
-    return { set, items: items || [] };
+    return { set, items: items || [], hasSongs: !!((songs || []).length || (texts || []).length) };
   }
 
   function mapItems(set, items) {
@@ -82,7 +84,7 @@
     const I = n => (window.icon ? window.icon(n, 16) : "");
     const acts = [["set.html", "layout-grid", "Overview", true], ["list.html", "list-checks", "Word list", words.length > 0], ["cards.html", "layers", "Flashcards", words.length > 0],
       ["exam.html", "clipboard-check", "Exam", words.length >= 4], ["games.html", "puzzle", "Games", words.length >= 4],
-      ["spelling.html", "spell-check-2", "Spelling", words.length >= 2], ["quiz.html", "circle-help", "Quiz", questions.length > 0]];
+      ["spelling.html", "spell-check-2", "Spelling", words.length >= 2], ["quiz.html", "circle-help", "Quiz", questions.length > 0], ["songs.html", "music", "Songs", !!window.HAS_SONGS]];
     const css = `#setbar{background:var(--ink,#1B2333);color:#fff;padding:10px 16px;display:flex;gap:10px 18px;align-items:center;flex-wrap:wrap;font:14px var(--f-body,system-ui)}
       #setbar .t{display:flex;flex-direction:column;min-width:0;flex:1 1 240px}#setbar .t b{font:800 1.02rem var(--f-display,system-ui);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
       #setbar .t span{color:#C9D1E3;font-size:.82rem}#setbar nav{display:flex;gap:4px;flex-wrap:wrap}
@@ -124,6 +126,7 @@
     window.SYL_MAP = Object.fromEntries(words.map(w => [w.w, w.syl]));
     window.HAS_PICS = words.filter(w => w.real).length >= 6;
     document.documentElement.lang = set.language || "en";
+    window.HAS_SONGS = got.hasSongs;
     setBar(set, words, questions);
     const eb = document.getElementById("setEyebrow");
     if (eb) eb.textContent = [set.subjects?.name, set.levels?.name, set.curricula?.short_name].filter(Boolean).join(" · ");

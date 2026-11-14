@@ -39,6 +39,11 @@
     <div class="row"><button class="btn small" data-add="term" type="button"><i data-i="plus"></i>Term</button><button class="btn small" data-add="mcq" type="button"><i data-i="plus"></i>Multiple choice</button><button class="btn small" data-add="tf" type="button"><i data-i="plus"></i>True / false</button></div>
   </section>
 
+  <section class="card"><div class="row" style="justify-content:space-between"><h2 class="sec-title"><i data-i="music"></i>Songs and texts <span class="muted" id="nSongs"></span></h2>
+    <div class="row"><button class="btn small" id="addText" type="button"><i data-i="plus"></i>Text</button><button class="btn small" id="addSong" type="button"><i data-i="plus"></i>Song</button></div></div>
+    <p class="muted" style="margin:0;font-size:.9rem">A unit can have several texts (a poem, script or reading) and several songs. Link a song to its text. Lyrics: one line per line. Vocabulary words in the text and lyrics are highlighted for students automatically, and become the gaps in “Fill in the words”.</p>
+    <div id="media" style="display:grid;gap:10px"></div></section>
+
   <div class="sticky-save"><button class="btn primary" id="save" type="button"><i data-i="save"></i>Save set</button><span class="msg" id="saveMsg" role="status"></span></div>
 </div>
 <script>
@@ -55,9 +60,45 @@ function drawUnits(){$("units").innerHTML=UNITS.map((u,k)=>`<div class="row" sty
   ${UNITS.length>1?`<button class="btn small danger" data-ud="${k}" type="button" aria-label="Remove unit ${u.u}">${icon("x",14)}</button>`:""}</div>`).join("");}
 $("units").oninput=e=>{const k=e.target.dataset.un;if(k!==undefined){UNITS[k].name=e.target.value;dirty=true;}};
 $("units").onclick=e=>{const b=e.target.closest("[data-ud]");if(!b)return;const u=UNITS[b.dataset.ud].u;
-  if(ROWS.some(r=>r.unit===u)){$("saveMsg").textContent=`Move or remove the items in Unit ${u} first.`;$("saveMsg").className="msg err";return;}
+  if(ROWS.some(r=>r.unit===u)||TEXTS.some(r=>r.unit===u)||SONGS.some(r=>r.unit===u)){$("saveMsg").textContent=`Move or remove the items in Unit ${u} first.`;$("saveMsg").className="msg err";return;}
   UNITS.splice(b.dataset.ud,1);drawUnits();drawRows();dirty=true;};
-$("addUnit").onclick=()=>{const n=Math.max(0,...UNITS.map(u=>u.u))+1;UNITS.push({u:n,name:""});drawUnits();drawRows();dirty=true;};
+$("addUnit").onclick=()=>{const n=Math.max(0,...UNITS.map(u=>u.u))+1;UNITS.push({u:n,name:""});drawUnits();drawRows();drawMedia();dirty=true;};
+// ---------- songs and texts ----------
+let TEXTS=[], SONGS=[], ORIG_T=new Set(), ORIG_S=new Set();
+const uOpts=sel=>UNITS.map(u=>`<option value="${u.u}" ${u.u===sel?"selected":""}>${u.u?"Unit "+u.u:"General"}${u.name?" · "+esc(u.name):""}</option>`).join("");
+function drawMedia(){
+  const tH=TEXTS.map((x,k)=>`<div class="erow"><div class="top"><span class="kind">Text</span><select data-tf="unit" data-k="${k}" aria-label="Unit">${uOpts(x.unit)}</select>
+      <span style="margin-left:auto"><button class="btn small danger" data-tdel="${k}" type="button" aria-label="Remove text">${icon("trash-2",14)}</button></span></div>
+    <label class="f">Title<input data-tf="title" data-k="${k}" value="${esc(x.title)}" maxlength="150"></label>
+    <label class="f">Text <span class="muted" style="font-weight:400">(lines like “Part 1: …” become headings; “(Kid 1 - smiling):” becomes a speaker)</span><textarea data-tf="body" data-k="${k}" maxlength="20000" style="min-height:160px">${esc(x.body)}</textarea></label></div>`).join("");
+  const sH=SONGS.map((x,k)=>`<div class="erow"><div class="top"><span class="kind q">Song</span><select data-sf="unit" data-k="${k}" aria-label="Unit">${uOpts(x.unit)}</select>
+      <select data-sf="text_id" data-k="${k}" aria-label="Linked text"><option value="">Not linked to a text</option>${TEXTS.map(tx=>`<option value="${tx.id}" ${tx.id===x.text_id?"selected":""}>${esc(tx.title||"Untitled text")}</option>`).join("")}</select>
+      <span style="margin-left:auto"><button class="btn small danger" data-sdel="${k}" type="button" aria-label="Remove song">${icon("trash-2",14)}</button></span></div>
+    <div class="g"><label class="f">Song title<input data-sf="title" data-k="${k}" value="${esc(x.title)}" maxlength="150"></label>
+      <label class="f" style="font-weight:600">Video or audio<span class="row" style="flex-wrap:nowrap;gap:6px"><input data-sf="media_url" data-k="${k}" value="${esc(x.media_url)}" placeholder="https://… or upload" style="flex:1">
+        <label class="btn small" style="cursor:pointer" title="Upload">${icon("upload",14)}<input type="file" data-sup="${k}" accept="video/*,audio/*" hidden></label></span></label></div>
+    <label class="f">Lyrics, one line per line ${x.lines.some(l=>l.t!=null)?`<span class="muted" style="font-weight:400">(timed for sing-along; changing a line keeps the timing of unchanged lines)</span>`:""}<textarea data-sf="lyrics" data-k="${k}" style="min-height:140px">${esc(x.lines.map(l=>l.l).join("\n"))}</textarea></label></div>`).join("");
+  $("media").innerHTML=tH+sH||'<p class="empty">No songs or texts yet.</p>';
+  $("nSongs").textContent=`· ${TEXTS.length} texts, ${SONGS.length} songs`;}
+$("addText").onclick=()=>{TEXTS.push({id:uid(),unit:(UNITS[UNITS.length-1]||{u:1}).u,title:"",body:""});dirty=true;drawMedia();};
+$("addSong").onclick=()=>{SONGS.push({id:uid(),unit:TEXTS.length?TEXTS[TEXTS.length-1].unit:(UNITS[UNITS.length-1]||{u:1}).u,text_id:TEXTS.length?TEXTS[TEXTS.length-1].id:null,title:"",media_url:"",lines:[]});dirty=true;drawMedia();};
+$("media").addEventListener("input",e=>{const el=e.target,k=+el.dataset.k;dirty=true;
+  if(el.dataset.tf){const x=TEXTS[k];x[el.dataset.tf]=el.dataset.tf==="unit"?+el.value:el.value;if(el.dataset.tf==="title")$("media").querySelectorAll(`option[value="${x.id}"]`).forEach(o=>o.textContent=x.title||"Untitled text");}
+  if(el.dataset.sf){const x=SONGS[k],f=el.dataset.sf;
+    if(f==="lyrics"){const old=x.lines;x.lines=el.value.split(/\r?\n/).map(s=>s.trim()).filter(Boolean).map((l,j)=>old[j]&&old[j].l===l?old[j]:(old.find(o=>o.l===l)||{t:null,e:null,l}));}
+    else x[f]=f==="unit"?+el.value:(f==="text_id"?el.value||null:el.value);}});
+$("media").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;
+  if(b.dataset.tdel!==undefined){const x=TEXTS.splice(+b.dataset.tdel,1)[0];SONGS.forEach(s=>{if(s.text_id===x.id)s.text_id=null;});dirty=true;drawMedia();}
+  if(b.dataset.sdel!==undefined){SONGS.splice(+b.dataset.sdel,1);dirty=true;drawMedia();}});
+$("media").addEventListener("change",async e=>{const el=e.target;
+  if(el.matches("select[data-sf],select[data-tf]")){const k=+el.dataset.k;if(el.dataset.sf){const f=el.dataset.sf;SONGS[k][f]=f==="unit"?+el.value:(el.value||null);}else TEXTS[k].unit=+el.value;dirty=true;return;}
+  if(!el.dataset.sup||!el.files[0])return;const f=el.files[0],k=+el.dataset.sup;
+  if(f.size>50*1024*1024){App.status("That file is bigger than 50 MB",false);return;}
+  App.status("Uploading… (large videos can take a minute)",true);
+  const path=`${ME.id}/${Date.now()}-${f.name.replace(/[^\w.-]+/g,"_").slice(-60)}`;
+  const {error}=await App.client.storage.from("media").upload(path,f,{contentType:f.type,upsert:false});
+  if(error){App.status("Upload failed: "+error.message,false);return;}
+  SONGS[k].media_url=App.client.storage.from("media").getPublicUrl(path).data.publicUrl;if(!SONGS[k].title)SONGS[k].title=f.name.replace(/\.[^.]+$/,"").replace(/[-_]+/g," ");dirty=true;drawMedia();App.status("Uploaded",true);});
 const unitSel=(r,k)=>`<select data-f="unit" data-k="${k}" aria-label="Unit">${UNITS.map(u=>`<option value="${u.u}" ${u.u===r.unit?"selected":""}>${u.u?"Unit "+u.u:"General"}${u.name?" · "+esc(u.name):""}</option>`).join("")}</select>`;
 // ---------- rows ----------
 const media=(r,k,f,label,accept)=>`<label class="f" style="font-weight:600">${label}<span class="row" style="flex-wrap:nowrap;gap:6px">${f==="image_url"?`<img class="thumb" src="${esc(r.image_url||r.anim_url||Sets.tile(r.term||"?"))}" alt="">`:""}
@@ -174,6 +215,14 @@ $("save").onclick=async()=>{const m=$("saveMsg"),err=validate();if(err){m.textCo
     const gone=[...ORIG].filter(id=>!rows.some(r=>r.id===id));
     for(let k=0;k<gone.length;k+=100){const r=await C.from("set_items").delete().in("id",gone.slice(k,k+100));if(r.error)throw r.error;}
     for(let k=0;k<rows.length;k+=200){const r=await C.from("set_items").upsert(rows.slice(k,k+200));if(r.error)throw r.error;}
+    for(const x of TEXTS)if(!x.title.trim())throw new Error("Give every text a title.");
+    for(const x of SONGS)if(!x.title.trim())throw new Error("Give every song a title.");
+    for(const x of SONGS)if(x.media_url&&!/^(https:\/\/|assets\/)/.test(x.media_url))throw new Error("Song links must start with https://");
+    const goneS=[...ORIG_S].filter(id=>!SONGS.some(s=>s.id===id)), goneT=[...ORIG_T].filter(id=>!TEXTS.some(s=>s.id===id));
+    if(goneS.length){const r=await C.from("set_songs").delete().in("id",goneS);if(r.error)throw r.error;}
+    if(TEXTS.length){const r=await C.from("set_texts").upsert(TEXTS.map((x,k)=>({id:x.id,set_id:sid,unit:x.unit,title:x.title.trim(),body:x.body,position:k+1})));if(r.error)throw r.error;}
+    if(SONGS.length){const r=await C.from("set_songs").upsert(SONGS.map((x,k)=>({id:x.id,set_id:sid,text_id:x.text_id||null,unit:x.unit,title:x.title.trim(),media_url:(x.media_url||"").trim(),lines:x.lines,position:k+1})));if(r.error)throw r.error;}
+    if(goneT.length){const r=await C.from("set_texts").delete().in("id",goneT);if(r.error)throw r.error;}
     dirty=false; location.href="set.html?id="+sid;
   }catch(e){m.textContent="Not saved: "+(e.message||e);m.className="msg err";$("save").disabled=false;}};
 window.addEventListener("beforeunload",e=>{if(dirty){e.preventDefault();e.returnValue="";}});
@@ -184,7 +233,10 @@ App.requireUser({role:"teacher"}).then(async p=>{ME=p;LK=await App.lookups();
     got.items.forEach(x=>{if(!UNITS.some(u=>u.u===x.unit))UNITS.push({u:x.unit,name:""});});UNITS.sort((a,b)=>(a.u===0)-(b.u===0)||a.u-b.u);
     ROWS=got.items.map(x=>({...x,choices:Array.isArray(x.choices)?x.choices.slice():[],answer:x.answer??0}));ORIG=new Set(ROWS.map(r=>r.id));
     $("h").textContent="Edit study set";$("back").href="set.html?id="+SET.id;document.title="Edit: "+SET.title+" · Helper Academy";}
-  fillMeta();drawUnits();drawRows();
+  if(SET){const [a,b]=await Promise.all([App.client.from("set_texts").select("*").eq("set_id",SET.id).order("position",{ascending:true}),App.client.from("set_songs").select("*").eq("set_id",SET.id).order("position",{ascending:true})]);
+    TEXTS=(a.data||[]).map(x=>({...x}));SONGS=(b.data||[]).map(x=>({...x,lines:Array.isArray(x.lines)?x.lines:[]}));ORIG_T=new Set(TEXTS.map(x=>x.id));ORIG_S=new Set(SONGS.map(x=>x.id));
+    [...TEXTS,...SONGS].forEach(x=>{if(!UNITS.some(u=>u.u===x.unit))UNITS.push({u:x.unit,name:""});});UNITS.sort((a,b)=>(a.u===0)-(b.u===0)||a.u-b.u);}
+  fillMeta();drawUnits();drawRows();drawMedia();
 }).catch(()=>{});
 </script>
 </body></html>

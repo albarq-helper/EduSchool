@@ -16,7 +16,8 @@ Hosted on GitHub Pages; data and sign-in on Supabase.
 3. `supabase_v2_seed_grade5.sql`: the first public set (Grade 5 ELA, 166 words)
 4. `supabase_v3_curricula.sql`: curricula, and which curricula each school follows
 5. `supabase_v4_pronunciation.sql`: “Say it” respelling and sounds-like hints (fills them in for the Grade 5 set)
-6. Make yourself admin: run the last line of `supabase_v2_global.sql` with your email.
+6. `supabase_v5_songs.sql`: songs and texts per unit (lyrics with timing, fill-in-the-words), plus Unit 5's text and two songs
+7. Make yourself admin: run the last line of `supabase_v2_global.sql` with your email.
 
 If you ever re-run step 2, run step 4 again afterwards (it updates the sign-up function).
 
@@ -36,5 +37,6 @@ All scripts are safe to run again. Access rules (Row Level Security) are tested:
 | library.html | everyone | Public study sets, filter by subject, level, school |
 | set.html | everyone | One set: activities, contents, teacher tools |
 | mysets.html, edit.html | teachers | Create and edit sets; paste from Excel / CSV |
+| list, songs .html | everyone | Word list (all words, cover word/meaning); songs & texts with sing-along lyrics and fill-in-the-words |
 | cards, exam, games, spelling, quiz .html | everyone | Activities for the chosen set (`?set=<id>`) |
 | admin.html | site admin | Schools, subjects, public sets |
