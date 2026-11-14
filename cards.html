@@ -36,15 +36,17 @@ function draw(){
   if(!deck.length){$("card").innerHTML='<p class="empty">No terms in this unit.</p>';return;}
   const i=deck[k], v=D[i], guess=$("guess").checked&&!shown;
   const ex=esc(v.s).replace(/\[([^\]]*)\]/,"<b>$1</b>");
-  $("card").innerHTML=`${guess&&!v.real?`<div style="font:700 1.25rem/1.4 var(--f-body);padding:28px 8px;max-width:30rem">${esc(v.d)}</div>`:(v.vid?`<video src="${esc(v.vid)}" autoplay muted loop playsinline style="width:min(300px,75vw);height:min(300px,75vw);object-fit:contain;border-radius:18px;background:#fff" aria-label="${guess?"Clip to guess":"Clip showing "+esc(v.w)}"></video>`:`<img src="${esc(v.img)}" alt="${guess?"Picture to guess":esc(v.w)}">`)}
+  $("card").innerHTML=`${guess&&!v.real?`<div style="font:700 1.25rem/1.4 var(--f-body);padding:28px 8px;max-width:30rem">${esc(v.d)}</div>`:(v.vid?`<video id="clip" src="${esc(v.vid)}" autoplay muted loop playsinline style="width:min(300px,75vw);height:min(300px,75vw);object-fit:contain;border-radius:18px;background:#fff" aria-label="${guess?"Clip to guess":"Clip showing "+esc(v.w)}"></video>`:`<img src="${esc(v.img)}" alt="${guess?"Picture to guess":esc(v.w)}">`)}
     ${guess?`<button class="cover" id="reveal" type="button">${icon("eye",18)} Show the term</button>`:
     `<div class="row" style="justify-content:center"><span class="term">${esc(v.w)}</span><button class="round" type="button" id="say" aria-label="Hear ${esc(v.w)}">${icon("volume-2",18)}</button></div>
      <div>${esc(v.d)}</div>${v.s&&!/^\[[^\]]*\]$/.test(v.s)?`<div class="ex">${ex}</div>`:""}${v.ar?`<div class="tr" dir="auto">${esc(v.ar)}</div>`:""}
      ${v.photo?`<img src="${esc(v.photo)}" alt="" style="width:120px;height:120px">`:""}`}
+    ${v.vid?`<button class="btn small" type="button" id="clipSound">${icon("volume-2",15)}Play clip with sound</button>`:""}
     <span class="chip">${esc(uname(U.find(x=>x.u===v.u)||{u:v.u,name:""}))}</span>`;
   $("count").textContent=(k+1)+" / "+deck.length; $("prog").style.width=((k+1)/deck.length*100)+"%";
   if($("reveal"))$("reveal").onclick=()=>{shown=true;draw();hear(i);};
   if($("say"))$("say").onclick=()=>hear(i);
+  if($("clipSound"))$("clipSound").onclick=()=>{const c=$("clip");c.muted=false;c.loop=false;c.currentTime=0;c.play().catch(()=>{});c.onended=()=>{c.muted=true;c.loop=true;c.play().catch(()=>{});};};
 }
 function go(d){if(!deck.length)return;k=(k+d+deck.length)%deck.length;shown=false;draw();}
 $("prev").onclick=()=>go(-1); $("next").onclick=()=>go(1);

@@ -207,12 +207,12 @@ $("out").addEventListener("keydown",e=>{const i=e.target;
 const AU={};
 function hear(i){const v=D[i];if(v.au&&v.au!=="tts"){try{const a=AU[i]||(AU[i]=new Audio(v.au));a.currentTime=0;a.play();return;}catch(e){}}Sets.speak(v.w);}
 function showPop(i,anchor){const v=D[i];if(!v)return;const p=$("pop");
-  p.innerHTML=`${v.vid?`<video src="${esc(v.vid)}" autoplay muted loop playsinline style="width:100%;height:170px;object-fit:contain;background:#fff;border-radius:10px;border:1px solid var(--rule)"></video>`:`<img src="${esc(v.img)}" alt="">`}<div class="t"><span>${esc(v.w)}</span><button class="round" type="button" id="popHear" aria-label="Hear ${esc(v.w)}">${icon("volume-2",18)}</button></div>
+  p.innerHTML=`${v.vid?`<video id="popClip" src="${esc(v.vid)}" autoplay muted loop playsinline style="width:100%;height:170px;object-fit:contain;background:#fff;border-radius:10px;border:1px solid var(--rule);cursor:pointer" title="Tap for sound"></video><button class="btn small" type="button" id="popClipSound" style="align-self:flex-start">${icon("volume-2",14)}Play clip with sound</button>`:`<img src="${esc(v.img)}" alt="">`}<div class="t"><span>${esc(v.w)}</span><button class="round" type="button" id="popHear" aria-label="Hear ${esc(v.w)}">${icon("volume-2",18)}</button></div>
     ${v.pron?`<div class="muted" style="font-size:.9rem">Say it: <b>${esc(v.pron.replace(/-/g,"·"))}</b></div>`:""}<div>${esc(v.d)}</div>${v.ar?`<div class="tr" dir="auto">${esc(v.ar)}</div>`:""}
     <a class="btn small" href="list.html?set=${SET.id}" style="align-self:flex-start">${icon("list-checks",14)}Open in word list</a>`;
   p.classList.add("on");const r=anchor.getBoundingClientRect(),pw=Math.min(300,innerWidth-24);
   p.style.left=Math.max(12,Math.min(r.left,innerWidth-pw-12))+"px";const below=r.bottom+8,h=p.offsetHeight;p.style.top=(below+h<innerHeight?below:Math.max(12,r.top-h-8))+"px";
-  $("popHear").onclick=()=>hear(i);hear(i);$("popHear").focus({preventScroll:true});POPAT=scrollY;}
+  $("popHear").onclick=()=>hear(i);if($("popClipSound")){const go=()=>{const c=$("popClip");c.muted=false;c.loop=false;c.currentTime=0;c.play().catch(()=>{});};$("popClipSound").onclick=go;$("popClip").onclick=go;}else hear(i);$("popHear").focus({preventScroll:true});POPAT=scrollY;}
 document.addEventListener("click",e=>{if(!e.target.closest("#pop,mark.vw"))$("pop").classList.remove("on");});
 document.addEventListener("keydown",e=>{if(e.key==="Escape")$("pop").classList.remove("on");});
 let POPAT=0;window.addEventListener("scroll",()=>{if(Math.abs(scrollY-POPAT)>40)$("pop").classList.remove("on");},{passive:true});
