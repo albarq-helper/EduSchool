@@ -6,14 +6,14 @@ W=1024; FPS=30; D=0.5   # crossfade seconds
 SRC='/home/claude/songs/across-the-blue-sea.mp4'
 CL='/mnt/user-data/uploads/Reem/Website/assets/videos/{}.raw.mp4'
 OUT='/home/claude/songs/ab'
-lines=json.load(open('/home/claude/songs/across-the-blue-sea.json'))
+lines=json.load(open('/home/claude/songs/across-aligned.json'))   # line times measured from the singing (Whisper), not the file's estimates
 TOTAL=177.93
 # (start, end, kind, word)
-S=[(0,12,'cover',None),(12,30,'clip','rustled'),(30,43.5,'clip','sigh'),(43.5,54.9,'clip','swayed'),(54.9,68.6,'clip','precarious'),
-   (68.6,81,'clip','faraway'),(81,93,'clip','observed'),(93,114,'cover',None),(114,129,'clip','separated'),(129,141,'clip','symbolized'),(141,TOTAL,'grid',None)]
+S=[(0,17.9,'cover',None),(17.9,32.4,'clip','rustled'),(32.4,44.8,'clip','sigh'),(44.8,59.9,'clip','swayed'),(59.9,74.4,'clip','precarious'),
+   (74.4,86.8,'clip','faraway'),(86.8,98.5,'clip','observed'),(98.5,119.8,'cover',None),(119.8,131.1,'clip','separated'),(131.1,147.3,'clip','symbolized'),(147.3,TOTAL,'grid',None)]
 SYL={'rustled':['Rus','tled'],'sigh':['Sigh'],'swayed':['Swayed'],'precarious':['Pre','car','i','ous'],'faraway':['Far','a','way'],
      'observed':['Ob','served'],'separated':['Sep','a','rat','ed'],'symbolized':['Sym','bol','ized']}
-OFFSET={'sigh':2.25}
+OFFSET={'sigh':1.95}   # the visible breath (2.6 s into the clip) lands on the sung sigh at 0:33.05
 TITLE_Y={'faraway':360}   # move the title down when the top of the clip matters (the sailboat)
 ORDER=['rustled','sigh','swayed','precarious','faraway','observed','separated','symbolized']
 def run(cmd): subprocess.run(cmd,check=True)
@@ -86,11 +86,11 @@ for k in range(1,len(segs)):
 fl.append(f"{prev}ass={OUT}/lyrics.ass:fontsdir=/root/.fonts,format=yuv420p[v]")
 N=len(segs)
 # (song start, song end, level) — the song dips to this level while the real sound plays; 0.35 s ramps
-DUCKS=[(12.0,17.0,0.62),(29.95,31.35,0.30)]
+DUCKS=[(20.4,23.6,0.62),(32.75,34.25,0.30)]   # sung 'Swish! Swish!' 20.6-23.6 s; sung 'Hhh... phew!' 33.0-34.2 s
 g='*'.join(f"(1-{1-l}*clip((t-{a})/0.35,0,1)*clip(({b}-t)/0.35,0,1))" for a,b,l in DUCKS)
 fl.append(f"[{N}:a]volume=eval=frame:volume='{g}'[song]")
-fl.append(f"[{N+1}:a]atrim=0:5.0,asetpts=PTS-STARTPTS,aresample=48000,dynaudnorm=f=150:g=15,volume=1.25,afade=t=in:d=0.3,afade=t=out:st=4.4:d=0.6,adelay=12000|12000[rus]")
-fl.append(f"[{N+2}:a]atrim=2.3:3.75,asetpts=PTS-STARTPTS,aresample=48000,dynaudnorm=f=75:g=9,volume=2.2,afade=t=out:st=1.0:d=0.45,adelay=30050|30050[sig]")
+fl.append(f"[{N+1}:a]atrim=0:5.0,asetpts=PTS-STARTPTS,aresample=48000,dynaudnorm=f=150:g=15,volume=1.25,afade=t=in:d=0.3,afade=t=out:st=3.6:d=0.6,atrim=0:4.2,adelay=20200|20200[rus]")
+fl.append(f"[{N+2}:a]atrim=2.3:3.75,asetpts=PTS-STARTPTS,aresample=48000,dynaudnorm=f=75:g=9,volume=2.2,afade=t=out:st=1.0:d=0.45,adelay=32750|32750[sig]")
 fl.append("[song]aresample=48000[s48];[s48][rus][sig]amix=inputs=3:normalize=0:duration=first,alimiter=limit=0.95[a]")
 run(['ffmpeg','-v','error','-y',*ins,'-i',SRC,'-i',CL.format('rustled'),'-i',CL.format('sigh'),'-filter_complex',';'.join(fl),'-map','[v]','-map','[a]',
      '-c:v','libx264','-preset','slow','-crf','28','-tune','animation','-r',str(FPS),'-pix_fmt','yuv420p','-c:a','aac','-b:a','160k','-movflags','+faststart','-shortest',f'{OUT}/across-the-blue-sea-words.mp4'])
