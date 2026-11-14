@@ -35,3 +35,7 @@ update public.set_items s set video_url = 'assets/videos/' || v.slug || '.mp4'
 from (values ('Rustled','rustled'),('Sigh','sigh'),('Swayed','swayed'),('Precarious','precarious'),
              ('Faraway','faraway'),('Observed','observed'),('Separated','separated'),('Symbolized','symbolized')) as v(term, slug)
 where s.set_id = '00000000-0000-4000-8000-000000000005' and s.term = v.term and s.video_url = '';
+
+-- ---------- "Across the Blue Sea" now plays the edition with the word clips and burned-in lyrics ----------
+update public.set_songs set media_url = 'assets/songs/across-the-blue-sea-words.mp4'
+where id = '00000000-0000-4000-8000-0000000005b3' and media_url = 'assets/songs/across-the-blue-sea.mp4';
