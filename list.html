@@ -23,6 +23,15 @@
 .syl{font:800 1em var(--f-display);letter-spacing:.01em}
 .c0{color:var(--s1)}.c1{color:var(--s2)}.c2{color:var(--s3)}.c3{color:var(--s4)}
 .syl .dot{color:var(--muted)!important;font-weight:400;margin:0 1px}
+/* the whole word first (one colour, no gaps), then it opens into coloured syllables */
+.c0{--to:var(--s1)}.c1{--to:var(--s2)}.c2{--to:var(--s3)}.c3{--to:var(--s4)}
+.syl.anim{display:inline-block;animation:sylPop .5s 1.3s both}
+.syl.anim>span:not(.dot){animation:sylColor .6s 1.3s both}
+.syl.anim>.dot{display:inline-block;overflow:hidden;vertical-align:bottom;animation:sylOpen .6s 1.3s both}
+@keyframes sylColor{from{color:var(--ink)}to{color:var(--to)}}
+@keyframes sylOpen{from{max-width:0;opacity:0;margin:0}to{max-width:1em;opacity:1;margin:0 2px}}
+@keyframes sylPop{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+@media (prefers-reduced-motion:reduce){.syl.anim,.syl.anim>span{animation:none!important}}
 .pills{display:flex;gap:4px;flex-wrap:wrap}
 .pills span{font:700 .78rem var(--f-body);padding:2px 8px;border-radius:999px;border:1.5px solid currentColor}
 
@@ -137,7 +146,7 @@ function parts(v){const syl=(v.syl||"").split("-").filter(Boolean),w=v.w;
   for(const p of syl){let s="",n=0;while(k<w.length&&n<p.length){const c=w[k];s+=c;if(/[\p{L}\p{N}']/u.test(c))n++;k++;}out.push(s);}
   if(k<w.length)out[out.length-1]+=w.slice(k);
   return out.join("").toLowerCase()===w.toLowerCase()&&out.every(Boolean)?out:[w];}
-const sylHTML=v=>{const p=parts(v);return `<span class="syl">${SHOW.syl&&p.length>1?p.map((s,k)=>`<span class="c${k%4}">${esc(s)}</span>`).join('<span class="dot">·</span>'):`<span>${esc(v.w)}</span>`}</span>`;};
+const sylHTML=v=>{const p=parts(v);return `<span class="syl${SHOW.syl&&p.length>1?" anim":""}" aria-label="${esc(v.w)}">${SHOW.syl&&p.length>1?p.map((s,k)=>`<span class="c${k%4}">${esc(s)}</span>`).join('<span class="dot">·</span>'):`<span>${esc(v.w)}</span>`}</span>`;};
 const pillsHTML=v=>{const p=parts(v);return SHOW.syl&&p.length>1?`<div class="pills" aria-label="${p.length} syllables">${p.map((s,k)=>`<span class="c${k%4}">${esc(s.replace(/-$/,""))}</span>`).join("")}<span style="border:0;color:var(--muted)">${p.length} syllables</span></div>`:"";};
 // ---- "say it": respelling (stressed part in capitals) + sounds-like hints ----
 function sayHTML(v,i){if(!SHOW.say||!v.pron||(i!==undefined&&wordHidden(i)))return "";

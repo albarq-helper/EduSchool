@@ -1,7 +1,7 @@
 import json, subprocess, re, os
 # Builds the 'Across the Blue Sea' video: song cover + each word's clip while it is sung (crossfades),
-# word titles with coloured syllables, burned-in karaoke lyrics (ASS/libass), finale 3x3 grid,
-# and the clips' real sounds (rustling leaves, the sigh) mixed in with the song gently ducked. Free: ffmpeg only.
+# word titles shown whole first then split into coloured syllables, burned-in karaoke lyrics (ASS/libass),
+# finale 3x3 grid, and the clips' real sounds mixed in with the song gently ducked. Free: ffmpeg only.
 W=1024; FPS=30; D=0.5   # crossfade seconds
 SRC='/home/claude/songs/across-the-blue-sea.mp4'
 CL='/mnt/user-data/uploads/Reem/Website/assets/videos/{}.raw.mp4'
@@ -63,11 +63,20 @@ for i,x in enumerate(lines):
     ass.append(f"Dialogue: 2,{ts(st)},{ts(en-0.05)},Lyric,,0,0,0,,{{\\fad(120,80)}}{lyr(x['l'])}")
 for (s,e,kind,w) in S:
     if kind!='clip': continue
-    parts=SYL[w]; title='{\\c&H00331B1B&} · '.join(f'{{\\c{COLS[j%4]}}}{p}' for j,p in enumerate(parts))
-    n=len(parts); beats=f"{n} beat{'s' if n>1 else ''}  ·  "+'-'.join(w.upper())
+    parts=SYL[w]; n=len(parts)
+    # 1) the whole word in one colour  2) at SPLIT ms the gaps grow open, each syllable takes its colour and bounces
+    NAVY='&H00331B1B&'; SPLIT=1600; DUR=700
+    bounce=f"\\t({SPLIT},{SPLIT+DUR//2},\\fscx112\\fscy112)\\t({SPLIT+DUR//2},{SPLIT+DUR},\\fscx100\\fscy100)"
+    segs_=[]
+    for j,p in enumerate(parts):
+        segs_.append(f"{{\\alpha&H00&\\fscx100\\fscy100\\c{NAVY}\\t({SPLIT},{SPLIT+DUR},\\c{COLS[j%4]}){bounce}}}{p}")
+        if j<n-1:   # separator starts squeezed to zero width and invisible, then opens up
+            segs_.append(f"{{\\c{NAVY}\\fscx0\\alpha&HFF&\\t({SPLIT},{SPLIT+DUR},\\fscx100\\alpha&H00&)}} · ")
+    title=''.join(segs_)
+    beats=f"{n} beat{'s' if n>1 else ''}  ·  "+'-'.join(w.upper())
     y=TITLE_Y.get(w); p1=f"\\an8\\pos({W//2},{y})" if y else ""; p2=f"\\an8\\pos({W//2},{y+134})" if y else ""
     ass.append(f"Dialogue: 3,{ts(s+0.3)},{ts(e-0.2)},Word,,0,0,0,,{{\\fad(300,200){p1}}}{title}")
-    ass.append(f"Dialogue: 3,{ts(s+0.6)},{ts(e-0.2)},Beats,,0,0,0,,{{\\fad(300,200){p2}}}{beats}")
+    ass.append(f"Dialogue: 3,{ts(s+0.3+(SPLIT+DUR)/1000)},{ts(e-0.2)},Beats,,0,0,0,,{{\\fad(300,200){p2}}}{beats}")
 # finale grid labels
 gs=S[-1][0]; c=341
 tiles=ORDER[:4]+[None]+ORDER[4:]
@@ -76,6 +85,8 @@ for j,t in enumerate(tiles):
     x=(j%3)*c+c//2; y=(j//3)*c+c-14
     ass.append(f"Dialogue: 1,{ts(gs+0.4+j*0.25)},{ts(TOTAL)},Label,,0,0,0,,{{\\an2\\pos({x},{y})\\fad(250,0)}}{''.join(SYL[t]) if len(SYL[t])==1 else '·'.join(SYL[t])}")
 open(f'{OUT}/lyrics.ass','w').write('\n'.join(ass)+'\n')
+import sys
+if os.environ.get('ASS_ONLY'): sys.exit()
 # ---------- join with crossfades, burn subtitles, add the song ----------
 ins=[]; 
 for f,L in segs: ins+=['-i',f]
