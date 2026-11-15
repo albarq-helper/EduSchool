@@ -15,3 +15,5 @@ where id = '00000000-0000-4000-8000-0000000005b3';
 -- Video editions of the two Vocabulary Jam songs (word clips + lyrics). Lines 48-62 s of Spell It Out Loud re-measured.
 update public.set_songs set media_url = 'assets/songs/swish-and-sway-words.mp4?v=20261115c' where id = '00000000-0000-4000-8000-0000000005b1';
 update public.set_songs set media_url = 'assets/songs/spell-it-out-loud-words.mp4?v=20261115c' where id = '00000000-0000-4000-8000-0000000005b2';
+-- Word clips no longer contain the spoken word (the page says the word once on tap); ?v= makes browsers fetch the new files.
+update public.set_items set video_url = split_part(video_url, '?', 1) || '?v=20261115d' where video_url like 'assets/videos/%';

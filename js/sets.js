@@ -41,6 +41,30 @@
       speechSynthesis.speak(u); return true;
     } catch (e) { return false; }
   }
+  // Say a word once: its recorded audio when there is one, otherwise the browser voice.
+  let wordAudio = null;
+  function sayWord(v) {
+    if (!v) return;
+    if (wordAudio) { try { wordAudio.pause(); } catch (e) {} }
+    if (v.au && v.au !== "tts") {
+      try { wordAudio = new Audio(v.au); wordAudio.play().catch(() => speak(v.w)); return; } catch (e) {}
+    }
+    speak(v.w);
+  }
+  // Play a word clip: the word is said ONCE, the clip plays once with its own sounds,
+  // then it keeps looping silently. The clips themselves contain no voice.
+  function playClip(video, v) {
+    if (!video) return;
+    video.muted = false; video.loop = false; video.currentTime = 0;
+    video.onended = () => { video.muted = true; video.loop = true; video.play().catch(() => {}); };
+    video.play().catch(() => {});
+    clearTimeout(video._sayT);
+    video._sayT = setTimeout(() => sayWord(v), 250);
+  }
+  function stopClip(video) {
+    if (!video) return;
+    clearTimeout(video._sayT); video.onended = null; video.pause(); video.muted = true; video.loop = true;
+  }
 
   async function pickSetId(p) {
     const want = qs.get("set");
@@ -140,5 +164,5 @@
     runPage();
   }
 
-  window.Sets = { boot, speak, tile, autoSyl, blankify, load, mapItems, G5, LANGS };
+  window.Sets = { boot, speak, sayWord, playClip, stopClip,tile, autoSyl, blankify, load, mapItems, G5, LANGS };
 })();

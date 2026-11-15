@@ -41,12 +41,13 @@ function draw(){
     `<div class="row" style="justify-content:center"><span class="term">${esc(v.w)}</span><button class="round" type="button" id="say" aria-label="Hear ${esc(v.w)}">${icon("volume-2",18)}</button></div>
      <div>${esc(v.d)}</div>${v.s&&!/^\[[^\]]*\]$/.test(v.s)?`<div class="ex">${ex}</div>`:""}${v.ar?`<div class="tr" dir="auto">${esc(v.ar)}</div>`:""}
      ${v.photo?`<img src="${esc(v.photo)}" alt="" style="width:120px;height:120px">`:""}`}
-    ${v.vid?`<button class="btn small" type="button" id="clipSound">${icon("volume-2",15)}Play clip with sound</button>`:""}
+    ${v.vid?`<button class="btn small" type="button" id="clipSound">${icon("volume-2",15)}Watch and hear the word</button>`:""}
     <span class="chip">${esc(uname(U.find(x=>x.u===v.u)||{u:v.u,name:""}))}</span>`;
   $("count").textContent=(k+1)+" / "+deck.length; $("prog").style.width=((k+1)/deck.length*100)+"%";
   if($("reveal"))$("reveal").onclick=()=>{shown=true;draw();hear(i);};
   if($("say"))$("say").onclick=()=>hear(i);
-  if($("clipSound"))$("clipSound").onclick=()=>{const c=$("clip");c.muted=false;c.loop=false;c.currentTime=0;c.play().catch(()=>{});c.onended=()=>{c.muted=true;c.loop=true;c.play().catch(()=>{});};};
+  if($("clipSound"))$("clipSound").onclick=()=>Sets.playClip($("clip"),v);
+  if($("clip"))$("clip").onclick=()=>Sets.playClip($("clip"),v);
 }
 function go(d){if(!deck.length)return;k=(k+d+deck.length)%deck.length;shown=false;draw();}
 $("prev").onclick=()=>go(-1); $("next").onclick=()=>go(1);
