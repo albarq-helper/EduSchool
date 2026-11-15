@@ -51,15 +51,17 @@
     }
     speak(v.w);
   }
-  // Play a word clip: the word is said ONCE, the clip plays once with its own sounds,
-  // then it keeps looping silently. The clips themselves contain no voice.
+  // Play a word clip: first the clip plays once with its own sounds (see and hear the action),
+  // then the word is said ONCE, and the clip keeps looping silently. The clips themselves contain no voice.
   function playClip(video, v) {
     if (!video) return;
-    video.muted = false; video.loop = false; video.currentTime = 0;
-    video.onended = () => { video.muted = true; video.loop = true; video.play().catch(() => {}); };
-    video.play().catch(() => {});
     clearTimeout(video._sayT);
-    video._sayT = setTimeout(() => sayWord(v), 250);
+    video.muted = false; video.loop = false; video.currentTime = 0;
+    video.onended = () => {
+      video.onended = null; video.muted = true; video.loop = true; video.play().catch(() => {});
+      video._sayT = setTimeout(() => sayWord(v), 150);
+    };
+    video.play().catch(() => {});
   }
   function stopClip(video) {
     if (!video) return;
