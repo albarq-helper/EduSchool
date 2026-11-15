@@ -42,30 +42,44 @@
     } catch (e) { return false; }
   }
   // Say a word once: its recorded audio when there is one, otherwise the browser voice.
+  // Returns a promise that resolves when the word has finished (or after a safety timeout).
   let wordAudio = null;
   function sayWord(v) {
-    if (!v) return;
-    if (wordAudio) { try { wordAudio.pause(); } catch (e) {} }
-    if (v.au && v.au !== "tts") {
-      try { wordAudio = new Audio(v.au); wordAudio.play().catch(() => speak(v.w)); return; } catch (e) {}
-    }
-    speak(v.w);
+    return new Promise(done => {
+      if (!v) return done();
+      const t = setTimeout(done, 3000);
+      const fin = () => { clearTimeout(t); done(); };
+      if (wordAudio) { try { wordAudio.pause(); } catch (e) {} }
+      const tts = () => {
+        if (!("speechSynthesis" in window)) return fin();
+        speak(v.w);
+        const iv = setInterval(() => { if (!speechSynthesis.speaking) { clearInterval(iv); fin(); } }, 150);
+      };
+      if (v.au && v.au !== "tts") {
+        try { wordAudio = new Audio(v.au); wordAudio.onended = fin; wordAudio.onerror = tts; wordAudio.play().catch(tts); return; } catch (e) {}
+      }
+      tts();
+    });
   }
-  // Play a word clip: first the clip plays once with its own sounds (see and hear the action),
-  // then the word is said ONCE, and the clip keeps looping silently. The clips themselves contain no voice.
+  // Play a word clip: the clip plays once with its own sounds (see and hear the action);
+  // at the end it holds on the last picture while the word is said ONCE; then it loops silently.
+  // The clips themselves contain no voice.
   function playClip(video, v) {
     if (!video) return;
-    clearTimeout(video._sayT);
+    const run = (video._run = (video._run || 0) + 1);       // a newer tap cancels the older sequence
     video.muted = false; video.loop = false; video.currentTime = 0;
-    video.onended = () => {
-      video.onended = null; video.muted = true; video.loop = true; video.play().catch(() => {});
-      video._sayT = setTimeout(() => sayWord(v), 150);
+    video.onended = async () => {
+      video.onended = null;
+      await sayWord(v);                                       // the picture stays on the final frame meanwhile
+      await new Promise(r => setTimeout(r, 400));
+      if (video._run !== run || video.paused === false) return;
+      video.muted = true; video.loop = true; video.currentTime = 0; video.play().catch(() => {});
     };
     video.play().catch(() => {});
   }
   function stopClip(video) {
     if (!video) return;
-    clearTimeout(video._sayT); video.onended = null; video.pause(); video.muted = true; video.loop = true;
+    video._run = (video._run || 0) + 1; video.onended = null; video.pause(); video.muted = true; video.loop = true;
   }
 
   async function pickSetId(p) {
