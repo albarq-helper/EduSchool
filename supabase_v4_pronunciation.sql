@@ -112,7 +112,7 @@ from (values
 ('f14d3d42-c6d7-54aa-bec5-fee3e55e7aab'::uuid,'muh-JOR-uh-tee','JOR ≈ for | tee ~ tea'),
 ('505d40a2-87bb-56d3-872e-aeaf2b7ba626'::uuid,'sy-muhl-TAY-nee-uh-slee','TAY ≈ they | sy ≈ by'),
 ('74d9e447-0998-509d-8005-f7f2923f9862'::uuid,'rih-NOWND','NOWND ≈ found'),
-('9cc85101-1f4d-58cd-b314-5127f68a87c2'::uuid,'dih-TEER-ee-uh-ray-ting','TEER ≈ year | ray ≈ they'),
+('9cc85101-1f4d-58cd-b314-5127f68a87c2'::uuid,'dee-TEE-ree-ur-ay-tuhng','TEE ≈ see | ay ≈ day'),
 ('b386eb12-190f-549f-8a6a-8cc0042738c8'::uuid,'RY-fuhl','RY ≈ by'),
 ('cc3199eb-2755-5b3e-962b-941fb142f042'::uuid,'ad-MYR',''),
 ('1021a64b-8fdb-5a4f-8317-bed995c69546'::uuid,'jy-GAN-tik','GAN ≈ an | jy ≈ by'),
