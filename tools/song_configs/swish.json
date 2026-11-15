@@ -1,0 +1,104 @@
+{
+ "src": "../swish-and-sway.mp4",
+ "out": "../swish/swish-and-sway-words.mp4",
+ "workdir": "../swish",
+ "lines": "../swish-and-sway-aligned.json",
+ "sections": [
+  [
+   0,
+   13.28,
+   "cover",
+   null
+  ],
+  [
+   13.28,
+   35.9,
+   "clip",
+   "rustled"
+  ],
+  [
+   35.9,
+   48.24,
+   "clip",
+   "sigh",
+   1.6
+  ],
+  [
+   48.24,
+   65.92,
+   "clip",
+   "swayed"
+  ],
+  [
+   65.92,
+   91.66,
+   "clip",
+   "precarious"
+  ],
+  [
+   91.66,
+   108.02,
+   "clip",
+   "faraway"
+  ],
+  [
+   108.02,
+   119.62,
+   "clip",
+   "observed"
+  ],
+  [
+   119.62,
+   135.98,
+   "clip",
+   "separated"
+  ],
+  [
+   135.98,
+   167.6,
+   "clip",
+   "symbolized"
+  ],
+  [
+   167.6,
+   "end",
+   "grid",
+   null
+  ]
+ ],
+ "effects": [
+  {
+   "word": "rustled",
+   "at": 17.6,
+   "trim": [
+    0,
+    5
+   ],
+   "len": 4.2,
+   "gain": 1.25
+  },
+  {
+   "word": "sigh",
+   "at": 36.75,
+   "trim": [
+    2.3,
+    3.75
+   ],
+   "len": 1.45,
+   "gain": 2.2,
+   "norm": "dynaudnorm=f=75:g=9"
+  }
+ ],
+ "ducks": [
+  [
+   17.8,
+   22.0,
+   0.62
+  ],
+  [
+   36.75,
+   37.9,
+   0.3
+  ]
+ ]
+}
