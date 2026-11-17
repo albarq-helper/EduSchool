@@ -38,6 +38,8 @@ enc = ['-c:v', 'libx264', '-preset', 'veryfast', '-crf', '18', '-pix_fmt', 'yuv4
 cover = C.get('cover') or f'{OUT}/cover.png'
 if not os.path.exists(cover): run(['ffmpeg', '-v', 'error', '-y', '-ss', '2', '-i', SRC, '-frames:v', '1', '-vf', f'scale={W}:{W}', cover])
 segs = []
+TR = {int(k): v for k, v in C.get('transitions', {}).items()}
+def trans(k): return TR.get(k, ['fade', D])   # transition INTO section k
 def bridge_windows(s, e):
     # each answer zooms in just as it is shouted, stays a moment, then shrinks back before the next question
     A = C['bridge']['answers']; out = []
@@ -48,7 +50,7 @@ def bridge_windows(s, e):
     return out
 for k, sec in enumerate(S):
     s, e, kind, w = sec[:4]; off = sec[4] if len(sec) > 4 else 0
-    L = (e - s) + (D if k < len(S) - 1 else 0)
+    L = (e - s) + (trans(k + 1)[1] if k < len(S) - 1 else 0)
     f = f'{OUT}/seg/{k:02d}.mp4'
     if os.environ.get('ASS_ONLY') or os.path.exists(f): segs.append((f, L)); continue
     if kind == 'cover':
@@ -76,8 +78,11 @@ for k, sec in enumerate(S):
         fl[-1] = fl[-1].rsplit('[', 1)[0] + '[v]'
         run(['ffmpeg', '-v', 'error', '-y', *ins, '-filter_complex', ';'.join(fl), '-map', '[v]', '-an', '-t', f'{L:.3f}', *enc, f])
     elif kind in ('clip', 'recap', 'quiz'):
-        run(['ffmpeg', '-v', 'error', '-y', '-stream_loop', '-1', '-ss', str(off), '-i', CL.format(w), '-t', f'{L:.3f}', '-an',
-             '-vf', f'scale={W}:{W}:flags=lanczos,setsar=1', *enc, f])
+        cd = float(subprocess.run(['ffprobe', '-v', 'error', '-select_streams', 'v:0', '-show_entries', 'stream=duration', '-of', 'csv=p=0', CL.format(w)],
+                                  capture_output=True, text=True).stdout.strip() or 0) - off
+        stretch = L / cd if cd and cd < L <= cd * 1.3 else 1          # up to 30% slower looks natural; longer still loops
+        run(['ffmpeg', '-v', 'error', '-y', *([] if stretch > 1 else ['-stream_loop', '-1']), '-ss', str(off), '-i', CL.format(w), '-t', f'{L:.3f}', '-an',
+             '-vf', f'setpts={stretch:.4f}*PTS,scale={W}:{W}:flags=lanczos,setsar=1', *enc, f])
     else:   # grid of all the clips (plus the cover tile)
         c = GT; ins = []; fl = []
         for j, t in enumerate(GRID['tiles']):
@@ -143,7 +148,7 @@ for sec in S:   # bridge: answer titles while zoomed, small tile labels otherwis
         parts = SYL[w]; shown = ' · '.join(parts); fs = f"\\fs{min(104, int(104 * 17 / max(17, len(shown) - 2)))}"
         title = f"{{\\c{NAVY}}} · ".join(f"{{\\c{COLS[k%4]}}}{p}" for k, p in enumerate(parts))
         ass.append(f"Dialogue: 3,{ts(g0+0.3)},{ts(g3-0.3)},Word,,0,0,0,,{{\\fad(120,120){fs}\\fscx70\\fscy70\\t(0,180,\\fscx112\\fscy112)\\t(180,320,\\fscx100\\fscy100)}}{title}")
-    gaps = [(sec[0], win[0][0])] + [(win[i][1], win[i+1][0]) for i in range(len(win) - 1)] + [(win[-1][1], sec[1])]
+    gaps = [(sec[0] + trans(S.index(sec))[1] * 0.75, win[0][0])] + [(win[i][1], win[i+1][0]) for i in range(len(win) - 1)] + [(win[-1][1], sec[1])]
     for a0, a1 in gaps:
         if a1 - a0 < 0.15: continue
         for j, w in enumerate(B['words']):
@@ -164,8 +169,8 @@ ins = []
 for f, L in segs: ins += ['-i', f]
 fl = []; prev = '[0:v]'; off = 0
 for k in range(1, len(segs)):
-    off += segs[k-1][1] - D
-    lab = f'[x{k}]'; fl.append(f'{prev}[{k}:v]xfade=transition=fade:duration={D}:offset={off:.3f}{lab}'); prev = lab
+    tt, td = trans(k); off += segs[k-1][1] - td
+    lab = f'[x{k}]'; fl.append(f'{prev}[{k}:v]xfade=transition={tt}:duration={td}:offset={off:.3f}{lab}'); prev = lab
 fl.append(f"{prev}ass={OUT}/lyrics.ass:fontsdir=/root/.fonts,format=yuv420p[v]")
 N = len(segs)
 DUCKS = C.get('ducks', [])
