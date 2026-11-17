@@ -1,0 +1,214 @@
+{
+ "src": "../nevergonna/song.mp3",
+ "out": "../nevergonna/never-gonna-slow-us-down-words.mp4",
+ "workdir": "../nevergonna",
+ "cover": "../nevergonna/cover.png",
+ "clips": "../assets/videos/{}.mp4",
+ "lines": "../nevergonna/lines.json",
+ "syllables": {
+  "stooping": [
+   "Stoop",
+   "ing"
+  ],
+  "boughs": [
+   "Boughs"
+  ],
+  "fern": [
+   "Fern"
+  ],
+  "moss": [
+   "Moss"
+  ],
+  "rover": [
+   "Rov",
+   "er"
+  ],
+  "wren": [
+   "Wren"
+  ],
+  "affluent": [
+   "Af",
+   "flu",
+   "ent"
+  ],
+  "majority": [
+   "Ma",
+   "jor",
+   "i",
+   "ty"
+  ],
+  "simultaneously": [
+   "Si",
+   "mul",
+   "ta",
+   "ne",
+   "ous",
+   "ly"
+  ],
+  "renowned": [
+   "Re",
+   "nowned"
+  ],
+  "deteriorating": [
+   "De",
+   "te",
+   "ri",
+   "o",
+   "rat",
+   "ing"
+  ]
+ },
+ "title_y": {},
+ "sections": [
+  [
+   0,
+   14.83,
+   "cover",
+   null
+  ],
+  [
+   14.83,
+   23.89,
+   "clip",
+   "renowned"
+  ],
+  [
+   23.89,
+   33.13,
+   "clip",
+   "deteriorating"
+  ],
+  [
+   33.13,
+   37.23,
+   "clip",
+   "rover"
+  ],
+  [
+   37.23,
+   41.32,
+   "clip",
+   "boughs"
+  ],
+  [
+   41.32,
+   45.64,
+   "clip",
+   "wren"
+  ],
+  [
+   45.64,
+   50.19,
+   "clip",
+   "moss"
+  ],
+  [
+   50.19,
+   54.73,
+   "clip",
+   "fern"
+  ],
+  [
+   54.73,
+   58.96,
+   "clip",
+   "stooping"
+  ],
+  [
+   58.96,
+   67.39,
+   "cover",
+   null
+  ],
+  [
+   67.39,
+   75.91,
+   "clip",
+   "affluent"
+  ],
+  [
+   75.91,
+   80.36,
+   "clip",
+   "majority"
+  ],
+  [
+   80.36,
+   85.64,
+   "clip",
+   "simultaneously"
+  ],
+  [
+   85.64,
+   87.11,
+   "quiz",
+   "rover",
+   0,
+   86.5
+  ],
+  [
+   87.11,
+   88.65,
+   "quiz",
+   "boughs",
+   0,
+   88.1
+  ],
+  [
+   88.65,
+   90.31,
+   "quiz",
+   "stooping",
+   0,
+   89.7
+  ],
+  [
+   90.31,
+   91.87,
+   "quiz",
+   "renowned",
+   0,
+   91.1
+  ],
+  [
+   91.87,
+   94.24,
+   "quiz",
+   "wren",
+   0,
+   93.1
+  ],
+  [
+   94.24,
+   99.48,
+   "quiz",
+   "simultaneously",
+   0,
+   95.9
+  ],
+  [
+   99.48,
+   "end",
+   "grid",
+   null
+  ]
+ ],
+ "grid": {
+  "cols": 4,
+  "rows": 3,
+  "tiles": [
+   "rover",
+   "boughs",
+   "wren",
+   "moss",
+   "fern",
+   "stooping",
+   "__cover",
+   "renowned",
+   "deteriorating",
+   "affluent",
+   "majority",
+   "simultaneously"
+  ]
+ }
+}
