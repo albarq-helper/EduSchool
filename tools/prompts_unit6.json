@@ -1,0 +1,66 @@
+{
+  "style": "Bright, soft 3D cartoon animation for children, warm autumn colours, simple clean background, gentle camera movement, no text, no letters, no words on screen, no speech, only soft natural sound effects.",
+  "settings": {
+    "duration": "5",
+    "resolution": "720p",
+    "aspect_ratio": "1:1",
+    "generate_audio": true
+  },
+  "words": [
+    {
+      "term": "Stooping",
+      "slug": "stooping",
+      "scene": "A kind cartoon grandfather in a sunny apple orchard slowly bends forward at the waist, stooping low with one hand on his knee, and picks up a shiny red apple from the grass, then straightens up and smiles."
+    },
+    {
+      "term": "Boughs",
+      "slug": "boughs",
+      "scene": "The camera slowly rises up the trunk of a huge old oak tree to its wide, heavy leafy branches spreading out like arms; a small bird flies in and lands in a nest on one of the big branches."
+    },
+    {
+      "term": "Fern",
+      "slug": "fern",
+      "scene": "In a cool shady garden corner, a curled young fern frond slowly unrolls into a long feathery green leaf, among other lush feather-like fern leaves gently moving."
+    },
+    {
+      "term": "Moss",
+      "slug": "moss",
+      "scene": "Close-up of soft bright green moss covering wet grey rocks beside a sparkling stream; a cartoon child's hand gently presses the spongy moss and water droplets glisten."
+    },
+    {
+      "term": "Rover",
+      "slug": "rover",
+      "scene": "A cheerful cartoon traveler with a small backpack and walking stick strolls along a winding country road, passing one little village and heading toward another village on the next hill."
+    },
+    {
+      "term": "Wren",
+      "slug": "wren",
+      "scene": "A tiny round brown wren bird with its short tail pointing straight up perches on a green hedge branch, opens its beak and sings sweetly, its little chest puffing in and out."
+    },
+    {
+      "term": "Affluent",
+      "slug": "affluent",
+      "scene": "A smiling cartoon family walks out of a very large elegant mansion with a big beautiful garden, a fountain, tall gates and a shiny car, everything looking rich and luxurious."
+    },
+    {
+      "term": "Majority",
+      "slug": "majority",
+      "scene": "A cartoon classroom of ten children votes: on the board are two pictures, a lion and a painting; eight children excitedly raise their hands for the lion while only two raise hands for the painting."
+    },
+    {
+      "term": "Simultaneously",
+      "slug": "simultaneously",
+      "scene": "Two cartoon runners sprint side by side toward a finish ribbon and cross it at exactly the same moment, the ribbon snapping in the middle, slow motion, both throwing their arms up together."
+    },
+    {
+      "term": "Renowned",
+      "slug": "renowned",
+      "scene": "A smiling famous cartoon author sits at a table signing books for a long line of excited fans, camera flashes popping and people clapping and cheering in admiration."
+    },
+    {
+      "term": "Deteriorating",
+      "slug": "deteriorating",
+      "scene": "Time-lapse of an old wooden footbridge over a river as rain pours: the planks crack, sag, grow dark and mossy, and one board breaks and falls, the bridge getting worse and worse."
+    }
+  ]
+}
