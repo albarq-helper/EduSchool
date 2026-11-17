@@ -10,6 +10,9 @@ Config keys:
   src, out, lines (aligned lyric JSON [{t,e,l}]), workdir
   sections: [[start, end, kind, word, clip_offset?], ...]
       kind = cover | clip (word shown whole, then split) | recap (word already split, short cut) | grid
+             | quiz (title waits for the sung answer, time in field 6) | fun (a clip with no word: word = file path)
+             | bridge (all the call-and-response words in a grid; each answer zooms to full screen, see "bridge")
+  bridge:   {"words": [...], "answers": [seconds...], "cols": 3, "rows": 2}
   effects:  [{"word":"rustled","at":20.2,"trim":[0,5],"len":4.2,"gain":1.25}, ...]   real sounds from a clip
   ducks:    [[from, to, level], ...]   the song dips while a real sound plays
 """
@@ -35,6 +38,14 @@ enc = ['-c:v', 'libx264', '-preset', 'veryfast', '-crf', '18', '-pix_fmt', 'yuv4
 cover = C.get('cover') or f'{OUT}/cover.png'
 if not os.path.exists(cover): run(['ffmpeg', '-v', 'error', '-y', '-ss', '2', '-i', SRC, '-frames:v', '1', '-vf', f'scale={W}:{W}', cover])
 segs = []
+def bridge_windows(s, e):
+    # each answer zooms in just as it is shouted, stays a moment, then shrinks back before the next question
+    A = C['bridge']['answers']; out = []
+    for i, a in enumerate(A):
+        nxt = A[i+1] if i + 1 < len(A) else None
+        end = (nxt - 0.6) if nxt else (e - 0.4)
+        out.append((a - 0.12, max(end, a + 0.7)))
+    return out
 for k, sec in enumerate(S):
     s, e, kind, w = sec[:4]; off = sec[4] if len(sec) > 4 else 0
     L = (e - s) + (D if k < len(S) - 1 else 0)
@@ -42,6 +53,28 @@ for k, sec in enumerate(S):
     if os.environ.get('ASS_ONLY') or os.path.exists(f): segs.append((f, L)); continue
     if kind == 'cover':
         run(['ffmpeg', '-v', 'error', '-y', '-loop', '1', '-i', cover, '-t', f'{L:.3f}', '-vf', f'scale={W}:{W},setsar=1', *enc, f])
+    elif kind == 'fun':
+        run(['ffmpeg', '-v', 'error', '-y', '-stream_loop', '-1', '-ss', str(off), '-i', w, '-t', f'{L:.3f}', '-an',
+             '-vf', f'scale={W}:{W}:flags=lanczos,setsar=1', *enc, f])
+    elif kind == 'bridge':
+        B = C['bridge']; bw = B['words']; cols = B['cols']; rows = B['rows']; c = W // cols; gy = (W - rows * c) // 2
+        ins = []; fl = []
+        for j, t in enumerate(bw):
+            ins += ['-stream_loop', '-1', '-t', f'{L:.3f}', '-i', CL.format(t)]
+            fl.append(f'[{j}:v]setsar=1,split=2[a{j}][b{j}]')
+            fl.append(f'[a{j}]scale={c-6}:{c-6}:flags=lanczos,pad={c}:{c}:3:3:color=0xF4EBDD[t{j}]')
+        layout = '|'.join(f'{(j%cols)*c}_{(j//cols)*c}' for j in range(len(bw)))
+        fl.append(''.join(f'[t{j}]' for j in range(len(bw))) + f'xstack=inputs={len(bw)}:layout={layout}:fill=0xF4EBDD,pad={W}:{W}:0:{gy}:color=0xF4EBDD[g0]')
+        prev = '[g0]'
+        for j, (g0, g3) in enumerate(bridge_windows(s, e)):
+            g0 -= s; g3 -= s; Z = 0.35
+            p = f"min(clip((t-{g0:.3f})/{Z},0,1),clip(({g3:.3f}-t)/{Z},0,1))"; q = f"({p})*({p})*(3-2*({p}))"   # eased 0..1..0
+            x0 = (j % cols) * c; y0 = gy + (j // cols) * c
+            fl.append(f"[b{j}]scale=w='trunc(({c}+({W}-{c})*{q})/2)*2':h='trunc(({c}+({W}-{c})*{q})/2)*2':eval=frame:flags=bicubic[z{j}]")
+            fl.append(f"{prev}[z{j}]overlay=x='{x0}*(1-{q})':y='{y0}*(1-{q})':eval=frame:enable='between(t,{g0:.3f},{g3:.3f})'[o{j}]")
+            prev = f'[o{j}]'
+        fl[-1] = fl[-1].rsplit('[', 1)[0] + '[v]'
+        run(['ffmpeg', '-v', 'error', '-y', *ins, '-filter_complex', ';'.join(fl), '-map', '[v]', '-an', '-t', f'{L:.3f}', *enc, f])
     elif kind in ('clip', 'recap', 'quiz'):
         run(['ffmpeg', '-v', 'error', '-y', '-stream_loop', '-1', '-ss', str(off), '-i', CL.format(w), '-t', f'{L:.3f}', '-an',
              '-vf', f'scale={W}:{W}:flags=lanczos,setsar=1', *enc, f])
@@ -75,7 +108,7 @@ ass = ['[Script Info]', 'ScriptType: v4.00+', f'PlayResX: {W}', f'PlayResY: {W}'
        'Style: Label,Fredoka SemiBold,30,&H00FFFFFF,&H00FFFFFF,&H40331B1B,&H80331B1B,0,0,0,0,100,100,0,0,3,7,0,2,0,0,0,1', '',
        '[Events]', 'Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text']
 for i, x in enumerate(lines):
-    st = x['t']; en = min(lines[i+1]['t'] if i + 1 < len(lines) else TOTAL, TOTAL)
+    st = x['t']; en = min(lines[i+1]['t'] if i + 1 < len(lines) else x.get('e', TOTAL), TOTAL)
     if not x['l'].strip(): continue
     in_grid = any(sec[2] == 'grid' and sec[0] - 0.3 <= st < sec[1] for sec in S)
     pos = f"\\an5\\pos({W//2},{W//2})" if in_grid and GY == 0 else ""   # over the centre tile, clear of the labels
@@ -103,6 +136,19 @@ for sec in S:
     beats = f"{n} beat{'s' if n > 1 else ''}  ·  " + '-'.join(w.upper())
     ass.append(f"Dialogue: 3,{ts(s+0.3)},{ts(e-0.2)},Word,,0,0,0,,{{\\fad(300,200){p1}}}{''.join(out)}")
     ass.append(f"Dialogue: 3,{ts(s+0.3+(SPLIT+DUR)/1000)},{ts(e-0.2)},Beats,,0,0,0,,{{\\fad(300,200){p2}}}{beats}")
+for sec in S:   # bridge: answer titles while zoomed, small tile labels otherwise
+    if sec[2] != 'bridge': continue
+    B = C['bridge']; cols = B['cols']; c = W // cols; gy = (W - B['rows'] * c) // 2; win = bridge_windows(sec[0], sec[1])
+    for j, (w, (g0, g3)) in enumerate(zip(B['words'], win)):
+        parts = SYL[w]; shown = ' · '.join(parts); fs = f"\\fs{min(104, int(104 * 17 / max(17, len(shown) - 2)))}"
+        title = f"{{\\c{NAVY}}} · ".join(f"{{\\c{COLS[k%4]}}}{p}" for k, p in enumerate(parts))
+        ass.append(f"Dialogue: 3,{ts(g0+0.3)},{ts(g3-0.3)},Word,,0,0,0,,{{\\fad(120,120){fs}\\fscx70\\fscy70\\t(0,180,\\fscx112\\fscy112)\\t(180,320,\\fscx100\\fscy100)}}{title}")
+    gaps = [(sec[0], win[0][0])] + [(win[i][1], win[i+1][0]) for i in range(len(win) - 1)] + [(win[-1][1], sec[1])]
+    for a0, a1 in gaps:
+        if a1 - a0 < 0.15: continue
+        for j, w in enumerate(B['words']):
+            x = (j % cols) * c + c // 2; y = gy + (j // cols) * c + c - 12
+            ass.append(f"Dialogue: 1,{ts(a0)},{ts(a1)},Label,,0,0,0,,{{\\an2\\pos({x},{y})}}{'·'.join(SYL[w])}")
 for sec in S:   # finale grid labels
     if sec[2] != 'grid': continue
     gs = sec[0]; c = GT; cols = GRID['cols']
