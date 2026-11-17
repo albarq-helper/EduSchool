@@ -95,6 +95,14 @@ for k, sec in enumerate(S):
         run(['ffmpeg', '-v', 'error', '-y', *ins, '-filter_complex', ';'.join(fl), '-map', '[v]', '-an', '-t', f'{L:.3f}', *enc, f])
     segs.append((f, L)); print('segment', k, kind, w, round(L, 2), flush=True)
 
+# optional opening effect on the very first picture, e.g. "intro": ["circleopen", 1.2] (it opens out of black)
+if C.get('intro') and not os.environ.get('ASS_ONLY'):
+    it, idur = C['intro']; f0, L0 = segs[0]; fi = f'{OUT}/seg/00-intro.mp4'
+    run(['ffmpeg', '-v', 'error', '-y', '-f', 'lavfi', '-i', f'color=black:s={W}x{W}:r={FPS}:d={idur}', '-i', f0,
+         '-filter_complex', f'[0:v]setsar=1,format=yuv420p,settb=1/{FPS}[b];[1:v]setsar=1,format=yuv420p,fps={FPS},settb=1/{FPS}[a];[b][a]xfade=transition={it}:duration={idur}:offset=0[v]',
+         '-map', '[v]', *enc, fi])
+    segs[0] = (fi, L0)
+
 # ---------- subtitles (ASS) ----------
 def ts(t): t = max(0, t); return f"{int(t//3600)}:{int(t%3600//60):02d}:{t%60:05.2f}"
 COLS = ['&H00C54723&', '&H000C41C2&', '&H006E760F&', '&H00ED3A7C&']   # blue, orange, teal, purple (BGR)

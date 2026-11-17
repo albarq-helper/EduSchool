@@ -147,12 +147,12 @@
   ],
   [
    80.36,
-   84.4,
+   85.64,
    "clip",
    "simultaneously"
   ],
   [
-   84.4,
+   85.64,
    99.48,
    "bridge",
    null
@@ -222,10 +222,8 @@
   "cols": 3,
   "rows": 2
  },
- "transitions": {
-  "15": [
-   "circlecrop",
-   1.2
-  ]
- }
+ "intro": [
+  "circleopen",
+  1.4
+ ]
 }
