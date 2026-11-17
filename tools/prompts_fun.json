@@ -1,0 +1,31 @@
+{
+  "style": "Bright, soft 3D cartoon animation for children, vivid happy colours, lively camera movement, joyful energy, no text, no letters, no words, no signs on screen.",
+  "settings": {
+    "duration": "5",
+    "resolution": "720p",
+    "aspect_ratio": "1:1",
+    "generate_audio": false
+  },
+  "words": [
+    {
+      "term": "Singer",
+      "slug": "fun-singer",
+      "scene": "A cheerful cartoon girl singer with a microphone sings and jumps on a colourful school stage under bright spotlights, while a crowd of happy children in front wave their hands and dance."
+    },
+    {
+      "term": "Crowd",
+      "slug": "fun-crowd",
+      "scene": "A big group of happy cartoon children and their parents dance together in a sunny school yard, clapping hands, stomping their feet and jumping, colourful balloons and bunting all around."
+    },
+    {
+      "term": "Band",
+      "slug": "fun-band",
+      "scene": "A fun cartoon kids band plays on stage: a boy blows a shiny trumpet, a girl bangs the drums, another boy plays a big golden tuba, musical notes and confetti float in the air."
+    },
+    {
+      "term": "Cheer",
+      "slug": "fun-cheer",
+      "scene": "Cartoon children on stage and the whole crowd in front throw their arms up and cheer together as confetti and streamers fall under golden stage lights, a joyful celebration."
+    }
+  ]
+}
