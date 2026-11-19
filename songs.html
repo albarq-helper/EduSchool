@@ -61,7 +61,7 @@ input.gap.ok{border-color:var(--good);background:var(--good-soft)}input.gap.no{b
 table.guide{width:100%;font-size:.95rem}table.guide td{vertical-align:top}
 table.guide td:nth-child(3){text-align:center;font-weight:800;color:var(--accent)}
 mark.vw.chunks{background:var(--sun-soft)}
-.c0{color:var(--s1,#2347C5)}.c1{color:var(--s2,#C2410C)}.c2{color:var(--s3,#0F766E)}.c3{color:var(--s4,#7C3AED)}
+.psyl{font:800 1.35rem/1.2 var(--f-head);display:flex;align-items:baseline;flex-wrap:wrap;gap:2px;margin-top:-4px}.psyl .pdot{color:var(--ink);opacity:.55;margin:0 2px}.psyl .pcount{font:700 .8rem var(--f-body);color:var(--muted);margin-left:10px}.c0{color:var(--s1,#2347C5)}.c1{color:var(--s2,#C2410C)}.c2{color:var(--s3,#0F766E)}.c3{color:var(--s4,#7C3AED)}
 .dot{color:var(--muted);font-weight:400;margin:0 1px}
 :root{--s1:#2347C5;--s2:#C2410C;--s3:#0F766E;--s4:#7C3AED}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--s1:#8FA8FF;--s2:#FF9F6B;--s3:#4FD1C0;--s4:#C4A5FF}}
@@ -210,7 +210,7 @@ $("out").addEventListener("keydown",e=>{const i=e.target;
 const AU={};
 function hear(i){const v=D[i];if(v.au&&v.au!=="tts"){try{const a=AU[i]||(AU[i]=new Audio(v.au));a.currentTime=0;a.play();return;}catch(e){}}Sets.speak(v.w);}
 function showPop(i,anchor){const v=D[i];if(!v)return;const p=$("pop");
-  p.innerHTML=`${v.vid?`<video id="popClip" src="${esc(v.vid)}" autoplay muted loop playsinline style="width:100%;height:170px;object-fit:contain;background:#fff;border-radius:10px;border:1px solid var(--rule);cursor:pointer" title="Tap for sound"></video><button class="btn small" type="button" id="popClipSound" style="align-self:flex-start">${icon("volume-2",14)}Watch and hear the word</button>`:`<img src="${esc(v.img)}" alt="">`}<div class="t"><span>${esc(v.w)}</span><button class="round" type="button" id="popHear" aria-label="Hear ${esc(v.w)}">${icon("volume-2",18)}</button></div>
+  p.innerHTML=`${v.vid?`<video id="popClip" src="${esc(v.vid)}" autoplay muted loop playsinline style="width:100%;height:170px;object-fit:contain;background:#fff;border-radius:10px;border:1px solid var(--rule);cursor:pointer" title="Tap for sound"></video><button class="btn small" type="button" id="popClipSound" style="align-self:flex-start">${icon("volume-2",14)}Watch and hear the word</button>`:`<img src="${esc(v.img)}" alt="">`}<div class="t"><span>${esc(v.w)}</span><button class="round" type="button" id="popHear" aria-label="Hear ${esc(v.w)}">${icon("volume-2",18)}</button></div>${(v.syl||"").includes("-")?`<div class="psyl" aria-label="Syllables">${v.syl.split("-").map((x,j)=>`<span class="c${j%4}">${esc(j?x:x.charAt(0).toUpperCase()+x.slice(1))}</span>`).join('<span class="pdot">·</span>')}<span class="pcount">${v.syl.split("-").length} syllables</span></div>`:""}
     ${v.pron?`<div class="muted" style="font-size:.9rem">Say it: <b>${esc(v.pron.replace(/-/g,"·"))}</b></div>`:""}<div>${esc(v.d)}</div>${v.ar?`<div class="tr" dir="auto">${esc(v.ar)}</div>`:""}
     <a class="btn small" href="list.html?set=${SET.id}" style="align-self:flex-start">${icon("list-checks",14)}Open in word list</a>`;
   p.classList.add("on");const r=anchor.getBoundingClientRect(),pw=Math.min(300,innerWidth-24);
