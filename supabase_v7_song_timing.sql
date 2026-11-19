@@ -17,3 +17,5 @@ update public.set_songs set media_url = 'assets/songs/swish-and-sway-words.mp4?v
 update public.set_songs set media_url = 'assets/songs/spell-it-out-loud-words.mp4?v=20261115c' where id = '00000000-0000-4000-8000-0000000005b2';
 -- Word clips no longer contain the spoken word (the page says the word once on tap); ?v= makes browsers fetch the new files.
 update public.set_items set video_url = split_part(video_url, '?', 1) || '?v=20261115d' where video_url like 'assets/videos/%';
+-- Spell It Out Loud v2: classroom scenes instead of the still cover; each word clip plays once, slowed to fit.
+update public.set_songs set media_url = 'assets/songs/spell-it-out-loud-words.mp4?v=20261119s' where id = '00000000-0000-4000-8000-0000000005b2';
