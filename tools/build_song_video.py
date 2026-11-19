@@ -41,12 +41,17 @@ segs = []
 TR = {int(k): v for k, v in C.get('transitions', {}).items()}
 def trans(k): return TR.get(k, ['fade', D])   # transition INTO section k
 def bridge_windows(s, e):
-    # each answer zooms in just as it is shouted, stays a moment, then shrinks back before the next question
-    A = C['bridge']['answers']; out = []
+    # each answer zooms in just as it is sung and stays for its slot x "hold" (default 1.0), so it can overlap the next one growing in
+    B = C['bridge']; A = B['answers']; hold = B.get('hold', 1.0); out = []
     for i, a in enumerate(A):
         nxt = A[i+1] if i + 1 < len(A) else None
-        end = (nxt - 0.6) if nxt else (e - 0.4)
-        out.append((a - 0.12, max(end, a + 0.7)))
+        if hold > 1.0:
+            start = a - 0.25
+            end = min(a + hold * (nxt - a), e - 0.4) if nxt else e - 0.4
+        else:
+            start = a - 0.12
+            end = (nxt - 0.6) if nxt else (e - 0.4)
+        out.append((start, max(end, a + 0.9)))
     return out
 for k, sec in enumerate(S):
     s, e, kind, w = sec[:4]; off = sec[4] if len(sec) > 4 else 0
@@ -167,9 +172,10 @@ for sec in S:   # bridge: answer titles while zoomed, small tile labels otherwis
     if sec[2] != 'bridge': continue
     B = C['bridge']; cols = B['cols']; c = W // cols; gy = (W - B['rows'] * c) // 2; win = bridge_windows(sec[0], sec[1])
     for j, (w, (g0, g3)) in enumerate(zip(B['words'], win)):
+        if j + 1 < len(win): g3 = min(g3, win[j+1][0] + 0.55)
         parts = SYL[w]; shown = ' · '.join(parts); fs = f"\\fs{min(104, int(104 * 17 / max(17, len(shown) - 2)))}"
         title = f"{{\\c{NAVY}}} · ".join(f"{{\\c{COLS[k%4]}}}{p}" for k, p in enumerate(parts))
-        ass.append(f"Dialogue: 3,{ts(g0+0.3)},{ts(g3-0.3)},Word,,0,0,0,,{{\\fad(120,120){fs}\\fscx70\\fscy70\\t(0,180,\\fscx112\\fscy112)\\t(180,320,\\fscx100\\fscy100)}}{title}")
+        ass.append(f"Dialogue: 3,{ts(g0+0.2)},{ts(g3-0.25)},Word,,0,0,0,,{{\\fad(120,120){fs}\\fscx70\\fscy70\\t(0,180,\\fscx112\\fscy112)\\t(180,320,\\fscx100\\fscy100)}}{title}")
     gaps = [(sec[0] + trans(S.index(sec))[1] * 0.75, win[0][0])] + [(win[i][1], win[i+1][0]) for i in range(len(win) - 1)] + [(win[-1][1], sec[1])]
     for a0, a1 in gaps:
         if a1 - a0 < 0.15: continue
