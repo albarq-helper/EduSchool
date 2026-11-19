@@ -121,7 +121,7 @@ if C.get('intro') and not os.environ.get('ASS_ONLY'):
 def ts(t): t = max(0, t); return f"{int(t//3600)}:{int(t%3600//60):02d}:{t%60:05.2f}"
 COLS = ['&H00C54723&', '&H000C41C2&', '&H006E760F&', '&H00ED3A7C&']   # blue, orange, teal, purple (BGR)
 YEL = '&H004DC9FF&'; NAVY = '&H00331B1B&'
-vocab = '|'.join(sorted([re.escape(w) for w in ['Rustled', 'Sigh', 'Swayed', 'Precarious', 'Faraway', 'Observed', 'Separated', 'Symbolized'] + [sec[3].capitalize() for sec in S if sec[3]]] +
+vocab = '|'.join(sorted([re.escape(w) for w in ['Rustled', 'Sigh', 'Swayed', 'Precarious', 'Faraway', 'Observed', 'Separated', 'Symbolized'] + [sec[3].capitalize() for sec in S if sec[3]]] + [re.escape('-'.join(SYL[sec[3]])) for sec in S if sec[3] and sec[3] in SYL and len(SYL[sec[3]]) > 1] + [re.escape('-'.join(p.lower() if j else p for j, p in enumerate(v))) for k, v in C.get('syllables', {}).items() if len(v) > 1] +
                         ['Rus-tled', 'Pre-car-i-ous', 'Far-a-way', 'Ob-served', 'Sep-a-rat-ed', 'Sym-bol-ized'], key=len, reverse=True))
 VR = re.compile(r'(?<![A-Za-z])(' + vocab + r')(?![A-Za-z])', re.I)
 def lyr(t):
