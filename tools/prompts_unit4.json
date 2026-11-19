@@ -1,0 +1,41 @@
+{
+  "style": "Bright, soft 3D cartoon animation for children, warm autumn colours, simple clean background, gentle camera movement, no text, no letters, no words on screen, no speech, only soft natural sound effects.",
+  "settings": {
+    "duration": "5",
+    "resolution": "720p",
+    "aspect_ratio": "1:1",
+    "generate_audio": true
+  },
+  "words": [
+    {
+      "term": "Relentlessly",
+      "slug": "relentlessly",
+      "scene": "A determined little cartoon ant pushes a big red strawberry up a steep grassy hill, slipping a little but never stopping, wind blowing and rain drops falling, it keeps pushing forward with all its strength."
+    },
+    {
+      "term": "Starving",
+      "slug": "starving",
+      "scene": "A cartoon boy at a kitchen table holds his rumbling tummy with both hands and looks weak and very hungry, then a big plate of warm food is placed in front of him and his eyes go wide as he grabs a spoon."
+    },
+    {
+      "term": "Nervous",
+      "slug": "nervous",
+      "scene": "A cartoon girl waits backstage behind a red curtain before her turn, biting her lip, twisting her fingers together and taking a shaky breath as she peeks out at the audience."
+    },
+    {
+      "term": "Ferocious",
+      "slug": "ferocious",
+      "scene": "A cartoon tiger leaps onto a big rock in the jungle and lets out a fierce, powerful roar showing its big teeth, leaves blowing back from the force; bold and strong but suitable for children, not scary."
+    },
+    {
+      "term": "Deliberately",
+      "slug": "deliberately",
+      "scene": "A cartoon boy looks at the camera with a cheeky smile, then slowly and on purpose reaches out one finger and taps the first domino, starting a long colourful chain of dominoes falling."
+    },
+    {
+      "term": "Brilliant",
+      "slug": "brilliant",
+      "scene": "A cartoon girl in a white lab coat and goggles fits the last piece into a glowing science machine; a bright light bulb pops on above her head and she jumps and cheers proudly."
+    }
+  ]
+}
