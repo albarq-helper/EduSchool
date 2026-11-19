@@ -56,8 +56,11 @@ for k, sec in enumerate(S):
     if kind == 'cover':
         run(['ffmpeg', '-v', 'error', '-y', '-loop', '1', '-i', cover, '-t', f'{L:.3f}', '-vf', f'scale={W}:{W},setsar=1', *enc, f])
     elif kind == 'fun':
-        run(['ffmpeg', '-v', 'error', '-y', '-stream_loop', '-1', '-ss', str(off), '-i', w, '-t', f'{L:.3f}', '-an',
-             '-vf', f'scale={W}:{W}:flags=lanczos,setsar=1', *enc, f])
+        cd = float(subprocess.run(['ffprobe', '-v', 'error', '-select_streams', 'v:0', '-show_entries', 'stream=duration', '-of', 'csv=p=0', w],
+                                  capture_output=True, text=True).stdout.strip() or 0) - off
+        stretch = L / cd if cd and cd < L <= cd * 1.3 else 1          # slow a little rather than visibly restart
+        run(['ffmpeg', '-v', 'error', '-y', *([] if stretch > 1 else ['-stream_loop', '-1']), '-ss', str(off), '-i', w, '-t', f'{L:.3f}', '-an',
+             '-vf', f'setpts={stretch:.4f}*PTS,scale={W}:{W}:flags=lanczos,setsar=1', *enc, f])
     elif kind == 'bridge':
         B = C['bridge']; bw = B['words']; cols = B['cols']; rows = B['rows']; c = W // cols; gy = (W - rows * c) // 2
         ins = []; fl = []

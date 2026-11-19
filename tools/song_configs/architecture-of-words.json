@@ -45,15 +45,15 @@
  "sections": [
   [
    0,
-   5.9,
+   6.2,
    "fun",
-   "../assets/videos/fun/web-band.mp4"
+   "../assets/videos/fun/web-calm-library.mp4"
   ],
   [
-   5.9,
+   6.2,
    11.9,
    "fun",
-   "../assets/videos/fun/web-crowd.mp4"
+   "../assets/videos/fun/web-calm-reading.mp4"
   ],
   [
    11.9,
@@ -71,28 +71,27 @@
    46.1,
    53.65,
    "fun",
-   "../assets/videos/fun/web-singer-woman.mp4"
+   "../assets/videos/fun/web-calm-singer.mp4"
   ],
   [
    53.65,
    59.9,
    "fun",
-   "../assets/videos/fun/web-crowd.mp4",
-   1.0
+   "../assets/videos/fun/web-calm-blocks.mp4"
   ],
   [
    59.9,
    64.75,
    "fun",
-   "../assets/videos/fun/web-band.mp4",
+   "../assets/videos/fun/web-calm-reading.mp4",
    0.5
   ],
   [
    64.75,
    69.75,
    "fun",
-   "../assets/videos/fun/web-singer-woman.mp4",
-   2.0
+   "../assets/videos/fun/web-calm-singer.mp4",
+   1.5
   ],
   [
    69.75,
@@ -110,28 +109,29 @@
    96.1,
    100.5,
    "fun",
-   "../assets/videos/fun/web-cheer.mp4"
+   "../assets/videos/fun/web-calm-library.mp4",
+   1.0
   ],
   [
    100.5,
    107.8,
    "fun",
-   "../assets/videos/fun/web-singer-woman.mp4",
-   1.0
+   "../assets/videos/fun/web-calm-singer.mp4",
+   0.5
   ],
   [
    107.8,
    113.65,
    "fun",
-   "../assets/videos/fun/web-crowd.mp4",
-   2.5
+   "../assets/videos/fun/web-calm-blocks.mp4",
+   0.8
   ],
   [
    113.65,
    119.15,
    "fun",
-   "../assets/videos/fun/web-band.mp4",
-   1.5
+   "../assets/videos/fun/web-calm-reading.mp4",
+   1.0
   ],
   [
    119.15,
@@ -149,35 +149,35 @@
    131.5,
    137.8,
    "fun",
-   "../assets/videos/fun/web-singer-woman.mp4",
-   0.5
+   "../assets/videos/fun/web-calm-singer.mp4"
   ],
   [
    137.8,
    142.65,
    "fun",
-   "../assets/videos/fun/web-crowd.mp4"
+   "../assets/videos/fun/web-calm-blocks.mp4",
+   1.5
   ],
   [
    142.65,
    148.8,
    "fun",
-   "../assets/videos/fun/web-band.mp4",
-   2.0
+   "../assets/videos/fun/web-calm-library.mp4",
+   0.5
   ],
   [
    148.8,
    153.85,
    "fun",
-   "../assets/videos/fun/web-cheer.mp4",
-   1.0
+   "../assets/videos/fun/web-calm-reading.mp4",
+   1.5
   ],
   [
    153.85,
    158.75,
    "fun",
-   "../assets/videos/fun/web-singer-woman.mp4",
-   2.5
+   "../assets/videos/fun/web-calm-singer.mp4",
+   1.0
   ],
   [
    158.75,
@@ -189,8 +189,8 @@
    174.6,
    "end",
    "fun",
-   "../assets/videos/fun/web-cheer.mp4",
-   0.5
+   "../assets/videos/fun/web-calm-library.mp4",
+   1.0
   ]
  ],
  "bridge": {
@@ -212,5 +212,25 @@
   ],
   "cols": 3,
   "rows": 2
- }
+ },
+ "effects": [
+  {
+   "word": "ferocious",
+   "at": 94.85,
+   "trim": [
+    2.9,
+    4.9
+   ],
+   "len": 2.0,
+   "gain": 1.6,
+   "norm": "dynaudnorm=f=150:g=15"
+  }
+ ],
+ "ducks": [
+  [
+   94.85,
+   96.4,
+   0.35
+  ]
+ ]
 }
