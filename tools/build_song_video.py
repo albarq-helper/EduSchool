@@ -52,6 +52,8 @@ def bridge_windows(s, e):
             start = a - 0.12
             end = (nxt - 0.6) if nxt else (e - 0.4)
         out.append((start, max(end, a + 0.9)))
+    for i, w in enumerate(B['words']):            # per-word adjustments, e.g. "override": {"deliberately": [168.1, 171.0]}
+        if w in B.get('override', {}): out[i] = tuple(B['override'][w])
     return out
 for k, sec in enumerate(S):
     s, e, kind, w = sec[:4]; off = sec[4] if len(sec) > 4 else 0

@@ -212,7 +212,21 @@
   ],
   "cols": 3,
   "rows": 2,
-  "hold": 1.2
+  "hold": 1.2,
+  "override": {
+   "ferocious": [
+    166.06,
+    168.7
+   ],
+   "deliberately": [
+    168.15,
+    171.05
+   ],
+   "brilliant": [
+    170.6,
+    174.2
+   ]
+  }
  },
  "effects": [
   {
