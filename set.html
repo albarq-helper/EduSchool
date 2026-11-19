@@ -19,6 +19,7 @@ const ACTS=[["list.html","list-checks","Word list","All words together: picture,
   ["songs.html","music","Songs","Sing along with the lyrics, read the text, fill in the words.","a-coral",m=>m.hasSongs]];
 async function render(){
   const got=await Sets.load(ID);
+  Sets.watchClips();
   if(!got){$("page").innerHTML=`<div class="card"><h1>Set not available</h1><p>This study set doesn't exist any more, or it hasn't been shared with you.</p><a class="btn" href="library.html">${I("library")}Open the library</a></div>`;return;}
   SET=got.set; MAP=Sets.mapItems(SET,got.items); MAP.hasSongs=got.hasSongs; document.title=SET.title+" · Helper Academy";
   try{localStorage.setItem("lastSet",SET.id);}catch(e){}
@@ -56,7 +57,7 @@ async function render(){
       ${owner?`<button class="btn danger" id="del" type="button">${I("trash-2")}<span>Delete set</span></button>`:""}<span class="msg" id="toolMsg" role="status"></span></div></section>`:""}
   <section class="card"><h2 class="sec-title">${I("list-checks",20)}What's inside</h2>
     ${units.map(u=>{const it=got.items.filter(x=>x.unit===u);return `<details ${units.length<=3?"open":""}><summary style="cursor:pointer;font-weight:700;padding:6px 0">${esc(uname(u))} <span class="muted">· ${it.length}</span></summary>
-      <div class="items" style="margin-top:8px">${it.slice(0,200).map(x=>x.kind==="term"?`<div class="item"><img src="${esc(x.image_url||x.anim_url||Sets.tile(x.term))}" alt="" loading="lazy"><div><b>${esc(x.term)}</b> <span class="muted">— ${esc(x.meaning)}</span>${x.translation?`<br><span dir="auto" style="font-family:var(--f-ar)">${esc(x.translation)}</span>`:""}</div></div>`
+      <div class="items" style="margin-top:8px">${it.slice(0,200).map(x=>x.kind==="term"?`<div class="item">${x.video_url?`<video src="${esc(x.video_url)}" muted loop playsinline preload="none" data-auto aria-label="Clip"></video>`:`<img src="${esc(x.image_url||x.anim_url||Sets.tile(x.term,x.emoji))}" alt="" loading="lazy">`}<div><b>${esc(x.term)}</b> <span class="muted">— ${esc(x.meaning)}</span>${x.translation?`<br><span dir="auto" style="font-family:var(--f-ar)">${esc(x.translation)}</span>`:""}</div></div>`
         :`<div class="item" style="grid-template-columns:auto 1fr"><span class="tag" style="background:var(--sun-soft);color:#8A6100">${x.kind==="tf"?"True/False":"Choice"}</span><div dir="auto"><b>${esc(x.term)}</b></div></div>`).join("")}</div></details>`;}).join("")||'<p class="empty">No items yet.</p>'}
   </section>`;
   if(teacher)wireTeacher(owner);

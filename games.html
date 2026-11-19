@@ -41,7 +41,7 @@ select{font:inherit;padding:8px 10px;border:1px solid var(--rule);border-radius:
 .board.defs{grid-template-columns:1fr}
 .card{background:var(--sheet);border:1px solid var(--rule);border-radius:12px;padding:10px;display:flex;gap:10px;min-width:0}
 .pics .card{flex-direction:column}
-.pics .card img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;display:block;max-width:100%}
+.pics .card img,.card video{width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;display:block;max-width:100%}
 .defs .card{align-items:center;flex-wrap:wrap}
 .defs .card .dtext{flex:1 1 260px;min-width:0}
 .dn{font:800 1rem var(--f-display);color:var(--accent);margin-right:4px}
@@ -159,7 +159,7 @@ function matchRound(kind){
   const g=$("#game");
   g.innerHTML=`<p class="hint">${kind==="pics"?"Drag each word onto its picture.":"Drag each word onto its definition."} On a tablet or phone, tap a word, then tap where it goes.</p>
    <div class="board ${kind}" id="board">${items.map((i,k)=>kind==="pics"
-     ? `<div class="card" data-i="${i}"><img src="${DATA[i].img}" alt="Picture ${k+1}"><div class="slot" data-i="${i}" aria-label="Drop word for picture ${k+1}"></div></div>`
+     ? `<div class="card" data-i="${i}">${Sets.media(DATA[i],{alt:"Picture "+(k+1)})}<div class="slot" data-i="${i}" aria-label="Drop word for picture ${k+1}"></div></div>`
      : `<div class="card" data-i="${i}"><div class="dtext"><span class="dn">${k+1}.</span>${esc(DATA[i].d)}</div><div class="slot" data-i="${i}" aria-label="Drop word for definition ${k+1}"></div></div>`).join("")}</div>
    <div class="tray"><div class="chips" id="bank">${shuffle(items).map(i=>`<button type="button" class="chip" data-i="${i}">${esc(DATA[i].w)}</button>`).join("")}</div>
      <div class="trayrow"><span class="prog" id="placed">0 of ${items.length} placed</span><button class="btn primary" id="check" disabled>Check answers</button></div></div>

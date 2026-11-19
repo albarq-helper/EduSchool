@@ -147,7 +147,7 @@ tr.click{cursor:pointer} tr.click:hover td{background:var(--accent-soft)}
 .kv span{font-size:.75rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:700}
 .items{display:flex;flex-direction:column;gap:8px}
 .item{display:grid;grid-template-columns:56px 1fr;gap:12px;align-items:start;padding:10px;border:1px solid var(--rule);border-radius:12px;background:var(--sheet)}
-.item img{width:56px;height:56px;border-radius:10px;object-fit:cover;background:var(--paper)}
+.item img,.item video{width:56px;height:56px;border-radius:10px;object-fit:cover;background:var(--paper)}
 .item b{font-family:var(--f-display)}
 textarea{font:inherit;padding:9px 11px;border:1px solid var(--rule);border-radius:8px;background:var(--paper);color:var(--ink);width:100%;min-height:70px;resize:vertical}
 textarea:focus{outline:none;border-color:var(--accent)}

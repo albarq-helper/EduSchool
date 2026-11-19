@@ -117,6 +117,7 @@ function rowHTML(r,k){
     <label class="f">Syllables (optional)<input data-f="syllables" data-k="${k}" value="${esc(r.syllables)}" maxlength="200" placeholder="e.g. pho-to-syn-the-sis"></label>
     <label class="f">Say it (optional)<input data-f="pronunciation" data-k="${k}" value="${esc(r.pronunciation||"")}" maxlength="120" placeholder="e.g. foh-toh-SIN-thuh-sis (stress in CAPITALS)"></label>
     <label class="f">Video clip (optional)<input data-f="video_url" data-k="${k}" value="${esc(r.video_url||"")}" maxlength="500" placeholder="https://… or assets/videos/word.mp4"></label>
+    <label class="f">Emoji (optional, shown when there is no clip or picture)<input data-f="emoji" data-k="${k}" value="${esc(r.emoji||"")}" maxlength="16" placeholder="e.g. 🦋"></label>
     <label class="f">Sounds like (optional)<input data-f="sound_hint" data-k="${k}" value="${esc(r.sound_hint||"")}" maxlength="300" placeholder="e.g. SIN ~ tin | foh ≈ go  (~ sounds like, ≈ rhymes with)"></label>
     ${media(r,k,"image_url","Picture (optional)","image/*")}${media(r,k,"audio_url","Audio (optional, otherwise read aloud)","audio/*")}</div></div>`;
   const qtop=`<label class="f">${r.kind==="tf"?"Statement":"Question"}<textarea data-f="term" data-k="${k}" maxlength="500" dir="auto" style="min-height:52px">${esc(r.term)}</textarea></label>`;
@@ -210,7 +211,7 @@ $("save").onclick=async()=>{const m=$("saveMsg"),err=validate();if(err){m.textCo
     if(sid){const r=await C.from("study_sets").update(meta).eq("id",sid);if(r.error)throw r.error;}
     else{const r=await C.from("study_sets").insert({...meta,owner_id:ME.id}).select("id").single();if(r.error)throw r.error;sid=r.data.id;}
     const rows=ROWS.map((r,k)=>{const o={id:r.id,set_id:sid,position:k+1,kind:r.kind,unit:r.unit,also_units:r.also_units||[],term:r.term.trim(),meaning:r.meaning.trim(),example:(r.example||"").trim(),
-      translation:(r.translation||"").trim(),syllables:(r.syllables||"").trim(),pronunciation:(r.pronunciation||"").trim(),sound_hint:(r.sound_hint||"").trim(),video_url:(r.video_url||"").trim(),image_url:(r.image_url||"").trim(),anim_url:r.anim_url||"",audio_url:(r.audio_url||"").trim(),choices:[],answer:null};
+      translation:(r.translation||"").trim(),syllables:(r.syllables||"").trim(),pronunciation:(r.pronunciation||"").trim(),sound_hint:(r.sound_hint||"").trim(),video_url:(r.video_url||"").trim(),emoji:(r.emoji||"").trim(),image_url:(r.image_url||"").trim(),anim_url:r.anim_url||"",audio_url:(r.audio_url||"").trim(),choices:[],answer:null};
       if(r.kind==="mcq"){const keep=r.choices.map((c,j)=>[c.trim(),j]).filter(x=>x[0]);o.choices=keep.map(x=>x[0]);o.answer=keep.findIndex(x=>x[1]===r.answer);}
       if(r.kind==="tf")o.answer=r.answer;return o;});
     const gone=[...ORIG].filter(id=>!rows.some(r=>r.id===id));

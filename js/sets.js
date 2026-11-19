@@ -7,11 +7,15 @@
   const qs = new URLSearchParams(location.search);
   const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
 
-  // Coloured letter tile for terms without a picture.
-  function tile(term) {
+  // Tile for terms without a clip or picture: the term's emoji when it has one, else its first letter.
+  function tile(term, emoji) {
     const pal = [["#E6ECFB", "#2347C5"], ["#DDF3EE", "#127A68"], ["#FDE7DF", "#B4472A"], ["#FFF3CC", "#8A6100"], ["#EDE6FB", "#6236C5"]];
     let h = 0; for (const c of String(term)) h = (h * 31 + c.codePointAt(0)) >>> 0;
     const [bg, fg] = pal[h % pal.length], ch = esc((String(term).trim()[0] || "?").toUpperCase());
+    if (emoji) {
+      const em = esc(emoji);
+      return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><rect width="120" height="120" rx="24" fill="${bg}"/><text x="60" y="62" dominant-baseline="middle" font-family="'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',sans-serif" font-size="66" text-anchor="middle">${em}</text></svg>`);
+    }
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><rect width="120" height="120" rx="24" fill="${bg}"/><text x="60" y="80" font-family="system-ui,sans-serif" font-size="64" font-weight="800" text-anchor="middle" fill="${fg}">${ch}</text></svg>`;
     return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
   }
@@ -77,9 +81,33 @@
     };
     video.play().catch(() => {});
   }
+  // Stop the sound and go back to the silent loop (clips play silently by default while on screen).
   function stopClip(video) {
     if (!video) return;
-    video._run = (video._run || 0) + 1; video.onended = null; video.pause(); video.muted = true; video.loop = true;
+    video._run = (video._run || 0) + 1; video.onended = null; video.muted = true; video.loop = true;
+    if (video.dataset.auto != null && video._seen) video.play().catch(() => {}); else video.pause();
+  }
+  // The picture for a term: its clip (playing silently on a loop while on screen) or its picture / emoji tile.
+  function media(v, o = {}) {
+    const cls = o.cls ? ` class="${o.cls}"` : "", alt = esc(o.alt != null ? o.alt : v.w), extra = o.attrs || "";
+    if (v.vid) return `<video${cls} src="${esc(v.vid)}" poster="${esc(v.real ? v.img : "")}" muted loop playsinline preload="none" data-auto aria-label="${alt ? "Clip showing " + alt : "Clip"}"${extra}></video>`;
+    return `<img${cls} src="${esc(v.img)}" alt="${alt}" loading="lazy"${extra}>`;
+  }
+  // Play every [data-auto] clip silently while it is on screen and pause it when it scrolls away.
+  // New clips are picked up automatically, so pages only need to output media(...).
+  let io = null;
+  function watchClips() {
+    if (io || !("IntersectionObserver" in window)) return;
+    const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    io = new IntersectionObserver(es => es.forEach(e => {
+      const v = e.target; v._seen = e.isIntersecting;
+      if (reduce) { if (e.isIntersecting && v.preload === "none") v.preload = "metadata"; return; }
+      if (e.isIntersecting) { if (v.preload === "none") v.preload = "auto"; if (v.paused && v.muted) v.play().catch(() => {}); }
+      else if (v.muted) v.pause();
+    }), { rootMargin: "120px" });
+    const scan = root => (root.querySelectorAll ? root : document).querySelectorAll("video[data-auto]").forEach(v => { if (!v._io) { v._io = 1; io.observe(v); } });
+    scan(document);
+    new MutationObserver(ms => ms.forEach(m => m.addedNodes.forEach(n => { if (n.nodeType === 1) { if (n.matches && n.matches("video[data-auto]")) scan(n.parentNode); else scan(n); } }))).observe(document.body, { childList: true, subtree: true });
   }
 
   async function pickSetId(p) {
@@ -108,8 +136,8 @@
     const terms = items.filter(x => x.kind === "term"), questions = items.filter(x => x.kind !== "term");
     const words = terms.map(x => ({
       id: x.id, w: x.term, d: x.meaning, s: blankify(x.example, x.term), ar: x.translation || "",
-      u: x.unit, also: x.also_units || [], img: x.anim_url || x.image_url || tile(x.term),
-      photo: x.anim_url && x.image_url ? x.image_url : "", au: x.audio_url || "tts",
+      u: x.unit, also: x.also_units || [], img: x.anim_url || (x.emoji ? tile(x.term, x.emoji) : "") || x.image_url || tile(x.term), emoji: x.emoji || "",   // clip first (vid), then animated emoji, emoji, photo
+      photo: (x.anim_url || x.emoji) && x.image_url ? x.image_url : "", au: x.audio_url || "tts",
       vid: x.video_url || "", pron: x.pronunciation || "", hint: x.sound_hint || "", syl: (x.syllables || (/\s/.test(x.term) ? x.term.toLowerCase() : autoSyl(x.term))).toLowerCase(), real: !!(x.anim_url || x.image_url)
     }));
     const named = new Map((set.units || []).map(u => [Number(u.u), u.name || ""]));
@@ -150,6 +178,7 @@
     document.querySelectorAll('script[type="text/x-app"]').forEach(s => {
       const n = document.createElement("script"); n.textContent = s.textContent; document.body.appendChild(n);
     });
+    watchClips();
   }
 
   async function boot(opts = {}) {
@@ -180,5 +209,5 @@
     runPage();
   }
 
-  window.Sets = { boot, speak, sayWord, playClip, stopClip,tile, autoSyl, blankify, load, mapItems, G5, LANGS };
+  window.Sets = { boot, speak, sayWord, playClip, stopClip, media, watchClips, tile, autoSyl, blankify, load, mapItems, G5, LANGS };
 })();

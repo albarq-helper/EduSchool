@@ -72,7 +72,7 @@ input:checked+.opt .bub{background:var(--ink);border-color:var(--ink);color:var(
 .verdict.ok{background:var(--good-soft);color:var(--good)} .verdict.no{background:var(--bad-soft);color:var(--bad)}
 .review{display:flex;gap:12px;align-items:flex-start;border-top:1px dashed var(--rule);padding-top:12px;margin-left:calc(2.2ch + 12px)}
 @media (max-width:520px){.review{margin-left:0}}
-.review img{width:72px;height:72px;object-fit:cover;border-radius:8px;flex:none}
+.review img,.review video{width:72px;height:72px;object-fit:cover;border-radius:8px;flex:none}
 .review .body{min-width:0;display:flex;flex-direction:column;gap:4px;font-size:.93rem}
 .review .word{font:700 1.05rem var(--f-display)} .review .ar{font:700 1.05rem var(--f-ar);color:var(--muted)}
 .review u{text-decoration-thickness:2px;font-weight:700}
@@ -264,7 +264,7 @@ function grade(){
     head.insertAdjacentHTML("beforeend",`<span class="verdict ${ok?"ok":"no"}">${ok?"Correct":(q.chosen===null?"No answer":"Incorrect")}</span><label class="pick"><input type="checkbox" class="pq" data-idx="${q.idx}"${ok?"":" checked"}> Practice</label>`);
     const v=DATA[q.idx];
     const sent=esc(v.s).replace(/\[([^\]]*)\]/,"<u>$1</u>");
-    li.insertAdjacentHTML("beforeend",`<div class="review"><img src="${v.img}" alt="${esc(v.w)}">${v.photo?`<img src="${v.photo}" alt="">`:""}<div class="body">
+    li.insertAdjacentHTML("beforeend",`<div class="review">${Sets.media(v)}${v.photo?`<img src="${v.photo}" alt="">`:""}<div class="body">
       <div><span class="word">${L[q.ans]}. ${esc(v.w)}</span> ${v.au?`<button type="button" class="say" data-say="${q.idx}" aria-label="Hear ${esc(v.w)}">🔊</button>`:""} &nbsp;<span class="ar" dir="auto">${esc(v.ar)}</span></div>
       <div><b>Definition:</b> ${esc(v.d)}</div><div><b>Sentence:</b> ${sent}</div></div></div>`);
   });

@@ -78,7 +78,7 @@ select{font:inherit;padding:8px 10px;border:1px solid var(--rule);border-radius:
 .score b{font:800 2.2rem/1 var(--f-display);font-variant-numeric:tabular-nums}
 .rev{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
 .rev li{background:var(--sheet);border:1px solid var(--rule);border-radius:10px;padding:10px 12px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
-.rev li img{width:48px;height:48px;object-fit:cover;border-radius:6px}
+.rev li img,.rev li video{width:48px;height:48px;object-fit:cover;border-radius:6px}
 .rev .w{font:800 1.15rem var(--f-display);min-width:8ch}
 .rev .yours{min-width:0;flex:1 1 200px}
 .pill{font-size:.8rem;font-weight:700;padding:2px 9px;border-radius:999px}
@@ -192,7 +192,7 @@ function finish(title,rows){
   const right=rows.filter(r=>r.ok).length,n=rows.length;
   $("#app").innerHTML=`<div class="score" role="status"><b>${right} / ${n}</b><span>${title} · ${Math.round(right/n*100)}% · ${right===n?"Perfect!":right/n>=.75?"Great work!":"Keep practising the red ones."}</span>
     <button class="btn primary" id="again">Go again</button>${right<n?`<button class="btn" id="redo">Practise missed words</button>`:""}</div>
-    <ul class="rev">${rows.map(r=>`<li><img src="${DATA[r.i].img}" alt=""><span class="w">${esc(DATA[r.i].w.replace(/\s*\(.*\)/,""))}</span>
+    <ul class="rev">${rows.map(r=>`<li>${Sets.media(DATA[r.i],{alt:""})}<span class="w">${esc(DATA[r.i].w.replace(/\s*\(.*\)/,""))}</span>
       <span class="yours">${r.ok?`<span class="pill ok">Correct</span>`:`<span class="pill no">You wrote: ${esc(r.typed||"(blank)")}</span>`}</span>
       <span class="ar" dir="auto">${esc(DATA[r.i].ar)}</span></li>`).join("")}</ul>`;
   $("#again").onclick=start; const rd=$("#redo"); if(rd) rd.onclick=()=>{$("#wordSet").value="missed";start();};

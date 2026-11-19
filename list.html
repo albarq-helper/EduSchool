@@ -166,7 +166,7 @@ const coverBtns=i=>{const s=S(i);return `<div class="covers no-print">
   <button type="button" class="cv-btn" data-cw="${i}" aria-pressed="${!!s.cw}">${icon(s.cw?"eye":"eye-off",14)}${s.cw?"Show word":"Cover word"}</button>
   ${SHOW.mean||s.cm?`<button type="button" class="cv-btn" data-cm="${i}" aria-pressed="${!!s.cm}">${icon(s.cm?"eye":"eye-off",14)}${s.cm?"Show meaning":"Cover meaning"}</button>`:""}</div>`;};
 // ---- pieces ----
-const picHTML=(i,v)=>!SHOW.pic?"":v.vid?`<div class="vwrap"><video class="pic" src="${esc(v.vid)}" poster="${esc(v.real?v.img:"")}" muted loop playsinline preload="metadata" data-clip data-i="${i}" aria-label="${S(i).cw?"Clip":"Clip showing "+esc(v.w)}"></video><span class="vbadge">${icon("volume-2",12)} Tap to watch</span></div>`:`<img class="pic" src="${esc(v.img)}" alt="${S(i).cw?"":esc(v.w)}" loading="lazy">`;
+const picHTML=(i,v)=>!SHOW.pic?"":v.vid?`<div class="vwrap">${Sets.media(v,{cls:"pic",alt:S(i).cw?"":v.w,attrs:` data-clip data-i="${i}"`})}<span class="vbadge">${icon("volume-2",12)} Tap to hear</span></div>`:`<img class="pic" src="${esc(v.img)}" alt="${S(i).cw?"":esc(v.w)}" loading="lazy">`;
 const exHTML=(i,v)=>{if(!SHOW.ex||!v.s||/^\[[^\]]*\]$/.test(v.s))return "";
   const t=S(i).cw&&S(i).ok===undefined?esc(v.s).replace(/\[([^\]]*)\]/,(m,x)=>"_".repeat(Math.max(4,x.length))):esc(v.s).replace(/\[([^\]]*)\]/,"<b>$1</b>");return `<div class="ex">${t}</div>`;};
 const trHTML=(i,v)=>SHOW.tr&&v.ar&&!(S(i).cm&&!S(i).mrev)?`<div class="tr" dir="auto">${esc(v.ar)}</div>`:"";
@@ -230,11 +230,10 @@ $("out").addEventListener("keydown",e=>{
   if((e.key==="Enter"||e.key===" ")&&e.target.dataset.hear!==undefined&&e.target.getAttribute("role")==="button"){e.preventDefault();hear(+e.target.dataset.hear);}});
 $("out").addEventListener("click",e=>{const v=e.target.closest("video[data-clip]");if(!v)return;
   // A tap says the word ONCE and plays the clip once with its own sounds; then it loops silently. A second tap stops it.
-  if(!v.dataset.stick){delete v.dataset.hov;document.querySelectorAll("video[data-clip]").forEach(o=>{if(o!==v){Sets.stopClip(o);delete o.dataset.stick;o.parentNode.classList.remove("playing");}});
+  if(!v.dataset.stick){document.querySelectorAll("video[data-clip]").forEach(o=>{if(o!==v){Sets.stopClip(o);delete o.dataset.stick;o.parentNode.classList.remove("playing");}});
     Sets.playClip(v,D[+v.dataset.i]);v.dataset.stick=1;v.parentNode.classList.add("playing");}
   else{Sets.stopClip(v);delete v.dataset.stick;v.parentNode.classList.remove("playing");}});
-$("out").addEventListener("mouseover",e=>{const v=e.target.closest("video[data-clip]");if(v&&v.paused&&matchMedia("(hover:hover)").matches){v.dataset.hov=1;v.play().catch(()=>{});v.parentNode.classList.add("playing");}});
-$("out").addEventListener("mouseout",e=>{const v=e.target.closest("video[data-clip]");if(v&&!v.contains(e.relatedTarget)){delete v.dataset.hov;if(!v.dataset.stick){Sets.stopClip(v);v.parentNode.classList.remove("playing");}}});
+// clips already play silently while on screen (Sets.watchClips); no hover preview needed
 $("out").addEventListener("input",e=>{const t=e.target;if(t.dataset.spell!==undefined)S(+t.dataset.spell).typed=t.value;if(t.dataset.mean!==undefined)S(+t.dataset.mean).mtyped=t.value;});
 const press=(grp,attr,val)=>document.querySelectorAll(`#${grp} button`).forEach(b=>b.setAttribute("aria-pressed",b.dataset[attr]===val));
 $("views").onclick=e=>{const b=e.target.closest("[data-v]");if(!b)return;VIEW=b.dataset.v;store.set("view",VIEW);press("views","v",VIEW);render();};
