@@ -48,7 +48,7 @@ input.gap.ok{border-color:var(--good);background:var(--good-soft)}input.gap.no{b
 .ly.past{color:var(--ink)}
 .ly.now{background:var(--accent-soft);color:var(--ink);font-weight:700;transform:scale(1.01)}
 .ly.now .tm{color:var(--accent)}
-.ly.stage{font-style:italic}
+.ly.stage{font-style:italic}.ly.intro{font-weight:700;color:var(--accent)}.ly.intro svg{vertical-align:-2px}
 .nolines{color:var(--muted)}
 .res{font-weight:700}.res.ok{color:var(--good)}.res.no{color:var(--bad)}
 /* word pop-up */
@@ -144,9 +144,11 @@ function textHTML(t,fill){const lines=t.body.split(/\r?\n/), roles=[];let html="
 function songHTML(s,fill){const L=Array.isArray(s.lines)?s.lines:[],gc={n:0};
   const isVideo=/\.(mp4|webm|mov)(\?|$)/i.test(s.media_url)||/video/.test(s.media_url);
   const media=s.media_url?(isVideo?`<video id="m_${s.id}" src="${esc(s.media_url)}" controls playsinline preload="metadata"></video>`:`<audio id="m_${s.id}" src="${esc(s.media_url)}" controls preload="metadata"></audio>`):`<p class="muted">No recording yet.</p>`;
-  const lyr=L.length?L.map((x,k)=>`<div class="ly${/^\(.*\)$/.test(x.l)?" stage":""}" data-k="${k}" ${x.t!=null?`data-t="${x.t}"`:""}><span class="tm">${fmt(x.t)}</span><span>${lineHTML(x.l,s.unit,fill,"s"+s.id,gc)}</span></div>`).join(""):`<p class="nolines">No lyrics added yet.</p>`;
+  // An "Intro" line at 0:00 so the song can always be started from the very beginning (and the intro music lights up too)
+  const intro=L.length&&L[0].t!=null&&+L[0].t>1?`<div class="ly intro" data-k="-1" data-t="0"><span class="tm">${fmt(0)}</span><span>${icon("music",15)} Intro</span></div>`:"";
+  const lyr=L.length?intro+L.map((x,k)=>`<div class="ly${/^\(.*\)$/.test(x.l)?" stage":""}" data-k="${k}" ${x.t!=null?`data-t="${x.t}"`:""}><span class="tm">${fmt(x.t)}</span><span>${lineHTML(x.l,s.unit,fill,"s"+s.id,gc)}</span></div>`).join(""):`<p class="nolines">No lyrics added yet.</p>`;
   return `<div class="player"><div class="vid">${media}
-      <div class="row" style="gap:6px"><button class="btn small" type="button" data-rate="${s.id}" data-r="0.75">${icon("clock",14)}Slower</button><button class="btn small" type="button" data-rate="${s.id}" data-r="1">Normal speed</button></div>
+      <div class="row" style="gap:6px"><button class="btn small" type="button" data-start="${s.id}">${icon("rotate-ccw",14)}From the start</button><button class="btn small" type="button" data-rate="${s.id}" data-r="0.75">${icon("clock",14)}Slower</button><button class="btn small" type="button" data-rate="${s.id}" data-r="1">Normal speed</button></div>
       <p class="muted" style="margin:0;font-size:.86rem">Tap any line to jump to it. Highlighted words show their picture and meaning.</p></div>
     <div class="lyrics" id="ly_${s.id}" aria-label="Lyrics">${lyr}</div></div>`;}
 
@@ -183,7 +185,8 @@ const groupOf=el=>GROUPS.find(g=>g.id===el.closest("[data-pack]")?.dataset.pack)
 const norm=s=>String(s).trim().toLowerCase().replace(/[’']/g,"'");
 $("out").addEventListener("click",e=>{
   const w=e.target.closest("mark.vw");if(w){showPop(+w.dataset.w,w);return;}
-  const b=e.target.closest("button");const ly=e.target.closest(".ly[data-t]");
+  const b=e.target.closest("button");
+  if(b&&b.dataset.start){const m=$("m_"+b.dataset.start);if(m){m.currentTime=0;m.play().catch(()=>{});}return;}const ly=e.target.closest(".ly[data-t]");
   if(ly&&!e.target.closest("input")){const box=ly.closest(".lyrics"),m=$("m_"+box.id.slice(3));if(m){m.currentTime=+ly.dataset.t;m.play().catch(()=>{});}return;}
   if(!b)return;const g=groupOf(b);
   if(b.dataset.tab){g.sel=b.dataset.tab;redrawPack(g);}
