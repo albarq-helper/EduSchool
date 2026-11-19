@@ -58,9 +58,9 @@ for k, sec in enumerate(S):
     elif kind == 'fun':
         cd = float(subprocess.run(['ffprobe', '-v', 'error', '-select_streams', 'v:0', '-show_entries', 'stream=duration', '-of', 'csv=p=0', w],
                                   capture_output=True, text=True).stdout.strip() or 0) - off
-        stretch = L / cd if cd and cd < L <= cd * 1.3 else 1          # slow a little rather than visibly restart
-        run(['ffmpeg', '-v', 'error', '-y', *([] if stretch > 1 else ['-stream_loop', '-1']), '-ss', str(off), '-i', w, '-t', f'{L:.3f}', '-an',
-             '-vf', f'setpts={stretch:.4f}*PTS,scale={W}:{W}:flags=lanczos,setsar=1', *enc, f])
+        k = L / cd if cd and L > cd else 1
+        vf = f'setpts={k:.4f}*PTS' + (',minterpolate=fps=30:mi_mode=mci:mc_mode=aobmc:me_mode=bidir:vsbmc=1' if k > 1.05 else '') + f',scale={W}:{W}:flags=lanczos,setsar=1'
+        run(['ffmpeg', '-v', 'error', '-y', '-ss', str(off), '-i', w, '-t', f'{L:.3f}', '-an', '-vf', vf, *enc, f])
     elif kind == 'bridge':
         B = C['bridge']; bw = B['words']; cols = B['cols']; rows = B['rows']; c = W // cols; gy = (W - rows * c) // 2
         ins = []; fl = []
@@ -81,11 +81,22 @@ for k, sec in enumerate(S):
         fl[-1] = fl[-1].rsplit('[', 1)[0] + '[v]'
         run(['ffmpeg', '-v', 'error', '-y', *ins, '-filter_complex', ';'.join(fl), '-map', '[v]', '-an', '-t', f'{L:.3f}', *enc, f])
     elif kind in ('clip', 'recap', 'quiz'):
-        cd = float(subprocess.run(['ffprobe', '-v', 'error', '-select_streams', 'v:0', '-show_entries', 'stream=duration', '-of', 'csv=p=0', CL.format(w)],
-                                  capture_output=True, text=True).stdout.strip() or 0) - off
-        stretch = L / cd if cd and cd < L <= cd * 1.3 else 1          # up to 30% slower looks natural; longer still loops
-        run(['ffmpeg', '-v', 'error', '-y', *([] if stretch > 1 else ['-stream_loop', '-1']), '-ss', str(off), '-i', CL.format(w), '-t', f'{L:.3f}', '-an',
-             '-vf', f'setpts={stretch:.4f}*PTS,scale={W}:{W}:flags=lanczos,setsar=1', *enc, f])
+        src_clip = CL.format(w)
+        cd = float(subprocess.run(['ffprobe', '-v', 'error', '-select_streams', 'v:0', '-show_entries', 'stream=duration', '-of', 'csv=p=0', src_clip],
+                                  capture_output=True, text=True).stdout.strip() or 0)
+        smooth = 'minterpolate=fps=30:mi_mode=mci:mc_mode=aobmc:me_mode=bidir:vsbmc=1'   # made-up in-between frames = smooth slow motion
+        warp = C.get('warps', {}).get(w) if kind == 'clip' else None
+        if warp:   # [[clip_from, clip_to, song_from, song_to], ...]: e.g. reach the tiger's roar exactly on the sung "roar"
+            parts = []
+            for j, (c0, c1, t0, t1) in enumerate(warp):
+                k = (t1 - t0 + (L - (e - s) if j == len(warp) - 1 else 0)) / (c1 - c0)
+                parts.append(f'[0:v]trim={c0}:{c1},setpts=(PTS-STARTPTS)*{k:.4f}[p{j}]')
+            fc = ';'.join(parts) + ';' + ''.join(f'[p{j}]' for j in range(len(warp))) + f'concat=n={len(warp)}:v=1:a=0,{smooth},scale={W}:{W}:flags=lanczos,setsar=1[v]'
+            run(['ffmpeg', '-v', 'error', '-y', '-i', src_clip, '-filter_complex', fc, '-map', '[v]', '-t', f'{L:.3f}', '-an', *enc, f])
+        else:      # play the clip ONCE, slowed down to fill the whole section (no repeats)
+            k = L / (cd - off) if cd and L > cd - off else 1
+            vf = f'setpts={k:.4f}*PTS' + (f',{smooth}' if k > 1.05 else '') + f',scale={W}:{W}:flags=lanczos,setsar=1'
+            run(['ffmpeg', '-v', 'error', '-y', '-ss', str(off), '-i', src_clip, '-t', f'{L:.3f}', '-an', '-vf', vf, *enc, f])
     else:   # grid of all the clips (plus the cover tile)
         c = GT; ins = []; fl = []
         for j, t in enumerate(GRID['tiles']):
