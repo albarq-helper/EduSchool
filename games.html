@@ -69,8 +69,8 @@ select{font:inherit;padding:8px 10px;border:1px solid var(--rule);border-radius:
 
 /* unscramble */
 .uns{background:var(--sheet);border:1px solid var(--rule);border-radius:12px;padding:16px;display:grid;grid-template-columns:140px 1fr;gap:16px;align-items:start}
-@media (max-width:560px){.uns{grid-template-columns:1fr}.uns img{max-width:160px}}
-.uns img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;display:block}
+@media (max-width:560px){.uns{grid-template-columns:1fr}.uns img,.uns video{max-width:160px}}
+.uns img,.uns video{width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;display:block}
 .uns .body{display:flex;flex-direction:column;gap:12px;min-width:0}
 .answer{display:flex;flex-wrap:wrap;gap:6px;min-height:52px;padding:6px;border-bottom:3px solid var(--ink)}
 .letters{display:flex;flex-wrap:wrap;gap:6px}
@@ -258,7 +258,7 @@ function scramble(w){
 function unsShow(){
   const i=U.items[U.k], v=DATA[i], sc=scramble(v.w); U.cur={i,sc,built:[]};
   $("#game").innerHTML=`<p class="hint">Read the clue, then tap the letters in the right order to spell the word.</p>
-   <div class="uns" id="unsBox"><img src="${v.img}" alt="Picture clue">
+   <div class="uns" id="unsBox">${Sets.media(v,{alt:"Picture clue"})}
     <div class="body"><span class="prog">Word ${U.k+1} of ${U.items.length} · ${sc.target.length} letters</span>
      <div><b>Clue:</b> ${esc(v.d)}</div>
      <div class="answer" id="ans" aria-live="polite"></div>

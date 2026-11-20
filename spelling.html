@@ -41,8 +41,8 @@ select{font:inherit;padding:8px 10px;border:1px solid var(--rule);border-radius:
 .hint{color:var(--muted);font-size:.93rem;margin:0}
 
 .stage{background:var(--sheet);border:1px solid var(--rule);border-radius:14px;padding:18px;display:grid;grid-template-columns:150px 1fr;gap:18px}
-@media (max-width:560px){.stage{grid-template-columns:1fr}.stage>img{max-width:150px}}
-.stage>img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;display:block}
+@media (max-width:560px){.stage{grid-template-columns:1fr}.stage>img,.stage>video{max-width:150px}}
+.stage>img,.stage>video{width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;display:block}
 .col{display:flex;flex-direction:column;gap:12px;min-width:0}
 .prog{color:var(--muted);font-variant-numeric:tabular-nums;font-size:.9rem}
 .big{font:800 clamp(2rem,7vw,3.2rem)/1.1 var(--f-display);letter-spacing:.02em;overflow-wrap:anywhere}
@@ -204,7 +204,7 @@ function learn(){L={items:shuffle(pool()),k:0,rows:[]};learnShow();}
 function learnShow(){
   const i=L.items[L.k];L.stage="look";
   $("#app").innerHTML=`<p class="hint">Look at the word and say it out loud. Notice the coloured syllables. Then press <b>Cover</b> and write it from memory.</p>
-  <div class="stage"><img src="${DATA[i].img}" alt=""><div class="col">
+  <div class="stage">${Sets.media(DATA[i],{alt:""})}<div class="col">
    <span class="prog">Word ${L.k+1} of ${L.items.length}</span>
    <div class="big" id="lw">${sylHTML(i)}</div>
    <div class="clue">${esc(DATA[i].d)} <span class="ar" dir="auto">${esc(DATA[i].ar)}</span></div>
@@ -241,7 +241,7 @@ function gapsShow(){
   const i=G.items[G.k],t=spell(i),H=holesFor(t,G.level);G.cur={i,t,H,fill:{},order:[...H].sort((a,b)=>a-b)};
   const pool=shuffle([...G.cur.order.map(j=>t[j]),...shuffle("aeioulnrst".split("")).slice(0,Math.min(4,8-Math.min(8,H.size)+2))]);
   $("#app").innerHTML=`<div class="level"><span class="eyebrow">Level</span>${[1,2,3].map(l=>`<button class="btn small ${G.level===l?"primary":""}" data-l="${l}">${l===1?"1 · Few gaps":l===2?"2 · Half":"3 · Only first letter"}</button>`).join("")}</div>
-  <div class="stage"><img src="${DATA[i].img}" alt=""><div class="col">
+  <div class="stage">${Sets.media(DATA[i],{alt:""})}<div class="col">
    <span class="prog">Word ${G.k+1} of ${G.items.length}</span>
    <div class="clue">${esc(DATA[i].d)}</div>
    <div class="gaps" id="gw">${[...t].map((c,j)=>H.has(j)?`<button type="button" class="g hole" data-j="${j}" aria-label="Missing letter"></button>`:`<span class="g fixed">${esc(c)}</span>`).join("")}</div>
@@ -276,7 +276,7 @@ function buildShow(){
   const i=B.items[B.k],S=syls(i);let order;do{order=shuffle(S.map((_,k)=>k))}while(S.length>1&&order.every((v,k)=>v===k));
   B.cur={i,S,built:[]};
   $("#app").innerHTML=`<p class="hint">Put the syllables in order to build the word. Say each part as you tap it.</p>
-  <div class="stage"><img src="${DATA[i].img}" alt=""><div class="col">
+  <div class="stage">${Sets.media(DATA[i],{alt:""})}<div class="col">
    <span class="prog">Word ${B.k+1} of ${B.items.length} · ${S.length} syllables</span>
    <div class="clue">${esc(DATA[i].d)}</div>
    <div class="built" id="bb" aria-live="polite"></div>
@@ -302,7 +302,7 @@ function test(){const n=+$("#testLen").value;T={items:shuffle(pool()).slice(0,n)
 function testShow(){
   const i=T.items[T.k];
   $("#app").innerHTML=`<p class="hint">Spelling test: no hints. ${canSpeak?"Press <b>Hear it</b> to listen to the word, then type it.":"Use the picture, meaning and sentence, then type the word."} Answers are shown at the end.</p>
-  <div class="stage"><img src="${DATA[i].img}" alt=""><div class="col">
+  <div class="stage">${Sets.media(DATA[i],{alt:""})}<div class="col">
    <span class="prog">Question ${T.k+1} of ${T.items.length}</span>
    <div class="clue"><b>Meaning:</b> ${esc(DATA[i].d)}</div>
    <div class="clue sent"><b>Sentence:</b> ${sentBlank(i)}</div>
