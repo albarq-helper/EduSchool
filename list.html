@@ -100,7 +100,7 @@ input.ok,textarea.ok{border-color:var(--good)!important;background:var(--good-so
   <section class="card tools no-print">
     <div class="r">
       <label class="q"><i data-i="search"></i><input id="q" type="search" placeholder="Filter words or meanings…" aria-label="Filter words"></label>
-      <select id="unit" aria-label="Unit"></select>
+      <div id="unitMount" aria-label="Units"></div>
       <div class="seg" role="group" aria-label="View" id="views">
         <button type="button" data-v="detail" aria-pressed="true">Detail</button><button type="button" data-v="grid" aria-pressed="false">Grid</button><button type="button" data-v="list" aria-pressed="false">List</button><button type="button" data-v="blocks" aria-pressed="false">Blocks</button>
       </div>
@@ -132,7 +132,7 @@ const $=id=>document.getElementById(id), esc=App.esc, D=window.WORDS, U=window.U
 document.querySelectorAll("[data-i]").forEach(el=>el.insertAdjacentHTML("afterbegin",icon(el.dataset.i,16)));
 const store={get(k,d){try{const v=localStorage.getItem("wl_"+k);return v===null?d:JSON.parse(v);}catch(e){return d;}},set(k,v){try{localStorage.setItem("wl_"+k,JSON.stringify(v));}catch(e){}}};
 const uname=x=>x.u?(x.name?`Unit ${x.u} · ${x.name}`:`Unit ${x.u}`):(x.name||"General");
-$("unit").innerHTML=`<option value="all">All units (${D.length})</option>`+U.map(x=>`<option value="${x.u}">${esc(uname(x))} (${x.n})</option>`).join("");
+const UP=Sets.unitPicker($("unitMount"),()=>render());
 let VIEW=store.get("view","detail"), SHOW=Object.assign({pic:true,syl:true,say:true,mean:true,ex:true,tr:true},store.get("show",{}));
 let ORDER=D.map((v,i)=>i), ST={};   // ST[i] = {cw, cm, typed, ok, mtyped, mrev, self}
 const S=i=>ST[i]||(ST[i]={});
@@ -195,8 +195,8 @@ function card(i,view){const v=D[i], hid=wordHidden(i);
   if(view==="blocks")return `<article class="b" data-i="${i}">${picHTML(i,v)}<div class="w bw" data-hear="${i}" role="button" tabindex="0" aria-label="Hear the word">${wordHTML(i,v)} ${icon("volume-2",15)}</div>${sayHTML(v,i)}${spellHTML(i,v)}${S(i).cm?meanHTML(i,v):""}${coverBtns(i)}</article>`;
   return `<tr data-i="${i}">${SHOW.pic?`<td>${picHTML(i,v)}</td>`:""}<td><div class="w">${wordHTML(i,v)}</div>${sayHTML(v,i)}${spellHTML(i,v)}</td><td>${hearBtn(i,v)}</td>
     <td>${meanHTML(i,v)}${coverBtns(i)}</td>${SHOW.tr&&D.some(x=>x.ar)?`<td class="tr" dir="auto">${S(i).cm&&!S(i).mrev?"":esc(v.ar)}</td>`:""}<td>${unitTag(v)}</td></tr>`;}
-function visible(){const q=$("q").value.trim().toLowerCase(),u=$("unit").value;
-  return ORDER.filter(i=>{const v=D[i];return (u==="all"||v.u===+u||(v.also||[]).includes(+u))&&(!q||(v.w+" "+v.d+" "+v.ar).toLowerCase().includes(q));});}
+function visible(){const q=$("q").value.trim().toLowerCase();
+  return ORDER.filter(i=>{const v=D[i];return UP.match(v)&&(!q||(v.w+" "+v.d+" "+v.ar).toLowerCase().includes(q));});}
 function render(){const L=visible();
   $("count").textContent=L.length+(L.length===1?" word":" words");
   if(!L.length){$("out").innerHTML='<div class="card empty-l">No words match.</div>';score();return;}
@@ -238,7 +238,7 @@ $("out").addEventListener("input",e=>{const t=e.target;if(t.dataset.spell!==unde
 const press=(grp,attr,val)=>document.querySelectorAll(`#${grp} button`).forEach(b=>b.setAttribute("aria-pressed",b.dataset[attr]===val));
 $("views").onclick=e=>{const b=e.target.closest("[data-v]");if(!b)return;VIEW=b.dataset.v;store.set("view",VIEW);press("views","v",VIEW);render();};
 $("toggles").onchange=e=>{SHOW[e.target.dataset.t]=e.target.checked;store.set("show",SHOW);render();};
-$("q").oninput=render;$("unit").onchange=render;
+$("q").oninput=render;
 $("shuffle").onclick=()=>{for(let a=ORDER.length-1;a>0;a--){const b=Math.floor(Math.random()*(a+1));[ORDER[a],ORDER[b]]=[ORDER[b],ORDER[a]];}render();};
 $("reset").onclick=()=>{ST={};render();};
 $("print").onclick=()=>window.print();

@@ -45,6 +45,47 @@
       speechSynthesis.speak(u); return true;
     } catch (e) { return false; }
   }
+
+  // Multi-unit picker (the same one as on the Exam page). Remembers the choice (shared with the Exam page).
+  // Sets.unitPicker(mountEl, onChange) -> { selected(): number[], match(word): bool }
+  function unitPicker(mount, onChange) {
+    const U = window.UNITS_LIST || [], KEY = "vocabUnitsSel";
+    if (!document.getElementById("unitpick-css")) document.head.insertAdjacentHTML("beforeend", `<style id="unitpick-css">.unitpick{position:relative}
+.unitpick summary{list-style:none;cursor:pointer;font:inherit;padding:8px 30px 8px 10px;border:1px solid var(--rule);border-radius:8px;background:var(--sheet);color:var(--ink);min-width:12rem;max-width:100%;position:relative}
+.unitpick summary::-webkit-details-marker{display:none}
+.unitpick summary::after{content:"\\25BE";position:absolute;right:10px;top:50%;transform:translateY(-50%);color:var(--muted)}
+.unitpick[open] summary{border-color:var(--accent)}
+.unitpick .ubox{position:absolute;z-index:20;top:calc(100% + 4px);left:0;width:min(23rem,calc(100vw - 32px));max-height:min(60vh,26rem);overflow:auto;background:var(--sheet);border:1px solid var(--rule);border-radius:10px;padding:10px;box-shadow:0 10px 24px rgba(0,0,0,.18);display:flex;flex-direction:column;gap:4px}
+.unitpick .uquick{display:flex;flex-wrap:wrap;gap:6px;padding-bottom:8px;margin-bottom:4px;border-bottom:1px solid var(--rule)}
+.unitpick .uquick button{font:700 .82rem var(--f-body);padding:5px 10px;border-radius:999px;border:1px solid var(--accent);background:transparent;color:var(--accent);cursor:pointer}
+.unitpick label{display:flex;gap:8px;align-items:flex-start;padding:5px 4px;border-radius:6px;cursor:pointer;font-size:.92rem;line-height:1.3}
+.unitpick label:hover{background:var(--accent-soft)}
+.unitpick input{width:18px;height:18px;flex:none;margin-top:1px;accent-color:var(--accent)}
+.unitpick .uc{margin-left:auto;color:var(--muted);font-variant-numeric:tabular-nums;padding-left:8px}
+.unitpick .uwarn{color:var(--bad);font-size:.85rem;font-weight:700;padding:4px}</style>`);
+    mount.innerHTML = `<details class="unitpick"><summary></summary><div class="ubox"></div></details>`;
+    const det = mount.querySelector("details"), sum = mount.querySelector("summary"), box = mount.querySelector(".ubox");
+    let saved = null; try { saved = JSON.parse(localStorage.getItem(KEY) || "null"); } catch (e) {}
+    const name = x => x.u ? (x.name ? `Unit ${x.u} · ${x.name}` : `Unit ${x.u}`) : (x.name || "General");
+    box.innerHTML = `<div class="uquick"><button type="button" data-q="all">All</button><button type="button" data-q="none">None</button></div>` +
+      U.map(x => `<label><input type="checkbox" value="${x.u}" ${!saved || saved.includes(x.u) ? "checked" : ""}><span>${esc(name(x))}</span><span class="uc">${x.n}</span></label>`).join("") +
+      `<div class="uwarn" hidden>Tick at least one unit.</div>`;
+    const sel = () => [...box.querySelectorAll("input:checked")].map(c => +c.value);
+    if (!sel().length) box.querySelectorAll("input").forEach(c => c.checked = true);
+    const match = w => { const S = sel(); return S.includes(w.u) || (w.also || []).some(u => S.includes(u)); };
+    const range = S => { const n = S.filter(u => u > 0).sort((a, b) => a - b), out = [];
+      for (let k = 0; k < n.length;) { let j = k; while (j + 1 < n.length && n[j + 1] === n[j] + 1) j++; out.push(j > k ? `${n[k]}–${n[j]}` : `${n[k]}`); k = j + 1; }
+      let t = out.length ? (n.length > 1 ? "Units " : "Unit ") + out.join(", ") : ""; if (S.includes(0)) t += (t ? " + " : "") + "general"; return t; };
+    const summary = () => { const S = sel(), n = (window.WORDS || []).filter(match).length;
+      sum.textContent = !S.length ? "Choose at least one unit" : (S.length === U.length ? "All units" : (S.length === 1 ? name(U.find(x => x.u === S[0]) || { u: S[0] }) : range(S))) + ` (${n} words)`;
+      box.querySelector(".uwarn").hidden = !!S.length; try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
+    box.addEventListener("click", e => { const b = e.target.closest("[data-q]"); if (!b) return;
+      box.querySelectorAll("input").forEach(c => c.checked = b.dataset.q === "all"); summary(); onChange && onChange(); });
+    box.addEventListener("change", () => { summary(); onChange && onChange(); });
+    document.addEventListener("click", e => { if (det.open && !det.contains(e.target)) det.open = false; });
+    summary();
+    return { selected: sel, match, refresh: summary };
+  }
   // Say a word once: its recorded audio when there is one, otherwise the browser voice.
   // Returns a promise that resolves when the word has finished (or after a safety timeout).
   let wordAudio = null;
@@ -209,5 +250,5 @@
     runPage();
   }
 
-  window.Sets = { boot, speak, sayWord, playClip, stopClip, media, watchClips, tile, autoSyl, blankify, load, mapItems, G5, LANGS };
+  window.Sets = { boot, speak, sayWord, unitPicker, playClip, stopClip, media, watchClips, tile, autoSyl, blankify, load, mapItems, G5, LANGS };
 })();
