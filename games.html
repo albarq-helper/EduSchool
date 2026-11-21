@@ -66,6 +66,11 @@ select{font:inherit;padding:8px 10px;border:1px solid var(--rule);border-radius:
 
 .score{display:flex;gap:14px;align-items:center;flex-wrap:wrap;background:var(--sheet);border:2px solid var(--ink);border-radius:12px;padding:14px 16px}
 .score b{font:800 2rem/1 var(--f-display);font-variant-numeric:tabular-nums}
+.clock{font:800 1.15rem/1 var(--f-display);font-variant-numeric:tabular-nums;background:var(--sheet);border:2px solid var(--ink);border-radius:999px;padding:6px 12px;min-width:5.2em;text-align:center}
+.clock.low{background:#FDE2E1;border-color:#C2410C;color:#9A3412;animation:tick 1s steps(2) infinite}
+@keyframes tick{50%{transform:scale(1.06)}}
+.score .time{font:700 1rem var(--f-body);color:var(--muted)}
+@media (prefers-reduced-motion:reduce){.clock.low{animation:none}}
 
 /* unscramble */
 .uns{background:var(--sheet);border:1px solid var(--rule);border-radius:12px;padding:16px;display:grid;grid-template-columns:140px 1fr;gap:16px;align-items:start}
@@ -118,6 +123,8 @@ select{font:inherit;padding:8px 10px;border:1px solid var(--rule);border-radius:
       <span class="eyebrow">Units</span>
       <details class="unitpick" id="unitPick"><summary id="unitSum">All units</summary><div class="ubox" id="unitBox"></div></details>
       <label for="wordSet" class="eyebrow">Practise</label><select id="wordSet"><option value="all">Words in the ticked units</option></select>
+      <label for="timerSel" class="eyebrow">Timer</label><select id="timerSel"><option value="off">Off</option><option value="up">Stopwatch</option><option value="60">1 minute</option><option value="120">2 minutes</option><option value="180">3 minutes</option></select>
+      <span class="clock" id="clock" hidden aria-live="off"></span>
     </div>
     <button class="btn" id="newRound">New round</button>
   </div>
@@ -154,8 +161,37 @@ function addMissed(idxs){
 
 /* ---------- Match games (pictures / definitions) ---------- */
 let sel=null; // selected chip element
+/* ---------- optional timer (Off / Stopwatch / countdown) ---------- */
+let CUR=[], T={mode:"off",t0:0,limit:0,iv:null,end:null};
+const fmtT=s=>{s=Math.max(0,Math.round(s));return Math.floor(s/60)+":"+String(s%60).padStart(2,"0");};
+function timerStart(){
+  timerStop(); const m=$("#timerSel").value, c=$("#clock"); T.mode=m; T.end=null;
+  if(m==="off"){c.hidden=true;return;}
+  T.t0=Date.now(); T.limit=m==="up"?0:+m; c.hidden=false; c.classList.remove("low"); tick();
+  T.iv=setInterval(tick,250);
+}
+function tick(){
+  const el=(Date.now()-T.t0)/1000, c=$("#clock");
+  if(T.mode==="up"){c.textContent="⏱ "+fmtT(el);return;}
+  const left=T.limit-el; c.textContent="⏳ "+fmtT(left); c.classList.toggle("low",left<=10);
+  if(left<=0) timeUp();
+}
+function timerStop(){ if(T.iv){clearInterval(T.iv);T.iv=null;} if(T.mode!=="off"&&T.t0&&T.end===null) T.end=(Date.now()-T.t0)/1000; }
+function timeText(){
+  if(T.mode==="off"||T.end===null) return "";
+  if(T.mode==="up") return `Finished in ${fmtT(T.end)}`;
+  return T.end>=T.limit?"Time's up!":`${fmtT(T.limit-T.end)} left on the clock`;
+}
+function timeUp(){
+  timerStop(); T.end=T.limit; $("#clock").textContent="⏳ 0:00";
+  if(game==="uns"&&U){ // the rest of the words count as missed
+    if(!U.cur.done){U.missed.push(U.cur.i);U.ans.push({word:DATA[U.cur.i].w,unit:DATA[U.cur.i].u,given:"",correct:false});}
+    for(let k=U.k+1;k<U.items.length;k++){const i=U.items[k];U.missed.push(i);U.ans.push({word:DATA[i].w,unit:DATA[i].u,given:"",correct:false});}
+    addMissed(U.missed);saveGame("unscramble",U.right,U.items.length,U.ans);$("#game").innerHTML='<div id="result"></div>';showScore(U.right,U.items.length,U.missed);
+  } else if($("#check")&&!document.querySelector("#board .card[data-done]")) checkMatch(CUR);   // unplaced words count as wrong
+}
 function matchRound(kind){
-  const items=shuffle(pool()).slice(0,ROUND);
+  const items=shuffle(pool()).slice(0,ROUND); CUR=items;
   const g=$("#game");
   g.innerHTML=`<p class="hint">${kind==="pics"?"Drag each word onto its picture.":"Drag each word onto its definition."} On a tablet or phone, tap a word, then tap where it goes.</p>
    <div class="board ${kind}" id="board">${items.map((i,k)=>kind==="pics"
@@ -188,7 +224,8 @@ function checkMatch(items){
   showScore(right,items.length,missed);
 }
 function showScore(right,n,missed){
-  $("#result").innerHTML=`<div class="score" role="status"><b>${right} / ${n}</b><span>${right===n?"Perfect round!":right>=n-2?"Nearly there!":"Keep practising!"}</span>
+  timerStop(); const tt=timeText();
+  $("#result").innerHTML=`<div class="score" role="status"><b>${right} / ${n}</b><span>${right===n?"Perfect round!":right>=n-2?"Nearly there!":"Keep practising!"}</span>${tt?`<span class="time">${tt}</span>`:""}
     <button class="btn primary" id="again">Next round</button>${missed.length?`<button class="btn" id="redo">Practise missed words</button>`:""}</div>`;
   $("#again").onclick=start;
   const r=$("#redo"); if(r) r.onclick=()=>{$("#wordSet").value="missed";start();};
@@ -289,7 +326,9 @@ function unsCheck(){
 }
 
 /* ---------- shell ---------- */
-function start(){ sel=null; if(!pool().length){$("#wordSet").value="all";} game==="uns"?unsRound():matchRound(game); }
+function start(){ sel=null; if(!pool().length){$("#wordSet").value="all";} game==="uns"?unsRound():matchRound(game); timerStart(); }
+try{const tv=localStorage.getItem("gameTimer");if(tv&&$("#timerSel").querySelector(`option[value="${tv}"]`))$("#timerSel").value=tv;}catch(e){}
+$("#timerSel").onchange=()=>{try{localStorage.setItem("gameTimer",$("#timerSel").value);}catch(e){}start();};
 document.querySelector(".tabs").onclick=e=>{const t=e.target.closest(".tab");if(!t)return;game=t.dataset.g;
   document.querySelectorAll(".tab").forEach(x=>x.setAttribute("aria-selected",x===t));start();};
 document.addEventListener("click",e=>{const b=e.target.closest("[data-say]");if(b){e.stopPropagation();playWord(+b.dataset.say);}},true);
