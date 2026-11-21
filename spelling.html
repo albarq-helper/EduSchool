@@ -76,6 +76,11 @@ select{font:inherit;padding:8px 10px;border:1px solid var(--rule);border-radius:
 .level{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 .score{display:flex;gap:14px;align-items:center;flex-wrap:wrap;background:var(--sheet);border:2px solid var(--ink);border-radius:12px;padding:14px 16px}
 .score b{font:800 2.2rem/1 var(--f-display);font-variant-numeric:tabular-nums}
+.clock{font:800 1.15rem/1 var(--f-display);font-variant-numeric:tabular-nums;background:var(--sheet);border:2px solid var(--ink);border-radius:999px;padding:6px 12px;min-width:5.2em;text-align:center}
+.clock.low{background:#FDE2E1;border-color:#C2410C;color:#9A3412;animation:tick 1s steps(2) infinite}
+@keyframes tick{50%{transform:scale(1.06)}}
+.score .time{font:700 1rem var(--f-body);color:var(--muted)}
+@media (prefers-reduced-motion:reduce){.clock.low{animation:none}}
 .rev{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
 .rev li{background:var(--sheet);border:1px solid var(--rule);border-radius:10px;padding:10px 12px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
 .rev li img,.rev li video{width:48px;height:48px;object-fit:cover;border-radius:6px}
@@ -116,6 +121,8 @@ select{font:inherit;padding:8px 10px;border:1px solid var(--rule);border-radius:
     <div class="left"><span class="eyebrow">Units</span>
       <details class="unitpick" id="unitPick"><summary id="unitSum">All units</summary><div class="ubox" id="unitBox"></div></details>
       <label for="wordSet" class="eyebrow">Practise</label><select id="wordSet"><option value="all">Words in the ticked units</option></select>
+      <label for="timerSel" class="eyebrow">Timer</label><select id="timerSel"><option value="off">Off</option><option value="up">Stopwatch</option><option value="60">1 minute</option><option value="120">2 minutes</option><option value="180">3 minutes</option></select>
+      <span class="clock" id="clock" hidden aria-live="off"></span>
       <span id="testLenBox" hidden><label for="testLen" class="eyebrow">Test length</label> <select id="testLen"><option>10</option><option selected>20</option><option value="999">All</option></select></span>
     </div>
     <button class="btn" id="restart">Start again</button>
@@ -184,13 +191,43 @@ function wireHints(i,onUse){
     if(b.dataset.act==="arabic")o.innerHTML=`<span class="ar" dir="auto">${esc(DATA[i].ar)}</span>`;
   });
 }
+/* ---------- optional timer (Off / Stopwatch / countdown), same as on the Games page ---------- */
+let T_={mode:"off",t0:0,limit:0,iv:null,end:null};
+const fmtT=s=>{s=Math.max(0,Math.round(s));return Math.floor(s/60)+":"+String(s%60).padStart(2,"0");};
+function timerStart(){
+  timerStop(); const m=$("#timerSel").value, c=$("#clock"); T_.mode=m; T_.end=null;
+  if(m==="off"){c.hidden=true;return;}
+  T_.t0=Date.now(); T_.limit=m==="up"?0:+m; c.hidden=false; c.classList.remove("low"); tick(); T_.iv=setInterval(tick,250);
+}
+function tick(){
+  const el=(Date.now()-T_.t0)/1000, c=$("#clock");
+  if(T_.mode==="up"){c.textContent="⏱ "+fmtT(el);return;}
+  const left=T_.limit-el; c.textContent="⏳ "+fmtT(left); c.classList.toggle("low",left<=10);
+  if(left<=0) timeUp();
+}
+function timerStop(){ if(T_.iv){clearInterval(T_.iv);T_.iv=null;} if(T_.mode!=="off"&&T_.t0&&T_.end===null) T_.end=(Date.now()-T_.t0)/1000; }
+function timeText(n){
+  if(T_.mode==="off"||T_.end===null) return "";
+  if(T_.mode==="up") return `Finished in ${fmtT(T_.end)}`;
+  return T_.end>=T_.limit?`Time's up! ${n} word${n===1?"":"s"} in ${fmtT(T_.limit)}`:`${fmtT(T_.limit-T_.end)} left on the clock`;
+}
+function timeUp(){   // the word on screen counts as missed; words not reached are left out of the score
+  timerStop(); T_.end=T_.limit; $("#clock").textContent="⏳ 0:00";
+  const st={learn:[L,"Look, cover, write"],gaps:[G,"Missing letters · level "+(G&&G.level)],build:[B,"Syllable builder"],test:[T,"Spelling test"]}[mode];
+  const S=st&&st[0]; if(!S||!S.items) return;
+  const seen=new Set(S.rows.map(r=>r.i));
+  const cur=S.items[S.k]; if(cur!==undefined&&!seen.has(cur)) S.rows.push({i:cur,ok:false,typed:""});
+  if(!S.rows.length){ $("#app").innerHTML=`<div class="score" role="status"><b>0</b><span>Time's up! No words answered yet.</span><button class="btn primary" id="again">Go again</button></div>`; $("#again").onclick=start; return; }
+  finish(st[1],S.rows);
+}
 function finish(title,rows){
+  timerStop(); const tt=timeText(rows.length);
   {const act=title.startsWith("Look")?"spell-look-cover":title.startsWith("Missing")?"spell-missing-letters":title.startsWith("Syllable")?"spell-syllables":"spell-test";
    App.saveAttempt({activity:act,detail:title.includes("level")?title.split("· ").pop():"",units:selUnits(),word_list:listName(),score:rows.filter(r=>r.ok).length,total:rows.length,
      answers:rows.map(r=>({word:DATA[r.i].w,unit:DATA[r.i].u,given:r.typed||"",correct:!!r.ok}))})
    .then(r=>{if(r.error)App.status("Result not saved: "+r.error.message,false);else if(r.id)App.status("Result saved",true);});}
   const right=rows.filter(r=>r.ok).length,n=rows.length;
-  $("#app").innerHTML=`<div class="score" role="status"><b>${right} / ${n}</b><span>${title} · ${Math.round(right/n*100)}% · ${right===n?"Perfect!":right/n>=.75?"Great work!":"Keep practising the red ones."}</span>
+  $("#app").innerHTML=`<div class="score" role="status"><b>${right} / ${n}</b><span>${title} · ${Math.round(right/n*100)}% · ${right===n?"Perfect!":right/n>=.75?"Great work!":"Keep practising the red ones."}</span>${tt?`<span class="time">${tt}</span>`:""}
     <button class="btn primary" id="again">Go again</button>${right<n?`<button class="btn" id="redo">Practise missed words</button>`:""}</div>
     <ul class="rev">${rows.map(r=>`<li>${Sets.media(DATA[r.i],{alt:""})}<span class="w">${esc(DATA[r.i].w.replace(/\s*\(.*\)/,""))}</span>
       <span class="yours">${r.ok?`<span class="pill ok">Correct</span>`:`<span class="pill no">You wrote: ${esc(r.typed||"(blank)")}</span>`}</span>
@@ -321,7 +358,9 @@ function testDone(){
 
 /* shell */
 function start(){if(!pool().length)$("#wordSet").value="all";$("#testLenBox").hidden=mode!=="test";
-  ({learn,gaps,build,test})[mode]();window.scrollTo({top:0});}
+  ({learn,gaps,build,test})[mode]();window.scrollTo({top:0});timerStart();}
+try{const tv=localStorage.getItem("gameTimer");if(tv&&$("#timerSel").querySelector(`option[value="${tv}"]`))$("#timerSel").value=tv;}catch(e){}
+$("#timerSel").onchange=()=>{try{localStorage.setItem("gameTimer",$("#timerSel").value);}catch(e){}start();};
 document.querySelector(".tabs").onclick=e=>{const t=e.target.closest(".tab");if(!t)return;mode=t.dataset.m;document.querySelectorAll(".tab").forEach(x=>x.setAttribute("aria-selected",x===t));start();};
 
 var UKEY="vocabUnitsSel";
