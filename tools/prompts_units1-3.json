@@ -1,0 +1,291 @@
+{
+  "style": "Bright, soft 3D cartoon animation for children, warm autumn colours, simple clean background, gentle camera movement, no text, no letters, no words on screen, no speech, only soft natural sound effects.",
+  "settings": {
+    "duration": "5",
+    "resolution": "720p",
+    "aspect_ratio": "1:1",
+    "generate_audio": true
+  },
+  "words": [
+    {
+      "term": "Lethargic",
+      "slug": "lethargic",
+      "scene": "An ancient Chinese emperor in silk robes slumps on his throne, eyelids drooping, yawning slowly and barely able to lift his arm, completely drained of energy."
+    },
+    {
+      "term": "Ailing",
+      "slug": "ailing",
+      "scene": "A pale, weak ancient Chinese king lies in bed under thick blankets, coughing softly, while a kind royal doctor checks his forehead with concern."
+    },
+    {
+      "term": "Glance",
+      "slug": "glance",
+      "scene": "An ancient Chinese man walking past a bubbling pot over a fire turns his head for a quick, curious glance at it, then keeps walking."
+    },
+    {
+      "term": "Unpalatable",
+      "slug": "unpalatable",
+      "scene": "A cartoon child takes a sip of dark bitter medicine from a cup and scrunches up the whole face in disgust, sticking out the tongue."
+    },
+    {
+      "term": "Insisted",
+      "slug": "insisted",
+      "scene": "A firm but kind royal doctor holds out a cup of herbal medicine and shakes his head as the emperor refuses, then pushes the cup forward again, not taking no for an answer."
+    },
+    {
+      "term": "Behead",
+      "slug": "behead",
+      "scene": "A cartoon gardener with big garden shears snips the heads off a row of tall yellow dandelions one after another, the flower heads popping off and tumbling to the grass."
+    },
+    {
+      "term": "Aroma",
+      "slug": "aroma",
+      "scene": "Fragrant golden steam curls up from a cup of fresh tea; a smiling ancient Chinese man closes his eyes and breathes in the lovely smell with delight."
+    },
+    {
+      "term": "Fantastic",
+      "slug": "fantastic",
+      "scene": "An ancient Chinese emperor takes a sip of golden tea, his eyes light up with sparkles, and he throws his arms up in amazement at how wonderful it tastes."
+    },
+    {
+      "term": "Exhilaration",
+      "slug": "exhilaration",
+      "scene": "A cartoon boy suddenly bursts with energy and joy, leaping high into the air with arms wide open in a sunny meadow, laughing with excitement."
+    },
+    {
+      "term": "Beverage",
+      "slug": "beverage",
+      "scene": "A table full of colourful drinks: tea in a teapot, a glass of orange juice, lemonade and hot cocoa; a hand picks one up and pours it into a cup."
+    },
+    {
+      "term": "Impact",
+      "slug": "impact",
+      "scene": "A big round stone drops into a calm pond and makes a huge splash, with ripples spreading out wider and wider across the whole water."
+    },
+    {
+      "term": "Tonic",
+      "slug": "tonic",
+      "scene": "An old ancient Chinese healer drinks a softly glowing green herbal drink; his tired face brightens and he stands up straight, feeling strong and healthy."
+    },
+    {
+      "term": "Distant",
+      "slug": "distant",
+      "scene": "A tiny camel caravan carrying sacks of tea crosses golden sand dunes far away on the distant horizon, as the camera slowly pulls back to show how far it is."
+    },
+    {
+      "term": "Concord",
+      "slug": "concord",
+      "scene": "Two cartoon friends who were arguing sit down, share cups of warm tea, smile, and shake hands in peace and harmony."
+    },
+    {
+      "term": "Addicting",
+      "slug": "addicting",
+      "scene": "A cartoon girl eats one piece of popcorn from a bowl, then another, then another, unable to stop reaching back for more with a happy grin."
+    },
+    {
+      "term": "Region",
+      "slug": "region",
+      "scene": "The camera glides over a lush green mountain region with terraced tea fields, misty valleys and little villages, like flying over a living map."
+    },
+    {
+      "term": "Exotic",
+      "slug": "exotic",
+      "scene": "A bustling foreign market with bright unusual fruits, a colourful parrot and patterned silks; a curious traveller looks around with wide eyes at all the strange new things."
+    },
+    {
+      "term": "Blend",
+      "slug": "blend",
+      "scene": "Hands pour three different kinds of tea leaves and dried flowers into one glass jar and stir them together into a colourful mix."
+    },
+    {
+      "term": "Traditional",
+      "slug": "traditional",
+      "scene": "An ancient Chinese tea ceremony: a woman in traditional robes slowly pours tea from a delicate porcelain teapot into small cups, following an old custom."
+    },
+    {
+      "term": "Reside",
+      "slug": "reside",
+      "scene": "A cozy family of little grey pill bugs live under a damp mossy log, tucked into their tiny home with leaves around them like furniture."
+    },
+    {
+      "term": "Life-threatening",
+      "slug": "life-threatening",
+      "scene": "A small cartoon pill bug on a hot cracked rock under a scorching sun starts drying out in danger, then hurries into the cool shade just in time."
+    },
+    {
+      "term": "Crucial",
+      "slug": "crucial",
+      "scene": "A team of cartoon ants builds a tall tower of twigs; it wobbles, and one ant slides in the last important piece that keeps the whole tower standing."
+    },
+    {
+      "term": "Nicknamed",
+      "slug": "nicknamed",
+      "scene": "A little grey pill bug curls up into a tight ball, and next to it a cartoon armadillo curls into a ball the same way; the two roll side by side like twins."
+    },
+    {
+      "term": "Moist",
+      "slug": "moist",
+      "scene": "Close-up of soft dark damp soil and wet moss with glistening water droplets, where little pill bugs crawl happily in the dampness."
+    },
+    {
+      "term": "Species",
+      "slug": "species",
+      "scene": "A row of many different cartoon crabs, shrimps and pill bugs of different shapes, colours and sizes line up side by side as the camera slides past them."
+    },
+    {
+      "term": "Appearance",
+      "slug": "appearance",
+      "scene": "A little grey pill bug looks at its reflection in a shiny water drop, turning left and right to see how it looks on the outside."
+    },
+    {
+      "term": "Allergic",
+      "slug": "allergic",
+      "scene": "A cartoon girl walks past a bunch of flowers, her nose twitches and her eyes water, and she lets out a big sneeze."
+    },
+    {
+      "term": "Organism",
+      "slug": "organism",
+      "scene": "Looking through a microscope: a drop of pond water full of tiny wiggling living creatures, little round cells and swimming specks of life."
+    },
+    {
+      "term": "Ecological",
+      "slug": "ecological",
+      "scene": "Time-lapse on a forest floor: fallen leaves break down as worms and pill bugs munch them, turning into rich soil from which a new green sprout grows."
+    },
+    {
+      "term": "Molting",
+      "slug": "molting",
+      "scene": "A cartoon crab slowly wriggles out of its old hard shell, leaving the empty shell behind, and stretches in its new bigger soft shell."
+    },
+    {
+      "term": "Entomologist",
+      "slug": "entomologist",
+      "scene": "A friendly scientist in a sun hat kneels in a garden with a magnifying glass, carefully studying a honeybee on a flower and smiling with interest."
+    },
+    {
+      "term": "Crustacean",
+      "slug": "crustacean",
+      "scene": "A cartoon red crab with a hard shell scuttles sideways across a sandy beach, snapping its claws, next to a little shrimp in a rock pool."
+    },
+    {
+      "term": "Nocturnal",
+      "slug": "nocturnal",
+      "scene": "Night falls under a big moon; an owl opens its big eyes and wakes up on a branch while little bugs come out to search for food in the dark."
+    },
+    {
+      "term": "Bookkeeper",
+      "slug": "bookkeeper",
+      "scene": "A man in an old-fashioned office sits at a desk with a big ledger book and an abacus, carefully writing rows of small marks and checking his records."
+    },
+    {
+      "term": "Monotonous",
+      "slug": "monotonous",
+      "scene": "A bored office worker stamps one paper after another in an endless pile, again and again, yawning and slumping as the clock ticks slowly."
+    },
+    {
+      "term": "Published",
+      "slug": "published",
+      "scene": "An old printing press clanks and rolls, and freshly printed books stack up high; an author holds up the first copy of his book proudly."
+    },
+    {
+      "term": "Pseudonym",
+      "slug": "pseudonym",
+      "scene": "An author signs a book, then playfully puts on a fake moustache and glasses disguise and winks, hiding his real identity behind a pen name."
+    },
+    {
+      "term": "Pension",
+      "slug": "pension",
+      "scene": "A happy retired grandfather opens a letter at his mailbox, smiles, then relaxes in a garden chair with a cup of tea, enjoying his free time."
+    },
+    {
+      "term": "Rejuvenated",
+      "slug": "rejuvenated",
+      "scene": "A tired man arrives in the green countryside, takes a deep breath of fresh air, stretches, and suddenly skips across the meadow full of youthful energy."
+    },
+    {
+      "term": "Casements",
+      "slug": "casements",
+      "scene": "An old cottage window on side hinges swings open like a little door, letting silver moonlight pour into a cozy room."
+    },
+    {
+      "term": "Thatch",
+      "slug": "thatch",
+      "scene": "A cozy farmhouse with a thick golden straw roof glows under the moon, dewdrops sparkling on the straw as the camera moves closer."
+    },
+    {
+      "term": "Couched",
+      "slug": "couched",
+      "scene": "A sleepy dog lies curled up comfortably on a soft cushion like a resting log, slowly closing its eyes in peace."
+    },
+    {
+      "term": "Kennel",
+      "slug": "kennel",
+      "scene": "A cute little wooden dog house in a garden at night; a sleepy puppy walks inside, turns around and lies down cozily."
+    },
+    {
+      "term": "Shadowy",
+      "slug": "shadowy",
+      "scene": "Inside a dim moonlit barn full of dark shadows, a little mouse creeps through the shadowy corners, barely visible."
+    },
+    {
+      "term": "Harvest",
+      "slug": "harvest",
+      "scene": "Under a big bright full moon, farmers gather golden wheat in the autumn fields, tying it into bundles and loading a cart."
+    },
+    {
+      "term": "Scampering",
+      "slug": "scampering",
+      "scene": "A tiny grey mouse scampers quickly across a stone floor with little rapid steps, its tail swishing behind it."
+    },
+    {
+      "term": "Gleam",
+      "slug": "gleam",
+      "scene": "Silver moonlight shimmers on a calm stream, sparkling with a faint gleam of light as the water flows past sleeping trees."
+    },
+    {
+      "term": "Reeds",
+      "slug": "reeds",
+      "scene": "Tall slender green reeds sway gently at the edge of a quiet river at dusk, while a fish swims silently between their stems."
+    },
+    {
+      "term": "Shoon",
+      "slug": "shoon",
+      "scene": "A kind old grandfather sits by the door and pulls on a pair of worn old leather boots, patting them fondly."
+    },
+    {
+      "term": "Peers",
+      "slug": "peers",
+      "scene": "A curious cat presses its nose to a window and peers carefully at birds hopping on a branch outside, eyes wide and focused."
+    },
+    {
+      "term": "Cote",
+      "slug": "cote",
+      "scene": "White doves fly home at sunset and settle into the little round openings of a wooden dovecote shelter, cooing softly."
+    },
+    {
+      "term": "Flowing",
+      "slug": "flowing",
+      "scene": "A clear blue river flows smoothly and steadily through a green valley, gently carrying a leaf along with the current."
+    },
+    {
+      "term": "Withdrew",
+      "slug": "withdrew",
+      "scene": "A shy cartoon boy at a busy party slowly steps backwards away from the noisy crowd and settles into a quiet corner by himself."
+    },
+    {
+      "term": "Peep",
+      "slug": "peep",
+      "scene": "A little mouse pokes its head out of a tiny hole in the wall, peeps left and right to check for the cat, then pops back in."
+    },
+    {
+      "term": "Beam",
+      "slug": "beam",
+      "scene": "A bright silver beam of moonlight shines through a dark room window, making a glowing path of light across the floor."
+    },
+    {
+      "term": "Beneath",
+      "slug": "beneath",
+      "scene": "Underwater view: colourful fish swim slowly beneath the sparkling surface of the water, with sunlight rippling above them."
+    }
+  ]
+}
