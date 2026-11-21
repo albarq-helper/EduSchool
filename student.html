@@ -3,6 +3,22 @@
 <title>My learning · Helper Academy</title><link rel="icon" href="assets/icons/brilliant.png">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=Noto+Naskh+Arabic:wght@600&display=swap">
 <link rel="stylesheet" href="css/app.css">
+<style>
+#results tr[data-a]{cursor:pointer}#results tr[data-a]:hover td{background:var(--sheet,#F4F6FB)}
+#results .open{font:700 .8rem var(--f-body);color:var(--accent);white-space:nowrap}
+dialog.res{width:min(720px,94vw);max-height:88vh;border:2px solid var(--ink);border-radius:18px;padding:0;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+dialog.res::backdrop{background:rgba(15,20,40,.45)}
+.res .rhead{position:sticky;top:0;background:var(--bg,#fff);padding:16px 18px;border-bottom:1px solid var(--line,#E3E7EF);display:flex;gap:12px;align-items:center;justify-content:space-between;z-index:1}
+.res .rhead h2{margin:0;font:800 1.25rem/1.2 var(--f-display)}
+.res .rbody{padding:12px 18px 18px;display:flex;flex-direction:column;gap:8px}
+.res .sumline{display:flex;gap:10px;flex-wrap:wrap;align-items:center;color:var(--muted)}
+.res .ans{display:grid;grid-template-columns:28px 1fr;gap:4px 10px;align-items:start;padding:10px 12px;border:1px solid var(--line,#E3E7EF);border-radius:12px}
+.res .ans.ok{background:#EEF8F1;border-color:#B7E2C4}.res .ans.no{background:#FDF0EF;border-color:#F3C3BE}
+.res .mark{font:800 1.1rem/1.4 var(--f-display);text-align:center}.res .ans.ok .mark{color:#1E7A3C}.res .ans.no .mark{color:#B42318}
+.res .w{font:800 1.08rem var(--f-display)}.res .given{font-size:.92rem}.res .given s{color:#B42318}
+.res .mean{grid-column:2;color:var(--muted);font-size:.9rem}
+.res .rfoot{display:flex;gap:8px;flex-wrap:wrap;padding-top:6px}
+</style>
 <script src="js/vendor/supabase.js"></script><script src="js/config.js"></script><script src="js/icons.js"></script><script src="js/app.js"></script>
 </head><body>
 <div class="wrap" style="max-width:1080px">
@@ -42,7 +58,8 @@
     <div id="missed" style="display:flex;flex-direction:column;gap:10px"><p class="empty">Loading…</p></div><span class="msg" id="makeMsg" role="status"></span></section>
 
   <section class="card"><h2 class="sec-title"><i data-i="chart-column"></i>My recent results</h2>
-    <div class="tablewrap"><table><thead><tr><th>Activity</th><th>Study set</th><th>When</th><th class="num">Score</th></tr></thead><tbody id="results"><tr><td colspan="4" class="empty">Loading…</td></tr></tbody></table></div></section>
+    <div class="tablewrap"><table><thead><tr><th>Activity</th><th>Study set</th><th>When</th><th class="num">Score</th><th></th></tr></thead><tbody id="results"><tr><td colspan="5" class="empty">Loading…</td></tr></tbody></table></div></section>
+  <dialog class="res" id="resDlg" aria-labelledby="resTitle"><div class="rhead"><h2 id="resTitle">Result</h2><button class="btn small" type="button" id="resClose">Close</button></div><div class="rbody" id="resBody"></div></dialog>
 </div>
 <script>
 const $=id=>document.getElementById(id), esc=App.esc, G5=App.G5;
@@ -95,9 +112,10 @@ async function load(p){
      <div class="row" style="gap:6px"><a class="btn small primary" href="exam.html?set=${sid}&list=${l.id}">Exam</a><a class="btn small" href="games.html?set=${sid}&list=${l.id}">Games</a><a class="btn small" href="spelling.html?set=${sid}&list=${l.id}">Spelling</a></div></div>`;}).join("")
     :`<div class="empty-ill"><img src="assets/anims/estimate.gif" alt=""><span>No practice lists yet. After an exam, save the terms you missed as a list.</span></div>`;
   // results
+  window.ATT=Object.fromEntries(A.map(a=>[a.id,a]));
   $("results").innerHTML=A.length?A.slice(0,15).map(a=>{const [nm,ic,col]=ACT[a.activity]||[a.activity,"activity","blue"], s=SETS[a.set_id||G5];
-      return `<tr><td><div class="ainfo"><span class="ib" style="background:${SOFT[col]};color:${INK[col]}">${icon(ic,16)}</span><div>${esc(nm)}${a.word_list?`<br><span class="muted" style="font-size:.85rem">${esc(a.word_list)}</span>`:""}</div></div></td><td>${s?`<a href="set.html?id=${s.id}">${esc(s.title)}</a>`:'<span class="muted">—</span>'}</td><td class="muted">${ago(a.created_at)}</td><td class="num">${pill(a.score,a.total)}</td></tr>`;}).join("")
-    :`<tr><td colspan="4"><div class="empty-ill"><img src="assets/anims/launch.gif" alt=""><span>No results yet. Open a study set and try an activity.</span></div></td></tr>`;
+      return `<tr data-a="${a.id}" tabindex="0" title="See the answers"><td><div class="ainfo"><span class="ib" style="background:${SOFT[col]};color:${INK[col]}">${icon(ic,16)}</span><div>${esc(nm)}${a.word_list?`<br><span class="muted" style="font-size:.85rem">${esc(a.word_list)}</span>`:""}</div></div></td><td>${s?`<a href="set.html?id=${s.id}">${esc(s.title)}</a>`:'<span class="muted">—</span>'}</td><td class="muted">${ago(a.created_at)}</td><td class="num">${pill(a.score,a.total)}</td><td class="open">See answers ›</td></tr>`;}).join("")
+    :`<tr><td colspan="5"><div class="empty-ill"><img src="assets/anims/launch.gif" alt=""><span>No results yet. Open a study set and try an activity.</span></div></td></tr>`;
   // missed terms, grouped by set
   const recent=A.slice(0,60), ids=recent.map(a=>a.id), setOf=Object.fromEntries(recent.map(a=>[a.id,a.set_id||G5]));
   if(!ids.length){$("missed").innerHTML='<p class="empty">Nothing yet.</p>';$("stWords").textContent="0";return;}
@@ -118,6 +136,32 @@ $("joinForm").onsubmit=async e=>{e.preventDefault();const code=$("code").value.t
   const {data,error}=await App.client.rpc("join_class",{p_code:code});
   $("joinMsg").textContent=error?(error.message.includes("No class")?"No class has that code. Check it with your teacher.":error.message):"You joined "+(data&&data[0]?data[0].class_name:"the class")+".";
   $("joinMsg").className="msg "+(error?"err":"ok");if(!error){$("code").value="";load(App.profile);}};
+// ----- one result in detail: every word, the answer given, right or wrong, and the correct word + meaning -----
+async function openResult(id){
+  const a=(window.ATT||{})[id]; if(!a) return;
+  const [nm]=ACT[a.activity]||[a.activity], sid=a.set_id||G5, set=SETS[sid], d=$("resDlg"), body=$("resBody");
+  $("resTitle").textContent=nm; body.innerHTML='<p class="muted">Loading answers…</p>'; d.showModal();
+  const C=App.client;
+  const {data:ans,error}=await C.from("attempt_answers").select("position,word,unit,given,correct").eq("attempt_id",id).order("position");
+  if(error){body.innerHTML=`<p class="msg err">${esc(error.message)}</p>`;return;}
+  const words=[...new Set((ans||[]).map(x=>x.word))];
+  let info={}; if(words.length){const {data:it}=await C.from("set_items").select("term,meaning,syllables").eq("set_id",sid).in("term",words.slice(0,200)); (it||[]).forEach(x=>info[x.term]=x);}
+  const when=new Date(a.created_at).toLocaleString(undefined,{weekday:"short",day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"});
+  const wrong=(ans||[]).filter(x=>!x.correct);
+  body.innerHTML=`<div class="sumline">${pill(a.score,a.total)}<span>${esc(set?set.title:"Study set")}</span><span>· ${when}</span>${a.word_list?`<span>· ${esc(a.word_list)}</span>`:""}${a.detail?`<span>· ${esc(a.detail)}</span>`:""}</div>
+   ${!(ans||[]).length?'<p class="muted">The answers for this attempt were not saved.</p>':(ans||[]).map(x=>{const m=info[x.word];return `<div class="ans ${x.correct?"ok":"no"}"><span class="mark">${x.correct?"✓":"✗"}</span>
+     <div><span class="w">${esc(x.word)}</span>${x.correct?(x.given&&x.given.toLowerCase()!==x.word.toLowerCase()?` <span class="given">· you answered: ${esc(x.given)}</span>`:""):`<div class="given">You answered: <s>${esc(x.given||"(blank)")}</s></div>`}</div>
+     ${!x.correct&&m&&m.meaning?`<div class="mean">${esc(m.meaning)}</div>`:""}</div>`;}).join("")}
+   <div class="rfoot">${wrong.length&&set&&set.term_count?`<button class="btn primary small" type="button" id="resSave">${icon("plus",15)}Save the ${wrong.length} missed word${wrong.length>1?"s":""} as a practice list</button>`:""}
+     <a class="btn small" href="set.html?id=${sid}">Open the study set</a></div>`;
+  const sv=$("resSave"); if(sv) sv.onclick=async()=>{sv.disabled=true;
+    const r=await App.client.from("practice_lists").insert({student_id:App.profile.id,name:`Missed in ${nm} · ${new Date(a.created_at).toLocaleDateString(undefined,{day:"numeric",month:"short"})}`,words:[...new Set(wrong.map(x=>x.word))],score:a.score,total:a.total,set_id:sid});
+    sv.textContent=r&&r.error?"Could not save: "+(r.error.message||r.error):"Saved to My practice lists ✓"; if(!(r&&r.error)) load(App.profile);};
+}
+$("results").addEventListener("click",e=>{const tr=e.target.closest("tr[data-a]");if(tr&&!e.target.closest("a"))openResult(tr.dataset.a);});
+$("results").addEventListener("keydown",e=>{const tr=e.target.closest("tr[data-a]");if(tr&&(e.key==="Enter"||e.key===" ")){e.preventDefault();openResult(tr.dataset.a);}});
+$("resClose").onclick=()=>$("resDlg").close();
+$("resDlg").addEventListener("click",e=>{if(e.target===$("resDlg"))$("resDlg").close();});
 App.requireUser({role:"student"}).then(load).catch(()=>{});
 </script>
 </body></html>
