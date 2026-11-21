@@ -44,9 +44,6 @@
       #appbar button{display:inline-flex;align-items:center;gap:6px;font:700 .85rem var(--f-body,system-ui);color:var(--muted,#5E6A80);background:none;border:1px solid var(--rule,#DCE1EA);border-radius:9px;cursor:pointer;padding:6px 10px}
       @media (max-width:760px){#appbar nav a span{display:none}#appbar .nm{display:none}}`;
     document.head.insertAdjacentHTML("beforeend", `<style>${css}</style>`);
-    // Credits for the AI tools used on the site (their free plans ask for credit when work is shared)
-    if (!document.getElementById("credits")) document.body.insertAdjacentHTML("beforeend",
-      `<p id="credits" style="text-align:center;font:500 .75rem var(--f-body,system-ui);color:var(--muted,#5E6A80);margin:28px 0 18px">Voices by ElevenLabs</p>`);
     document.body.insertAdjacentHTML("afterbegin", `<div id="appbar" role="banner"><a class="brand" href="${home}"><i>${I("book-open-check")}</i>Helper Academy</a>
       <nav aria-label="Main">${link(home, "house", "Home")}${link("library.html", "library", "Library")}${profile.role === "teacher" ? link("mysets.html", "layers", "My sets") : ""}${profile.is_admin ? link("admin.html", "shield-check", "Admin") : ""}</nav>
       <span class="me"><span class="av" aria-hidden="true">${esc(initials)}</span><span class="nm">${esc(name)}</span>${profile.role === "teacher" ? '<span class="role">Teacher</span>' : ""}
