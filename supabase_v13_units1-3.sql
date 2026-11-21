@@ -2,7 +2,7 @@
 -- Helper Academy — v13: Units 1-3 word clips (safe to run more than once)
 -- =====================================================================
 update public.set_items i set video_url = 'assets/videos/' || v.slug || '.mp4?v=20261121'
-from (values ('Lethargic','lethargic'),
+from (values ('Ecological','ecological'),('Beneath','beneath'),('Lethargic','lethargic'),
              ('Ailing','ailing'),
              ('Glance','glance'),
              ('Unpalatable','unpalatable'),
