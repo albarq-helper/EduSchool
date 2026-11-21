@@ -1,0 +1,21 @@
+{
+  "style": "Bright, soft 3D cartoon animation for children, warm autumn colours, simple clean background, gentle camera movement, no text, no letters, no words on screen, no speech, only soft natural sound effects.",
+  "settings": {
+    "duration": "5",
+    "resolution": "720p",
+    "aspect_ratio": "1:1",
+    "generate_audio": true
+  },
+  "words": [
+    {
+      "term": "Department (Dept.)",
+      "slug": "department",
+      "scene": "The camera glides along the hallway of a big busy school building, passing through different rooms one after another: a science lab, a library, an art room and a kitchen, each with its own small team of cartoon people busy at their special job."
+    },
+    {
+      "term": "Abbreviation",
+      "slug": "abbreviation",
+      "scene": "A long train of many colourful wooden blocks lined up in a row on a desk magically shrinks and squeezes together until only three small blocks are left, with a little sparkle, as a cartoon child smiles and nods."
+    }
+  ]
+}
