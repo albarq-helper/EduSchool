@@ -69,6 +69,17 @@
 .wi .st{font-size:.84rem;margin-top:4px}.wi .st .ok{color:var(--good);font-weight:700}.wi .st .no{color:var(--bad);font-weight:700}
 .checks{margin-top:10px;font-size:.9rem;display:flex;flex-direction:column;gap:3px}.checks .ok{color:var(--good)}.checks .no{color:var(--bad)}
 .lvlsel{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.lvlsel select{max-width:26rem}
+.ibtn{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:999px;border:1.5px solid var(--accent);color:var(--accent);background:none;font:800 1rem/1 Georgia,serif;font-style:italic;cursor:pointer;vertical-align:middle;margin-left:8px}
+.ibtn:hover{background:var(--accent);color:#fff}
+#infoDlg{max-width:min(860px,94vw);border:0;border-radius:18px;padding:0;box-shadow:0 24px 60px rgba(0,0,0,.3);background:var(--sheet);color:var(--ink)}
+#infoDlg::backdrop{background:rgba(15,23,42,.45)}
+#infoDlg .ib{padding:20px 22px;max-height:82vh;overflow:auto;line-height:1.5}
+#infoDlg h2{margin:0 0 8px;font:800 1.4rem var(--f-display)}#infoDlg h3{margin:18px 0 6px;font:800 1.08rem var(--f-display)}
+#infoDlg table{width:100%;border-collapse:collapse;font-size:.92rem}#infoDlg th,#infoDlg td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--rule);vertical-align:top}
+#infoDlg th{font-size:.8rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+#infoDlg td:first-child,#infoDlg td:last-child{text-align:center;font-weight:800}
+#infoDlg ul,#infoDlg ol{margin:4px 0 0;padding-left:20px}#infoDlg li{margin:4px 0}
+#infoDlg .close{position:sticky;top:0;float:right;margin:-6px -8px 0 0}
 .parent{margin-top:18px}.parent summary{cursor:pointer;font:800 1rem var(--f-display)}
 .parent textarea{width:100%;min-height:140px;font:14px/1.5 var(--f-body);padding:10px;border:1px solid var(--rule);border-radius:10px;background:var(--paper);color:var(--ink)}
 .parent .step{margin-top:12px}.parent .step b{display:block;margin-bottom:4px}
@@ -78,7 +89,7 @@
 </head><body>
 <div class="wrap" style="max-width:1280px">
   <div class="head2">
-    <div><span class="eyebrow" id="setEyebrow">&nbsp;</span><h1>Story builder</h1>
+    <div><span class="eyebrow" id="setEyebrow">&nbsp;</span><h1>Story builder<button class="ibtn" type="button" data-info aria-label="How the Story builder works" title="How it works">i</button></h1>
       <p class="muted" style="margin:4px 0 0">Pick words, put them in order, add your own words, and build your very own story. Then send it to your parent to turn it into a story book and a movie!</p></div>
   </div>
   <div class="sb">
@@ -105,18 +116,43 @@
   <section class="panel read" id="read" hidden></section>
   <details class="panel parent" id="parent">
     <summary>For parents: turn this plan into a story and a movie</summary>
-    <div class="step"><b>Level for this story</b><div class="lvlsel"><select id="levelSel" aria-label="Level"></select><span class="muted" id="levelDesc"></span></div></div>
+    <div class="step"><b>Level for this story<button class="ibtn" type="button" data-info aria-label="What the levels mean" title="What the levels mean">i</button></b><div class="lvlsel"><select id="levelSel" aria-label="Level"></select><span class="muted" id="levelDesc"></span></div></div>
     <div class="step"><b>1. Copy the prompt</b>
       <div class="acts"><button class="btn small primary" id="copyPrompt" type="button"><span data-i="copy"></span>Copy the prompt</button><span class="saved" id="copied"></span></div>
       <textarea id="promptBox" readonly hidden></textarea></div>
     <div class="step"><b>2. If the answer says REJECT: paste the feedback and send it back</b><textarea id="fbText" placeholder="Paste the feedback here…"></textarea>
-      <div class="acts"><button class="btn small primary" id="sendBack" type="button"><span data-i="send"></span>Send back to Reem</button></div></div>
+      <div class="acts"><button class="btn small primary" id="sendBack" type="button"><span data-i="send"></span>Send back to student</button></div></div>
     <div class="step"><b>3. Paste the finished story</b><textarea id="storyText" placeholder="Paste the story here…"></textarea>
       <div class="acts"><button class="btn small primary" id="saveStory" type="button"><span data-i="save"></span>Save story</button></div></div>
     <div class="step"><b>4. Movie link (when the video is ready)</b><input type="text" id="videoUrl" placeholder="assets/stories/my-story.mp4 or https://…">
       <div class="acts"><button class="btn small primary" id="saveVideo" type="button"><span data-i="save"></span>Save movie</button></div></div>
   </details>
 </div>
+<dialog id="infoDlg" aria-labelledby="infoTitle"><div class="ib"><button class="btn small close" type="button" id="infoClose">✕ Close</button>
+  <h2 id="infoTitle">How the Story builder works</h2>
+  <p>The student builds a story from vocabulary words, in their own order. A parent then turns the plan into a finished story (with an AI) and, later, a movie. Nothing on this page can spend money or contact an AI by itself.</p>
+  <h3>Levels</h3>
+  <p class="muted" style="margin:0 0 6px">The parent chooses the level for each story (in <b>For parents</b>). Higher levels ask for more writing and allow fewer mistakes.</p>
+  <table><thead><tr><th>Level</th><th>Name</th><th>What the student must do</th><th>Small mistakes the AI allows</th></tr></thead><tbody id="infoLevels"></tbody></table>
+  <h3>How it works for the student</h3>
+  <ul>
+    <li>Pick words from the <b>Word library</b> (tap a picture to watch and hear it), press <b>+ Add</b> or drag them into the story, and put them in order. Add your own words and new scenes.</li>
+    <li>From level 4 up, a <b>✍️ Write your sentences</b> section appears with a box for each scene, or for each word at levels 7–10.</li>
+    <li>Each box is checked while typing: is it long enough, does it use the word, does it start with a capital letter and end with . ! or ? A green ✓ appears when it's right, or a hint such as “use the word Kennel”.</li>
+    <li>A <b>Ready to send?</b> checklist shows what's still missing, and <b>Send to parent</b> stays blocked until everything is ticked.</li>
+    <li><b>My story so far</b> shows the student's own sentences (or the words in order at levels 1–3).</li>
+    <li>If the story comes back with notes, a yellow box shows them. Fix the sentences, then press <b>Send to parent</b> again.</li>
+  </ul>
+  <h3>How it works for the parent</h3>
+  <ol>
+    <li><b>Copy the prompt</b> and paste it into an AI such as Claude. At levels 1–3 the AI writes the story from the plan. From level 4 up it first checks the student's sentences against the level and answers <b>VERDICT: ACCEPT</b> or <b>VERDICT: REJECT</b>, with kind hints for each mistake (it does not rewrite the sentences).</li>
+    <li>If it says <b>REJECT</b>: paste the hints and press <b>Send back to student</b>. The story shows as “Needs fixing ✏️” until the student sends it again.</li>
+    <li>If it says <b>ACCEPT</b>: the AI writes the story from the student's own sentences. Paste it in <b>Paste the finished story</b>. The student can then read it, with the vocabulary words highlighted.</li>
+    <li>When a movie has been made from the story's VIDEO SCENE lines, add its link and it plays above the story.</li>
+  </ol>
+  <h3>Status</h3>
+  <p style="margin:0">Draft → Sent to parent ✉️ → (Needs fixing ✏️ → Sent again) → Story ready 📖 → Movie ready 🎬</p>
+</div></dialog>
 <script type="text/x-app">
 const $=id=>document.getElementById(id), esc=App.esc, D=window.WORDS, SET=window.CURRENT_SET, C=App.client;
 document.querySelectorAll("[data-i]").forEach(el=>el.insertAdjacentHTML("afterbegin",icon(el.dataset.i,16)));
@@ -325,7 +361,11 @@ $("levelSel").innerHTML=LEVELS.slice(1).map((L,k)=>`<option value="${k+1}">Level
 $("levelSel").onchange=()=>{if(!CUR)CUR=blank();CUR.level=+$("levelSel").value;DEF_LEVEL=CUR.level;try{localStorage.setItem("storyLevel",CUR.level);}catch(e){}
   $("levelDesc").textContent=LEVELS[CUR.level].d;drawStatus();drawWrite();drawPreview();changed();};
 $("sendBack").onclick=async()=>{if(!CUR||!CUR.id)return;const t=$("fbText").value.trim();if(!t){App.status("Paste the feedback first.",false);return;}
-  if(await save({feedback:t,status:"returned"}))App.status("Sent back to Reem ✏️",true);};
+  if(await save({feedback:t,status:"returned"}))App.status("Sent back to the student ✏️",true);};
+$("infoLevels").innerHTML=LEVELS.slice(1).map((L,k)=>`<tr><td>${k+1}</td><td>${esc(L.n)}</td><td>${esc(L.d)}</td><td>${L.tol==null?'<span class="muted" style="font-weight:600">not checked</span>':L.tol}</td></tr>`).join("");
+document.addEventListener("click",e=>{if(e.target.closest("[data-info]")){e.preventDefault();$("infoDlg").showModal();}});
+$("infoClose").onclick=()=>$("infoDlg").close();
+$("infoDlg").addEventListener("click",e=>{if(e.target===$("infoDlg"))$("infoDlg").close();});
 // ---------- start ----------
 (async()=>{const r=await C.from("stories").select("id,title,blocks,status,story_text,video_url,level,sentences,feedback,updated_at").eq("set_id",SET.id).order("updated_at",{ascending:false});
   if(r.error){$("saved").textContent="Stories can't be saved yet: "+r.error.message;}
