@@ -89,6 +89,55 @@ select{font:inherit;padding:8px 10px;border:1px solid var(--rule);border-radius:
 .pill{font-size:.8rem;font-weight:700;padding:2px 9px;border-radius:999px}
 .pill.ok{background:var(--good-soft);color:var(--good)} .pill.no{background:var(--bad-soft);color:var(--bad)}
 
+.sp-opts{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;background:var(--sheet);border:1px solid var(--rule);border-radius:12px;padding:10px 12px;margin-bottom:10px}
+.sp-opts .grp{display:flex;gap:4px;align-items:center;flex-wrap:wrap}
+.sp-opts .eyebrow{margin-right:4px}
+.seg{font:700 .88rem var(--f-body);padding:6px 11px;border-radius:999px;border:1.5px solid var(--chip-edge);background:var(--chip);color:var(--ink);cursor:pointer}
+.seg.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.sp-opts input[type=number]{width:5em;padding:6px 8px;border:1px solid var(--rule);border-radius:8px;font:inherit}
+.chk{display:flex;gap:6px;align-items:center;font-weight:700;cursor:pointer}
+.sp-sheet{list-style:none;margin:0 0 14px;padding:0;display:grid;gap:12px}
+.sp-sheet.grid{grid-template-columns:repeat(auto-fill,minmax(190px,1fr))}
+.sp-sheet.grid.show-mean{grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
+.sp-sheet.list{grid-template-columns:1fr}
+.sp-card{background:var(--sheet);border:1.5px solid var(--rule);border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:8px;break-inside:avoid}
+.sp-sheet.list .sp-card{flex-direction:row;align-items:center;flex-wrap:wrap}
+.sp-prompt{all:unset;cursor:pointer;display:flex;flex-direction:column;gap:6px;position:relative;border-radius:8px}
+.sp-prompt:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.sp-sheet.list .sp-prompt{flex-direction:row;align-items:center;flex:1 1 320px}
+.sp-n{position:absolute;top:4px;left:4px;z-index:2;background:var(--ink);color:var(--sheet);font:800 .9rem/1 var(--f-display);border-radius:999px;min-width:1.8em;padding:4px 6px;text-align:center}
+.sp-sheet.list .sp-n,.show-mean .sp-n{position:static;flex:none}
+.sp-pic video,.sp-pic img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;display:block}
+.sp-sheet.list .sp-pic{width:96px;flex:none}
+.printpic{display:none!important}
+.sp-mean{font-size:.95rem;line-height:1.35}
+.sp-in{font:700 1.15rem var(--f-display);padding:9px 10px;border:2px solid var(--rule);border-radius:8px;width:100%;background:#fff;color:#111}
+.sp-sheet.list .sp-in{width:auto;flex:1 1 220px}
+.sp-in:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 3px var(--accent-soft)}
+.sp-card.right{border-color:var(--good);background:var(--good-soft)} .sp-card.wrong{border-color:var(--bad);background:var(--bad-soft)}
+.sp-card.right .sp-in{border-color:var(--good)} .sp-card.wrong .sp-in{border-color:var(--bad);text-decoration:line-through}
+.sp-res:empty{display:none} .sp-correct{font:800 1.15rem var(--f-display);color:var(--good);margin-right:8px}
+.sp-res .diff{font-size:1rem}
+.sp-line{border-bottom:2px solid var(--ink);height:2.2em}
+.sp-sheet.list .sp-line{flex:1 1 220px}
+.sp-ans{font:800 1.3rem var(--f-display);color:var(--good)}
+.paper .sp-pic video,.paper .sp-pic img{max-height:none}
+.sp-actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:6px 0 14px}
+.sp-count{color:var(--muted);font-weight:700} .sp-count .warn{color:var(--bad)}
+.printonly{display:none}
+@media print{
+  body{background:#fff!important;color:#000} header,.bar,.noprint,nav,footer,#appbar,#setbar,.toast,[role=status]:not(.sp-card){display:none!important}
+  .printonly{display:block} .sp-title{font:700 14pt system-ui;margin:0 0 10pt}
+  .wrap{max-width:none;padding:0;margin:0}
+  .sp-sheet.grid{grid-template-columns:repeat(4,1fr);gap:8pt}
+  .sp-sheet.grid.show-mean{grid-template-columns:repeat(2,1fr)}
+  .sp-card{border:1px solid #999;background:#fff!important;padding:6pt}
+  .sp-pic video{display:none!important} .sp-pic .printpic{display:block!important}
+  .sp-n{background:#000;color:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .sp-ans{display:none!important} .sp-line{border-color:#000;height:26pt}
+  .sp-key{break-before:page} .sp-key ol{columns:3;font:700 13pt system-ui}
+}
+
 .unitpick{position:relative}
 .unitpick summary{list-style:none;cursor:pointer;font:inherit;padding:8px 30px 8px 10px;border:1px solid var(--rule);border-radius:8px;background:var(--sheet);color:var(--ink);min-width:12rem;max-width:100%;position:relative}
 .unitpick summary::-webkit-details-marker{display:none}
@@ -115,6 +164,7 @@ select{font:inherit;padding:8px 10px;border:1px solid var(--rule);border-radius:
       <button class="tab" role="tab" data-m="gaps" aria-selected="false"><span class="n">2</span>Missing letters</button>
       <button class="tab" role="tab" data-m="build" aria-selected="false"><span class="n">3</span>Syllable builder</button>
       <button class="tab" role="tab" data-m="test" aria-selected="false"><span class="n">4</span>Spelling test</button>
+      <button class="tab" role="tab" data-m="sheet" aria-selected="false"><span class="n">5</span>All at once</button>
     </div>
   </header>
   <div class="bar">
@@ -213,6 +263,7 @@ function timeText(n){
 }
 function timeUp(){   // the word on screen counts as missed; words not reached are left out of the score
   timerStop(); T_.end=T_.limit; $("#clock").textContent="⏳ 0:00";
+  if(mode==="sheet"){ if(A&&!A.done&&!A.o.paper) sheetCheck(); return; }
   const st={learn:[L,"Look, cover, write"],gaps:[G,"Missing letters · level "+(G&&G.level)],build:[B,"Syllable builder"],test:[T,"Spelling test"]}[mode];
   const S=st&&st[0]; if(!S||!S.items) return;
   const seen=new Set(S.rows.map(r=>r.i));
@@ -356,9 +407,91 @@ function testDone(){
   document.querySelectorAll(".rev li").forEach((li,k)=>{const r=T.rows[k];if(!r.ok&&r.typed){li.querySelector(".yours").insertAdjacentHTML("beforeend",diff(r.typed,spell(r.i)));}});
 }
 
+/* 5. All at once: every word on one screen, by picture and/or meaning. Type all the answers, or use it as a paper (handwriting) test. */
+let A=null;
+const AOPT_KEY="spellSheet";
+function aOpts(){let o={};try{o=JSON.parse(localStorage.getItem(AOPT_KEY)||"{}")||{};}catch(e){}
+  return Object.assign({show:"pic",layout:"grid",count:"all",n:10,shuffle:true,paper:false},o);}
+function aSave(o){try{localStorage.setItem(AOPT_KEY,JSON.stringify(o));}catch(e){}}
+function sheet(){
+  const o=aOpts(); let items=pool(); if(o.shuffle)items=shuffle(items);
+  if(o.count!=="all"){const n=Math.max(1,Math.min(items.length,+(o.count==="custom"?o.n:o.count)||10));items=items.slice(0,n);}
+  A={items,o,done:false,rows:[]}; sheetShow();
+}
+function sheetShow(){
+  const {o,items}=A, seg=(name,val,label)=>`<button type="button" class="seg${o[name]===val?" on":""}" data-o="${name}" data-v="${val}" aria-pressed="${o[name]===val}">${label}</button>`;
+  const prompt=(i,k)=>{const v=DATA[i];
+    const pic=o.show!=="mean"?`<div class="sp-pic">${Sets.media(v,{alt:""})}${v.vid?`<img class="printpic" src="${esc(v.img)}" alt="">`:""}</div>`:"";
+    const mean=o.show!=="pic"?`<div class="sp-mean">${esc(v.d)}</div>`:"";
+    return `<li class="sp-card" data-k="${k}"><button type="button" class="sp-prompt" data-k="${k}" aria-label="Question ${k+1}"><span class="sp-n">${k+1}</span>${pic}${mean}</button>
+      ${o.paper?`<div class="sp-line" aria-hidden="true"></div><div class="sp-ans" hidden>${esc(v.w.replace(/\s*\(.*\)/,""))}</div>`
+               :`<input class="sp-in" data-k="${k}" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Spelling for question ${k+1}"><div class="sp-res"></div>`}</li>`;};
+  $("#app").innerHTML=`<div class="sp-opts noprint">
+     <div class="grp"><span class="eyebrow">Show</span>${seg("show","pic","Picture")}${seg("show","mean","Meaning")}${seg("show","both","Both")}</div>
+     <div class="grp"><span class="eyebrow">Layout</span>${seg("layout","grid","Grid")}${seg("layout","list","List")}</div>
+     <div class="grp"><span class="eyebrow">How many</span>${seg("count","all","All")}${seg("count","5","5")}${seg("count","10","10")}${seg("count","20","20")}${seg("count","custom","Set…")}
+       ${o.count==="custom"?`<input type="number" id="spN" min="1" max="${pool().length}" value="${o.n}" aria-label="Number of words">`:""}</div>
+     <div class="grp"><label class="chk"><input type="checkbox" id="spShuf" ${o.shuffle?"checked":""}> Shuffle</label></div>
+     <div class="grp"><span class="eyebrow">Answer on</span>${seg("paper",false,"Screen (type)")}${seg("paper",true,"Paper (handwriting)")}</div>
+   </div>
+   <p class="hint noprint">${o.paper
+     ?`Paper test: your child writes the answers on paper while looking at the screen. Number each answer. When finished, press <b>Show answers</b> to mark it together, or <b>Print</b> for a worksheet with an answer key on the last page.`
+     :`${items.length} words. Click a ${o.show==="mean"?"meaning":"picture"} (or press Enter) to jump between boxes, type every spelling, then press <b>Check all</b>.`}</p>
+   <h2 class="printonly sp-title">Spelling test · Name: ________________ Date: __________</h2>
+   <ol class="sp-sheet ${o.layout} show-${o.show}${o.paper?" paper":""}">${items.map((i,k)=>prompt(i,k)).join("")}</ol>
+   <div class="sp-actions noprint">${o.paper
+     ?`<button class="btn primary" id="spShow">Show answers</button><button class="btn" id="spPrint">🖨 Print worksheet</button>`
+     :`<button class="btn primary" id="spCheck">Check all</button><span class="sp-count" id="spCount" aria-live="polite">0 of ${items.length} filled</span>`}</div>
+   ${o.paper?`<section class="printonly sp-key"><h2>Answer key</h2><ol>${items.map(i=>`<li>${esc(DATA[i].w.replace(/\s*\(.*\)/,""))}</li>`).join("")}</ol></section>`:""}`;
+  // options
+  document.querySelectorAll(".sp-opts .seg").forEach(b=>b.onclick=()=>{const n=b.dataset.o;let v=b.dataset.v;if(n==="paper")v=v==="true";
+    const o2=aOpts();o2[n]=v;aSave(o2);
+    if(n==="show"||n==="layout"||n==="paper"){A.o=o2;sheetShow();timerStart();}else{sheet();timerStart();}});
+  const sn=$("#spN"); if(sn) sn.onchange=()=>{const o2=aOpts();o2.n=Math.max(1,+sn.value||10);aSave(o2);sheet();timerStart();};
+  $("#spShuf").onchange=e=>{const o2=aOpts();o2.shuffle=e.target.checked;aSave(o2);sheet();timerStart();};
+  const ins=[...document.querySelectorAll(".sp-in")];
+  document.querySelectorAll(".sp-prompt").forEach(b=>b.onclick=()=>{const k=+b.dataset.k;
+    if(ins[k]&&!A.done)ins[k].focus(); else if(o.paper){const a=b.parentNode.querySelector(".sp-ans");if(a&&A.shown)a.hidden=!a.hidden;}
+    const vid=b.querySelector("video"); if(vid&&Sets.playClip)Sets.playClip(vid,DATA[A.items[k]]);});
+  if(o.paper){
+    A.shown=false;
+    $("#spShow").onclick=()=>{A.shown=!A.shown;document.querySelectorAll(".sp-ans").forEach(a=>a.hidden=!A.shown);$("#spShow").textContent=A.shown?"Hide answers":"Show answers";if(A.shown)timerStop();};
+    $("#spPrint").onclick=()=>window.print();
+  }else{
+    const cnt=()=>{$("#spCount").textContent=`${ins.filter(x=>x.value.trim()).length} of ${items.length} filled`;};
+    ins.forEach((x,k)=>{x.oninput=cnt;x.onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();const nx=ins.slice(k+1).concat(ins.slice(0,k)).find(y=>!y.value.trim());(nx||ins[k+1]||$("#spCheck")).focus();}};});
+    $("#spCheck").onclick=()=>{const empty=ins.filter(x=>!x.value.trim()).length;
+      if(empty&&!confirmInline(empty))return; sheetCheck();};
+    ins[0]&&ins[0].focus({preventScroll:true});
+  }
+  Sets.watchClips&&Sets.watchClips();
+}
+// first press with blanks: warn in place; a second press marks them anyway
+function confirmInline(empty){const c=$("#spCount");if(c.dataset.warned)return true;c.dataset.warned="1";
+  c.innerHTML=`<b class="warn">${empty} box${empty>1?"es are":" is"} empty. Press Check all again to mark anyway.</b>`;return false;}
+function sheetCheck(){
+  if(A.done)return; A.done=true; timerStop();
+  const rows=A.items.map((i,k)=>{const x=document.querySelector(`.sp-in[data-k="${k}"]`),typed=norm(x.value),ok=typed===spell(i);
+    setMissed(i,!ok); x.readOnly=true; const card=x.closest(".sp-card"); card.classList.add(ok?"right":"wrong");
+    card.querySelector(".sp-res").innerHTML=ok?`<span class="pill ok">Correct</span>`:`<span class="sp-correct">${esc(DATA[i].w.replace(/\s*\(.*\)/,""))}</span>${typed?diff(typed,spell(i)).replace(/<div class="diffkey">.*<\/div>/,""):""}`;
+    return {i,ok,typed};});
+  A.rows=rows; sheetScore(rows);
+}
+function sheetScore(rows,timeUpNote){
+  const right=rows.filter(r=>r.ok).length,n=rows.length,tt=timeText(n);
+  App.saveAttempt({activity:"spell-test",detail:"All at once",units:selUnits(),word_list:listName(),score:right,total:n,
+    answers:rows.map(r=>({word:DATA[r.i].w,unit:DATA[r.i].u,given:r.typed||"",correct:!!r.ok}))})
+   .then(r=>{if(r.error)App.status("Result not saved: "+r.error.message,false);else if(r.id)App.status("Result saved",true);});
+  $(".sp-actions").outerHTML=`<div class="score sp-actions noprint" role="status"><b>${right} / ${n}</b><span>All at once · ${Math.round(right/n*100)}% · ${right===n?"Perfect!":right/n>=.75?"Great work!":"Keep practising the red ones."}</span>${timeUpNote?`<span class="time">${timeUpNote}</span>`:tt?`<span class="time">${tt}</span>`:""}
+    <button class="btn primary" id="again">Go again</button>${right<n?`<button class="btn" id="redo">Practise missed words</button>`:""}</div>`;
+  $("#again").onclick=start; const rd=$("#redo"); if(rd) rd.onclick=()=>{$("#wordSet").value="missed";start();};
+  document.querySelector(".sp-sheet").insertAdjacentElement("beforebegin",$(".sp-actions"));
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
 /* shell */
 function start(){if(!pool().length)$("#wordSet").value="all";$("#testLenBox").hidden=mode!=="test";
-  ({learn,gaps,build,test})[mode]();window.scrollTo({top:0});timerStart();}
+  ({learn,gaps,build,test,sheet})[mode]();window.scrollTo({top:0});timerStart();}
 try{const tv=localStorage.getItem("gameTimer");if(tv&&$("#timerSel").querySelector(`option[value="${tv}"]`))$("#timerSel").value=tv;}catch(e){}
 $("#timerSel").onchange=()=>{try{localStorage.setItem("gameTimer",$("#timerSel").value);}catch(e){}start();};
 document.querySelector(".tabs").onclick=e=>{const t=e.target.closest(".tab");if(!t)return;mode=t.dataset.m;document.querySelectorAll(".tab").forEach(x=>x.setAttribute("aria-selected",x===t));start();};
