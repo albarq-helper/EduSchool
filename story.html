@@ -11,6 +11,7 @@
 .lib .r{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
 .lib .q{position:relative;flex:1 1 180px}.lib .q svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted)}.lib .q input{width:100%;padding-left:34px}
 .lwrap{max-height:72vh;overflow:auto;padding:2px}
+.lib .gopp{grid-template-columns:1fr}.lib .gopp .gvs{justify-self:center;font-size:1.3rem}.lib .gsec{margin:10px 0 6px}
 .lgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:10px}
 .lw{border:1.5px solid var(--rule);border-radius:12px;background:var(--paper);padding:6px;display:flex;flex-direction:column;gap:4px;cursor:grab;position:relative}
 .lw:active{cursor:grabbing}.lw.used{border-color:var(--good)}
@@ -85,7 +86,7 @@
 .parent .step{margin-top:12px}.parent .step b{display:block;margin-bottom:4px}
 .parent input[type=text]{width:100%;max-width:40rem}
 </style>
-<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261122c"></script><script src="js/icons.js?v=20261122c"></script><script src="js/app.js?v=20261122c"></script><script src="js/sets.js?v=20261122c"></script><script src="js/storycore.js?v=20261122c"></script><script src="js/montage.js?v=20261122c"></script>
+<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261122d"></script><script src="js/icons.js?v=20261122d"></script><script src="js/app.js?v=20261122d"></script><script src="js/sets.js?v=20261122d"></script><script src="js/storycore.js?v=20261122d"></script><script src="js/montage.js?v=20261122d"></script>
 </head><body>
 <div class="wrap" style="max-width:1280px">
   <div class="head2">
@@ -96,8 +97,9 @@
     <section class="panel lib" aria-label="Word library">
       <h2><span data-i="book-open"></span>Word library</h2>
       <div class="r"><label class="q"><span data-i="search"></span><input id="q" type="search" placeholder="Find a word or meaning…" aria-label="Find a word"></label><div id="unitMount"></div></div>
+      <div id="groupMount" style="margin-bottom:10px"></div>
       <p class="muted" style="margin:0 0 8px;font-size:.86rem">Tap a picture to watch and hear it. Press <b>+ Add</b> or drag a word into your story.</p>
-      <div class="lwrap"><div class="lgrid" id="lib"></div></div>
+      <div class="lwrap" id="lib"></div>
     </section>
     <section class="panel" aria-label="My story">
       <div class="top"><h2 style="margin:0"><span data-i="sparkles"></span>My story</h2><span class="pill" id="status">Draft</span><span class="pill lvl" id="lvlBadge"></span><span style="flex:1"></span>
@@ -140,6 +142,7 @@
 const $=id=>document.getElementById(id), esc=App.esc, D=window.WORDS, SET=window.CURRENT_SET, C=App.client;
 document.querySelectorAll("[data-i]").forEach(el=>el.insertAdjacentHTML("afterbegin",icon(el.dataset.i,16)));
 const UP=Sets.unitPicker($("unitMount"),()=>drawLib());
+const GP=Sets.groupPicker($("groupMount"),()=>drawLib());
 const QUICK=["One day,","Then","Suddenly,","After that,","Because","But","In the end,"];
 const STATUS=StoryCore.STATUS;
 // Levels 1-10: what she must do (checked here, free) and how many small mistakes the AI allows (tol).
@@ -189,8 +192,12 @@ const blank=()=>({id:null,owner_id:ME.id,title:"",blocks:[],status:"draft",story
 
 // ---------- library ----------
 function drawLib(){const q=$("q").value.trim().toLowerCase();const used=new Map();(CUR?.blocks||[]).forEach(b=>b.k==="w"&&used.set(b.w,(used.get(b.w)||0)+1));
-  const L=D.map((v,i)=>({v,i})).filter(x=>UP.match(x.v)&&(!q||x.v.w.toLowerCase().includes(q)||String(x.v.d).toLowerCase().includes(q)));
-  $("lib").innerHTML=L.length?L.map(({v,i})=>`<div class="lw${used.has(v.w)?" used":""}" draggable="true" data-i="${i}">${used.has(v.w)?`<span class="n">✓ ${used.get(v.w)}</span>`:""}${Sets.media(v,{cls:"lm",alt:""})}<b>${esc(clean(v.w))}</b><small>${esc(v.d||"")}</small><button class="add" type="button" data-add="${i}">+ Add</button></div>`).join("")
+  const L=D.map((v,i)=>i).filter(i=>{const v=D[i];return UP.match(v)&&GP.match(v)&&(!q||v.w.toLowerCase().includes(q)||String(v.d).toLowerCase().includes(q));});
+  const card=i=>{const v=D[i];return `<div class="lw${used.has(v.w)?" used":""}" draggable="true" data-i="${i}">${used.has(v.w)?`<span class="n">✓ ${used.get(v.w)}</span>`:""}${Sets.media(v,{cls:"lm",alt:""})}<b>${esc(clean(v.w))}</b><small>${esc(v.d||"")}</small><button class="add" type="button" data-add="${i}">+ Add</button></div>`;};
+  const grid=M=>`<div class="lgrid">${M.map(card).join("")}</div>`;
+  $("lib").innerHTML=L.length?GP.sections(L).map(sc=>sc.sides
+      ?`<h3 class="gsec">⇄ ${esc(sc.title)}</h3><div class="gopp">${sc.sides.map((sd,k)=>`${k?'<div class="gvs" aria-hidden="true">⇄</div>':""}<div><h4>${esc(sd.name)}</h4>${sd.items.length?grid(sd.items):'<p class="muted">—</p>'}</div>`).join("")}</div>`
+      :(sc.title?`<h3 class="gsec">${sc.icon} ${esc(sc.title)} <small>${sc.items.length}</small></h3>`:"")+grid(sc.items)).join("")
     :`<p class="muted">No words match.</p>`;
   Sets.watchClips();}
 $("q").oninput=drawLib;

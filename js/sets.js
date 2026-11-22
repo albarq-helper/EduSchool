@@ -86,6 +86,71 @@
     summary();
     return { selected: sel, match, refresh: summary };
   }
+  // ---------- word groups (tags) ----------
+  // Tag kinds: word type (fixed names), opposites ("⇄ Group: side"), and themes (everything else).
+  const TYPES = [["Action", "🏃"], ["Describing", "🎨"], ["Naming: people", "🧑"], ["Naming: things & places", "📦"]];
+  const THEME_ICONS = { "Feelings & moods": "😊", "Homes & buildings": "🏠", "Animals": "🐾", "Plants, nature & weather": "🌿", "Health & body": "🩺",
+    "Food & drink": "🍵", "Money & work": "💼", "Words & books": "📚", "Looking & seeing": "👀", "Ways of moving": "🦶", "Light & sound": "🔆",
+    "Size, amount & distance": "📏", "Danger & safety": "⚠️", "Getting along": "🤝", "Government & law": "🏛️", "Good & great": "⭐",
+    "Important & famous": "🏆", "Science": "🔬", "Time & change": "⏳", "Saying & thinking": "💬", "Places & travel": "🧭", "Character": "🧠", "How things are done": "⚙️" };
+  const isType = t => TYPES.some(x => x[0] === t), isOpp = t => /^⇄\s/.test(t);
+  const oppSplit = t => { const m = t.replace(/^⇄\s*/, "").match(/^(.*?):\s*(.+)$/); return m ? { g: m[1].trim(), side: m[2].trim() } : { g: t.replace(/^⇄\s*/, ""), side: "" }; };
+  const tagIcon = t => isType(t) ? TYPES.find(x => x[0] === t)[1] : THEME_ICONS[t] || "🏷️";
+  // all groups present in a word list: {types:[{tag,n}], themes:[{tag,n}], opps:[{g, sides:[a,b], n}]}
+  function groupsOf(D) {
+    const cnt = new Map(), opp = new Map();
+    D.forEach(v => (v.tags || []).forEach(t => { if (isOpp(t)) { const o = oppSplit(t); if (!opp.has(o.g)) opp.set(o.g, new Map()); const m = opp.get(o.g); m.set(o.side, (m.get(o.side) || 0) + 1); } else cnt.set(t, (cnt.get(t) || 0) + 1); }));
+    const themes = [...cnt].filter(([t]) => !isType(t)).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([tag, n]) => ({ tag, n }));
+    const types = TYPES.filter(([t]) => cnt.has(t)).map(([tag]) => ({ tag, n: cnt.get(tag) }));
+    const opps = [...opp].map(([g, m]) => { const sides = [...m.keys()]; const want = g.split(/\s+vs\.?\s+/i).map(x => x.trim().toLowerCase());
+      sides.sort((a, b) => (want.indexOf(a.toLowerCase()) + 1 || 9) - (want.indexOf(b.toLowerCase()) + 1 || 9)); return { g, sides, n: [...m.values()].reduce((a, b) => a + b, 0) }; })
+      .sort((a, b) => b.n - a.n);
+    return { types, themes, opps };
+  }
+  // Sets.groupPicker(mountEl, onChange) -> { match(word), sections(indices), state() }
+  function groupPicker(mount, onChange) {
+    const D = window.WORDS || [], G = groupsOf(D), KEY = "wordGroupSel";
+    if (!G.types.length && !G.themes.length && !G.opps.length) { mount.innerHTML = ""; return { match: () => true, sections: L => [{ items: L }], state: () => ({ kind: "all" }) }; }
+    if (!document.getElementById("gpick-css")) document.head.insertAdjacentHTML("beforeend", `<style id="gpick-css">.gpick{display:flex;flex-direction:column;gap:8px;width:100%}
+.gpick .gk{display:inline-flex;flex-wrap:wrap;gap:4px;align-self:flex-start;border:1px solid var(--rule);border-radius:12px;padding:3px;background:var(--paper)}
+.gpick .gk button{border:0;background:transparent;font:700 .86rem var(--f-body);color:var(--muted);padding:6px 11px;border-radius:9px;cursor:pointer}
+.gpick .gk button[aria-pressed="true"]{background:var(--sheet);color:var(--ink);box-shadow:inset 0 0 0 2px var(--accent)}
+.gpick .gc{display:flex;flex-wrap:wrap;gap:6px}
+.gpick .gc button{font:700 .84rem var(--f-body);padding:5px 11px;border-radius:999px;border:1.5px solid var(--chip-edge,var(--rule));background:var(--chip,var(--paper));color:var(--ink);cursor:pointer}
+.gpick .gc button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+.gpick .gc small{opacity:.7;font-weight:700;margin-left:3px}
+.gsec{margin:14px 0 6px;font:800 1.05rem var(--f-display);display:flex;gap:8px;align-items:center}.gsec small{font:700 .82rem var(--f-body);color:var(--muted)}
+.gopp{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:start}.gopp .gvs{font:800 1.6rem var(--f-display);color:var(--accent);align-self:center}
+.gopp h4{margin:0 0 6px;font:800 .82rem var(--f-body);letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
+@media (max-width:640px){.gopp{grid-template-columns:1fr}.gopp .gvs{justify-self:center}}</style>`);
+    let st = { kind: "all", tag: "" }; try { st = Object.assign(st, JSON.parse(localStorage.getItem(KEY) || "{}")); } catch (e) {}
+    const kinds = [["all", "All words"], ["type", "🏃 Word type"], ["theme", "🏷️ Themes"], ["opp", "⇄ Opposites"]].filter(([k]) => k === "all" || (k === "type" ? G.types.length : k === "theme" ? G.themes.length : G.opps.length));
+    if (!kinds.some(k => k[0] === st.kind)) st = { kind: "all", tag: "" };
+    function draw() {
+      const chips = st.kind === "type" ? G.types.map(x => [x.tag, tagIcon(x.tag) + " " + x.tag, x.n]) : st.kind === "theme" ? G.themes.map(x => [x.tag, tagIcon(x.tag) + " " + x.tag, x.n])
+        : st.kind === "opp" ? G.opps.map(x => [x.g, x.sides.join(" ⇄ "), x.n]) : [];
+      mount.innerHTML = `<div class="gpick"><div class="gk" role="group" aria-label="Group the words">${kinds.map(([k, l]) => `<button type="button" data-k="${k}" aria-pressed="${st.kind === k}">${l}</button>`).join("")}</div>
+        ${chips.length ? `<div class="gc" role="group" aria-label="Choose a group"><button type="button" data-t="" aria-pressed="${!st.tag}">All groups</button>${chips.map(([t, l, n]) => `<button type="button" data-t="${esc(t)}" aria-pressed="${st.tag === t}">${esc(l)}<small>${n}</small></button>`).join("")}</div>` : ""}</div>`;
+    }
+    mount.addEventListener("click", e => { const k = e.target.closest("[data-k]"), t = e.target.closest("[data-t]");
+      if (k) st = { kind: k.dataset.k, tag: "" }; else if (t) st.tag = t.dataset.t; else return;
+      try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} draw(); onChange && onChange(); });
+    const has = (v, t) => (v.tags || []).includes(t), oppTags = (v, g) => (v.tags || []).filter(t => isOpp(t) && oppSplit(t).g === g);
+    function match(v) { if (st.kind === "all" || !st.tag) return true; return st.kind === "opp" ? oppTags(v, st.tag).length > 0 : has(v, st.tag); }
+    // sections for display: [{title, icon, items}] or [{title, sides:[{name, items}]}]
+    function sections(L) {
+      if (st.kind === "all") return [{ items: L }];
+      if (st.kind === "opp") { const gs = st.tag ? G.opps.filter(x => x.g === st.tag) : G.opps;
+        return gs.map(o => ({ title: o.g, icon: "⇄", sides: o.sides.map(sd => ({ name: sd, items: L.filter(i => oppTags(D[i], o.g).some(t => oppSplit(t).side === sd)) })) }))
+          .filter(x => x.sides.some(sd => sd.items.length)); }
+      const list = st.tag ? [st.tag] : (st.kind === "type" ? G.types : G.themes).map(x => x.tag);
+      const out = list.map(t => ({ title: t, icon: tagIcon(t), items: L.filter(i => has(D[i], t)) })).filter(x => x.items.length);
+      if (!st.tag) { const rest = L.filter(i => !(D[i].tags || []).some(t => st.kind === "type" ? isType(t) : !isType(t) && !isOpp(t))); if (rest.length) out.push({ title: st.kind === "type" ? "Other" : "No theme yet", icon: "🏷️", items: rest }); }
+      return out;
+    }
+    draw();
+    return { match, sections, state: () => ({ ...st }) };
+  }
   // Say a word once: its recorded audio when there is one, otherwise the browser voice.
   // Returns a promise that resolves when the word has finished (or after a safety timeout).
   let wordAudio = null;
@@ -179,7 +244,7 @@
       id: x.id, w: x.term, d: x.meaning, s: blankify(x.example, x.term), ar: x.translation || "",
       u: x.unit, also: x.also_units || [], img: x.anim_url || (x.emoji ? tile(x.term, x.emoji) : "") || x.image_url || tile(x.term), emoji: x.emoji || "",   // clip first (vid), then animated emoji, emoji, photo
       photo: (x.anim_url || x.emoji) && x.image_url ? x.image_url : "", au: x.audio_url || "tts",
-      vid: x.video_url || "", pron: x.pronunciation || "", hint: x.sound_hint || "", syl: (x.syllables || (/\s/.test(x.term) ? x.term.toLowerCase() : autoSyl(x.term))).toLowerCase(), real: !!(x.anim_url || x.image_url)
+      vid: x.video_url || "", tags: Array.isArray(x.tags) ? x.tags : [], pron: x.pronunciation || "", hint: x.sound_hint || "", syl: (x.syllables || (/\s/.test(x.term) ? x.term.toLowerCase() : autoSyl(x.term))).toLowerCase(), real: !!(x.anim_url || x.image_url)
     }));
     const named = new Map((set.units || []).map(u => [Number(u.u), u.name || ""]));
     const counts = new Map(); words.forEach(w => counts.set(w.u, (counts.get(w.u) || 0) + 1));
@@ -250,5 +315,5 @@
     runPage();
   }
 
-  window.Sets = { boot, speak, sayWord, unitPicker, playClip, stopClip, media, watchClips, tile, autoSyl, blankify, load, mapItems, G5, LANGS };
+  window.Sets = { boot, speak, sayWord, unitPicker, groupPicker, groupsOf, tagIcon, playClip, stopClip, media, watchClips, tile, autoSyl, blankify, load, mapItems, G5, LANGS };
 })();
