@@ -16,7 +16,8 @@ const ACTS=[["list.html","list-checks","Word list","All words together: picture,
   ["games.html","puzzle","Games","Match pictures and meanings, unscramble.","a-teal",m=>m.words.length>=4],
   ["spelling.html","spell-check-2","Spelling","Look-cover-write, missing letters, test.","a-coral",m=>m.words.length>=2],
   ["quiz.html","circle-help","Quiz","Multiple-choice and true/false questions.","a-blue",m=>m.questions.length>0],
-  ["songs.html","music","Songs & dialogs","Sing along, listen to dialogs, read the text, fill in the words.","a-coral",m=>m.hasSongs]];
+  ["songs.html","music","Songs & dialogs","Sing along, listen to dialogs, read the text, fill in the words.","a-coral",m=>m.hasSongs],
+  ["story.html","sparkles","Story builder","Put words in order, add your own, and build your own story and movie.","a-sun",m=>m.words.length>=2]];
 async function render(){
   const got=await Sets.load(ID);
   Sets.watchClips();
