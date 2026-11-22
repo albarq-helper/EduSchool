@@ -46,7 +46,7 @@ textarea.mid{width:100%;min-height:70px;font:14px/1.5 var(--f-body);padding:8px 
 .empty{padding:40px 20px;text-align:center;color:var(--muted)}
 .note{padding:10px 12px;border-radius:10px;background:var(--sky-soft);font-size:.9rem;margin-bottom:12px}
 </style>
-<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261122f"></script><script src="js/icons.js?v=20261122f"></script><script src="js/app.js?v=20261122f"></script><script src="js/sets.js?v=20261122f"></script><script src="js/storycore.js?v=20261122f"></script><script src="js/montage.js?v=20261122f"></script>
+<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261122g"></script><script src="js/icons.js?v=20261122g"></script><script src="js/app.js?v=20261122g"></script><script src="js/sets.js?v=20261122g"></script><script src="js/storycore.js?v=20261122g"></script><script src="js/montage.js?v=20261122g"></script>
 </head><body>
 <div class="wrap" style="max-width:1320px">
   <div class="head2">
@@ -197,6 +197,7 @@ function drawPremiere(){const p=plan(),ready=Montage.latest(TAKES),miss=p.shots.
   $("studio").hidden=false;
   const r=await C.from("stories").select("id,owner_id,title,blocks,status,story_text,video_url,video_plan,film_style,level,sentences,feedback,updated_at").eq("set_id",SET.id).order("updated_at",{ascending:false});
   if(r.error){$("ws").innerHTML=`<div class="empty">Can't load stories: ${esc(r.error.message)}</div>`;return;}
+  try{await Sets.loadBoxes(SET);}catch(e){}   // words from every word box (feelings, linking words…) for pictures and meanings
   STORIES=(r.data||[]).map(s=>Object.assign(s,{blocks:Array.isArray(s.blocks)?s.blocks:[],sentences:s.sentences||{}}));
   const ids=[...new Set(STORIES.map(s=>s.owner_id).filter(x=>x&&x!==ME.id))];
   if(ids.length){const pr=await C.from("profiles").select("id,full_name").in("id",ids);(pr.data||[]).forEach(p=>NAMES[p.id]=p.full_name);}

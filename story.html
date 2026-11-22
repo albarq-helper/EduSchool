@@ -12,6 +12,13 @@
 .lib .q{position:relative;flex:1 1 180px}.lib .q svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted)}.lib .q input{width:100%;padding-left:34px}
 .lwrap{max-height:72vh;overflow:auto;padding:2px}
 .lib .gopp{grid-template-columns:1fr}.lib .gslv{grid-template-columns:1fr}.lib .gsr{flex-direction:row;align-items:center;gap:8px}.lib .gopp .gvs{justify-self:center;font-size:1.3rem}.lib .gsec{margin:10px 0 6px}
+.boxes{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 10px}
+.boxes button{font:800 .92rem var(--f-body);padding:8px 14px;border-radius:12px;border:2px solid var(--rule);background:var(--paper);color:var(--ink);cursor:pointer}
+.boxes button[aria-selected="true"]{border-color:var(--accent);background:var(--accent);color:#fff}
+.boxes button small{font-weight:700;opacity:.75;margin-left:4px}
+.lw .mt{position:absolute;top:10px;left:10px;border:0;border-radius:999px;background:rgba(255,255,255,.92);box-shadow:0 1px 4px rgba(0,0,0,.2);font-size:.95rem;padding:3px 7px;cursor:pointer}
+.lw .from{font:700 .7rem var(--f-body);color:var(--muted)}
+.lw.link .lm{background:var(--sun-soft)}
 .lgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:10px}
 .lw{border:1.5px solid var(--rule);border-radius:12px;background:var(--paper);padding:6px;display:flex;flex-direction:column;gap:4px;cursor:grab;position:relative}
 .lw:active{cursor:grabbing}.lw.used{border-color:var(--good)}
@@ -86,7 +93,7 @@
 .parent .step{margin-top:12px}.parent .step b{display:block;margin-bottom:4px}
 .parent input[type=text]{width:100%;max-width:40rem}
 </style>
-<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261122f"></script><script src="js/icons.js?v=20261122f"></script><script src="js/app.js?v=20261122f"></script><script src="js/sets.js?v=20261122f"></script><script src="js/storycore.js?v=20261122f"></script><script src="js/montage.js?v=20261122f"></script>
+<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261122g"></script><script src="js/icons.js?v=20261122g"></script><script src="js/app.js?v=20261122g"></script><script src="js/sets.js?v=20261122g"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261122g"></script><script src="js/storycore.js?v=20261122g"></script><script src="js/montage.js?v=20261122g"></script>
 </head><body>
 <div class="wrap" style="max-width:1280px">
   <div class="head2">
@@ -96,7 +103,8 @@
   <div class="sb">
     <section class="panel lib" aria-label="Word library">
       <h2><span data-i="book-open"></span>Word library</h2>
-      <div class="r"><label class="q"><span data-i="search"></span><input id="q" type="search" placeholder="Find a word or meaning…" aria-label="Find a word"></label><div id="unitMount"></div></div>
+      <div class="boxes" id="boxes" role="tablist" aria-label="Word boxes"></div>
+      <div class="r"><label class="q"><span data-i="search"></span><input id="q" type="search" placeholder="Search every word box…" aria-label="Search every word box"></label><div id="unitMount"></div></div>
       <div id="groupMount" style="margin-bottom:10px"></div>
       <p class="muted" style="margin:0 0 8px;font-size:.86rem">Tap a picture to watch and hear it. Press <b>+ Add</b> or drag a word into your story.</p>
       <div class="lwrap" id="lib"></div>
@@ -142,7 +150,19 @@
 const $=id=>document.getElementById(id), esc=App.esc, D=window.WORDS, SET=window.CURRENT_SET, C=App.client;
 document.querySelectorAll("[data-i]").forEach(el=>el.insertAdjacentHTML("afterbegin",icon(el.dataset.i,16)));
 const UP=Sets.unitPicker($("unitMount"),()=>drawLib());
-const GP=Sets.groupPicker($("groupMount"),()=>drawLib());
+let GP=Sets.groupPicker($("groupMount"),()=>drawLib());
+let BOXES=[{id:SET.id,title:SET.title,kind:"set",icon:"📘",idx:D.map((v,i)=>i)}], BOX=SET.id, START={};
+const boxOf=id=>BOXES.find(b=>b.id===id)||BOXES[0];
+function drawBoxes(){$("boxes").innerHTML=BOXES.length>1?BOXES.map(b=>`<button type="button" role="tab" data-box="${b.id}" aria-selected="${b.id===BOX}">${b.icon} ${esc(b.title.replace(/\s*·.*$/,"").replace(/:.*$/,""))}<small>${b.idx.length}</small></button>`).join(""):"";}
+function setBox(id){BOX=boxOf(id).id;try{localStorage.setItem("storyBox",BOX);}catch(e){}const b=boxOf(BOX);
+  $("unitMount").hidden=b.kind!=="set";
+  const old=$("groupMount"),n=old.cloneNode(false);old.replaceWith(n);
+  const words=b.idx.map(i=>D[i]),hasScale=words.some(v=>(v.tags||[]).some(t=>/^📶/.test(t)));
+  GP=Sets.groupPicker(n,()=>drawLib(),{words,key:"wordGroupSel:"+BOX,kind:b.kind==="link"?"theme":(b.kind==="words"&&hasScale?"scale":"all")});
+  drawBoxes();drawLib();}
+$("boxes").onclick=e=>{const b=e.target.closest("[data-box]");if(b){$("q").value="";setBox(b.dataset.box);}};
+// add a library word: linking words become the student's own words; others are vocabulary words
+function addIdx(i,at){const v=D[i];if(!v)return;addBlock(v.boxKind==="link"?{k:"t",t:clean(v.w)}:{k:"w",w:v.w},at);}
 const QUICK=["One day,","Then","Suddenly,","After that,","Because","But","In the end,"];
 const STATUS=StoryCore.STATUS;
 // Levels 1-10: what she must do (checked here, free) and how many small mistakes the AI allows (tol).
@@ -191,17 +211,22 @@ const ME=App.profile||{};
 const blank=()=>({id:null,owner_id:ME.id,title:"",blocks:[],status:"draft",story_text:"",video_url:"",level:DEF_LEVEL,sentences:{},feedback:""});
 
 // ---------- library ----------
-function drawLib(){const q=$("q").value.trim().toLowerCase();const used=new Map();(CUR?.blocks||[]).forEach(b=>b.k==="w"&&used.set(b.w,(used.get(b.w)||0)+1));
-  const L=D.map((v,i)=>i).filter(i=>{const v=D[i];return UP.match(v)&&GP.match(v)&&(!q||v.w.toLowerCase().includes(q)||String(v.d).toLowerCase().includes(q));});
-  const card=i=>{const v=D[i];return `<div class="lw${used.has(v.w)?" used":""}" draggable="true" data-i="${i}">${used.has(v.w)?`<span class="n">✓ ${used.get(v.w)}</span>`:""}${Sets.media(v,{cls:"lm",alt:""})}<b>${esc(clean(v.w))}</b><small>${esc(v.d||"")}</small><button class="add" type="button" data-add="${i}">+ Add</button></div>`;};
+function drawLib(){const q=$("q").value.trim().toLowerCase();const used=new Map();(CUR?.blocks||[]).forEach(b=>{const t=b.k==="w"?b.w:b.k==="t"?clean(b.t||""):"";if(t)used.set(t,(used.get(t)||0)+1);});
+  const hit=v=>v.w.toLowerCase().includes(q)||String(v.d).toLowerCase().includes(q);
+  const card=i=>{const v=D[i],u=used.get(v.w)||used.get(clean(v.w)),sc=Sets.scaleOfWord(v);
+    return `<div class="lw${u?" used":""}${v.boxKind==="link"?" link":""}" draggable="true" data-i="${i}">${u?`<span class="n">✓ ${u}</span>`:""}${sc?`<button class="mt" type="button" data-meter="${i}" title="See it on the ${esc(sc.g)} meter">🎚️</button>`:""}${Sets.media(v,{cls:"lm",alt:""})}<b>${esc(clean(v.w))}</b><small>${esc(v.d||"")}</small>${q&&v.box!==BOX?`<span class="from">in ${esc(boxOf(v.box).title)}</span>`:""}<button class="add" type="button" data-add="${i}">+ Add</button></div>`;};
   const grid=M=>`<div class="lgrid">${M.map(card).join("")}</div>`;
-  $("lib").innerHTML=L.length?Sets.sectionsHTML(GP.sections(L),grid)
-    :`<p class="muted">No words match.</p>`;
+  let secs;
+  if(q){secs=BOXES.map(b=>({title:b.title,icon:b.icon,items:b.idx.filter(i=>hit(D[i]))})).filter(x=>x.items.length);}
+  else{const b=boxOf(BOX),L=b.idx.filter(i=>{const v=D[i];return (b.kind!=="set"||UP.match(v))&&GP.match(v);});secs=GP.sections(L);}
+  $("lib").innerHTML=secs.some(x=>(x.items||[]).length||x.scale||x.sides)?Sets.sectionsHTML(secs,grid,{rows:false}):`<p class="muted">No words match.</p>`;
+  Sets.mountMeters($("lib"),secs,{onAdd:i=>addIdx(i),start:START,addLabel:"+ Add to story"});
   Sets.watchClips();}
 $("q").oninput=drawLib;
-$("lib").addEventListener("click",e=>{const a=e.target.closest("[data-add]");if(a){addBlock({k:"w",w:D[+a.dataset.add].w});return;}
+$("lib").addEventListener("click",e=>{const mt=e.target.closest("[data-meter]");if(mt){const v=D[+mt.dataset.meter],sc=Sets.scaleOfWord(v);if(sc){START[sc.g]=sc.r;$("q").value="";if(v.box!==BOX)setBox(v.box);GP.set("scale",sc.g);$("lib").scrollIntoView({behavior:"smooth",block:"start"});}return;}
+  const a=e.target.closest(".lw [data-add]");if(a){addIdx(+a.dataset.add);return;}
   const m=e.target.closest(".lm");if(m){const v=D[+m.closest(".lw").dataset.i];m.tagName==="VIDEO"?Sets.playClip(m,v):Sets.sayWord(v);}});
-$("lib").addEventListener("dragstart",e=>{const c=e.target.closest(".lw");if(!c)return;DRAG={add:D[+c.dataset.i].w};e.dataTransfer.setData("text/plain","word");e.dataTransfer.effectAllowed="copy";});
+$("lib").addEventListener("dragstart",e=>{const c=e.target.closest(".lw");if(!c)return;DRAG={idx:+c.dataset.i};e.dataTransfer.setData("text/plain","word");e.dataTransfer.effectAllowed="copy";});
 
 // ---------- story board ----------
 function addBlock(b,at){if(!CUR)CUR=blank();if(CUR.blocks.length>=200){App.status("That's a very long story! (200 steps max)",false);return;}
@@ -241,7 +266,7 @@ $("board").addEventListener("dragover",e=>{if(!DRAG)return;e.preventDefault();$(
   const t=dropTarget(e);if(t.li)t.li.classList.add(t.after?"dropa":"dropb");});
 $("board").addEventListener("dragleave",e=>{if(!$("board").contains(e.relatedTarget)){$("board").classList.remove("over");document.querySelectorAll(".dropb,.dropa").forEach(x=>x.classList.remove("dropb","dropa"));}});
 $("board").addEventListener("drop",e=>{if(!DRAG)return;e.preventDefault();$("board").classList.remove("over");let {k}=dropTarget(e);
-  if(DRAG.add)addBlock({k:"w",w:DRAG.add},k);
+  if(DRAG.idx!=null)addIdx(DRAG.idx,k);
   else if(DRAG.move!=null){const B=CUR.blocks,[b]=B.splice(DRAG.move,1);if(DRAG.move<k)k--;B.splice(k,0,b);SEL=k;changed();drawBoard();}
   DRAG=null;});
 document.addEventListener("dragend",()=>{DRAG=null;$("board").classList.remove("over");document.querySelectorAll(".dropb,.dropa").forEach(x=>x.classList.remove("dropb","dropa"));});
@@ -305,5 +330,8 @@ $("infoDlg").addEventListener("click",e=>{if(e.target===$("infoDlg"))$("infoDlg"
   if(STORIES[0]&&STORIES[0].level)DEF_LEVEL=STORIES[0].level;
   if(ME.role==="teacher")document.querySelector(".head2").insertAdjacentHTML("afterend",`<div class="panel" style="margin-bottom:14px;background:var(--sky-soft)">👋 You're signed in as a parent. Stories your student sends you are in the <a href="studio.html?set=${SET.id}"><b>🎬 Director's Studio</b></a>. This page is the student's builder (you can still make your own stories here).</div>`);
   let last="";try{last=localStorage.getItem("storyCur")||"";}catch(e){}
-  openStory(STORIES.find(s=>s.id===last)||STORIES[0]||null);})();
+  openStory(STORIES.find(s=>s.id===last)||STORIES[0]||null);
+  try{BOXES=await Sets.loadBoxes(SET);}catch(e){}
+  let sb="";try{sb=localStorage.getItem("storyBox")||"";}catch(e){}
+  setBox(BOXES.some(b=>b.id===sb)?sb:SET.id);drawBoard();})();
 </script><script>Sets.boot({min:2})</script></body></html>

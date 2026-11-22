@@ -92,7 +92,8 @@
   const THEME_ICONS = { "Feelings & moods": "😊", "Homes & buildings": "🏠", "Animals": "🐾", "Plants, nature & weather": "🌿", "Health & body": "🩺",
     "Food & drink": "🍵", "Money & work": "💼", "Words & books": "📚", "Looking & seeing": "👀", "Ways of moving": "🦶", "Light & sound": "🔆",
     "Size, amount & distance": "📏", "Danger & safety": "⚠️", "Getting along": "🤝", "Government & law": "🏛️", "Good & great": "⭐",
-    "Important & famous": "🏆", "Science": "🔬", "Time & change": "⏳", "Saying & thinking": "💬", "Places & travel": "🧭", "Character": "🧠", "How things are done": "⚙️", "Ways to show love": "💞", "Caring qualities": "🤲" };
+    "Important & famous": "🏆", "Science": "🔬", "Time & change": "⏳", "Saying & thinking": "💬", "Places & travel": "🧭", "Character": "🧠", "How things are done": "⚙️", "Ways to show love": "💞", "Caring qualities": "🤲",
+    "Time & order": "⏰", "Adding ideas": "➕", "Contrast": "⚖️", "Cause & effect": "💡", "Examples": "🔍", "Endings": "🎬" };
   const isType = t => TYPES.some(x => x[0] === t), isOpp = t => /^⇄\s/.test(t), isScale = t => /^📶\s/.test(t);
   // "📶 Hate ⇄ Love: -4" -> {g:"Hate ⇄ Love", r:-4}
   const scaleSplit = t => { const m = t.replace(/^📶\s*/, "").match(/^(.*?):\s*([+-]?\d+)\s*$/); return m ? { g: m[1].trim(), r: +m[2] } : { g: t.replace(/^📶\s*/, ""), r: 0 }; };
@@ -110,10 +111,11 @@
     const scales = [...scl].map(([g, n]) => ({ g, n })).sort((a, b) => b.n - a.n);
     return { types, themes, opps, scales };
   }
-  // Sets.groupPicker(mountEl, onChange) -> { match(word), sections(indices), state() }
-  function groupPicker(mount, onChange) {
-    const D = window.WORDS || [], G = groupsOf(D), KEY = "wordGroupSel";
-    if (!G.types.length && !G.themes.length && !G.opps.length && !G.scales.length) { mount.innerHTML = ""; return { match: () => true, sections: L => [{ items: L }], state: () => ({ kind: "all" }) }; }
+  // Sets.groupPicker(mountEl, onChange, {words, key, kind}) -> { match(word), sections(indices), state(), set(kind, tag) }
+  // words: the words whose groups to offer (default: all words); kind: the tab to open first.
+  function groupPicker(mount, onChange, opts) {
+    opts = opts || {}; const D = window.WORDS || [], G = groupsOf(opts.words || D), KEY = opts.key || "wordGroupSel";
+    if (!G.types.length && !G.themes.length && !G.opps.length && !G.scales.length) { mount.innerHTML = ""; return { match: () => true, sections: L => [{ items: L }], state: () => ({ kind: "all" }), set: () => {} }; }
     if (!document.getElementById("gpick-css")) document.head.insertAdjacentHTML("beforeend", `<style id="gpick-css">.gpick{display:flex;flex-direction:column;gap:8px;width:100%}
 .gpick .gk{display:inline-flex;flex-wrap:wrap;gap:4px;align-self:flex-start;border:1px solid var(--rule);border-radius:12px;padding:3px;background:var(--paper)}
 .gpick .gk button{border:0;background:transparent;font:700 .86rem var(--f-body);color:var(--muted);padding:6px 11px;border-radius:9px;cursor:pointer}
@@ -135,12 +137,13 @@
 .gslv{display:grid;grid-template-columns:110px 1fr;gap:10px;align-items:start}
 .gsr{border-radius:12px;padding:8px 10px;display:flex;flex-direction:column;gap:2px;color:#1f2937}.gsr span{font:800 1.3rem var(--f-display)}.gsr small{font:700 .74rem var(--f-body);opacity:.85}
 @media (max-width:640px){.gslv{grid-template-columns:1fr}}</style>`);
-    let st = { kind: "all", tag: "" }; try { st = Object.assign(st, JSON.parse(localStorage.getItem(KEY) || "{}")); } catch (e) {}
-    const kinds = [["all", "All words"], ["type", "🏃 Word type"], ["theme", "🏷️ Themes"], ["scale", "📶 Scales"], ["opp", "⇄ Opposites"]].filter(([k]) => k === "all" || (k === "type" ? G.types.length : k === "theme" ? G.themes.length : k === "scale" ? G.scales.length : G.opps.length));
+    let st = { kind: opts.kind || "all", tag: "" }; try { st = Object.assign(st, JSON.parse(localStorage.getItem(KEY) || "{}")); } catch (e) {}
+    const kinds = [["all", "All words"], ["type", "🏃 Word type"], ["theme", "🏷️ Themes"], ["scale", "🎚️ Feeling meters"], ["opp", "⇄ Opposites"]].filter(([k]) => k === "all" || (k === "type" ? G.types.length : k === "theme" ? G.themes.length : k === "scale" ? G.scales.length : G.opps.length));
     if (!kinds.some(k => k[0] === st.kind)) st = { kind: "all", tag: "" };
+    if (st.tag && !(st.kind === "opp" ? G.opps.some(x => x.g === st.tag) : st.kind === "scale" ? G.scales.some(x => x.g === st.tag) : (st.kind === "type" ? G.types : G.themes).some(x => x.tag === st.tag))) st.tag = "";
     function draw() {
       const chips = st.kind === "type" ? G.types.map(x => [x.tag, tagIcon(x.tag) + " " + x.tag, x.n]) : st.kind === "theme" ? G.themes.map(x => [x.tag, tagIcon(x.tag) + " " + x.tag, x.n])
-        : st.kind === "opp" ? G.opps.map(x => [x.g, x.sides.join(" ⇄ "), x.n]) : st.kind === "scale" ? G.scales.map(x => [x.g, "📶 " + x.g, x.n]) : [];
+        : st.kind === "opp" ? G.opps.map(x => [x.g, x.sides.join(" ⇄ "), x.n]) : st.kind === "scale" ? G.scales.map(x => [x.g, "🎚️ " + x.g, x.n]) : [];
       mount.innerHTML = `<div class="gpick"><div class="gk" role="group" aria-label="Group the words">${kinds.map(([k, l]) => `<button type="button" data-k="${k}" aria-pressed="${st.kind === k}">${l}</button>`).join("")}</div>
         ${chips.length ? `<div class="gc" role="group" aria-label="Choose a group"><button type="button" data-t="" aria-pressed="${!st.tag}">All groups</button>${chips.map(([t, l, n]) => `<button type="button" data-t="${esc(t)}" aria-pressed="${st.tag === t}">${esc(l)}<small>${n}</small></button>`).join("")}</div>` : ""}</div>`;
     }
@@ -166,10 +169,11 @@
       return out;
     }
     draw();
-    return { match, sections, state: () => ({ ...st }) };
+    return { match, sections, state: () => ({ ...st }), set: (kind, tag) => { st = { kind, tag: tag || "" }; try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} draw(); onChange && onChange(); } };
   }
   // Draw groupPicker sections. view(indices) returns the HTML for a list of words in the page's own style.
-  function sectionsHTML(secs, view) {
+  function sectionsHTML(secs, view, opts) {
+    opts = opts || {}; const useMeter = !!window.Meter && opts.meter !== false;
     const lab2 = r => r === 0 ? "neutral" : ["", "a little", "some", "strong", "very strong", "strongest"][Math.min(5, Math.abs(r))];
     const lab1 = r => r === 0 ? "calm" : ["", "a little", "some", "strong", "very strong", "strongest"][Math.min(5, r)];
     const col = (r, two) => { const a = Math.min(5, Math.abs(r)); if (two) return r < 0 ? `hsl(0 75% ${92 - a * 9}%)` : r > 0 ? `hsl(145 55% ${92 - a * 9}%)` : "hsl(220 15% 90%)";
@@ -178,11 +182,37 @@
       if (sc.scale) { const S = sc.scale;
         const D = window.WORDS || [];
         const strip = `<div class="gsstrip">${S.levels.map(l => `<div class="gss" style="background:${col(l.rank, S.two)}"><b>${l.rank > 0 ? "+" : ""}${l.rank}</b>${l.items.map(i => `<span>${esc(String(D[i] ? D[i].w : "").replace(/\s*\(.*\)/, ""))}</span>`).join("")}</div>`).join("")}</div>`;
-        return `<h3 class="gsec">📶 ${esc(sc.title)}</h3><div class="gscale"><div class="gsbar"><b>${esc(S.left)}</b><span class="gsgrad${S.two ? "" : " one"}"></span><b>${esc(S.right)}</b></div>${strip}
+        const k = secs.indexOf(sc);
+        if (useMeter && opts.rows === false) return `<h3 class="gsec">🎚️ ${esc(sc.title)}</h3><div class="meterbox" data-mi="${k}"></div>`;
+        return `<h3 class="gsec">${useMeter ? "🎚️" : "📶"} ${esc(sc.title)}</h3><div class="gscale">${useMeter ? `<div class="meterbox" data-mi="${k}"></div>` : `<div class="gsbar"><b>${esc(S.left)}</b><span class="gsgrad${S.two ? "" : " one"}"></span><b>${esc(S.right)}</b></div>${strip}`}
           ${S.levels.map(l => `<div class="gslv"><div class="gsr" style="background:${col(l.rank, S.two)}"><span>${l.rank > 0 ? "+" : ""}${l.rank}</span><small>${S.two ? lab2(l.rank) : lab1(l.rank)}${S.two && l.rank ? " · " + esc(l.rank < 0 ? S.left : S.right) : ""}</small></div><div class="gsw">${view(l.items)}</div></div>`).join("")}</div>`; }
       if (sc.sides) return `<h3 class="gsec">⇄ ${esc(sc.title)}</h3><div class="gopp">${sc.sides.map((sd, k) => `${k ? '<div class="gvs" aria-hidden="true">⇄</div>' : ""}<div><h4>${esc(sd.name)}</h4>${sd.items.length ? view(sd.items) : '<p class="muted">—</p>'}</div>`).join("")}</div>`;
       return (sc.title ? `<h3 class="gsec">${sc.icon} ${esc(sc.title)} <small>${sc.items.length} word${sc.items.length === 1 ? "" : "s"}</small></h3>` : "") + view(sc.items);
     }).join("");
+  }
+  // Story builder word boxes: the current set plus every set marked study_sets.story_box ('words' or 'link').
+  // Their words are added to window.WORDS (each word gets .box = set id) so stories can use them everywhere.
+  // -> [{id, title, kind:'set'|'words'|'link', icon, idx:[indices into window.WORDS]}]
+  async function loadBoxes(cur) {
+    const D = window.WORDS || (window.WORDS = []), C = App.client;
+    D.forEach(v => { if (!v.box) v.box = cur.id; });
+    const boxes = [{ id: cur.id, title: cur.title, kind: "set", icon: "📘", idx: D.map((v, i) => i) }];
+    const r = await C.from("study_sets").select("id,title,story_box,units").not("story_box", "is", null).order("title");
+    for (const b of (r.data || [])) {
+      if (b.id === cur.id) { boxes[0].kind = b.story_box; continue; }
+      const got = await load(b.id); if (!got) continue;
+      const m = mapItems(got.set, got.items), start = D.length;
+      m.words.forEach(w => { w.box = b.id; w.boxKind = b.story_box; w.boxUnits = m.units; D.push(w); });
+      boxes.push({ id: b.id, title: b.title, kind: b.story_box, icon: b.story_box === "link" ? "🔗" : /feel/i.test(b.title) ? "💗" : "📦", idx: m.words.map((w, j) => start + j) });
+    }
+    return boxes;
+  }
+  // Turn the meter boxes drawn by sectionsHTML into live Feeling meters. opts: {onAdd(i), start:{scaleTitle: rank}, addLabel}
+  function mountMeters(root, secs, opts) {
+    opts = opts || {}; if (!window.Meter || !root) return;
+    root.querySelectorAll(".meterbox[data-mi]").forEach(box => { const sc = secs[+box.dataset.mi]; if (!sc || !sc.scale) return;
+      Meter.mount(box, { title: sc.title, left: sc.scale.left, right: sc.scale.right, two: sc.scale.two, levels: sc.scale.levels,
+        start: (opts.start || {})[sc.title], onAdd: opts.onAdd, addLabel: opts.addLabel }); });
   }
   // Say a word once: its recorded audio when there is one, otherwise the browser voice.
   // Returns a promise that resolves when the word has finished (or after a safety timeout).
@@ -348,5 +378,5 @@
     runPage();
   }
 
-  window.Sets = { boot, speak, sayWord, unitPicker, groupPicker, groupsOf, tagIcon, sectionsHTML, TAG_TYPES: TYPES, TAG_THEMES: THEME_ICONS, playClip, stopClip, media, watchClips, tile, autoSyl, blankify, load, mapItems, G5, LANGS };
+  window.Sets = { boot, speak, sayWord, unitPicker, groupPicker, groupsOf, tagIcon, sectionsHTML, mountMeters, loadBoxes, scaleOfWord: (v, g) => { const t = (v.tags || []).find(t => isScale(t) && (!g || scaleSplit(t).g === g)); return t ? scaleSplit(t) : null; }, TAG_TYPES: TYPES, TAG_THEMES: THEME_ICONS, playClip, stopClip, media, watchClips, tile, autoSyl, blankify, load, mapItems, G5, LANGS };
 })();
