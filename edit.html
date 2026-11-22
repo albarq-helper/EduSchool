@@ -3,7 +3,7 @@
 <title>Edit study set · Helper Academy</title><link rel="icon" href="assets/icons/brilliant.png">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=Noto+Naskh+Arabic:wght@600&display=swap">
 <link rel="stylesheet" href="css/app.css">
-<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261122e"></script><script src="js/icons.js?v=20261122e"></script><script src="js/app.js?v=20261122e"></script><script src="js/sets.js?v=20261122e"></script>
+<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261122f"></script><script src="js/icons.js?v=20261122f"></script><script src="js/app.js?v=20261122f"></script><script src="js/sets.js?v=20261122f"></script>
 <style>
 .groupsbox{border:1px solid var(--rule);border-radius:12px;padding:10px 12px;margin:0 0 10px;background:var(--paper);display:grid;gap:8px}
 .tagf .ttype{gap:6px}.tbtn{font:700 .82rem var(--f-body);padding:5px 10px;border-radius:999px;border:1.5px solid var(--rule);background:var(--sheet);color:var(--ink);cursor:pointer}
@@ -44,7 +44,7 @@
 
   <section class="card"><div class="row" style="justify-content:space-between"><h2 class="sec-title"><i data-i="layers"></i>Terms and questions <span class="muted" id="nItems"></span></h2>
     <div class="row"><button class="btn small" data-add="term" type="button"><i data-i="plus"></i>Term</button><button class="btn small" data-add="mcq" type="button"><i data-i="plus"></i>Multiple choice</button><button class="btn small" data-add="tf" type="button"><i data-i="plus"></i>True / false</button></div></div>
-    <div class="groupsbox"><div class="row" style="justify-content:space-between"><b>Word groups</b><span class="muted" style="font-size:.85rem">Give each term a word type, themes and opposites. Words with the same group appear together on the Word list and in the Story builder. For opposites, type <code>Hot vs. cold: hot</code>.</span></div><div id="groupsSum"></div></div>
+    <div class="groupsbox"><div class="row" style="justify-content:space-between"><b>Word groups</b><span class="muted" style="font-size:.85rem">Give each term a word type, themes and opposites. Words with the same group appear together on the Word list and in the Story builder. For opposites, type <code>Hot vs. cold: hot</code>. For a strength scale, type <code>Hate ⇄ Love: +3</code> (−5 to +5).</span></div><div id="groupsSum"></div></div>
     <datalist id="tagList"></datalist>
     <div id="rows" style="display:grid;gap:10px"></div>
     <div class="row"><button class="btn small" data-add="term" type="button"><i data-i="plus"></i>Term</button><button class="btn small" data-add="mcq" type="button"><i data-i="plus"></i>Multiple choice</button><button class="btn small" data-add="tf" type="button"><i data-i="plus"></i>True / false</button></div>
@@ -118,17 +118,18 @@ const media=(r,k,f,label,accept)=>`<label class="f" style="font-weight:600">${la
 // ---------- word groups (tags) ----------
 const TT=Sets.TAG_TYPES, isTypeTag=t=>TT.some(x=>x[0]===t);
 const normTag=t=>{t=String(t||"").replace(/\s+/g," ").trim().slice(0,80);if(!t)return "";
+  if(/^📶/.test(t)||/:\s*[+-]?\d+$/.test(t)){t=t.replace(/^📶\s*/,"");const m=t.match(/^(.*?):\s*([+-]?)(\d+)$/);if(m){const r=+m[3]*(m[2]==="-"?-1:1);return "📶 "+m[1].trim()+": "+(r>0?"+":"")+r;}}
   if(/^(⇄|<>|<->|opp:)/i.test(t))t="⇄ "+t.replace(/^(⇄|<>|<->|opp:)\s*/i,"");else if(/\svs\.?\s.*:/i.test(t))t="⇄ "+t;return t;};
 function tagField(r,k){const tags=r.tags||[],type=tags.find(isTypeTag),rest=tags.filter(t=>!isTypeTag(t));
   return `<div class="f tagf" style="grid-column:1/-1"><span>Groups <span class="muted" style="font-weight:400">(word type, themes, opposites)</span></span>
     <div class="row ttype" role="group" aria-label="Word type">${TT.map(([t,ic])=>`<button type="button" class="tbtn${type===t?" on":""}" data-ttype="${esc(t)}" data-k="${k}" aria-pressed="${type===t}">${ic} ${esc(t)}</button>`).join("")}</div>
-    <div class="row tchips">${rest.map(t=>`<span class="tchip${/^⇄/.test(t)?" opp":""}">${/^⇄/.test(t)?"":esc(Sets.tagIcon(t))+" "}${esc(t)}<button type="button" data-tdel="${esc(t)}" data-k="${k}" aria-label="Remove ${esc(t)}">✕</button></span>`).join("")}
-      <input class="tin" list="tagList" data-tagin="${k}" maxlength="80" placeholder="+ Add a theme or opposite…" aria-label="Add a group"></div></div>`;}
+    <div class="row tchips">${rest.map(t=>`<span class="tchip${/^⇄|^📶/.test(t)?" opp":""}">${/^⇄|^📶/.test(t)?"":esc(Sets.tagIcon(t))+" "}${esc(t)}<button type="button" data-tdel="${esc(t)}" data-k="${k}" aria-label="Remove ${esc(t)}">✕</button></span>`).join("")}
+      <input class="tin" list="tagList" data-tagin="${k}" maxlength="80" placeholder="+ Add a theme, opposite or scale…" aria-label="Add a group"></div></div>`;}
 function tagList(){const all=new Set([...Object.keys(Sets.TAG_THEMES)]);ROWS.forEach(r=>(r.tags||[]).forEach(t=>{if(!isTypeTag(t))all.add(t);}));
   $("tagList").innerHTML=[...all].sort().map(t=>`<option value="${esc(t)}">`).join("");}
 function drawGroups(){const box=$("groupsSum");if(!box)return;const terms=ROWS.filter(r=>r.kind==="term");const c=new Map();
   terms.forEach(r=>(r.tags||[]).forEach(t=>c.set(t,(c.get(t)||0)+1)));const none=terms.filter(r=>!(r.tags||[]).length).length;
-  box.innerHTML=c.size||none?`<div class="row" style="gap:6px">${[...c].sort((a,b)=>b[1]-a[1]).map(([t,n])=>`<span class="tchip${/^⇄/.test(t)?" opp":""}">${/^⇄/.test(t)?"":esc(Sets.tagIcon(t))+" "}${esc(t)} <b>${n}</b></span>`).join("")}${none?`<span class="tchip warn">🏷️ No group yet <b>${none}</b></span>`:""}</div>`:"";}
+  box.innerHTML=c.size||none?`<div class="row" style="gap:6px">${[...c].sort((a,b)=>b[1]-a[1]).map(([t,n])=>`<span class="tchip${/^⇄|^📶/.test(t)?" opp":""}">${/^⇄|^📶/.test(t)?"":esc(Sets.tagIcon(t))+" "}${esc(t)} <b>${n}</b></span>`).join("")}${none?`<span class="tchip warn">🏷️ No group yet <b>${none}</b></span>`:""}</div>`:"";}
 function setTags(k,tags){const r=ROWS[k];r.tags=[...new Set(tags.map(normTag).filter(Boolean))].slice(0,12);dirty=true;
   const card=$("rows").querySelectorAll(".erow")[k];const f=card&&card.querySelector(".tagf");if(f&&f.isConnected&&f.parentNode){f.outerHTML=tagField(r,k);}tagList();drawGroups();
   const inp=$("rows").querySelector(`[data-tagin="${k}"]`);if(inp&&document.activeElement===document.body)inp.focus();}

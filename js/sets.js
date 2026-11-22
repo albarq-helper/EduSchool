@@ -92,25 +92,28 @@
   const THEME_ICONS = { "Feelings & moods": "😊", "Homes & buildings": "🏠", "Animals": "🐾", "Plants, nature & weather": "🌿", "Health & body": "🩺",
     "Food & drink": "🍵", "Money & work": "💼", "Words & books": "📚", "Looking & seeing": "👀", "Ways of moving": "🦶", "Light & sound": "🔆",
     "Size, amount & distance": "📏", "Danger & safety": "⚠️", "Getting along": "🤝", "Government & law": "🏛️", "Good & great": "⭐",
-    "Important & famous": "🏆", "Science": "🔬", "Time & change": "⏳", "Saying & thinking": "💬", "Places & travel": "🧭", "Character": "🧠", "How things are done": "⚙️" };
-  const isType = t => TYPES.some(x => x[0] === t), isOpp = t => /^⇄\s/.test(t);
+    "Important & famous": "🏆", "Science": "🔬", "Time & change": "⏳", "Saying & thinking": "💬", "Places & travel": "🧭", "Character": "🧠", "How things are done": "⚙️", "Ways to show love": "💞", "Caring qualities": "🤲" };
+  const isType = t => TYPES.some(x => x[0] === t), isOpp = t => /^⇄\s/.test(t), isScale = t => /^📶\s/.test(t);
+  // "📶 Hate ⇄ Love: -4" -> {g:"Hate ⇄ Love", r:-4}
+  const scaleSplit = t => { const m = t.replace(/^📶\s*/, "").match(/^(.*?):\s*([+-]?\d+)\s*$/); return m ? { g: m[1].trim(), r: +m[2] } : { g: t.replace(/^📶\s*/, ""), r: 0 }; };
   const oppSplit = t => { const m = t.replace(/^⇄\s*/, "").match(/^(.*?):\s*(.+)$/); return m ? { g: m[1].trim(), side: m[2].trim() } : { g: t.replace(/^⇄\s*/, ""), side: "" }; };
-  const tagIcon = t => isType(t) ? TYPES.find(x => x[0] === t)[1] : THEME_ICONS[t] || "🏷️";
+  const tagIcon = t => isType(t) ? TYPES.find(x => x[0] === t)[1] : isScale(t) ? "📶" : isOpp(t) ? "⇄" : THEME_ICONS[t] || "🏷️";
   // all groups present in a word list: {types:[{tag,n}], themes:[{tag,n}], opps:[{g, sides:[a,b], n}]}
   function groupsOf(D) {
-    const cnt = new Map(), opp = new Map();
-    D.forEach(v => (v.tags || []).forEach(t => { if (isOpp(t)) { const o = oppSplit(t); if (!opp.has(o.g)) opp.set(o.g, new Map()); const m = opp.get(o.g); m.set(o.side, (m.get(o.side) || 0) + 1); } else cnt.set(t, (cnt.get(t) || 0) + 1); }));
+    const cnt = new Map(), opp = new Map(), scl = new Map();
+    D.forEach(v => (v.tags || []).forEach(t => { if (isScale(t)) { const x = scaleSplit(t); scl.set(x.g, (scl.get(x.g) || 0) + 1); } else if (isOpp(t)) { const o = oppSplit(t); if (!opp.has(o.g)) opp.set(o.g, new Map()); const m = opp.get(o.g); m.set(o.side, (m.get(o.side) || 0) + 1); } else cnt.set(t, (cnt.get(t) || 0) + 1); }));
     const themes = [...cnt].filter(([t]) => !isType(t)).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([tag, n]) => ({ tag, n }));
     const types = TYPES.filter(([t]) => cnt.has(t)).map(([tag]) => ({ tag, n: cnt.get(tag) }));
     const opps = [...opp].map(([g, m]) => { const sides = [...m.keys()]; const want = g.split(/\s+vs\.?\s+/i).map(x => x.trim().toLowerCase());
       sides.sort((a, b) => (want.indexOf(a.toLowerCase()) + 1 || 9) - (want.indexOf(b.toLowerCase()) + 1 || 9)); return { g, sides, n: [...m.values()].reduce((a, b) => a + b, 0) }; })
       .sort((a, b) => b.n - a.n);
-    return { types, themes, opps };
+    const scales = [...scl].map(([g, n]) => ({ g, n })).sort((a, b) => b.n - a.n);
+    return { types, themes, opps, scales };
   }
   // Sets.groupPicker(mountEl, onChange) -> { match(word), sections(indices), state() }
   function groupPicker(mount, onChange) {
     const D = window.WORDS || [], G = groupsOf(D), KEY = "wordGroupSel";
-    if (!G.types.length && !G.themes.length && !G.opps.length) { mount.innerHTML = ""; return { match: () => true, sections: L => [{ items: L }], state: () => ({ kind: "all" }) }; }
+    if (!G.types.length && !G.themes.length && !G.opps.length && !G.scales.length) { mount.innerHTML = ""; return { match: () => true, sections: L => [{ items: L }], state: () => ({ kind: "all" }) }; }
     if (!document.getElementById("gpick-css")) document.head.insertAdjacentHTML("beforeend", `<style id="gpick-css">.gpick{display:flex;flex-direction:column;gap:8px;width:100%}
 .gpick .gk{display:inline-flex;flex-wrap:wrap;gap:4px;align-self:flex-start;border:1px solid var(--rule);border-radius:12px;padding:3px;background:var(--paper)}
 .gpick .gk button{border:0;background:transparent;font:700 .86rem var(--f-body);color:var(--muted);padding:6px 11px;border-radius:9px;cursor:pointer}
@@ -122,13 +125,22 @@
 .gsec{margin:14px 0 6px;font:800 1.05rem var(--f-display);display:flex;gap:8px;align-items:center}.gsec small{font:700 .82rem var(--f-body);color:var(--muted)}
 .gopp{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:start}.gopp .gvs{font:800 1.6rem var(--f-display);color:var(--accent);align-self:center}
 .gopp h4{margin:0 0 6px;font:800 .82rem var(--f-body);letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
-@media (max-width:640px){.gopp{grid-template-columns:1fr}.gopp .gvs{justify-self:center}}</style>`);
+@media (max-width:640px){.gopp{grid-template-columns:1fr}.gopp .gvs{justify-self:center}}
+.gscale{display:flex;flex-direction:column;gap:8px;margin-bottom:6px}
+.gsbar{display:flex;align-items:center;gap:10px;font:800 .9rem var(--f-body)}.gsbar .gsgrad{flex:1;height:10px;border-radius:99px;background:linear-gradient(90deg,hsl(0 75% 55%),hsl(220 15% 85%),hsl(145 55% 45%))}
+.gsbar .gsgrad.one{background:linear-gradient(90deg,hsl(145 55% 60%),hsl(40 85% 60%),hsl(0 80% 50%))}
+.gsstrip{display:flex;gap:4px;overflow-x:auto;padding-bottom:4px}
+.gss{flex:1 0 auto;min-width:74px;border-radius:10px;padding:6px 8px;display:flex;flex-direction:column;gap:3px;color:#1f2937}
+.gss b{font:800 .85rem var(--f-display);opacity:.8}.gss span{font:700 .82rem var(--f-body);white-space:nowrap}
+.gslv{display:grid;grid-template-columns:110px 1fr;gap:10px;align-items:start}
+.gsr{border-radius:12px;padding:8px 10px;display:flex;flex-direction:column;gap:2px;color:#1f2937}.gsr span{font:800 1.3rem var(--f-display)}.gsr small{font:700 .74rem var(--f-body);opacity:.85}
+@media (max-width:640px){.gslv{grid-template-columns:1fr}}</style>`);
     let st = { kind: "all", tag: "" }; try { st = Object.assign(st, JSON.parse(localStorage.getItem(KEY) || "{}")); } catch (e) {}
-    const kinds = [["all", "All words"], ["type", "🏃 Word type"], ["theme", "🏷️ Themes"], ["opp", "⇄ Opposites"]].filter(([k]) => k === "all" || (k === "type" ? G.types.length : k === "theme" ? G.themes.length : G.opps.length));
+    const kinds = [["all", "All words"], ["type", "🏃 Word type"], ["theme", "🏷️ Themes"], ["scale", "📶 Scales"], ["opp", "⇄ Opposites"]].filter(([k]) => k === "all" || (k === "type" ? G.types.length : k === "theme" ? G.themes.length : k === "scale" ? G.scales.length : G.opps.length));
     if (!kinds.some(k => k[0] === st.kind)) st = { kind: "all", tag: "" };
     function draw() {
       const chips = st.kind === "type" ? G.types.map(x => [x.tag, tagIcon(x.tag) + " " + x.tag, x.n]) : st.kind === "theme" ? G.themes.map(x => [x.tag, tagIcon(x.tag) + " " + x.tag, x.n])
-        : st.kind === "opp" ? G.opps.map(x => [x.g, x.sides.join(" ⇄ "), x.n]) : [];
+        : st.kind === "opp" ? G.opps.map(x => [x.g, x.sides.join(" ⇄ "), x.n]) : st.kind === "scale" ? G.scales.map(x => [x.g, "📶 " + x.g, x.n]) : [];
       mount.innerHTML = `<div class="gpick"><div class="gk" role="group" aria-label="Group the words">${kinds.map(([k, l]) => `<button type="button" data-k="${k}" aria-pressed="${st.kind === k}">${l}</button>`).join("")}</div>
         ${chips.length ? `<div class="gc" role="group" aria-label="Choose a group"><button type="button" data-t="" aria-pressed="${!st.tag}">All groups</button>${chips.map(([t, l, n]) => `<button type="button" data-t="${esc(t)}" aria-pressed="${st.tag === t}">${esc(l)}<small>${n}</small></button>`).join("")}</div>` : ""}</div>`;
     }
@@ -136,20 +148,41 @@
       if (k) st = { kind: k.dataset.k, tag: "" }; else if (t) st.tag = t.dataset.t; else return;
       try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} draw(); onChange && onChange(); });
     const has = (v, t) => (v.tags || []).includes(t), oppTags = (v, g) => (v.tags || []).filter(t => isOpp(t) && oppSplit(t).g === g);
-    function match(v) { if (st.kind === "all" || !st.tag) return true; return st.kind === "opp" ? oppTags(v, st.tag).length > 0 : has(v, st.tag); }
+    const scaleOf = (v, g) => { const t = (v.tags || []).find(t => isScale(t) && scaleSplit(t).g === g); return t ? scaleSplit(t).r : null; };
+    function match(v) { if (st.kind === "all" || !st.tag) return true; return st.kind === "opp" ? oppTags(v, st.tag).length > 0 : st.kind === "scale" ? scaleOf(v, st.tag) !== null : has(v, st.tag); }
     // sections for display: [{title, icon, items}] or [{title, sides:[{name, items}]}]
     function sections(L) {
       if (st.kind === "all") return [{ items: L }];
+      if (st.kind === "scale") { const gs = st.tag ? G.scales.filter(x => x.g === st.tag) : G.scales;
+        return gs.map(o => { const lv = new Map(); L.forEach(i => { const r = scaleOf(D[i], o.g); if (r !== null) { if (!lv.has(r)) lv.set(r, []); lv.get(r).push(i); } });
+          const poles = o.g.split(/\s*(?:⇄|→|->|<->|vs\.?)\s*/); const levels = [...lv].sort((a, b) => a[0] - b[0]).map(([rank, items]) => ({ rank, items }));
+          return { title: o.g, icon: "📶", scale: { left: poles[0] || "", right: poles[1] || "", two: levels.some(l => l.rank < 0), levels } }; }).filter(x => x.scale.levels.length); }
       if (st.kind === "opp") { const gs = st.tag ? G.opps.filter(x => x.g === st.tag) : G.opps;
         return gs.map(o => ({ title: o.g, icon: "⇄", sides: o.sides.map(sd => ({ name: sd, items: L.filter(i => oppTags(D[i], o.g).some(t => oppSplit(t).side === sd)) })) }))
           .filter(x => x.sides.some(sd => sd.items.length)); }
       const list = st.tag ? [st.tag] : (st.kind === "type" ? G.types : G.themes).map(x => x.tag);
       const out = list.map(t => ({ title: t, icon: tagIcon(t), items: L.filter(i => has(D[i], t)) })).filter(x => x.items.length);
-      if (!st.tag) { const rest = L.filter(i => !(D[i].tags || []).some(t => st.kind === "type" ? isType(t) : !isType(t) && !isOpp(t))); if (rest.length) out.push({ title: st.kind === "type" ? "Other" : "No theme yet", icon: "🏷️", items: rest }); }
+      if (!st.tag) { const rest = L.filter(i => !(D[i].tags || []).some(t => st.kind === "type" ? isType(t) : !isType(t) && !isOpp(t) && !isScale(t))); if (rest.length) out.push({ title: st.kind === "type" ? "Other" : "No theme yet", icon: "🏷️", items: rest }); }
       return out;
     }
     draw();
     return { match, sections, state: () => ({ ...st }) };
+  }
+  // Draw groupPicker sections. view(indices) returns the HTML for a list of words in the page's own style.
+  function sectionsHTML(secs, view) {
+    const lab2 = r => r === 0 ? "neutral" : ["", "a little", "some", "strong", "very strong", "strongest"][Math.min(5, Math.abs(r))];
+    const lab1 = r => r === 0 ? "calm" : ["", "a little", "some", "strong", "very strong", "strongest"][Math.min(5, r)];
+    const col = (r, two) => { const a = Math.min(5, Math.abs(r)); if (two) return r < 0 ? `hsl(0 75% ${92 - a * 9}%)` : r > 0 ? `hsl(145 55% ${92 - a * 9}%)` : "hsl(220 15% 90%)";
+      return r <= 0 ? "hsl(145 55% 85%)" : `hsl(${40 - a * 8} 85% ${90 - a * 7}%)`; };
+    return secs.map(sc => {
+      if (sc.scale) { const S = sc.scale;
+        const D = window.WORDS || [];
+        const strip = `<div class="gsstrip">${S.levels.map(l => `<div class="gss" style="background:${col(l.rank, S.two)}"><b>${l.rank > 0 ? "+" : ""}${l.rank}</b>${l.items.map(i => `<span>${esc(String(D[i] ? D[i].w : "").replace(/\s*\(.*\)/, ""))}</span>`).join("")}</div>`).join("")}</div>`;
+        return `<h3 class="gsec">📶 ${esc(sc.title)}</h3><div class="gscale"><div class="gsbar"><b>${esc(S.left)}</b><span class="gsgrad${S.two ? "" : " one"}"></span><b>${esc(S.right)}</b></div>${strip}
+          ${S.levels.map(l => `<div class="gslv"><div class="gsr" style="background:${col(l.rank, S.two)}"><span>${l.rank > 0 ? "+" : ""}${l.rank}</span><small>${S.two ? lab2(l.rank) : lab1(l.rank)}${S.two && l.rank ? " · " + esc(l.rank < 0 ? S.left : S.right) : ""}</small></div><div class="gsw">${view(l.items)}</div></div>`).join("")}</div>`; }
+      if (sc.sides) return `<h3 class="gsec">⇄ ${esc(sc.title)}</h3><div class="gopp">${sc.sides.map((sd, k) => `${k ? '<div class="gvs" aria-hidden="true">⇄</div>' : ""}<div><h4>${esc(sd.name)}</h4>${sd.items.length ? view(sd.items) : '<p class="muted">—</p>'}</div>`).join("")}</div>`;
+      return (sc.title ? `<h3 class="gsec">${sc.icon} ${esc(sc.title)} <small>${sc.items.length} word${sc.items.length === 1 ? "" : "s"}</small></h3>` : "") + view(sc.items);
+    }).join("");
   }
   // Say a word once: its recorded audio when there is one, otherwise the browser voice.
   // Returns a promise that resolves when the word has finished (or after a safety timeout).
@@ -315,5 +348,5 @@
     runPage();
   }
 
-  window.Sets = { boot, speak, sayWord, unitPicker, groupPicker, groupsOf, tagIcon, TAG_TYPES: TYPES, TAG_THEMES: THEME_ICONS, playClip, stopClip, media, watchClips, tile, autoSyl, blankify, load, mapItems, G5, LANGS };
+  window.Sets = { boot, speak, sayWord, unitPicker, groupPicker, groupsOf, tagIcon, sectionsHTML, TAG_TYPES: TYPES, TAG_THEMES: THEME_ICONS, playClip, stopClip, media, watchClips, tile, autoSyl, blankify, load, mapItems, G5, LANGS };
 })();
