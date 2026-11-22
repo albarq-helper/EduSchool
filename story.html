@@ -93,7 +93,7 @@
 .parent .step{margin-top:12px}.parent .step b{display:block;margin-bottom:4px}
 .parent input[type=text]{width:100%;max-width:40rem}
 </style>
-<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261122i"></script><script src="js/icons.js?v=20261122i"></script><script src="js/app.js?v=20261122i"></script><script src="js/sets.js?v=20261122i"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261122i"></script><script src="js/storycore.js?v=20261122i"></script><script src="js/montage.js?v=20261122i"></script>
+<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261122j"></script><script src="js/icons.js?v=20261122j"></script><script src="js/app.js?v=20261122j"></script><script src="js/sets.js?v=20261122j"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261122j"></script><script src="js/storycore.js?v=20261122j"></script><script src="js/montage.js?v=20261122j"></script>
 </head><body>
 <div class="wrap" style="max-width:1280px">
   <div class="head2">
@@ -333,6 +333,7 @@ $("infoDlg").addEventListener("click",e=>{if(e.target===$("infoDlg"))$("infoDlg"
   let last="";try{last=localStorage.getItem("storyCur")||"";}catch(e){}
   openStory(STORIES.find(s=>s.id===last)||STORIES[0]||null);
   try{BOXES=await Sets.loadBoxes(SET);}catch(e){}
+  try{await Sets.loadCompanions();}catch(e){}
   let sb="";try{sb=localStorage.getItem("storyBox")||"";}catch(e){}
   setBox(BOXES.some(b=>b.id===sb)?sb:SET.id);drawBoard();})();
 </script><script>Sets.boot({min:2})</script></body></html>

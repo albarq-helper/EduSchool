@@ -88,7 +88,7 @@ input.ok,textarea.ok{border-color:var(--good)!important;background:var(--good-so
 .empty-l{padding:30px;text-align:center;color:var(--muted)}
 @media print{#appbar,#setbar,.tools,.no-print,button.round{display:none!important}.d,.g,.b{box-shadow:none;break-inside:avoid}body{background:#fff}}
 </style>
-<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261122i"></script><script src="js/icons.js?v=20261122i"></script><script src="js/app.js?v=20261122i"></script><script src="js/sets.js?v=20261122i"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261122i"></script>
+<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261122j"></script><script src="js/icons.js?v=20261122j"></script><script src="js/app.js?v=20261122j"></script><script src="js/sets.js?v=20261122j"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261122j"></script>
 </head><body>
 <div class="wrap" style="max-width:1180px">
   <div class="head2">
@@ -136,6 +136,7 @@ const uname=x=>x.u?(x.name?`Unit ${x.u} · ${x.name}`:`Unit ${x.u}`):(x.name||"G
 const UP=Sets.unitPicker($("unitMount"),()=>render());
 const METER_AT={};   // where each Feeling meter was left, so re-drawing keeps it
 const GP=Sets.groupPicker($("groupMount"),()=>render(),{view:"both",follow:true});
+Sets.loadCompanions().then(n=>{if(n)render();}).catch(()=>{});   // whole-scale words for the Feeling meters
 let VIEW=store.get("view","detail"), SHOW=Object.assign({pic:true,syl:true,say:true,mean:true,ex:true,tr:true},store.get("show",{}));
 let ORDER=D.map((v,i)=>i), ST={};   // ST[i] = {cw, cm, typed, ok, mtyped, mrev, self}
 const S=i=>ST[i]||(ST[i]={});
@@ -187,7 +188,7 @@ function meanHTML(i,v){const s=S(i);
   return `${s.mtyped?`<div class="mine"><span class="muted">You wrote:</span> ${esc(s.mtyped)}</div>`:""}<div class="mean"><b>Meaning:</b> ${esc(v.d)}</div>
     <div class="ans">${s.self===undefined?`<span class="muted" style="font-size:.88rem">Did you get it?</span><button class="btn small" type="button" data-self="${i}" data-val="1">${icon("check",14)}I got it</button><button class="btn small" type="button" data-self="${i}" data-val="0">${icon("x",14)}Not yet</button>`
       :s.self?`<span class="res ok">${icon("check",15)} Got it</span>`:`<span class="res no">${icon("rotate-ccw",15)} Practise again</span>`}</div>`;}
-const unitTag=v=>{const x=U.find(u=>u.u===v.u);return `<span class="utag">${esc(x?uname(x):"")}</span>`;};
+const unitTag=v=>{if(v.companion)return `<span class="utag" title="Not in this set: shown so you can see the whole scale">Extra word</span>`;const x=U.find(u=>u.u===v.u);return `<span class="utag">${esc(x?uname(x):"")}</span>`;};
 
 // ---- views ----
 function card(i,view){const v=D[i], hid=wordHidden(i);

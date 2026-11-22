@@ -7,7 +7,8 @@
     "hate ⇄ love": { "-5": "🤬", "-4": "😡", "-3": "😠", "-2": "😒", "-1": "🙁", "0": "😐", "1": "🙂", "2": "😊", "3": "🤗", "4": "🥰", "5": "😍" },
     "sad ⇄ happy": { "-5": "😭", "-4": "😩", "-3": "😢", "-2": "😞", "-1": "😕", "0": "😐", "1": "🙂", "2": "😊", "3": "😄", "4": "😁", "5": "🤩" },
     "calm → angry": { "0": "😌", "1": "😒", "2": "😤", "3": "😠", "4": "😡", "5": "🤬" },
-    "calm → afraid": { "0": "😌", "1": "😬", "2": "😟", "3": "😨", "4": "😱", "5": "🫣" }
+    "calm → afraid": { "0": "😌", "1": "😬", "2": "😟", "3": "😨", "4": "😱", "5": "🫣" },
+    "full → hungry": { "0": "😌", "1": "🙂", "2": "🤔", "3": "😋", "4": "😫", "5": "😵" }
   };
   const STRENGTH = ["", "a little", "some", "strong", "very strong", "strongest"];
   const css = `.mtr{--bg:#eef2f7;background:var(--bg);border-radius:18px;padding:16px;display:grid;gap:12px;transition:background .35s;user-select:none}
@@ -20,6 +21,8 @@
 .mtr-w{background:#fff;border-radius:14px;padding:8px 10px;box-shadow:0 2px 6px rgba(0,0,0,.08);display:flex;flex-direction:column;gap:4px;min-width:150px;max-width:260px}
 .mtr-w b{font:800 1.25rem var(--f-display,system-ui);display:flex;align-items:center;gap:6px}
 .mtr-w small{font-size:.82rem;color:#475569;line-height:1.3}
+.mtr-w.x{background:rgba(255,255,255,.75);border:1.5px dashed rgba(0,0,0,.18)}
+.mtr-xt{font:800 .62rem var(--f-body,system-ui);letter-spacing:.04em;text-transform:uppercase;background:#1f2937;color:#fff;border-radius:999px;padding:2px 7px;margin-left:4px}
 .mtr-w .row{display:flex;gap:6px;margin-top:2px}
 .mtr-w button{font:800 .8rem var(--f-body,system-ui);border-radius:999px;border:1.5px solid var(--accent,#2347c5);background:#fff;color:var(--accent,#2347c5);padding:4px 10px;cursor:pointer}
 .mtr-w button.add{background:var(--accent,#2347c5);color:#fff}
@@ -43,6 +46,7 @@
     const D = window.WORDS || [], L = (o.levels || []).slice().sort((a, b) => a.rank - b.rank);
     if (!L.length) { $(el).empty(); return null; }
     const faces = FACES[String(o.title || "").toLowerCase()] || {};
+    const X = new Set(o.extra || []);   // words from outside this list, shown to complete the scale
     const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
     const clean = w => String(w || "").replace(/\s*\(.*\)/, "");
     const grad = o.two ? "linear-gradient(90deg,hsl(0 80% 55%),hsl(220 15% 82%),hsl(145 60% 42%))" : "linear-gradient(90deg,hsl(145 60% 55%),hsl(45 90% 58%),hsl(0 85% 52%))";
@@ -51,7 +55,7 @@
       <div class="mtr-top"><div class="mtr-face" aria-hidden="true"></div><div><div class="mtr-lv"></div><div class="mtr-words"></div></div></div>
       <div class="mtr-track" style="--grad:${grad}"><input type="range" min="0" max="${L.length - 1}" step="1" value="${k}" aria-label="Strength">
         <div class="mtr-ticks">${L.map((l, j) => `<button type="button" data-j="${j}" title="${esc(l.items.map(i => clean(D[i] && D[i].w)).join(", "))}">${l.rank > 0 ? "+" : ""}${l.rank}</button>`).join("")}</div></div>
-      <div class="mtr-nav"><button type="button" data-step="-1">◀ ${esc(o.two ? "more " + o.left : "calmer")}</button><span class="mid"></span><button type="button" data-step="1">${esc(o.two ? "more " + o.right : "stronger")} ▶</button></div></div>`);
+      <div class="mtr-nav"><button type="button" data-step="-1">◀ ${esc(o.left ? "more " + o.left : "less")}</button><span class="mid"></span><button type="button" data-step="1">${esc(o.right ? "more " + o.right : "more")} ▶</button></div></div>`);
     $(el).empty().append($m);
     const $face = $m.find(".mtr-face"), $lv = $m.find(".mtr-lv"), $words = $m.find(".mtr-words"), $range = $m.find("input"), $mid = $m.find(".mid");
     function show(j, animate) {
@@ -61,7 +65,7 @@
       $m.css("--bg", color(l.rank, o.two)); $range.val(k);
       const lab = l.rank === 0 ? (o.two ? "neutral: in the middle" : "calm") : `${STRENGTH[Math.min(5, a)]}${o.two ? " · " + (l.rank < 0 ? o.left : o.right) : ""}`;
       $lv.text(`${l.rank > 0 ? "+" : ""}${l.rank} · ${lab}`); $mid.text(lab);
-      $words.html(l.items.map(i => { const v = D[i] || {}; return `<div class="mtr-w"><b>${esc(v.emoji || "")} ${esc(clean(v.w))}</b><small>${esc(v.d || "")}</small>
+      $words.html(l.items.map(i => { const v = D[i] || {}; return `<div class="mtr-w${X.has(i) ? " x" : ""}"><b>${esc(v.emoji || "")} ${esc(clean(v.w))}${X.has(i) ? '<span class="mtr-xt" title="Not in this set: shown so you can see the whole scale">extra word</span>' : ""}</b><small>${esc(v.d || "")}</small>
         <div class="row"><button type="button" data-say="${i}">🔊 Hear</button>${o.onAdd ? `<button type="button" class="add" data-add="${i}">${esc(o.addLabel || "+ Add")}</button>` : ""}</div></div>`; }).join(""));
       $m.find(".mtr-ticks button").removeClass("on").eq(k).addClass("on");
       $m.find('[data-step="-1"]').prop("disabled", k === 0); $m.find('[data-step="1"]').prop("disabled", k === L.length - 1);

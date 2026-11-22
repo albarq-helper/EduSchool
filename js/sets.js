@@ -164,9 +164,14 @@
     function sections(L) {
       if (st.kind === "all") return [{ items: L }];
       if (st.kind === "scale") { const gs = st.tag ? G.scales.filter(x => x.g === st.tag) : G.scales;
-        return gs.map(o => { const lv = new Map(); L.forEach(i => { const r = scaleOf(D[i], o.g); if (r !== null) { if (!lv.has(r)) lv.set(r, []); lv.get(r).push(i); } });
+        // the whole scale: this list's words, plus the same scale's words from other boxes and the dictionary ("extra words")
+        const inL = new Set(L), terms = new Set(L.map(i => String(D[i].w).toLowerCase()));
+        return gs.map(o => { const lv = new Map(), extra = [];
+          const put = i => { const r = scaleOf(D[i], o.g); if (r === null) return; if (!lv.has(r)) lv.set(r, []); lv.get(r).push(i); };
+          L.forEach(put);
+          D.forEach((v, i) => { if (inL.has(i) || scaleOf(v, o.g) === null) return; const t = String(v.w).toLowerCase(); if (terms.has(t)) return; terms.add(t); extra.push(i); put(i); });
           const poles = o.g.split(/\s*(?:⇄|→|->|<->|vs\.?)\s*/); const levels = [...lv].sort((a, b) => a[0] - b[0]).map(([rank, items]) => ({ rank, items }));
-          return { title: o.g, icon: "📶", scale: { left: poles[0] || "", right: poles[1] || "", two: levels.some(l => l.rank < 0), levels } }; }).filter(x => x.scale.levels.length); }
+          return { title: o.g, icon: "📶", scale: { left: poles[0] || "", right: poles[1] || "", two: levels.some(l => l.rank < 0), levels, extra } }; }).filter(x => x.scale.levels.length); }
       if (st.kind === "opp") { const gs = st.tag ? G.opps.filter(x => x.g === st.tag) : G.opps;
         return gs.map(o => ({ title: o.g, icon: "⇄", sides: o.sides.map(sd => ({ name: sd, items: L.filter(i => oppTags(D[i], o.g).some(t => oppSplit(t).side === sd)) })) }))
           .filter(x => x.sides.some(sd => sd.items.length)); }
@@ -214,6 +219,21 @@
     }
     return boxes;
   }
+  // Meter companions: other dictionary words on the same scales as this set's words (e.g. Peckish … Hungry under Starving).
+  // They are added to window.WORDS with .companion = true and appear only on Feeling meters, marked "extra word".
+  async function loadCompanions() {
+    const D = window.WORDS || [], names = new Set();
+    D.forEach(v => (v.tags || []).forEach(t => { if (isScale(t)) names.add(scaleSplit(t).g); }));
+    if (!names.size) return 0;
+    const want = []; names.forEach(g => { for (let r = -5; r <= 5; r++) want.push(`📶 ${g}: ${r > 0 ? "+" : ""}${r}`); });
+    const r = await App.client.from("words").select("id,headword,meaning,example,translation,syllables,pronunciation,sound_hint,image_url,anim_url,audio_url,video_url,emoji,tags").overlaps("tags", want);
+    if (r.error || !r.data) return 0;
+    const have = new Set(D.map(v => String(v.w).toLowerCase()));
+    const rows = r.data.filter(x => !have.has(String(x.headword).toLowerCase()));
+    const m = mapItems({ units: [] }, rows.map(x => ({ ...x, kind: "term", term: x.headword, unit: 0, also_units: [] })));
+    m.words.forEach(w => { w.companion = true; D.push(w); });
+    return m.words.length;
+  }
   // Turn the meter boxes drawn by sectionsHTML into live Feeling meters. opts: {onAdd(i), start:{scaleTitle: rank}, addLabel}
   function mountMeters(root, secs, opts) {
     opts = opts || {}; if (!window.Meter || !root) return;
@@ -222,7 +242,7 @@
       const onLevel = r => { if (opts.onLevel) opts.onLevel(sc.title, r); if (!wrap) return;
         wrap.querySelectorAll(".gslv[data-rank]").forEach(row => { row.hidden = !!opts.follow && +row.dataset.rank !== r; }); };
       Meter.mount(box, { title: sc.title, left: sc.scale.left, right: sc.scale.right, two: sc.scale.two, levels: sc.scale.levels,
-        start: (opts.start || {})[sc.title], onAdd: opts.onAdd, addLabel: opts.addLabel, onLevel }); });
+        start: (opts.start || {})[sc.title], onAdd: opts.onAdd, addLabel: opts.addLabel, onLevel, extra: sc.scale.extra || [] }); });
   }
   // Say a word once: its recorded audio when there is one, otherwise the browser voice.
   // Returns a promise that resolves when the word has finished (or after a safety timeout).
@@ -388,5 +408,5 @@
     runPage();
   }
 
-  window.Sets = { boot, speak, sayWord, unitPicker, groupPicker, groupsOf, tagIcon, sectionsHTML, mountMeters, loadBoxes, scaleOfWord: (v, g) => { const t = (v.tags || []).find(t => isScale(t) && (!g || scaleSplit(t).g === g)); return t ? scaleSplit(t) : null; }, TAG_TYPES: TYPES, TAG_THEMES: THEME_ICONS, playClip, stopClip, media, watchClips, tile, autoSyl, blankify, load, mapItems, G5, LANGS };
+  window.Sets = { boot, speak, sayWord, unitPicker, groupPicker, groupsOf, tagIcon, sectionsHTML, mountMeters, loadBoxes, loadCompanions, scaleOfWord: (v, g) => { const t = (v.tags || []).find(t => isScale(t) && (!g || scaleSplit(t).g === g)); return t ? scaleSplit(t) : null; }, TAG_TYPES: TYPES, TAG_THEMES: THEME_ICONS, playClip, stopClip, media, watchClips, tile, autoSyl, blankify, load, mapItems, G5, LANGS };
 })();
