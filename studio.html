@@ -1,0 +1,206 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Director's Studio · Helper Academy</title><link rel="icon" href="assets/icons/brilliant.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=Noto+Naskh+Arabic:wght@600&display=swap">
+<link rel="stylesheet" href="css/app.css">
+<style>
+.st{display:grid;grid-template-columns:300px 1fr;gap:18px;align-items:start}
+@media (max-width:900px){.st{grid-template-columns:1fr}}
+.panel{background:var(--sheet);border:1px solid var(--rule);border-radius:16px;padding:14px;box-shadow:var(--shadow)}
+.panel h2{margin:0 0 10px;font:800 1.15rem var(--f-display);display:flex;gap:8px;align-items:center}
+.seg{display:inline-flex;border:1px solid var(--rule);border-radius:12px;overflow:hidden;background:var(--paper);margin-bottom:10px}
+.seg button{border:0;background:transparent;font:700 .88rem var(--f-body);color:var(--muted);padding:8px 12px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--sheet);color:var(--ink);box-shadow:inset 0 0 0 2px var(--accent);border-radius:11px}
+.inbox{display:flex;flex-direction:column;gap:6px;max-height:70vh;overflow:auto}
+.ib{all:unset;cursor:pointer;display:flex;flex-direction:column;gap:3px;padding:10px 12px;border-radius:12px;border:1.5px solid var(--rule);background:var(--paper)}
+.ib:hover{border-color:var(--accent)}.ib.on{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.ib b{font:800 1rem var(--f-display)}.ib span{font-size:.82rem;color:var(--muted)}
+.pill{font:800 .76rem var(--f-body);padding:3px 10px;border-radius:999px;background:var(--chip);color:var(--ink);white-space:nowrap}
+.pill.sent{background:var(--sky-soft)}.pill.returned{background:var(--warn-soft)}.pill.written{background:var(--sun-soft)}.pill.filmed{background:var(--good-soft);color:var(--good)}
+.ws-head{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:6px}.ws-head h2{margin:0;font:800 1.5rem var(--f-display)}
+.use{font-size:.82rem;color:var(--muted);margin-left:auto}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 14px;border-bottom:2px solid var(--rule)}
+.tab{all:unset;cursor:pointer;padding:10px 14px;font:800 .95rem var(--f-body);color:var(--muted);border-bottom:3px solid transparent;margin-bottom:-2px;display:flex;gap:7px;align-items:center}
+.tab .n{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:999px;background:var(--chip);font-size:.78rem}
+.tab[aria-selected="true"]{color:var(--accent);border-color:var(--accent)}.tab[aria-selected="true"] .n{background:var(--accent);color:#fff}
+.blk{margin-bottom:16px}.blk>h3{margin:0 0 6px;font:800 1.02rem var(--f-display)}.blk>.hint{margin:0 0 8px;color:var(--muted);font-size:.88rem}
+.plan .sc{border:1px solid var(--rule);border-radius:12px;padding:10px 12px;margin-bottom:8px;background:var(--paper)}
+.plan .sc h4{margin:0 0 6px;font:800 .78rem var(--f-body);letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.plan .flow{line-height:2}.plan .w{display:inline-flex;align-items:center;gap:5px;background:var(--accent-soft);color:var(--accent);font-weight:800;border-radius:999px;padding:1px 10px 1px 3px;margin:0 2px}
+.plan .w img,.plan .w video{width:24px;height:24px;border-radius:999px;object-fit:cover}
+.plan .t{color:var(--ink)}.plan .sen{margin-top:6px;padding:6px 10px;border-left:3px solid var(--sun);background:var(--sun-soft);border-radius:6px;font-size:.95rem}
+textarea.big{width:100%;min-height:150px;font:14px/1.55 var(--f-body);padding:10px;border:1px solid var(--rule);border-radius:10px;background:var(--paper);color:var(--ink)}
+textarea.mid{width:100%;min-height:70px;font:14px/1.5 var(--f-body);padding:8px 10px;border:1px solid var(--rule);border-radius:10px;background:var(--paper);color:var(--ink)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.lvl select{max-width:24rem}
+.shots{display:flex;flex-direction:column;gap:10px}
+.shot{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:12px;border:1.5px solid var(--rule);border-radius:14px;padding:12px;background:var(--paper)}
+@media (max-width:700px){.shot{grid-template-columns:1fr}}
+.shot h4{margin:0 0 4px;font:800 .82rem var(--f-body);letter-spacing:.08em;text-transform:uppercase;color:var(--accent);display:flex;gap:8px;align-items:center}
+.shot .cap{font-size:.85rem;color:var(--muted);margin:0 0 6px;font-style:italic}
+.shot .take{aspect-ratio:16/9;background:#0f172a;border-radius:10px;overflow:hidden;display:grid;place-items:center;color:#cbd5e1;font-size:.85rem;text-align:center;padding:4px}
+.shot .take video{width:100%;height:100%;object-fit:cover}
+.shot .tk{font-size:.8rem;color:var(--muted);margin-top:4px}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:sp 1s linear infinite;vertical-align:-2px}
+@keyframes sp{to{transform:rotate(360deg)}}
+.empty{padding:40px 20px;text-align:center;color:var(--muted)}
+.note{padding:10px 12px;border-radius:10px;background:var(--sky-soft);font-size:.9rem;margin-bottom:12px}
+</style>
+<script src="js/vendor/supabase.js"></script><script src="js/config.js"></script><script src="js/icons.js"></script><script src="js/app.js"></script><script src="js/sets.js"></script><script src="js/storycore.js"></script><script src="js/montage.js"></script>
+</head><body>
+<div class="wrap" style="max-width:1320px">
+  <div class="head2">
+    <div><span class="eyebrow" id="setEyebrow">&nbsp;</span><h1>🎬 Director's Studio</h1>
+      <p class="muted" style="margin:4px 0 0">Stories your student sends you arrive here. Write the script, plan the storyboard, shoot each scene, and hold the premiere.</p></div>
+  </div>
+  <div id="denied" class="panel empty" hidden>This page is for the parent (teacher) account. Students build their stories in the <a href="story.html">Story builder</a>.</div>
+  <div class="st" id="studio" hidden>
+    <aside class="panel">
+      <h2><span data-i="mail"></span>Inbox</h2>
+      <div class="seg" role="group" aria-label="Show"><button type="button" data-f="todo" aria-pressed="true">To do</button><button type="button" data-f="all" aria-pressed="false">All stories</button></div>
+      <div class="inbox" id="inbox"></div>
+    </aside>
+    <main class="panel" id="ws"><div class="empty">Choose a story from the inbox.</div></main>
+  </div>
+</div>
+<script type="text/x-app">
+const $=id=>document.getElementById(id), esc=App.esc, D=window.WORDS, SET=window.CURRENT_SET, C=App.client, ME=App.profile||{}, K=StoryCore;
+document.querySelectorAll("[data-i]").forEach(el=>el.insertAdjacentHTML("afterbegin",icon(el.dataset.i,16)));
+let STORIES=[], NAMES={}, CUR=null, TAB="script", FILTER="todo", TAKES=[], POLL=null, USE={openai:0,fal:0}, SHOTARM=0;
+const who=s=>s.owner_id===ME.id?"You":(NAMES[s.owner_id]||"Student").split(" ")[0];
+const ago=t=>{const m=Math.round((Date.now()-new Date(t))/6e4);return m<1?"just now":m<60?m+" min ago":m<1440?Math.round(m/60)+" h ago":Math.round(m/1440)+" d ago";};
+const wv=w=>D.find(v=>v.w===w);
+
+// ---------- inbox ----------
+function drawInbox(){const L=STORIES.filter(s=>FILTER==="all"||s.status==="sent"||s.status==="written");
+  $("inbox").innerHTML=L.length?L.map(s=>`<button type="button" class="ib${CUR&&CUR.id===s.id?" on":""}" data-id="${s.id}"><b>${esc(s.title||"My story")}</b>
+    <span>${esc(who(s))} · ${ago(s.updated_at)} · Level ${s.level||3}</span><span><span class="pill ${s.status}">${esc(K.STATUS[s.status]||s.status)}</span></span></button>`).join("")
+    :`<p class="muted">${FILTER==="todo"?"Nothing waiting. 🎉 Switch to <b>All stories</b> to see the rest.":"No stories yet."}</p>`;}
+$("inbox").onclick=e=>{const b=e.target.closest("[data-id]");if(b)openStory(STORIES.find(s=>s.id===b.dataset.id));};
+document.querySelector(".seg").onclick=e=>{const b=e.target.closest("[data-f]");if(!b)return;FILTER=b.dataset.f;document.querySelectorAll(".seg button").forEach(x=>x.setAttribute("aria-pressed",x===b));drawInbox();};
+
+// ---------- saving ----------
+async function save(fields){if(!CUR)return false;Object.assign(CUR,fields);
+  const r=await C.from("stories").update(fields).eq("id",CUR.id).select("updated_at").single();
+  if(r.error){App.status("Not saved: "+r.error.message,false);return false;}CUR.updated_at=r.data.updated_at;drawInbox();drawHead();return true;}
+async function usage(){const since=new Date(Date.now()-864e5).toISOString();
+  for(const sv of ["openai","fal"]){const r=await C.from("ai_usage").select("id",{count:"exact",head:true}).eq("service",sv).gte("created_at",since);if(!r.error)USE[sv]=r.count||0;}
+  const u=$("use");if(u)u.textContent=`Today: AI ${USE.openai}/30 · shots ${USE.fal}/12`;}
+
+// ---------- workspace ----------
+async function openStory(s){CUR=s;TAB=s.status==="written"||s.status==="filmed"?"board":"script";TAKES=[];
+  const r=await C.from("story_shots").select("*").eq("story_id",s.id).order("created_at",{ascending:true});TAKES=r.data||[];
+  drawInbox();drawWs();startPoll();try{localStorage.setItem("studioCur",s.id);}catch(e){}}
+function drawHead(){const h=$("wsHead");if(!h||!CUR)return;
+  h.innerHTML=`<h2>${esc(CUR.title||"My story")}</h2><span class="muted">by ${esc(who(CUR))}</span><span class="pill ${CUR.status}">${esc(K.STATUS[CUR.status]||CUR.status)}</span><span class="use" id="use"></span>`;usage();}
+function drawWs(){if(!CUR){$("ws").innerHTML=`<div class="empty">Choose a story from the inbox.</div>`;return;}
+  const tabs=[["script","1","Script"],["board","2","Storyboard & shooting"],["premiere","3","Premiere"]];
+  $("ws").innerHTML=`<div class="ws-head" id="wsHead"></div>
+    <div class="tabs" role="tablist">${tabs.map(([k,n,l])=>`<button class="tab" role="tab" data-t="${k}" aria-selected="${TAB===k}"><span class="n">${n}</span>${l}</button>`).join("")}</div><div id="pane"></div>`;
+  drawHead();$("ws").querySelector(".tabs").onclick=e=>{const b=e.target.closest("[data-t]");if(b){TAB=b.dataset.t;drawWs();}};
+  ({script:drawScript,board:drawBoard,premiere:drawPremiere})[TAB]();}
+
+// ---------- 1. Script ----------
+function planHTML(){const sc=[[]];(CUR.blocks||[]).forEach(b=>b.k==="s"?sc.push([]):sc[sc.length-1].push(b));const S=CUR.sentences||{};
+  return sc.filter(x=>x.length).map((x,k)=>{const n=k+1,sen=Object.entries(S).filter(([key])=>key==="s"+n||key.startsWith(n+"|")).map(([,v])=>v).filter(v=>(v||"").trim());
+    return `<div class="sc"><h4>Scene ${n}</h4><div class="flow">${x.map(b=>{if(b.k!=="w")return `<span class="t">${esc(b.t||"")}</span>`;const v=wv(b.w);
+      return `<span class="w" title="${esc(v?v.d:"")}">${v?(v.vid?`<video src="${esc(v.vid)}" muted playsinline preload="metadata"></video>`:`<img src="${esc(v.img)}" alt="">`):""}${esc(K.clean(b.w))}</span>`;}).join(" ")}</div>
+      ${sen.map(t=>`<div class="sen">✍️ ${esc(t)}</div>`).join("")}</div>`;}).join("")||`<p class="muted">This story has no steps yet.</p>`;}
+function drawScript(){const L=K.lvl(CUR);
+  $("pane").innerHTML=`<div class="blk plan"><h3>The student's plan</h3>${planHTML()}</div>
+   <div class="blk lvl"><h3>Level</h3><div class="row"><select id="lv">${K.LEVELS.slice(1).map((x,k)=>`<option value="${k+1}" ${CUR.level===k+1?"selected":""}>Level ${k+1} · ${esc(x.n)}</option>`).join("")}</select><span class="muted" id="lvd">${esc(L.d)}${L.tol!=null?` · AI allows ${L.tol} small mistake${L.tol===1?"":"s"}`:""}</span></div>
+     <p class="hint muted" style="margin:6px 0 0;font-size:.85rem">The student sees this level. From level 4 up, they write their own sentences and the AI checks them first.</p></div>
+   <div class="blk"><h3>Write the story</h3><p class="hint">${L.mode==="none"?"The AI writes the story from the student's plan, plus a cast list and one shot per scene for the storyboard.":"The AI checks the student's sentences first: <b>ACCEPT</b> writes the story and storyboard; <b>REJECT</b> gives hints to send back."}</p>
+     <div class="row"><button class="btn primary" id="ask" type="button">${icon("sparkles",16)}Ask AI</button><button class="btn small" id="copy" type="button">${icon("copy",16)}Copy the prompt</button><span class="muted" id="askMsg"></span></div>
+     <details style="margin-top:8px" id="ansBox" hidden><summary class="muted">The AI's full answer</summary><textarea class="big" id="ans" readonly></textarea></details></div>
+   <div class="blk"><h3>Feedback for the student</h3><p class="hint">If the sentences need work, the student sees these notes in a yellow box.</p>
+     <textarea class="mid" id="fb" placeholder="Paste or write the feedback here…">${esc(CUR.feedback||"")}</textarea>
+     <div class="row" style="margin-top:6px"><button class="btn small" id="back" type="button">${icon("send",16)}Send back to student</button></div></div>
+   <div class="blk"><h3>The story</h3><textarea class="big" id="story" placeholder="Paste the story here…">${esc(CUR.story_text||"")}</textarea>
+     <div class="row" style="margin-top:6px"><button class="btn primary" id="saveStory" type="button">${icon("save",16)}Save story</button><span class="muted">Saving shows the story to the student and sends you to the storyboard.</span></div></div>`;
+  $("lv").onchange=async()=>{await save({level:+$("lv").value});drawScript();};
+  $("copy").onclick=async()=>{const p=K.prompt(CUR,D);$("ansBox").hidden=false;$("ansBox").open=true;$("ans").value=p;try{await navigator.clipboard.writeText(p);$("askMsg").textContent="Copied ✓";}catch(e){$("askMsg").textContent="Select the text below and copy it.";}};
+  $("ask").onclick=askAI;
+  $("back").onclick=async()=>{const t=$("fb").value.trim();if(!t){App.status("Write the feedback first.",false);return;}if(await save({feedback:t,status:"returned"}))App.status("Sent back to the student ✏️",true);};
+  $("saveStory").onclick=async()=>{const t=$("story").value.trim();if(!t){App.status("The story is empty.",false);return;}
+    if(await save({story_text:t,feedback:"",status:CUR.status==="filmed"?"filmed":"written"})){App.status("Story saved 📖",true);TAB="board";drawWs();}};}
+async function askAI(){if(!(CUR.blocks||[]).some(b=>b.k==="w")){App.status("This story has no vocabulary words yet.",false);return;}
+  const b=$("ask");b.disabled=true;b.innerHTML=`<span class="spin"></span> Asking AI…`;$("askMsg").textContent="This takes about 10–30 seconds.";
+  try{const r=await C.functions.invoke("ai",{body:{prompt:K.apiPrompt(CUR,D),task:K.lvl(CUR).mode==="none"?"write":"check",story_id:CUR.id}});
+    let data=r.data;if(r.error){try{data=await r.error.context.json();}catch(e){data={error:r.error.message};}}
+    if(!data||data.error){$("askMsg").textContent="Not done: "+((data&&data.error)||"unknown error");return;}
+    const t=data.text||"",S=K.sections(t);$("ansBox").hidden=false;$("ans").value=t;
+    if((S.VERDICT||"").toUpperCase().startsWith("REJECT")){$("fb").value=(S.FEEDBACK||t).replace(/\n\s*\n/g,"\n").trim();$("askMsg").textContent="The AI says REJECT. Check the feedback, then press Send back.";$("fb").scrollIntoView({behavior:"smooth",block:"center"});}
+    else{if(S.STORY)$("story").value=S.STORY.trim();
+      if(S["VIDEO SCENES"]||S.CAST){const plan=K.parsePlan((S.CAST?"CAST: "+S.CAST.split("\n")[0]+"\n":"")+(S["VIDEO SCENES"]||""));await save({video_plan:K.planText(plan.cast,plan.shots)});}
+      $("askMsg").textContent=S.STORY?"Story written ✓ Read it below, then press Save story.":"The AI answered. See the full answer.";if(S.STORY)$("story").scrollIntoView({behavior:"smooth",block:"center"});}
+  }finally{b.disabled=false;b.innerHTML=icon("sparkles",16)+"Ask AI";usage();}}
+
+// ---------- 2. Storyboard & shooting ----------
+function plan(){const p=K.parsePlan(CUR.video_plan);if(!p.shots.length){const paras=K.paragraphs(CUR.story_text);p.shots=K.scenes(CUR).map((x,k)=>({n:k+1,text:paras[k]||x.words.map(K.clean).join(", ")}));}return p;}
+const latestTake=n=>TAKES.filter(t=>t.scene===n).slice(-1)[0];
+const readyTake=n=>TAKES.filter(t=>t.scene===n&&t.status==="ready").slice(-1)[0];
+function fullPrompt(text){const p=plan();return `${text.trim()}${p.cast?` Characters: ${p.cast}`:""} ${(CUR.film_style||K.FILM_STYLE).trim()}`;}
+function drawBoard(){const p=plan(),paras=K.paragraphs(CUR.story_text),missing=p.shots.filter(x=>!readyTake(x.n)&&!(latestTake(x.n)||{}).status?.match(/queued|shooting/));
+  $("pane").innerHTML=`${!CUR.story_text?`<div class="note">Tip: write the story first (tab 1). The AI also writes the cast and one shot per scene for you.</div>`:""}
+   <div class="blk"><h3>Cast</h3><p class="hint">Describe the main characters once. It's added to every shot so they look the same in every scene.</p>
+     <textarea class="mid" id="cast" placeholder="Rover: a small brown dog with a red collar…">${esc(p.cast)}</textarea></div>
+   <div class="blk"><h3>Look of the film</h3><textarea class="mid" id="style">${esc(CUR.film_style||K.FILM_STYLE)}</textarea></div>
+   <div class="blk"><h3>Shot list</h3><p class="hint">Each scene becomes one 5-second shot, made with fal (about $${K.SHOT_COST.toFixed(2)} each, at most 12 a day). Every take is kept; the newest finished take goes into the movie.</p>
+     <div class="row" style="margin-bottom:10px"><button class="btn primary" id="shootAll" type="button" ${missing.length?"":"disabled"}>🎬 Shoot ${missing.length||"all"} scene${missing.length===1?"":"s"} without a take${missing.length?` (~$${(missing.length*K.SHOT_COST).toFixed(2)})`:""}</button>
+       <button class="btn small" id="addShot" type="button">${icon("plus",16)}Add a scene</button><span class="muted" id="boardMsg"></span></div>
+     <div class="shots">${p.shots.map((x,k)=>{const n=k+1,t=latestTake(n),rt=readyTake(n),busy=t&&/queued|shooting/.test(t.status);
+       return `<div class="shot" data-n="${n}"><div><h4>Scene ${n}<button class="btn small" type="button" data-del="${n}" title="Remove this scene" style="margin-left:auto">✕</button></h4>
+         ${paras[k]?`<p class="cap">“${esc(paras[k].slice(0,220))}${paras[k].length>220?"…":""}”</p>`:""}
+         <textarea class="mid" data-p="${n}" aria-label="What scene ${n} shows">${esc(x.text)}</textarea>
+         <div class="row" style="margin-top:6px"><button class="btn small ${rt?"":"primary"}" type="button" data-shoot="${n}" ${busy?"disabled":""}>🎬 ${rt?"Retake":"Shoot"} (~$${K.SHOT_COST.toFixed(2)})</button>
+           <span class="muted">${busy?`<span class="spin"></span> Filming… (usually 1–3 minutes)`:t&&t.status==="failed"?`⚠️ Last take failed: ${esc(t.error||"")}`:""}</span></div></div>
+         <div><div class="take">${rt?`<video src="${esc(rt.video_url)}" controls playsinline preload="metadata"></video>`:busy?`<span><span class="spin"></span><br>Filming…</span>`:`<span>No take yet</span>`}</div>
+         <div class="tk">${TAKES.filter(z=>z.scene===n).length} take${TAKES.filter(z=>z.scene===n).length===1?"":"s"}</div></div></div>`;}).join("")}</div></div>
+   <div class="row"><button class="btn small" id="toPremiere" type="button">${icon("arrow-right",16)}Go to the premiere</button></div>`;
+  const persist=async()=>{const shots=[...document.querySelectorAll("[data-p]")].map(t=>({text:t.value.trim()})).filter(x=>x.text);
+    await save({video_plan:K.planText($("cast").value.trim().replace(/\n+/g," "),shots),film_style:$("style").value.trim()});};
+  ["cast","style"].forEach(id=>$(id).onchange=persist);document.querySelectorAll("[data-p]").forEach(t=>t.onchange=persist);
+  $("addShot").onclick=async()=>{const shots=[...document.querySelectorAll("[data-p]")].map(t=>({text:t.value.trim()||"…"}));shots.push({text:"Describe what this scene shows…"});
+    await save({video_plan:K.planText($("cast").value.trim(),shots),film_style:$("style").value.trim()});drawBoard();};
+  $("pane").querySelectorAll("[data-del]").forEach(b=>b.onclick=async()=>{const n=+b.dataset.del,shots=[...document.querySelectorAll("[data-p]")].map(t=>({text:t.value.trim()})).filter((x,k)=>k+1!==n);
+    await save({video_plan:K.planText($("cast").value.trim(),shots)});drawBoard();});
+  $("pane").querySelectorAll("[data-shoot]").forEach(b=>b.onclick=async()=>{await persist();shoot([+b.dataset.shoot]);});
+  $("shootAll").onclick=async()=>{const ns=missing.map(x=>x.n);if(!ns.length)return;
+    if(Date.now()-SHOTARM>6000){SHOTARM=Date.now();$("boardMsg").textContent=`This will shoot ${ns.length} scene${ns.length>1?"s":""} for about $${(ns.length*K.SHOT_COST).toFixed(2)}. Press again to confirm.`;return;}
+    SHOTARM=0;await persist();shoot(ns);};
+  $("toPremiere").onclick=()=>{TAB="premiere";drawWs();};}
+async function shoot(ns){const p=plan();
+  for(const n of ns){const x=p.shots[n-1];if(!x)continue;
+    const r=await C.functions.invoke("film",{body:{action:"shoot",story_id:CUR.id,scene:n,prompt:fullPrompt(x.text)}});
+    let data=r.data;if(r.error){try{data=await r.error.context.json();}catch(e){data={error:r.error.message};}}
+    if(!data||data.error){App.status("Scene "+n+": "+((data&&data.error)||"could not start"),false);break;}
+    TAKES.push(data.shot);}
+  usage();drawBoard();startPoll();}
+function startPoll(){clearInterval(POLL);POLL=setInterval(async()=>{const busy=TAKES.filter(t=>/queued|shooting/.test(t.status));if(!busy.length){clearInterval(POLL);return;}
+  let changed=false;for(const t of busy){const r=await C.functions.invoke("film",{body:{action:"check",shot_id:t.id}});const d=r.data;
+    if(d&&d.shot&&d.shot.status!==t.status){Object.assign(t,d.shot);changed=true;if(d.shot.status==="ready")App.status(`Scene ${t.scene} is in the can 🎬`,true);}}
+  if(changed&&(TAB==="board"||TAB==="premiere"))drawWs();},9000);}
+
+// ---------- 3. Premiere ----------
+function drawPremiere(){const p=plan(),ready=Montage.latest(TAKES),miss=p.shots.map((x,k)=>k+1).filter(n=>!ready.some(r=>r.scene===n));
+  $("pane").innerHTML=`${miss.length?`<div class="note">${ready.length?"Still to shoot":"Nothing shot yet"}: scene${miss.length>1?"s":""} ${miss.join(", ")}. ${ready.length?"The movie plays the scenes that are ready.":"Go to the storyboard to shoot them."}</div>`:""}
+    <div id="movie"></div>
+    <div class="row" style="margin-top:14px">${CUR.status==="filmed"?`<span class="pill filmed">Released to ${esc(who(CUR))} ✓</span><button class="btn small" id="unrelease" type="button">Hide from student</button>`
+      :`<button class="btn primary" id="release" type="button" ${ready.length?"":"disabled"}>🎉 Release the movie to ${esc(who(CUR))}</button>`}</div>`;
+  Montage.mount($("movie"),{title:CUR.title,by:who(CUR),shots:ready,captions:K.paragraphs(CUR.story_text)});
+  const rl=$("release");if(rl)rl.onclick=async()=>{if(await save({status:"filmed"})){App.status("The movie is out! 🍿",true);drawPremiere();}};
+  const ur=$("unrelease");if(ur)ur.onclick=async()=>{if(await save({status:CUR.story_text?"written":"sent"}))drawPremiere();};}
+
+// ---------- start ----------
+(async()=>{if(ME.role!=="teacher"){$("denied").hidden=false;return;}
+  $("studio").hidden=false;
+  const r=await C.from("stories").select("id,owner_id,title,blocks,status,story_text,video_url,video_plan,film_style,level,sentences,feedback,updated_at").eq("set_id",SET.id).order("updated_at",{ascending:false});
+  if(r.error){$("ws").innerHTML=`<div class="empty">Can't load stories: ${esc(r.error.message)}</div>`;return;}
+  STORIES=(r.data||[]).map(s=>Object.assign(s,{blocks:Array.isArray(s.blocks)?s.blocks:[],sentences:s.sentences||{}}));
+  const ids=[...new Set(STORIES.map(s=>s.owner_id).filter(x=>x&&x!==ME.id))];
+  if(ids.length){const pr=await C.from("profiles").select("id,full_name").in("id",ids);(pr.data||[]).forEach(p=>NAMES[p.id]=p.full_name);}
+  if(!STORIES.some(s=>s.status==="sent"||s.status==="written")){FILTER="all";document.querySelectorAll(".seg button").forEach(x=>x.setAttribute("aria-pressed",x.dataset.f==="all"));}
+  drawInbox();let last="";try{last=localStorage.getItem("studioCur")||"";}catch(e){}
+  const want=new URLSearchParams(location.search).get("story")||last;const s=STORIES.find(x=>x.id===want)||STORIES.find(x=>x.status==="sent")||null;if(s)openStory(s);})();
+</script><script>Sets.boot({min:2})</script></body></html>

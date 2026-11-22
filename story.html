@@ -85,7 +85,7 @@
 .parent .step{margin-top:12px}.parent .step b{display:block;margin-bottom:4px}
 .parent input[type=text]{width:100%;max-width:40rem}
 </style>
-<script src="js/vendor/supabase.js"></script><script src="js/config.js"></script><script src="js/icons.js"></script><script src="js/app.js"></script><script src="js/sets.js"></script>
+<script src="js/vendor/supabase.js"></script><script src="js/config.js"></script><script src="js/icons.js"></script><script src="js/app.js"></script><script src="js/sets.js"></script><script src="js/storycore.js"></script><script src="js/montage.js"></script>
 </head><body>
 <div class="wrap" style="max-width:1280px">
   <div class="head2">
@@ -114,44 +114,25 @@
     </section>
   </div>
   <section class="panel read" id="read" hidden></section>
-  <details class="panel parent" id="parent">
-    <summary>For parents: turn this plan into a story and a movie</summary>
-    <div class="step"><b>Level for this story<button class="ibtn" type="button" data-info aria-label="What the levels mean" title="What the levels mean">i</button></b><div class="lvlsel"><select id="levelSel" aria-label="Level"></select><span class="muted" id="levelDesc"></span></div></div>
-    <div class="step"><b>1. Copy the prompt</b>
-      <div class="acts"><button class="btn small primary" id="askAI" type="button"><span data-i="sparkles"></span>Ask AI</button><button class="btn small" id="copyPrompt" type="button"><span data-i="copy"></span>Copy the prompt</button><span class="saved" id="copied"></span><span class="saved" id="aiUse"></span></div>
-      <textarea id="aiOut" readonly hidden placeholder="The AI's answer appears here"></textarea>
-      <textarea id="promptBox" readonly hidden></textarea></div>
-    <div class="step"><b>2. If the answer says REJECT: paste the feedback and send it back</b><textarea id="fbText" placeholder="Paste the feedback here…"></textarea>
-      <div class="acts"><button class="btn small primary" id="sendBack" type="button"><span data-i="send"></span>Send back to student</button></div></div>
-    <div class="step"><b>3. Paste the finished story</b><textarea id="storyText" placeholder="Paste the story here…"></textarea>
-      <b style="margin-top:8px">Video scenes (for the movie)</b><textarea id="videoPlan" placeholder="VIDEO SCENE 1: …" style="min-height:90px"></textarea>
-      <div class="acts"><button class="btn small primary" id="saveStory" type="button"><span data-i="save"></span>Save story</button></div></div>
-    <div class="step"><b>4. Movie link (when the video is ready)</b><input type="text" id="videoUrl" placeholder="assets/stories/my-story.mp4 or https://…">
-      <div class="acts"><button class="btn small primary" id="saveVideo" type="button"><span data-i="save"></span>Save movie</button></div></div>
-  </details>
+  
 </div>
 <dialog id="infoDlg" aria-labelledby="infoTitle"><div class="ib"><button class="btn small close" type="button" id="infoClose">✕ Close</button>
   <h2 id="infoTitle">How the Story builder works</h2>
-  <p>The student builds a story from vocabulary words, in their own order. A parent then turns the plan into a finished story (with an AI) and, later, a movie. Nothing on this page can spend money or contact an AI by itself.</p>
+  <p>Build your own story from vocabulary words: pick them, put them in order, add your own words and scenes. Then send it to your parent, who turns it into a finished story and a movie.</p>
   <h3>Levels</h3>
-  <p class="muted" style="margin:0 0 6px">The parent chooses the level for each story (in <b>For parents</b>). Higher levels ask for more writing and allow fewer mistakes.</p>
-  <table><thead><tr><th>Level</th><th>Name</th><th>What the student must do</th><th>Small mistakes the AI allows</th></tr></thead><tbody id="infoLevels"></tbody></table>
-  <h3>How it works for the student</h3>
+  <p class="muted" style="margin:0 0 6px">Your parent chooses the level for each story. Higher levels ask for more writing.</p>
+  <table><thead><tr><th>Level</th><th>Name</th><th>What you must do</th></tr></thead><tbody id="infoLevels"></tbody></table>
+  <h3>How it works for you</h3>
   <ul>
     <li>Pick words from the <b>Word library</b> (tap a picture to watch and hear it), press <b>+ Add</b> or drag them into the story, and put them in order. Add your own words and new scenes.</li>
     <li>From level 4 up, a <b>✍️ Write your sentences</b> section appears with a box for each scene, or for each word at levels 7–10.</li>
     <li>Each box is checked while typing: is it long enough, does it use the word, does it start with a capital letter and end with . ! or ? A green ✓ appears when it's right, or a hint such as “use the word Kennel”.</li>
     <li>A <b>Ready to send?</b> checklist shows what's still missing, and <b>Send to parent</b> stays blocked until everything is ticked.</li>
-    <li><b>My story so far</b> shows the student's own sentences (or the words in order at levels 1–3).</li>
+    <li><b>My story so far</b> shows your own sentences (or the words in order at levels 1–3).</li>
     <li>If the story comes back with notes, a yellow box shows them. Fix the sentences, then press <b>Send to parent</b> again.</li>
   </ul>
-  <h3>How it works for the parent</h3>
-  <ol>
-    <li><b>Copy the prompt</b> and paste it into an AI such as Claude. At levels 1–3 the AI writes the story from the plan. From level 4 up it first checks the student's sentences against the level and answers <b>VERDICT: ACCEPT</b> or <b>VERDICT: REJECT</b>, with kind hints for each mistake (it does not rewrite the sentences).</li>
-    <li>If it says <b>REJECT</b>: paste the hints and press <b>Send back to student</b>. The story shows as “Needs fixing ✏️” until the student sends it again.</li>
-    <li>If it says <b>ACCEPT</b>: the AI writes the story from the student's own sentences. Paste it in <b>Paste the finished story</b>. The student can then read it, with the vocabulary words highlighted.</li>
-    <li>When a movie has been made from the story's VIDEO SCENE lines, add its link and it plays above the story.</li>
-  </ol>
+  <h3>What happens after you send it</h3>
+  <p style="margin:0">Your parent reads your story plan. If something needs fixing, your story comes back with notes in a yellow box. When it's ready, your parent turns it into a finished story, and then into a movie. You can read the story and watch the movie right here.</p>
   <h3>Status</h3>
   <p style="margin:0">Draft → Sent to parent ✉️ → (Needs fixing ✏️ → Sent again) → Story ready 📖 → Movie ready 🎬</p>
 </div></dialog>
@@ -160,21 +141,11 @@ const $=id=>document.getElementById(id), esc=App.esc, D=window.WORDS, SET=window
 document.querySelectorAll("[data-i]").forEach(el=>el.insertAdjacentHTML("afterbegin",icon(el.dataset.i,16)));
 const UP=Sets.unitPicker($("unitMount"),()=>drawLib());
 const QUICK=["One day,","Then","Suddenly,","After that,","Because","But","In the end,"];
-const STATUS={draft:"Draft",sent:"Sent to parent ✉️",returned:"Needs fixing ✏️",written:"Story ready 📖",filmed:"Movie ready 🎬"};
+const STATUS=StoryCore.STATUS;
 // Levels 1-10: what she must do (checked here, free) and how many small mistakes the AI allows (tol).
-const LEVELS=[null,
- {n:"Word collector",mode:"none",min:3,scenes:1,d:"Pick at least 3 words and put them in order."},
- {n:"Scene maker",mode:"none",min:4,scenes:2,d:"At least 4 words, in 2 or more scenes."},
- {n:"Story linker",mode:"none",min:5,scenes:2,link:1,d:"At least 5 words, and your own linking words in every scene."},
- {n:"Phrase writer",mode:"scene",min:5,scenes:2,len:3,tol:4,d:"Write a short phrase (3+ words) for every scene, using one of its words."},
- {n:"Sentence maker",mode:"scene",min:5,scenes:2,len:5,caps:1,tol:3,d:"Write one full sentence (5+ words) for every scene, using one of its words."},
- {n:"Strong sentences",mode:"scene",min:6,scenes:3,len:7,caps:1,all:1,tol:2,d:"One sentence (7+ words) per scene that uses ALL of its words."},
- {n:"Word by word",mode:"word",min:5,scenes:2,len:5,caps:1,tol:2,d:"One sentence (5+ words) for every word."},
- {n:"Clear meaning",mode:"word",min:6,scenes:3,len:7,caps:1,mean:1,tol:1,d:"One sentence (7+ words) per word that shows what the word means."},
- {n:"Story writer",mode:"word",min:8,scenes:3,len:8,caps:1,mean:1,link:1,tol:1,d:"8+ words per sentence, meanings clear, linking words in every scene."},
- {n:"Author",mode:"word",min:10,scenes:4,len:10,caps:1,mean:1,link:1,tol:0,d:"10+ words per sentence, every meaning clear, no mistakes allowed."}];
+const LEVELS=StoryCore.LEVELS;
 const LV=()=>LEVELS[(CUR&&CUR.level)||3];
-let DEF_LEVEL=3;try{DEF_LEVEL=+localStorage.getItem("storyLevel")||3;}catch(e){}
+let DEF_LEVEL=3; // new stories start at the level the parent set on the most recent story
 const stemOf=w=>{const t=clean(w).toLowerCase(),b=t.replace(/(ing|ies|ied|ed|es|ly|s|e|y)$/,"");return b.length<4?t:b;};
 const hasWord=(txt,w)=>new RegExp(`(?<![a-z])${stemOf(w).replace(/[.*+?^${}()|[\]\\]/g,"\\$&")}`,"i").test(txt);
 // scenes: [{n, words:[term], texts:[own words]}]
@@ -213,9 +184,8 @@ function drawChecks(){if(!CUR){$("checks").innerHTML="";return;}const C_=planChe
 const wi=w=>D.findIndex(v=>v.w===w);
 const clean=w=>String(w).replace(/\s*\(.*\)/,"");
 let STORIES=[], CUR=null, SEL=-1, timer=null, DRAG=null;
-const ME=App.profile||{}, PARENT=ME.role==="teacher", NAMES={};
-const mine=()=>!CUR||!CUR.id||!CUR.owner_id||CUR.owner_id===ME.id;
-const blank=()=>({id:null,owner_id:ME.id,title:"",blocks:[],status:"draft",story_text:"",video_url:"",video_plan:"",level:DEF_LEVEL,sentences:{},feedback:""});
+const ME=App.profile||{};
+const blank=()=>({id:null,owner_id:ME.id,title:"",blocks:[],status:"draft",story_text:"",video_url:"",level:DEF_LEVEL,sentences:{},feedback:""});
 
 // ---------- library ----------
 function drawLib(){const q=$("q").value.trim().toLowerCase();const used=new Map();(CUR?.blocks||[]).forEach(b=>b.k==="w"&&used.set(b.w,(used.get(b.w)||0)+1));
@@ -280,7 +250,7 @@ $("title").oninput=()=>{if(!CUR)CUR=blank();CUR.title=$("title").value;changed()
 function changed(){$("saved").textContent="Saving…";clearTimeout(timer);timer=setTimeout(save,1200);}
 async function save(extra={}){if(!CUR)return;clearTimeout(timer);Object.assign(CUR,extra);
   const its=new Set(items().map(x=>x.key)),sent={};Object.entries(CUR.sentences||{}).forEach(([k,v])=>{if((v||"").trim()&&(its.has(k)||LV().mode==="none"))sent[k]=v;});
-  const row={title:(CUR.title||"").trim()||"My story",blocks:CUR.blocks,status:CUR.status,story_text:CUR.story_text||"",video_url:CUR.video_url||"",set_id:SET.id,level:CUR.level||3,sentences:sent,feedback:CUR.feedback||"",video_plan:CUR.video_plan||""};
+  const row={title:(CUR.title||"").trim()||"My story",blocks:CUR.blocks,status:CUR.status,set_id:SET.id,sentences:sent};if(!CUR.id)row.level=CUR.level||DEF_LEVEL;
   let r;if(CUR.id)r=await C.from("stories").update(row).eq("id",CUR.id).select("id").single();
   else r=await C.from("stories").insert(row).select("id").single();
   if(r.error){$("saved").textContent="Not saved: "+r.error.message;return false;}
@@ -290,10 +260,8 @@ function drawStatus(){const s=CUR?CUR.status:"draft";$("status").className="pill
   const lv=(CUR&&CUR.level)||DEF_LEVEL;$("lvlBadge").textContent=`Level ${lv} · ${LEVELS[lv].n}`;
   $("fb").hidden=!(CUR&&CUR.status==="returned"&&CUR.feedback);if(!$("fb").hidden)$("fb").innerHTML=`<b>✏️ Please fix these, then send again</b>${esc(CUR.feedback)}`;
   $("sendBtn").innerHTML=icon("send",16)+(s==="draft"||s==="returned"?"Send to parent":"Sent ✓ (send again)");drawRead();}
-function drawPick(){$("pick").innerHTML=`<option value="">My stories (${STORIES.length})</option>`+STORIES.map(s=>`<option value="${s.id}" ${CUR&&CUR.id===s.id?"selected":""}>${s.owner_id&&s.owner_id!==ME.id?esc((NAMES[s.owner_id]||"Student").split(" ")[0])+": ":""}${esc(s.title||"My story")} · ${esc((STATUS[s.status]||"").replace(/ .*/,""))}</option>`).join("");}
+function drawPick(){$("pick").innerHTML=`<option value="">My stories (${STORIES.length})</option>`+STORIES.map(s=>`<option value="${s.id}" ${CUR&&CUR.id===s.id?"selected":""}>${esc(s.title||"My story")} · ${esc((STATUS[s.status]||"").replace(/ .*/,""))}</option>`).join("");}
 function openStory(s){CUR=s||blank();CUR.level=CUR.level||DEF_LEVEL;CUR.sentences=CUR.sentences&&typeof CUR.sentences==="object"?CUR.sentences:{};SEL=-1;$("title").value=CUR.title||"";
-  $("levelSel").value=String(CUR.level);$("levelDesc").textContent=LEVELS[CUR.level].d;$("fbText").value=CUR.feedback||"";$("videoPlan").value=CUR.video_plan||"";$("aiOut").hidden=true;
-  $("sendBtn").hidden=!mine();$("delBtn").hidden=!mine();$("storyText").value=CUR.story_text||"";$("videoUrl").value=CUR.video_url||"";$("promptBox").hidden=true;
   drawBoard();drawStatus();drawPick();$("saved").textContent="";try{localStorage.setItem("storyCur",CUR.id||"");}catch(e){}}
 $("pick").onchange=()=>{const s=STORIES.find(x=>x.id===$("pick").value);if(s)openStory(s);};
 $("newBtn").onclick=()=>openStory(blank());
@@ -306,101 +274,31 @@ let delArm=0;$("delBtn").onclick=async()=>{if(!CUR||!CUR.id){openStory(blank());
   STORIES=STORIES.filter(s=>s.id!==CUR.id);openStory(STORIES[0]||blank());App.status("Story deleted",true);};
 
 // ---------- the finished story (and movie) ----------
-function drawRead(){const box=$("read");if(!CUR||!(CUR.story_text||CUR.video_url)){box.hidden=true;return;}
+const SHOTS={};   // story id -> finished takes (loaded when the movie has been released)
+async function loadShots(id){const r=await C.from("story_shots").select("scene,status,video_url,created_at").eq("story_id",id);SHOTS[id]=Montage.latest(r.data||[]);}
+function drawRead(){const box=$("read");if(!CUR||!(CUR.story_text||CUR.video_url||CUR.status==="filmed")){box.hidden=true;return;}
+  if(CUR.status==="filmed"&&CUR.id&&!SHOTS[CUR.id]){loadShots(CUR.id).then(()=>drawRead());}
   const words=[...new Set(CUR.blocks.filter(b=>b.k==="w").map(b=>b.w))].map(w=>({w,i:wi(w)})).filter(x=>x.i>=0);
   const stem=w=>{const t=clean(w).toLowerCase(),b=t.replace(/(ing|ies|ied|ed|es|ly|s|e|y)$/,"");return b.length<4?t:b;};
   const re=words.length?new RegExp(`(?<![a-z])(${words.map(x=>stem(x.w).replace(/[.*+?^${}()|[\]\\]/g,"\\$&")).join("|")})[a-z]*`,"gi"):null;
   const para=t=>esc(t).replace(re||/$^/,m=>{const x=words.find(x=>m.toLowerCase().startsWith(stem(x.w)));return x?`<mark data-i="${x.i}" title="${esc(D[x.i].d)}">${m}</mark>`:m;});
   box.hidden=false;
-  box.innerHTML=`<h2>${icon("book-open",20)} ${esc(CUR.title||"My story")}</h2>${CUR.video_url?`<video src="${esc(CUR.video_url)}" controls playsinline preload="metadata"></video>`:""}
-    ${CUR.story_text?`<div class="story">${CUR.story_text.split(/\n\s*\n|\n/).filter(x=>x.trim()).map(p=>`<p>${para(p)}</p>`).join("")}</div><p class="muted" style="font-size:.88rem">Tap a highlighted word to hear it.</p>`:""}`;}
+  const film=CUR.status==="filmed"&&(SHOTS[CUR.id]||[]).length;
+  box.innerHTML=`<h2>${icon("book-open",20)} ${esc(CUR.title||"My story")}</h2>${film?`<h3 style="margin:0 0 8px">🎬 My movie</h3><div id="movie" style="margin-bottom:16px"></div>`:CUR.video_url?`<video src="${esc(CUR.video_url)}" controls playsinline preload="metadata"></video>`:""}
+    ${CUR.story_text?`<div class="story">${CUR.story_text.split(/\n\s*\n|\n/).filter(x=>x.trim()).map(p=>`<p>${para(p)}</p>`).join("")}</div><p class="muted" style="font-size:.88rem">Tap a highlighted word to hear it.</p>`:""}`;
+  if(film)Montage.mount($("movie"),{title:CUR.title,by:(ME.full_name||"me").split(" ")[0],shots:SHOTS[CUR.id],captions:StoryCore.paragraphs(CUR.story_text)});}
 $("read").addEventListener("click",e=>{const m=e.target.closest("mark[data-i]");if(m)Sets.sayWord(D[+m.dataset.i]);});
 
-// ---------- parent tools ----------
-function buildPrompt(){const L=LV();if(L.mode!=="none")return checkPrompt();const B=CUR.blocks,sc=[[]];B.forEach(b=>b.k==="s"?sc.push([]):sc[sc.length-1].push(b));
-  const W=[...new Set(B.filter(b=>b.k==="w").map(b=>b.w))];
-  const scenes=sc.filter(s=>s.length).map((s,k)=>`Scene ${k+1}: `+s.map(b=>b.k==="w"?`[${clean(b.w)}]`:`"${(b.t||"").trim()}"`).filter(x=>x!=='""').join(" → ")).join("\n");
-  return `Please write a short children's story for my daughter, a Grade 5 student learning English vocabulary. She planned it herself in a story builder.
-
-Her title: ${(CUR.title||"").trim()||"(no title yet — please suggest one)"}
-
-Her plan, in her order (words in [brackets] are vocabulary words; words in "quotes" are her own words):
-${scenes}
-
-Rules:
-- Keep her order, her scenes and her ideas. Fill the gaps so it reads as a real story.
-- Use EVERY vocabulary word at least once (you may change the form, e.g. insist → insisted). Make each meaning clear from the sentence.
-- Grade 5 reading level, warm and fun, about ${Math.min(600,Math.max(180,W.length*30))} words. One short paragraph per scene. No violence beyond what the words need.
-- After the story, for each scene add one line starting "VIDEO SCENE n:" describing what a short video clip should show (characters, place, action, the vocabulary words it shows). No text or letters on screen. Keep the same characters looking the same in every scene.
-
-Vocabulary meanings:
-${W.map(w=>`- ${clean(w)}: ${D[wi(w)]?.d||""}`).join("\n")}`;}
-function checkPrompt(){const L=LV(),its=items(),S_=CUR.sentences||{},W=[...new Set(CUR.blocks.filter(b=>b.k==="w").map(b=>b.w))];
-  return `Please act as a kind English teacher for my daughter, a Grade 5 student learning English vocabulary. She planned a story in a story builder and wrote her own sentences.
-
-Her level: ${CUR.level} of 10 (${L.n}): ${L.d}
-Her title: ${(CUR.title||"").trim()||"(no title yet — please suggest one)"}
-
-Her sentences, scene by scene (vocabulary words in [brackets]):
-${scenesOf().map(x=>`Scene ${x.n} — [${x.words.map(clean).join("], [")}]${x.texts.length?` (her own words: ${x.texts.map(t=>`"${t}"`).join(", ")})`:""}\n`+its.filter(it=>it.scene===x.n).map(it=>`  ${L.mode==="word"?clean(it.words[0])+": ":""}"${(S_[it.key]||"").trim()}"`).join("\n")).join("\n")}
-
-STEP 1 — Check her sentences.
-- Allowed small mistakes in total at this level: ${L.tol} (spelling, grammar, capital letters, punctuation).${L.mean?"\n- Each vocabulary word must be used with its correct meaning, and the sentence should make the meaning clear.":"\n- Each vocabulary word must be used with a sensible meaning."}
-- A vocabulary word used with the wrong meaning always counts as a mistake.
-Reply first with exactly one line: VERDICT: ACCEPT or VERDICT: REJECT
-Then list every sentence with ✓ or ✗. For each ✗ give a short, kind hint saying what to fix. Do NOT write the corrected sentence for her.
-
-STEP 2 — Only if ACCEPT: write the final story. Keep her sentences as much as possible (fix small mistakes, join them smoothly, add a little in between so it flows). Keep her order and scenes, one paragraph per scene, Grade 5 level. After the story, for each scene add one line starting "VIDEO SCENE n:" describing what a short video clip should show (characters, place, action, the vocabulary words it shows). No text or letters on screen. Keep the same characters looking the same in every scene.
-
-Vocabulary meanings:
-${W.map(w=>`- ${clean(w)}: ${D[wi(w)]?.d||""}`).join("\n")}`;}
-$("copyPrompt").onclick=async()=>{if(!CUR||!CUR.blocks.some(b=>b.k==="w")){App.status("This story has no words yet.",false);return;}
-  const p=buildPrompt();$("promptBox").value=p;$("promptBox").hidden=false;
-  try{await navigator.clipboard.writeText(p);$("copied").textContent="Copied ✓";}catch(e){$("promptBox").select();$("copied").textContent="Select the text below and copy it.";}};
-// Ask AI (parent account only; the server refuses everyone else and limits calls per day)
-function apiPrompt(){const L=LV();return buildPrompt()+(L.mode==="none"
-  ?"\n\nFORMAT: Start your reply with a line 'STORY:' followed by the story, then a line 'VIDEO SCENES:' followed by the VIDEO SCENE lines. No other headings."
-  :"\n\nFORMAT: Use exactly these headings, each on its own line: 'VERDICT: ACCEPT' or 'VERDICT: REJECT', then 'FEEDBACK:' followed by the ✓/✗ list with hints, then (only if ACCEPT) 'STORY:' followed by the story and 'VIDEO SCENES:' followed by the VIDEO SCENE lines.");}
-function sections(t){const out={},re=/^\s*\**\s*(VERDICT|FEEDBACK|STORY|VIDEO SCENES)\s*:\**\s*(.*)$/gim;let m,last=null,pos=0;const marks=[];
-  while((m=re.exec(t))){marks.push({k:m[1].toUpperCase(),i:m.index,end:re.lastIndex,rest:m[2]});}
-  marks.forEach((x,j)=>{const body=t.slice(x.end,j+1<marks.length?marks[j+1].i:t.length);out[x.k]=((x.rest||"")+"\n"+body).replace(/\n{3,}/g,"\n\n").trim();});return out;}
-async function showUse(){if(!PARENT)return;const since=new Date(Date.now()-864e5).toISOString();
-  const r=await C.from("ai_usage").select("id",{count:"exact",head:true}).eq("service","openai").gte("created_at",since);
-  if(!r.error)$("aiUse").textContent=`AI used ${r.count||0} of 30 in the last 24 hours`;}
-$("askAI").onclick=async()=>{if(!CUR||!CUR.blocks.some(b=>b.k==="w")){App.status("This story has no words yet.",false);return;}
-  if(!CUR.id&&!(await save()))return;
-  const b=$("askAI");b.disabled=true;b.textContent="Asking AI…";$("aiOut").hidden=false;$("aiOut").value="Waiting for the AI…";
-  try{const r=await C.functions.invoke("ai",{body:{prompt:apiPrompt(),task:LV().mode==="none"?"write":"check",story_id:CUR.id}});
-    let data=r.data;if(r.error){try{data=await r.error.context.json();}catch(e){data={error:r.error.message};}}
-    if(!data||data.error){$("aiOut").value="Not done: "+((data&&data.error)||"unknown error");App.status((data&&data.error)||"AI error",false);return;}
-    const t=data.text||"",S=sections(t);$("aiOut").value=t;
-    const verdict=(S.VERDICT||"").toUpperCase();
-    if(verdict.startsWith("REJECT")){$("fbText").value=(S.FEEDBACK||t).replace(/\n\s*\n/g,"\n").trim();App.status("The AI says REJECT. Check the feedback in step 2, then press Send back.",false);$("fbText").scrollIntoView({behavior:"smooth",block:"center"});}
-    else{if(S.STORY){$("storyText").value=S.STORY.trim();}if(S["VIDEO SCENES"])$("videoPlan").value=S["VIDEO SCENES"].trim();
-      App.status(S.STORY?"Story written ✓ Check it in step 3, then press Save story.":"The AI answered. See the answer above.",true);if(S.STORY)$("storyText").scrollIntoView({behavior:"smooth",block:"center"});}
-  }finally{b.disabled=false;b.innerHTML=icon("sparkles",16)+"Ask AI";showUse();}};
-$("saveStory").onclick=async()=>{if(!CUR)return;const t=$("storyText").value.trim();CUR.video_plan=$("videoPlan").value.trim();if(await save({story_text:t,status:t?(CUR.video_url?"filmed":"written"):CUR.status}))App.status("Story saved 📖",true);};
-$("saveVideo").onclick=async()=>{if(!CUR)return;const u=$("videoUrl").value.trim();
-  if(u&&!/^(https:\/\/|assets\/)/.test(u)){App.status("The link must start with https:// or assets/",false);return;}
-  if(await save({video_url:u,status:u?"filmed":(CUR.story_text?"written":CUR.status)}))App.status("Movie saved 🎬",true);};
-
-$("levelSel").innerHTML=LEVELS.slice(1).map((L,k)=>`<option value="${k+1}">Level ${k+1} · ${L.n}${L.mode==="none"?" (words only)":L.mode==="scene"?" (sentence per scene)":" (sentence per word)"}</option>`).join("");
-$("levelSel").onchange=()=>{if(!CUR)CUR=blank();CUR.level=+$("levelSel").value;DEF_LEVEL=CUR.level;try{localStorage.setItem("storyLevel",CUR.level);}catch(e){}
-  $("levelDesc").textContent=LEVELS[CUR.level].d;drawStatus();drawWrite();drawPreview();changed();};
-$("sendBack").onclick=async()=>{if(!CUR||!CUR.id)return;const t=$("fbText").value.trim();if(!t){App.status("Paste the feedback first.",false);return;}
-  if(await save({feedback:t,status:"returned"}))App.status("Sent back to the student ✏️",true);};
-$("infoLevels").innerHTML=LEVELS.slice(1).map((L,k)=>`<tr><td>${k+1}</td><td>${esc(L.n)}</td><td>${esc(L.d)}</td><td>${L.tol==null?'<span class="muted" style="font-weight:600">not checked</span>':L.tol}</td></tr>`).join("");
+$("infoLevels").innerHTML=LEVELS.slice(1).map((L,k)=>`<tr><td>${k+1}</td><td>${esc(L.n)}</td><td>${esc(L.d)}</td></tr>`).join("");
 document.addEventListener("click",e=>{if(e.target.closest("[data-info]")){e.preventDefault();$("infoDlg").showModal();}});
 $("infoClose").onclick=()=>$("infoDlg").close();
 $("infoDlg").addEventListener("click",e=>{if(e.target===$("infoDlg"))$("infoDlg").close();});
 // ---------- start ----------
-(async()=>{const r=await C.from("stories").select("id,owner_id,title,blocks,status,story_text,video_url,video_plan,level,sentences,feedback,updated_at").eq("set_id",SET.id).order("updated_at",{ascending:false});
+(async()=>{const r=await C.from("stories").select("id,owner_id,title,blocks,status,story_text,video_url,level,sentences,feedback,updated_at").eq("set_id",SET.id).eq("owner_id",ME.id).order("updated_at",{ascending:false});
   if(r.error){$("saved").textContent="Stories can't be saved yet: "+r.error.message;}
   STORIES=(r.data||[]).map(s=>Object.assign(s,{blocks:Array.isArray(s.blocks)?s.blocks:[]}));
-  if(!PARENT){$("parent").hidden=true;document.querySelectorAll('#infoDlg h3').forEach(h=>{if(/parent/i.test(h.textContent)){let n=h.nextElementSibling;h.remove();if(n)n.remove();}});}
-  else{$("parent").open=true;const ids=[...new Set(STORIES.map(s=>s.owner_id).filter(x=>x&&x!==ME.id))];
-    if(ids.length){const pr=await C.from("profiles").select("id,full_name").in("id",ids);(pr.data||[]).forEach(p=>NAMES[p.id]=p.full_name);}
-    showUse();}
+  if(STORIES[0]&&STORIES[0].level)DEF_LEVEL=STORIES[0].level;
+  if(ME.role==="teacher")document.querySelector(".head2").insertAdjacentHTML("afterend",`<div class="panel" style="margin-bottom:14px;background:var(--sky-soft)">👋 You're signed in as a parent. Stories your student sends you are in the <a href="studio.html?set=${SET.id}"><b>🎬 Director's Studio</b></a>. This page is the student's builder (you can still make your own stories here).</div>`);
   let last="";try{last=localStorage.getItem("storyCur")||"";}catch(e){}
   openStory(STORIES.find(s=>s.id===last)||STORIES[0]||null);})();
 </script><script>Sets.boot({min:2})</script></body></html>
