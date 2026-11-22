@@ -1,7 +1,8 @@
 // Helper Academy — "ai" Edge Function.
 // The browser sends a prompt; this function adds the OpenAI key (secret "open_ai") on the server and returns the answer.
 // Safety: signed-in users only, parent (teacher) accounts only, at most DAILY_LIMIT calls per rolling 24 hours,
-// every call logged in public.ai_usage. Optional secret "openai_model" picks the model.
+// every call logged in public.ai_usage (rows can be added but never deleted). Optional secret "openai_model" picks the model.
+// It runs as the signed-in user (normal database security rules apply); no server key is needed.
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const DAILY_LIMIT = 30;
@@ -19,13 +20,14 @@ Deno.serve(async (req) => {
   if (req.method !== "POST") return reply({ error: "POST only" }, 405);
   try {
     const url = Deno.env.get("SUPABASE_URL")!;
-    const anon = Deno.env.get("SUPABASE_ANON_KEY")!;
-    const service = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const asUser = createClient(url, anon, { global: { headers: { Authorization: req.headers.get("Authorization") || "" } } });
-    const { data: { user } } = await asUser.auth.getUser();
+    const apikey = req.headers.get("apikey") || Deno.env.get("SUPABASE_PUBLISHABLE_KEY") || Deno.env.get("SUPABASE_ANON_KEY") || "";
+    const jwt = (req.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "");
+    if (!jwt) return reply({ error: "Please sign in." }, 401);
+    const asUser = createClient(url, apikey, { global: { headers: { Authorization: `Bearer ${jwt}` } }, auth: { persistSession: false } });
+    const { data: { user } } = await asUser.auth.getUser(jwt);
     if (!user) return reply({ error: "Please sign in." }, 401);
+    const admin = asUser; // same signed-in user; row-level security applies
 
-    const admin = createClient(url, service);
     const { data: prof } = await admin.from("profiles").select("role").eq("id", user.id).single();
     if (prof?.role !== "teacher") return reply({ error: "Only the parent account can use AI." }, 403);
 

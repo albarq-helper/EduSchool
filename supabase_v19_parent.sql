@@ -37,7 +37,11 @@ create index if not exists ai_usage_user_day on public.ai_usage (user_id, create
 alter table public.ai_usage enable row level security;
 drop policy if exists "own ai usage read" on public.ai_usage;
 create policy "own ai usage read" on public.ai_usage for select to authenticated using (user_id = auth.uid());
-grant select on public.ai_usage to authenticated;
+drop policy if exists "own ai usage log" on public.ai_usage;
+create policy "own ai usage log" on public.ai_usage for insert to authenticated with check (user_id = auth.uid());
+grant select, insert on public.ai_usage to authenticated;
+grant usage on sequence public.ai_usage_id_seq to authenticated;
+-- (no update/delete policies: usage rows can be added, never removed, so daily limits can't be reset)
 
 select c.name as class, t.full_name as parent, s.full_name as student
 from public.classes c join public.profiles t on t.id = c.teacher_id
