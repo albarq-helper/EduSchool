@@ -67,6 +67,15 @@ mark.vw.chunks{background:var(--sun-soft)}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--s1:#8FA8FF;--s2:#FF9F6B;--s3:#4FD1C0;--s4:#C4A5FF}}
 :root[data-theme="dark"]{--s1:#8FA8FF;--s2:#FF9F6B;--s3:#4FD1C0;--s4:#C4A5FF}
 .empty-s{padding:40px 20px;text-align:center}
+.cov{margin:0 0 18px}.cov>summary{cursor:pointer;list-style:none;display:flex;gap:10px;align-items:center;flex-wrap:wrap;font:800 1.05rem var(--f-head)}.cov>summary::-webkit-details-marker{display:none}
+.cov .bar{flex:1 1 160px;max-width:260px;height:10px;border-radius:99px;background:var(--bad-soft,#FDE2E1);overflow:hidden}.cov .bar i{display:block;height:100%;background:var(--good,#1E7F4F)}
+.cov .opts{display:flex;gap:12px;align-items:center;margin:10px 0 4px;font-size:.9rem;color:var(--muted)}
+.cov .urow{margin-top:12px}.cov .urow h3{margin:0 0 6px;font:800 .95rem var(--f-head)}.cov .urow h3 span{font:600 .85rem var(--f-body);color:var(--muted);margin-left:6px}
+.cov .chips{display:flex;flex-wrap:wrap;gap:6px}
+.wc{font:700 .9rem var(--f-body);padding:5px 10px;border-radius:999px;border:1.5px solid;display:inline-flex;gap:5px;align-items:center;background:none;cursor:default}
+.wc.on{border-color:var(--good,#1E7F4F);color:var(--good,#1E7F4F);background:var(--good-soft,#E3F4EA);cursor:pointer}.wc.on:hover{filter:brightness(.95)}
+.wc.off{border-color:#E8A3A0;color:var(--bad,#B8322A);border-style:dashed}
+.wc small{font-weight:600;opacity:.8}
 .player.wide{grid-template-columns:minmax(300px,1.4fr) 1fr}@media (max-width:820px){.player.wide{grid-template-columns:1fr}}
 .spk{flex:none;font:800 .72rem var(--f-body);padding:2px 8px;border-radius:999px;color:#fff;align-self:center}.spk.sp1{background:#E11D48}.spk.sp2{background:#0284C7}
 .ulab{font:700 .8rem var(--f-body);color:var(--muted);margin-left:8px;letter-spacing:.02em}
@@ -79,6 +88,7 @@ mark.vw.chunks{background:var(--sun-soft)}
       <p class="muted" style="margin:4px 0 0">Listen, sing along, read the text, then fill in the words yourself.</p></div>
     <div class="unitbar"><label class="muted" for="unit" style="font-weight:700">Unit</label><select id="unit"></select><label class="muted" for="kind" style="font-weight:700;margin-left:6px">Show</label><select id="kind"><option value="all">Everything</option><option value="song">Songs &amp; texts</option><option value="dialog">Dialogs</option></select></div>
   </div>
+  <details class="card cov" id="cov" hidden open></details>
   <div id="out"></div>
 </div>
 <div id="pop" role="dialog" aria-label="Word"></div>
@@ -172,7 +182,27 @@ function packHTML(group){const t=group.text, songs=group.songs, id=group.id, sel
         :`<span class="muted" style="font-size:.88rem">${cur&&sel.startsWith("s")?"Press play and follow the glowing line.":"Tap a highlighted word to see and hear it."}</span>`}</div>
       ${cur?(sel.startsWith("t")?textHTML(cur,mode==="fill"):songHTML(cur,mode==="fill")):""}</div></section>`;}
 let GROUPS=[];
-let UNITS=[];
+let UNITS=[], COV=null, COV_MISS=false;
+// ---------- word check: which words of the unit appear in its songs/dialogs, and which are missing ----------
+function covHas(c,K){return (c.sources||[]).some(x=>K==="all"||x.kind===K);}
+function drawCov(){const box=$("cov");if(!COV){box.hidden=true;return;}
+  const uv=$("unit").value,K=$("kind").value,U=uv==="all"?[...new Set(COV.flatMap(c=>[c.unit,...(c.also_units||[])]))].sort((x,y)=>(x===0)-(y===0)||x-y):[+uv];
+  const what=K==="dialog"?"dialogs":K==="song"?"songs":"songs & dialogs";
+  let tot=0,on=0;
+  const rows=U.map(u=>{const W=COV.filter(c=>[c.unit,...(c.also_units||[])].includes(u)).sort((a,b)=>a.position-b.position);if(!W.length)return "";
+    const k=W.filter(c=>covHas(c,K)).length;tot+=W.length;on+=k;
+    const chips=W.filter(c=>!COV_MISS||!covHas(c,K)).map(c=>{const src=(c.sources||[]).filter(x=>K==="all"||x.kind===K);
+      return src.length?`<button type="button" class="wc on" data-song="${src[0].song_id}" data-t="${src[0].t??0}" title="${esc(src.map(x=>(x.kind==="dialog"?"Dialog: ":"Song: ")+x.title+" ("+x.mentions+"×)").join("\n"))}">✓ ${esc(c.term)} <small>${src.some(x=>x.kind==="song")?"🎵":""}${src.some(x=>x.kind==="dialog")?"💬":""}</small></button>`
+        :`<span class="wc off" title="Not in any ${what} yet">✗ ${esc(c.term)}</span>`;}).join("");
+    return `<div class="urow"><h3>${esc(uname(u))}<span>${k} of ${W.length} showing · ${W.length-k} missing</span></h3><div class="chips">${chips||'<span class="muted">Nothing missing 🎉</span>'}</div></div>`;}).join("");
+  box.hidden=false;
+  box.innerHTML=`<summary>${icon("list-checks",18)} Word check: ${on} of ${tot} words appear in ${what}<span class="bar"><i style="width:${tot?Math.round(on/tot*100):0}%"></i></span></summary>
+    <div class="opts"><label><input type="checkbox" id="covMiss" ${COV_MISS?"checked":""}> Show only missing words</label><span>Tap a green word to hear it in the song or dialog.</span></div>${rows}`;
+  $("covMiss").onchange=e=>{COV_MISS=e.target.checked;drawCov();};}
+function jumpTo(songId,t){let g=GROUPS.find(g=>g.songs.some(s=>s.id===songId));
+  if(!g){const s=SONGS.find(x=>x.id===songId);if(!s)return;$("unit").value=String(s.unit);$("kind").value="all";build();g=GROUPS.find(g=>g.songs.some(x=>x.id===songId));if(!g)return;}
+  g.sel="s"+songId;g.mode="read";redrawPack(g);const el=$("out").querySelector(`[data-pack="${g.id}"]`);el.scrollIntoView({behavior:"smooth",block:"start"});
+  const m=$("m_"+songId);if(m){const go=()=>{m.currentTime=Math.max(0,+t-0.5);m.play().catch(()=>{});};m.readyState>0?go():m.addEventListener("loadedmetadata",go,{once:true});}}
 function build(){const uv=$("unit").value, K=$("kind").value, all=uv==="all", U=all?UNITS:[+uv];GROUPS=[];
   if(K!=="dialog")U.forEach(u=>{
     const ts=TEXTS.filter(t=>t.unit===u).sort((a,b)=>a.position-b.position);
@@ -181,6 +211,7 @@ function build(){const uv=$("unit").value, K=$("kind").value, all=uv==="all", U=
     if(loose.length)GROUPS.push({id:"gloose"+u,text:null,ulabel:all?uname(u):"",songs:loose.sort((a,b)=>a.position-b.position)});});
   if(K!=="song"){const dl=SONGS.filter(s=>isDlg(s)&&inU(s,uv)).sort((a,b)=>a.unit-b.unit||a.position-b.position);
     if(dl.length)GROUPS.push({id:"gdlg"+uv,text:null,dialog:true,ulabel:dl.map(s=>unitsOf(s)).flat().length?"Units "+[...new Set(dl.map(unitsOf).flat())].sort((a,b)=>a-b).join(", "):"",songs:dl});}
+  drawCov();
   try{const q=new URLSearchParams(location.search);q.set("unit",uv);q.set("kind",K);history.replaceState(null,"","?"+q);}catch(e){}
   draw();}
 function draw(){$("out").innerHTML=GROUPS.length?`<div style="display:flex;flex-direction:column;gap:18px">${GROUPS.map(packHTML).join("")}</div>`:`<div class="card empty-s">Nothing here for this unit yet${$("kind").value==="dialog"?" (no dialogs)":""}.</div>`;wireMedia();}
@@ -237,11 +268,18 @@ let POPAT=0;window.addEventListener("scroll",()=>{if(Math.abs(scrollY-POPAT)>40)
   if(!units.length){$("unit").closest(".unitbar").hidden=true;$("out").innerHTML=`<div class="card empty-s"><b>No songs or texts in this set yet.</b><br><span class="muted">Teachers can add them in the set editor.</span></div>`;return;}
   const qs=new URLSearchParams(location.search), wantRaw=qs.get("unit"), want=wantRaw==="all"?"all":+wantRaw;
   const cnt=u=>TEXTS.filter(t=>t.unit===u).length+SONGS.filter(s=>unitsOf(s).includes(u)).length;
-  $("unit").innerHTML=`<option value="all" ${want==="all"?"selected":""}>All units · ${TEXTS.length+SONGS.length} items</option>`+units.map(u=>`<option value="${u}" ${u===want?"selected":""}>${esc(uname(u))} · ${cnt(u)} items${SONGS.some(s=>isDlg(s)&&unitsOf(s).includes(u))?" · 💬 dialog":""}</option>`).join("");
+  window.unitOptions=(extra=[])=>{const cur=$("unit").value||String(want);const all=[...new Set([...units,...extra])].sort((x,y)=>(x===0)-(y===0)||x-y);
+    $("unit").innerHTML=`<option value="all">All units · ${TEXTS.length+SONGS.length} items</option>`+all.map(u=>`<option value="${u}">${esc(uname(u))} · ${cnt(u)?cnt(u)+" items":"no songs yet"}${SONGS.some(s=>isDlg(s)&&unitsOf(s).includes(u))?" · 💬 dialog":""}</option>`).join("");
+    const pick=[window.UNIT_WANT,cur].find(v=>v!=null&&[...$("unit").options].some(o=>o.value===String(v)));if(pick!=null){$("unit").value=String(pick);if(String(pick)===String(window.UNIT_WANT))window.UNIT_WANT=null;}};
+  window.UNIT_WANT=wantRaw;
+  unitOptions();
   if(!wantRaw&&units.length)$("unit").value=String(units[0]);
   const hasDlg=SONGS.some(isDlg);$("kind").hidden=$("kind").previousElementSibling.hidden=!hasDlg;
   if(hasDlg&&["all","song","dialog"].includes(qs.get("kind")))$("kind").value=qs.get("kind");
-  $("unit").onchange=build;$("kind").onchange=build;build();})();
+  $("unit").onchange=build;$("kind").onchange=build;build();
+  $("cov").addEventListener("click",e=>{const b=e.target.closest(".wc.on");if(b)jumpTo(b.dataset.song,b.dataset.t);});
+  const cv=await C.from("word_coverage").select("item_id,term,unit,also_units,position,songs,dialogs,sources,status").eq("set_id",SET.id);
+  if(!cv.error&&cv.data&&cv.data.length){COV=cv.data;const before=$("unit").value;unitOptions(COV.flatMap(c=>[c.unit,...(c.also_units||[])]));if($("unit").value!==before)build();else drawCov();}})();
 </script>
 <script>Sets.boot({min:0})</script>
 </body></html>
