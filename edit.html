@@ -3,7 +3,16 @@
 <title>Edit study set · Helper Academy</title><link rel="icon" href="assets/icons/brilliant.png">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=Noto+Naskh+Arabic:wght@600&display=swap">
 <link rel="stylesheet" href="css/app.css">
-<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261122d"></script><script src="js/icons.js?v=20261122d"></script><script src="js/app.js?v=20261122d"></script><script src="js/sets.js?v=20261122d"></script>
+<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261122e"></script><script src="js/icons.js?v=20261122e"></script><script src="js/app.js?v=20261122e"></script><script src="js/sets.js?v=20261122e"></script>
+<style>
+.groupsbox{border:1px solid var(--rule);border-radius:12px;padding:10px 12px;margin:0 0 10px;background:var(--paper);display:grid;gap:8px}
+.tagf .ttype{gap:6px}.tbtn{font:700 .82rem var(--f-body);padding:5px 10px;border-radius:999px;border:1.5px solid var(--rule);background:var(--sheet);color:var(--ink);cursor:pointer}
+.tbtn.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.tchips{gap:6px;align-items:center}.tchip{display:inline-flex;align-items:center;gap:5px;font:700 .82rem var(--f-body);padding:4px 6px 4px 10px;border-radius:999px;background:var(--accent-soft);color:var(--ink)}
+.tchip.opp{background:var(--sun-soft)}.tchip.warn{background:var(--warn-soft,#fde68a)}.tchip b{margin-left:2px}
+.tchip button{border:0;background:none;cursor:pointer;color:var(--muted);font-weight:800;padding:0 4px}.tchip button:hover{color:var(--bad)}
+.tin{flex:1;min-width:12rem;padding:6px 10px;border:1px dashed var(--rule);border-radius:999px;background:var(--sheet);font:inherit}
+</style>
 </head><body>
 <div class="wrap" style="max-width:1000px;padding-bottom:0">
   <div class="head2"><div><span class="eyebrow">Teacher</span><h1 id="h">New study set</h1></div>
@@ -35,6 +44,8 @@
 
   <section class="card"><div class="row" style="justify-content:space-between"><h2 class="sec-title"><i data-i="layers"></i>Terms and questions <span class="muted" id="nItems"></span></h2>
     <div class="row"><button class="btn small" data-add="term" type="button"><i data-i="plus"></i>Term</button><button class="btn small" data-add="mcq" type="button"><i data-i="plus"></i>Multiple choice</button><button class="btn small" data-add="tf" type="button"><i data-i="plus"></i>True / false</button></div></div>
+    <div class="groupsbox"><div class="row" style="justify-content:space-between"><b>Word groups</b><span class="muted" style="font-size:.85rem">Give each term a word type, themes and opposites. Words with the same group appear together on the Word list and in the Story builder. For opposites, type <code>Hot vs. cold: hot</code>.</span></div><div id="groupsSum"></div></div>
+    <datalist id="tagList"></datalist>
     <div id="rows" style="display:grid;gap:10px"></div>
     <div class="row"><button class="btn small" data-add="term" type="button"><i data-i="plus"></i>Term</button><button class="btn small" data-add="mcq" type="button"><i data-i="plus"></i>Multiple choice</button><button class="btn small" data-add="tf" type="button"><i data-i="plus"></i>True / false</button></div>
   </section>
@@ -53,7 +64,7 @@ paint();
 const LANGS=Sets.LANGS;
 let ME, LK, SET=null, UNITS=[{u:1,name:""}], ROWS=[], ORIG=new Set(), dirty=false;
 const uid=()=>(crypto.randomUUID?crypto.randomUUID():"xxxxxxxx-xxxx-4xxx-8xxx-xxxxxxxxxxxx".replace(/x/g,()=>(Math.random()*16|0).toString(16)));
-const blank=kind=>({id:uid(),kind,unit:(UNITS[UNITS.length-1]||{u:1}).u,term:"",meaning:"",example:"",translation:"",syllables:"",pronunciation:"",sound_hint:"",image_url:"",anim_url:"",audio_url:"",choices:kind==="mcq"?["","","",""]:[],answer:kind==="tf"?1:0,also_units:[]});
+const blank=kind=>({id:uid(),kind,unit:(UNITS[UNITS.length-1]||{u:1}).u,term:"",meaning:"",example:"",translation:"",syllables:"",pronunciation:"",sound_hint:"",image_url:"",anim_url:"",audio_url:"",choices:kind==="mcq"?["","","",""]:[],answer:kind==="tf"?1:0,also_units:[],tags:[]});
 // ---------- units ----------
 function drawUnits(){$("units").innerHTML=UNITS.map((u,k)=>`<div class="row" style="flex-wrap:nowrap"><span class="tag" style="min-width:4.5rem;justify-content:center">${u.u?"Unit "+u.u:"General"}</span>
   <input data-un="${k}" value="${esc(u.name)}" maxlength="80" placeholder="Unit name (optional)" style="flex:1" aria-label="Name of unit ${u.u}">
@@ -104,6 +115,26 @@ const unitSel=(r,k)=>`<select data-f="unit" data-k="${k}" aria-label="Unit">${UN
 const media=(r,k,f,label,accept)=>`<label class="f" style="font-weight:600">${label}<span class="row" style="flex-wrap:nowrap;gap:6px">${f==="image_url"?`<img class="thumb" src="${esc(r.image_url||r.anim_url||Sets.tile(r.term||"?"))}" alt="">`:""}
   <input data-f="${f}" data-k="${k}" value="${esc(r[f])}" placeholder="https://… or upload" style="flex:1">
   <label class="btn small" style="cursor:pointer" title="Upload">${icon("upload",14)}<input type="file" data-up="${f}" data-k="${k}" accept="${accept}" hidden></label></span></label>`;
+// ---------- word groups (tags) ----------
+const TT=Sets.TAG_TYPES, isTypeTag=t=>TT.some(x=>x[0]===t);
+const normTag=t=>{t=String(t||"").replace(/\s+/g," ").trim().slice(0,80);if(!t)return "";
+  if(/^(⇄|<>|<->|opp:)/i.test(t))t="⇄ "+t.replace(/^(⇄|<>|<->|opp:)\s*/i,"");else if(/\svs\.?\s.*:/i.test(t))t="⇄ "+t;return t;};
+function tagField(r,k){const tags=r.tags||[],type=tags.find(isTypeTag),rest=tags.filter(t=>!isTypeTag(t));
+  return `<div class="f tagf" style="grid-column:1/-1"><span>Groups <span class="muted" style="font-weight:400">(word type, themes, opposites)</span></span>
+    <div class="row ttype" role="group" aria-label="Word type">${TT.map(([t,ic])=>`<button type="button" class="tbtn${type===t?" on":""}" data-ttype="${esc(t)}" data-k="${k}" aria-pressed="${type===t}">${ic} ${esc(t)}</button>`).join("")}</div>
+    <div class="row tchips">${rest.map(t=>`<span class="tchip${/^⇄/.test(t)?" opp":""}">${/^⇄/.test(t)?"":esc(Sets.tagIcon(t))+" "}${esc(t)}<button type="button" data-tdel="${esc(t)}" data-k="${k}" aria-label="Remove ${esc(t)}">✕</button></span>`).join("")}
+      <input class="tin" list="tagList" data-tagin="${k}" maxlength="80" placeholder="+ Add a theme or opposite…" aria-label="Add a group"></div></div>`;}
+function tagList(){const all=new Set([...Object.keys(Sets.TAG_THEMES)]);ROWS.forEach(r=>(r.tags||[]).forEach(t=>{if(!isTypeTag(t))all.add(t);}));
+  $("tagList").innerHTML=[...all].sort().map(t=>`<option value="${esc(t)}">`).join("");}
+function drawGroups(){const box=$("groupsSum");if(!box)return;const terms=ROWS.filter(r=>r.kind==="term");const c=new Map();
+  terms.forEach(r=>(r.tags||[]).forEach(t=>c.set(t,(c.get(t)||0)+1)));const none=terms.filter(r=>!(r.tags||[]).length).length;
+  box.innerHTML=c.size||none?`<div class="row" style="gap:6px">${[...c].sort((a,b)=>b[1]-a[1]).map(([t,n])=>`<span class="tchip${/^⇄/.test(t)?" opp":""}">${/^⇄/.test(t)?"":esc(Sets.tagIcon(t))+" "}${esc(t)} <b>${n}</b></span>`).join("")}${none?`<span class="tchip warn">🏷️ No group yet <b>${none}</b></span>`:""}</div>`:"";}
+function setTags(k,tags){const r=ROWS[k];r.tags=[...new Set(tags.map(normTag).filter(Boolean))].slice(0,12);dirty=true;
+  const card=$("rows").querySelectorAll(".erow")[k];const f=card&&card.querySelector(".tagf");if(f&&f.isConnected&&f.parentNode){f.outerHTML=tagField(r,k);}tagList();drawGroups();
+  const inp=$("rows").querySelector(`[data-tagin="${k}"]`);if(inp&&document.activeElement===document.body)inp.focus();}
+function addTagFrom(inp){const k=+inp.dataset.tagin,t=normTag(inp.value);if(!t)return;
+  const r=ROWS[k];if(isTypeTag(t))setTags(k,[...(r.tags||[]).filter(x=>!isTypeTag(x)),t]);else setTags(k,[...(r.tags||[]),t]);
+  const n=$("rows").querySelector(`[data-tagin="${k}"]`);if(n){n.value="";n.focus();}}
 function rowHTML(r,k){
   const kindLab=r.kind==="term"?"Term":r.kind==="mcq"?"Multiple choice":"True / false";
   const head=`<div class="top"><span class="kind ${r.kind==="term"?"":"q"}">${kindLab}</span><span class="muted">#${k+1}</span>${unitSel(r,k)}
@@ -119,16 +150,16 @@ function rowHTML(r,k){
     <label class="f">Video clip (optional)<input data-f="video_url" data-k="${k}" value="${esc(r.video_url||"")}" maxlength="500" placeholder="https://… or assets/videos/word.mp4"></label>
     <label class="f">Emoji (optional, shown when there is no clip or picture)<input data-f="emoji" data-k="${k}" value="${esc(r.emoji||"")}" maxlength="16" placeholder="e.g. 🦋"></label>
     <label class="f">Sounds like (optional)<input data-f="sound_hint" data-k="${k}" value="${esc(r.sound_hint||"")}" maxlength="300" placeholder="e.g. SIN ~ tin | foh ≈ go  (~ sounds like, ≈ rhymes with)"></label>
-    ${media(r,k,"image_url","Picture (optional)","image/*")}${media(r,k,"audio_url","Audio (optional, otherwise read aloud)","audio/*")}</div></div>`;
+    ${media(r,k,"image_url","Picture (optional)","image/*")}${media(r,k,"audio_url","Audio (optional, otherwise read aloud)","audio/*")}${tagField(r,k)}</div></div>`;
   const qtop=`<label class="f">${r.kind==="tf"?"Statement":"Question"}<textarea data-f="term" data-k="${k}" maxlength="500" dir="auto" style="min-height:52px">${esc(r.term)}</textarea></label>`;
   const body=r.kind==="mcq"?`<div style="display:grid;gap:6px"><span class="muted" style="font-size:.85rem;font-weight:700">Choices: tick the correct one</span>${r.choices.map((c,j)=>`<div class="choice"><input type="radio" name="ans${k}" data-ans="${j}" data-k="${k}" ${r.answer===j?"checked":""} aria-label="Choice ${"ABCDEF"[j]} is correct"><b>${"ABCDEF"[j]}</b><input type="text" data-ch="${j}" data-k="${k}" value="${esc(c)}" maxlength="300" dir="auto">${r.choices.length>2?`<button class="btn small" data-rmch="${j}" data-k="${k}" type="button" aria-label="Remove choice">${icon("x",12)}</button>`:""}</div>`).join("")}
       ${r.choices.length<6?`<button class="btn small" data-addch="${k}" type="button" style="justify-self:start">${icon("plus",14)}Add choice</button>`:""}</div>`
     :`<div class="row"><label class="row" style="gap:6px;font-weight:700"><input type="radio" name="ans${k}" data-tf="1" data-k="${k}" ${r.answer===1?"checked":""}>True</label><label class="row" style="gap:6px;font-weight:700"><input type="radio" name="ans${k}" data-tf="0" data-k="${k}" ${r.answer===0?"checked":""}>False</label></div>`;
   return `<div class="erow">${head}${qtop}${body}<div class="g"><label class="f">Explanation shown after answering (optional)<input data-f="meaning" data-k="${k}" value="${esc(r.meaning)}" maxlength="1500" dir="auto"></label>${media(r,k,"image_url","Picture (optional)","image/*")}</div></div>`;
 }
-function drawRows(){$("rows").innerHTML=ROWS.length?ROWS.map(rowHTML).join(""):'<p class="empty">No items yet. Add a term or a question, or paste rows from a spreadsheet above.</p>';
+function drawRows(){tagList();drawGroups();$("rows").innerHTML=ROWS.length?ROWS.map(rowHTML).join(""):'<p class="empty">No items yet. Add a term or a question, or paste rows from a spreadsheet above.</p>';
   const t=ROWS.filter(r=>r.kind==="term").length;$("nItems").textContent=`· ${t} terms, ${ROWS.length-t} questions`;}
-$("rows").oninput=e=>{const el=e.target,k=+el.dataset.k;if(isNaN(k))return;const r=ROWS[k];dirty=true;
+$("rows").oninput=e=>{const el=e.target,k=+el.dataset.k;if(isNaN(k)||el.dataset.tagin!==undefined)return;const r=ROWS[k];dirty=true;
   if(el.dataset.f){r[el.dataset.f]=el.dataset.f==="unit"?+el.value:el.value;if(el.dataset.f==="image_url"){const th=el.parentNode.querySelector(".thumb");if(th)th.src=el.value||Sets.tile(r.term||"?");}}
   else if(el.dataset.ch!==undefined)r.choices[+el.dataset.ch]=el.value;
   else if(el.dataset.ans!==undefined)r.answer=+el.dataset.ans;
@@ -142,6 +173,13 @@ $("rows").onclick=e=>{const b=e.target.closest("button");if(!b)return;const k=+b
   else return; dirty=true; drawRows();};
 document.querySelectorAll("[data-add]").forEach(b=>b.onclick=()=>{ROWS.push(blank(b.dataset.add));dirty=true;drawRows();const last=$("rows").lastElementChild;last.scrollIntoView({behavior:"smooth",block:"center"});last.querySelector("input[type=text],input:not([type]),textarea")?.focus();});
 // uploads to the media bucket
+$("rows").addEventListener("click",e=>{const tb=e.target.closest("[data-ttype]"),td=e.target.closest("[data-tdel]");
+  if(tb){const k=+tb.dataset.k,r=ROWS[k],t=tb.dataset.ttype,cur=(r.tags||[]).find(isTypeTag);setTags(k,[...(cur===t?[]:[t]),...(r.tags||[]).filter(x=>!isTypeTag(x))]);}
+  else if(td){const k=+td.dataset.k;setTags(k,(ROWS[k].tags||[]).filter(x=>x!==td.dataset.tdel));}});
+$("rows").addEventListener("keydown",e=>{const inp=e.target.closest("[data-tagin]");if(!inp)return;
+  if(e.key==="Enter"||e.key===","){e.preventDefault();addTagFrom(inp);}
+  else if(e.key==="Backspace"&&!inp.value){const k=+inp.dataset.tagin,rest=(ROWS[k].tags||[]).filter(t=>!isTypeTag(t));if(rest.length)setTags(k,(ROWS[k].tags||[]).filter(t=>t!==rest[rest.length-1]));}});
+$("rows").addEventListener("focusout",e=>{const inp=e.target.closest("[data-tagin]");if(inp&&inp.isConnected&&inp.value.trim())setTimeout(()=>{if(inp.isConnected&&inp.value.trim())addTagFrom(inp);},0);});
 $("rows").addEventListener("change",async e=>{const el=e.target;if(!el.dataset.up||!el.files[0])return;const f=el.files[0],k=+el.dataset.k;
   if(f.size>5*1024*1024){App.status("That file is bigger than 5 MB",false);return;}
   App.status("Uploading…",true);
@@ -211,7 +249,7 @@ $("save").onclick=async()=>{const m=$("saveMsg"),err=validate();if(err){m.textCo
     if(sid){const r=await C.from("study_sets").update(meta).eq("id",sid);if(r.error)throw r.error;}
     else{const r=await C.from("study_sets").insert({...meta,owner_id:ME.id}).select("id").single();if(r.error)throw r.error;sid=r.data.id;}
     const rows=ROWS.map((r,k)=>{const o={id:r.id,set_id:sid,position:k+1,kind:r.kind,unit:r.unit,also_units:r.also_units||[],term:r.term.trim(),meaning:r.meaning.trim(),example:(r.example||"").trim(),
-      translation:(r.translation||"").trim(),syllables:(r.syllables||"").trim(),pronunciation:(r.pronunciation||"").trim(),sound_hint:(r.sound_hint||"").trim(),video_url:(r.video_url||"").trim(),emoji:(r.emoji||"").trim(),image_url:(r.image_url||"").trim(),anim_url:r.anim_url||"",audio_url:(r.audio_url||"").trim(),choices:[],answer:null};
+      translation:(r.translation||"").trim(),syllables:(r.syllables||"").trim(),pronunciation:(r.pronunciation||"").trim(),sound_hint:(r.sound_hint||"").trim(),video_url:(r.video_url||"").trim(),emoji:(r.emoji||"").trim(),image_url:(r.image_url||"").trim(),anim_url:r.anim_url||"",audio_url:(r.audio_url||"").trim(),choices:[],answer:null,tags:r.kind==="term"?(r.tags||[]):[]};
       if(r.kind==="mcq"){const keep=r.choices.map((c,j)=>[c.trim(),j]).filter(x=>x[0]);o.choices=keep.map(x=>x[0]);o.answer=keep.findIndex(x=>x[1]===r.answer);}
       if(r.kind==="tf")o.answer=r.answer;return o;});
     const gone=[...ORIG].filter(id=>!rows.some(r=>r.id===id));

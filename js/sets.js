@@ -315,5 +315,5 @@
     runPage();
   }
 
-  window.Sets = { boot, speak, sayWord, unitPicker, groupPicker, groupsOf, tagIcon, playClip, stopClip, media, watchClips, tile, autoSyl, blankify, load, mapItems, G5, LANGS };
+  window.Sets = { boot, speak, sayWord, unitPicker, groupPicker, groupsOf, tagIcon, TAG_TYPES: TYPES, TAG_THEMES: THEME_ICONS, playClip, stopClip, media, watchClips, tile, autoSyl, blankify, load, mapItems, G5, LANGS };
 })();
