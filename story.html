@@ -118,11 +118,13 @@
     <summary>For parents: turn this plan into a story and a movie</summary>
     <div class="step"><b>Level for this story<button class="ibtn" type="button" data-info aria-label="What the levels mean" title="What the levels mean">i</button></b><div class="lvlsel"><select id="levelSel" aria-label="Level"></select><span class="muted" id="levelDesc"></span></div></div>
     <div class="step"><b>1. Copy the prompt</b>
-      <div class="acts"><button class="btn small primary" id="copyPrompt" type="button"><span data-i="copy"></span>Copy the prompt</button><span class="saved" id="copied"></span></div>
+      <div class="acts"><button class="btn small primary" id="askAI" type="button"><span data-i="sparkles"></span>Ask AI</button><button class="btn small" id="copyPrompt" type="button"><span data-i="copy"></span>Copy the prompt</button><span class="saved" id="copied"></span><span class="saved" id="aiUse"></span></div>
+      <textarea id="aiOut" readonly hidden placeholder="The AI's answer appears here"></textarea>
       <textarea id="promptBox" readonly hidden></textarea></div>
     <div class="step"><b>2. If the answer says REJECT: paste the feedback and send it back</b><textarea id="fbText" placeholder="Paste the feedback here…"></textarea>
       <div class="acts"><button class="btn small primary" id="sendBack" type="button"><span data-i="send"></span>Send back to student</button></div></div>
     <div class="step"><b>3. Paste the finished story</b><textarea id="storyText" placeholder="Paste the story here…"></textarea>
+      <b style="margin-top:8px">Video scenes (for the movie)</b><textarea id="videoPlan" placeholder="VIDEO SCENE 1: …" style="min-height:90px"></textarea>
       <div class="acts"><button class="btn small primary" id="saveStory" type="button"><span data-i="save"></span>Save story</button></div></div>
     <div class="step"><b>4. Movie link (when the video is ready)</b><input type="text" id="videoUrl" placeholder="assets/stories/my-story.mp4 or https://…">
       <div class="acts"><button class="btn small primary" id="saveVideo" type="button"><span data-i="save"></span>Save movie</button></div></div>
@@ -211,7 +213,9 @@ function drawChecks(){if(!CUR){$("checks").innerHTML="";return;}const C_=planChe
 const wi=w=>D.findIndex(v=>v.w===w);
 const clean=w=>String(w).replace(/\s*\(.*\)/,"");
 let STORIES=[], CUR=null, SEL=-1, timer=null, DRAG=null;
-const blank=()=>({id:null,title:"",blocks:[],status:"draft",story_text:"",video_url:"",level:DEF_LEVEL,sentences:{},feedback:""});
+const ME=App.profile||{}, PARENT=ME.role==="teacher", NAMES={};
+const mine=()=>!CUR||!CUR.id||!CUR.owner_id||CUR.owner_id===ME.id;
+const blank=()=>({id:null,owner_id:ME.id,title:"",blocks:[],status:"draft",story_text:"",video_url:"",video_plan:"",level:DEF_LEVEL,sentences:{},feedback:""});
 
 // ---------- library ----------
 function drawLib(){const q=$("q").value.trim().toLowerCase();const used=new Map();(CUR?.blocks||[]).forEach(b=>b.k==="w"&&used.set(b.w,(used.get(b.w)||0)+1));
@@ -276,7 +280,7 @@ $("title").oninput=()=>{if(!CUR)CUR=blank();CUR.title=$("title").value;changed()
 function changed(){$("saved").textContent="Saving…";clearTimeout(timer);timer=setTimeout(save,1200);}
 async function save(extra={}){if(!CUR)return;clearTimeout(timer);Object.assign(CUR,extra);
   const its=new Set(items().map(x=>x.key)),sent={};Object.entries(CUR.sentences||{}).forEach(([k,v])=>{if((v||"").trim()&&(its.has(k)||LV().mode==="none"))sent[k]=v;});
-  const row={title:(CUR.title||"").trim()||"My story",blocks:CUR.blocks,status:CUR.status,story_text:CUR.story_text||"",video_url:CUR.video_url||"",set_id:SET.id,level:CUR.level||3,sentences:sent,feedback:CUR.feedback||""};
+  const row={title:(CUR.title||"").trim()||"My story",blocks:CUR.blocks,status:CUR.status,story_text:CUR.story_text||"",video_url:CUR.video_url||"",set_id:SET.id,level:CUR.level||3,sentences:sent,feedback:CUR.feedback||"",video_plan:CUR.video_plan||""};
   let r;if(CUR.id)r=await C.from("stories").update(row).eq("id",CUR.id).select("id").single();
   else r=await C.from("stories").insert(row).select("id").single();
   if(r.error){$("saved").textContent="Not saved: "+r.error.message;return false;}
@@ -286,9 +290,10 @@ function drawStatus(){const s=CUR?CUR.status:"draft";$("status").className="pill
   const lv=(CUR&&CUR.level)||DEF_LEVEL;$("lvlBadge").textContent=`Level ${lv} · ${LEVELS[lv].n}`;
   $("fb").hidden=!(CUR&&CUR.status==="returned"&&CUR.feedback);if(!$("fb").hidden)$("fb").innerHTML=`<b>✏️ Please fix these, then send again</b>${esc(CUR.feedback)}`;
   $("sendBtn").innerHTML=icon("send",16)+(s==="draft"||s==="returned"?"Send to parent":"Sent ✓ (send again)");drawRead();}
-function drawPick(){$("pick").innerHTML=`<option value="">My stories (${STORIES.length})</option>`+STORIES.map(s=>`<option value="${s.id}" ${CUR&&CUR.id===s.id?"selected":""}>${esc(s.title||"My story")} · ${esc((STATUS[s.status]||"").replace(/ .*/,""))}</option>`).join("");}
+function drawPick(){$("pick").innerHTML=`<option value="">My stories (${STORIES.length})</option>`+STORIES.map(s=>`<option value="${s.id}" ${CUR&&CUR.id===s.id?"selected":""}>${s.owner_id&&s.owner_id!==ME.id?esc((NAMES[s.owner_id]||"Student").split(" ")[0])+": ":""}${esc(s.title||"My story")} · ${esc((STATUS[s.status]||"").replace(/ .*/,""))}</option>`).join("");}
 function openStory(s){CUR=s||blank();CUR.level=CUR.level||DEF_LEVEL;CUR.sentences=CUR.sentences&&typeof CUR.sentences==="object"?CUR.sentences:{};SEL=-1;$("title").value=CUR.title||"";
-  $("levelSel").value=String(CUR.level);$("levelDesc").textContent=LEVELS[CUR.level].d;$("fbText").value=CUR.feedback||"";$("storyText").value=CUR.story_text||"";$("videoUrl").value=CUR.video_url||"";$("promptBox").hidden=true;
+  $("levelSel").value=String(CUR.level);$("levelDesc").textContent=LEVELS[CUR.level].d;$("fbText").value=CUR.feedback||"";$("videoPlan").value=CUR.video_plan||"";$("aiOut").hidden=true;
+  $("sendBtn").hidden=!mine();$("delBtn").hidden=!mine();$("storyText").value=CUR.story_text||"";$("videoUrl").value=CUR.video_url||"";$("promptBox").hidden=true;
   drawBoard();drawStatus();drawPick();$("saved").textContent="";try{localStorage.setItem("storyCur",CUR.id||"");}catch(e){}}
 $("pick").onchange=()=>{const s=STORIES.find(x=>x.id===$("pick").value);if(s)openStory(s);};
 $("newBtn").onclick=()=>openStory(blank());
@@ -352,7 +357,29 @@ ${W.map(w=>`- ${clean(w)}: ${D[wi(w)]?.d||""}`).join("\n")}`;}
 $("copyPrompt").onclick=async()=>{if(!CUR||!CUR.blocks.some(b=>b.k==="w")){App.status("This story has no words yet.",false);return;}
   const p=buildPrompt();$("promptBox").value=p;$("promptBox").hidden=false;
   try{await navigator.clipboard.writeText(p);$("copied").textContent="Copied ✓";}catch(e){$("promptBox").select();$("copied").textContent="Select the text below and copy it.";}};
-$("saveStory").onclick=async()=>{if(!CUR)return;const t=$("storyText").value.trim();if(await save({story_text:t,status:t?(CUR.video_url?"filmed":"written"):CUR.status}))App.status("Story saved 📖",true);};
+// Ask AI (parent account only; the server refuses everyone else and limits calls per day)
+function apiPrompt(){const L=LV();return buildPrompt()+(L.mode==="none"
+  ?"\n\nFORMAT: Start your reply with a line 'STORY:' followed by the story, then a line 'VIDEO SCENES:' followed by the VIDEO SCENE lines. No other headings."
+  :"\n\nFORMAT: Use exactly these headings, each on its own line: 'VERDICT: ACCEPT' or 'VERDICT: REJECT', then 'FEEDBACK:' followed by the ✓/✗ list with hints, then (only if ACCEPT) 'STORY:' followed by the story and 'VIDEO SCENES:' followed by the VIDEO SCENE lines.");}
+function sections(t){const out={},re=/^\s*\**\s*(VERDICT|FEEDBACK|STORY|VIDEO SCENES)\s*:\**\s*(.*)$/gim;let m,last=null,pos=0;const marks=[];
+  while((m=re.exec(t))){marks.push({k:m[1].toUpperCase(),i:m.index,end:re.lastIndex,rest:m[2]});}
+  marks.forEach((x,j)=>{const body=t.slice(x.end,j+1<marks.length?marks[j+1].i:t.length);out[x.k]=((x.rest||"")+"\n"+body).replace(/\n{3,}/g,"\n\n").trim();});return out;}
+async function showUse(){if(!PARENT)return;const since=new Date(Date.now()-864e5).toISOString();
+  const r=await C.from("ai_usage").select("id",{count:"exact",head:true}).eq("service","openai").gte("created_at",since);
+  if(!r.error)$("aiUse").textContent=`AI used ${r.count||0} of 30 in the last 24 hours`;}
+$("askAI").onclick=async()=>{if(!CUR||!CUR.blocks.some(b=>b.k==="w")){App.status("This story has no words yet.",false);return;}
+  if(!CUR.id&&!(await save()))return;
+  const b=$("askAI");b.disabled=true;b.textContent="Asking AI…";$("aiOut").hidden=false;$("aiOut").value="Waiting for the AI…";
+  try{const r=await C.functions.invoke("ai",{body:{prompt:apiPrompt(),task:LV().mode==="none"?"write":"check",story_id:CUR.id}});
+    let data=r.data;if(r.error){try{data=await r.error.context.json();}catch(e){data={error:r.error.message};}}
+    if(!data||data.error){$("aiOut").value="Not done: "+((data&&data.error)||"unknown error");App.status((data&&data.error)||"AI error",false);return;}
+    const t=data.text||"",S=sections(t);$("aiOut").value=t;
+    const verdict=(S.VERDICT||"").toUpperCase();
+    if(verdict.startsWith("REJECT")){$("fbText").value=(S.FEEDBACK||t).replace(/\n\s*\n/g,"\n").trim();App.status("The AI says REJECT. Check the feedback in step 2, then press Send back.",false);$("fbText").scrollIntoView({behavior:"smooth",block:"center"});}
+    else{if(S.STORY){$("storyText").value=S.STORY.trim();}if(S["VIDEO SCENES"])$("videoPlan").value=S["VIDEO SCENES"].trim();
+      App.status(S.STORY?"Story written ✓ Check it in step 3, then press Save story.":"The AI answered. See the answer above.",true);if(S.STORY)$("storyText").scrollIntoView({behavior:"smooth",block:"center"});}
+  }finally{b.disabled=false;b.innerHTML=icon("sparkles",16)+"Ask AI";showUse();}};
+$("saveStory").onclick=async()=>{if(!CUR)return;const t=$("storyText").value.trim();CUR.video_plan=$("videoPlan").value.trim();if(await save({story_text:t,status:t?(CUR.video_url?"filmed":"written"):CUR.status}))App.status("Story saved 📖",true);};
 $("saveVideo").onclick=async()=>{if(!CUR)return;const u=$("videoUrl").value.trim();
   if(u&&!/^(https:\/\/|assets\/)/.test(u)){App.status("The link must start with https:// or assets/",false);return;}
   if(await save({video_url:u,status:u?"filmed":(CUR.story_text?"written":CUR.status)}))App.status("Movie saved 🎬",true);};
@@ -367,9 +394,13 @@ document.addEventListener("click",e=>{if(e.target.closest("[data-info]")){e.prev
 $("infoClose").onclick=()=>$("infoDlg").close();
 $("infoDlg").addEventListener("click",e=>{if(e.target===$("infoDlg"))$("infoDlg").close();});
 // ---------- start ----------
-(async()=>{const r=await C.from("stories").select("id,title,blocks,status,story_text,video_url,level,sentences,feedback,updated_at").eq("set_id",SET.id).order("updated_at",{ascending:false});
+(async()=>{const r=await C.from("stories").select("id,owner_id,title,blocks,status,story_text,video_url,video_plan,level,sentences,feedback,updated_at").eq("set_id",SET.id).order("updated_at",{ascending:false});
   if(r.error){$("saved").textContent="Stories can't be saved yet: "+r.error.message;}
   STORIES=(r.data||[]).map(s=>Object.assign(s,{blocks:Array.isArray(s.blocks)?s.blocks:[]}));
+  if(!PARENT){$("parent").hidden=true;document.querySelectorAll('#infoDlg h3').forEach(h=>{if(/parent/i.test(h.textContent)){let n=h.nextElementSibling;h.remove();if(n)n.remove();}});}
+  else{$("parent").open=true;const ids=[...new Set(STORIES.map(s=>s.owner_id).filter(x=>x&&x!==ME.id))];
+    if(ids.length){const pr=await C.from("profiles").select("id,full_name").in("id",ids);(pr.data||[]).forEach(p=>NAMES[p.id]=p.full_name);}
+    showUse();}
   let last="";try{last=localStorage.getItem("storyCur")||"";}catch(e){}
   openStory(STORIES.find(s=>s.id===last)||STORIES[0]||null);})();
 </script><script>Sets.boot({min:2})</script></body></html>
