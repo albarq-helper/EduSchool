@@ -6,3 +6,4 @@
 # raw AI downloads and job files stay local
 assets/videos/*.raw.mp4
 assets/videos/_*
+__pycache__/
