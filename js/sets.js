@@ -115,7 +115,7 @@
   // words: the words whose groups to offer (default: all words); kind: the tab to open first.
   function groupPicker(mount, onChange, opts) {
     opts = opts || {}; const D = window.WORDS || [], G = groupsOf(opts.words || D), KEY = opts.key || "wordGroupSel";
-    if (!G.types.length && !G.themes.length && !G.opps.length && !G.scales.length) { mount.innerHTML = ""; return { match: () => true, sections: L => [{ items: L }], state: () => ({ kind: "all" }), set: () => {} }; }
+    if (!G.types.length && !G.themes.length && !G.opps.length && !G.scales.length) { mount.innerHTML = ""; return { match: () => true, sections: L => [{ items: L }], state: () => ({ kind: "all" }), view: () => ({ mode: "both", follow: false }), set: () => {} }; }
     if (!document.getElementById("gpick-css")) document.head.insertAdjacentHTML("beforeend", `<style id="gpick-css">.gpick{display:flex;flex-direction:column;gap:8px;width:100%}
 .gpick .gk{display:inline-flex;flex-wrap:wrap;gap:4px;align-self:flex-start;border:1px solid var(--rule);border-radius:12px;padding:3px;background:var(--paper)}
 .gpick .gk button{border:0;background:transparent;font:700 .86rem var(--f-body);color:var(--muted);padding:6px 11px;border-radius:9px;cursor:pointer}
@@ -124,6 +124,10 @@
 .gpick .gc button{font:700 .84rem var(--f-body);padding:5px 11px;border-radius:999px;border:1.5px solid var(--chip-edge,var(--rule));background:var(--chip,var(--paper));color:var(--ink);cursor:pointer}
 .gpick .gc button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
 .gpick .gc small{opacity:.7;font-weight:700;margin-left:3px}
+.gpick .gv{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font:700 .82rem var(--f-body);color:var(--muted)}
+.gpick .gv button{font:700 .82rem var(--f-body);padding:5px 10px;border-radius:9px;border:1.5px solid var(--rule);background:var(--sheet);color:var(--ink);cursor:pointer}
+.gpick .gv button[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent);color:var(--accent)}
+.gpick .gvsep{width:1px;height:20px;background:var(--rule);margin:0 4px}
 .gsec{margin:14px 0 6px;font:800 1.05rem var(--f-display);display:flex;gap:8px;align-items:center}.gsec small{font:700 .82rem var(--f-body);color:var(--muted)}
 .gopp{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:start}.gopp .gvs{font:800 1.6rem var(--f-display);color:var(--accent);align-self:center}
 .gopp h4{margin:0 0 6px;font:800 .82rem var(--f-body);letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
@@ -137,18 +141,21 @@
 .gslv{display:grid;grid-template-columns:110px 1fr;gap:10px;align-items:start}
 .gsr{border-radius:12px;padding:8px 10px;display:flex;flex-direction:column;gap:2px;color:#1f2937}.gsr span{font:800 1.3rem var(--f-display)}.gsr small{font:700 .74rem var(--f-body);opacity:.85}
 @media (max-width:640px){.gslv{grid-template-columns:1fr}}</style>`);
-    let st = { kind: opts.kind || "all", tag: "" }; try { st = Object.assign(st, JSON.parse(localStorage.getItem(KEY) || "{}")); } catch (e) {}
+    let st = { kind: opts.kind || "all", tag: "", view: opts.view || "both", follow: opts.follow !== false }; try { st = Object.assign(st, JSON.parse(localStorage.getItem(KEY) || "{}")); } catch (e) {}
+    if (!["both", "meter", "list"].includes(st.view)) st.view = "both";
     const kinds = [["all", "All words"], ["type", "🏃 Word type"], ["theme", "🏷️ Themes"], ["scale", "🎚️ Feeling meters"], ["opp", "⇄ Opposites"]].filter(([k]) => k === "all" || (k === "type" ? G.types.length : k === "theme" ? G.themes.length : k === "scale" ? G.scales.length : G.opps.length));
     if (!kinds.some(k => k[0] === st.kind)) st = { kind: "all", tag: "" };
     if (st.tag && !(st.kind === "opp" ? G.opps.some(x => x.g === st.tag) : st.kind === "scale" ? G.scales.some(x => x.g === st.tag) : (st.kind === "type" ? G.types : G.themes).some(x => x.tag === st.tag))) st.tag = "";
     function draw() {
       const chips = st.kind === "type" ? G.types.map(x => [x.tag, tagIcon(x.tag) + " " + x.tag, x.n]) : st.kind === "theme" ? G.themes.map(x => [x.tag, tagIcon(x.tag) + " " + x.tag, x.n])
         : st.kind === "opp" ? G.opps.map(x => [x.g, x.sides.join(" ⇄ "), x.n]) : st.kind === "scale" ? G.scales.map(x => [x.g, "🎚️ " + x.g, x.n]) : [];
+      const vrow = st.kind === "scale" ? `<div class="gv" role="group" aria-label="Show"><span>Show</span>${[["both", "🎚️ Meter + cards"], ["meter", "🎚️ Meter only"], ["list", "📋 Full list"]].map(([v, l]) => `<button type="button" data-view="${v}" aria-pressed="${st.view === v}">${l}</button>`).join("")}
+        ${st.view === "both" ? `<span class="gvsep"></span><span>Cards</span><button type="button" data-follow="1" aria-pressed="${!!st.follow}">Follow the meter</button><button type="button" data-follow="0" aria-pressed="${!st.follow}">All levels</button>` : ""}</div>` : "";
       mount.innerHTML = `<div class="gpick"><div class="gk" role="group" aria-label="Group the words">${kinds.map(([k, l]) => `<button type="button" data-k="${k}" aria-pressed="${st.kind === k}">${l}</button>`).join("")}</div>
-        ${chips.length ? `<div class="gc" role="group" aria-label="Choose a group"><button type="button" data-t="" aria-pressed="${!st.tag}">All groups</button>${chips.map(([t, l, n]) => `<button type="button" data-t="${esc(t)}" aria-pressed="${st.tag === t}">${esc(l)}<small>${n}</small></button>`).join("")}</div>` : ""}</div>`;
+        ${chips.length ? `<div class="gc" role="group" aria-label="Choose a group"><button type="button" data-t="" aria-pressed="${!st.tag}">All groups</button>${chips.map(([t, l, n]) => `<button type="button" data-t="${esc(t)}" aria-pressed="${st.tag === t}">${esc(l)}<small>${n}</small></button>`).join("")}</div>` : ""}${vrow}</div>`;
     }
-    mount.addEventListener("click", e => { const k = e.target.closest("[data-k]"), t = e.target.closest("[data-t]");
-      if (k) st = { kind: k.dataset.k, tag: "" }; else if (t) st.tag = t.dataset.t; else return;
+    mount.addEventListener("click", e => { const k = e.target.closest("[data-k]"), t = e.target.closest("[data-t]"), vw = e.target.closest("[data-view]"), fl = e.target.closest("[data-follow]");
+      if (k) st = { ...st, kind: k.dataset.k, tag: "" }; else if (t) st.tag = t.dataset.t; else if (vw) st.view = vw.dataset.view; else if (fl) st.follow = fl.dataset.follow === "1"; else return;
       try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} draw(); onChange && onChange(); });
     const has = (v, t) => (v.tags || []).includes(t), oppTags = (v, g) => (v.tags || []).filter(t => isOpp(t) && oppSplit(t).g === g);
     const scaleOf = (v, g) => { const t = (v.tags || []).find(t => isScale(t) && scaleSplit(t).g === g); return t ? scaleSplit(t).r : null; };
@@ -169,11 +176,11 @@
       return out;
     }
     draw();
-    return { match, sections, state: () => ({ ...st }), set: (kind, tag) => { st = { kind, tag: tag || "" }; try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} draw(); onChange && onChange(); } };
+    return { match, sections, state: () => ({ ...st }), view: () => ({ mode: st.view, follow: st.view === "both" && !!st.follow }), set: (kind, tag) => { st = { ...st, kind, tag: tag || "" }; try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} draw(); onChange && onChange(); } };
   }
   // Draw groupPicker sections. view(indices) returns the HTML for a list of words in the page's own style.
   function sectionsHTML(secs, view, opts) {
-    opts = opts || {}; const useMeter = !!window.Meter && opts.meter !== false;
+    opts = opts || {}; const mode = opts.mode || (opts.rows === false ? "meter" : "both"), useMeter = !!window.Meter && opts.meter !== false && mode !== "list";
     const lab2 = r => r === 0 ? "neutral" : ["", "a little", "some", "strong", "very strong", "strongest"][Math.min(5, Math.abs(r))];
     const lab1 = r => r === 0 ? "calm" : ["", "a little", "some", "strong", "very strong", "strongest"][Math.min(5, r)];
     const col = (r, two) => { const a = Math.min(5, Math.abs(r)); if (two) return r < 0 ? `hsl(0 75% ${92 - a * 9}%)` : r > 0 ? `hsl(145 55% ${92 - a * 9}%)` : "hsl(220 15% 90%)";
@@ -183,9 +190,9 @@
         const D = window.WORDS || [];
         const strip = `<div class="gsstrip">${S.levels.map(l => `<div class="gss" style="background:${col(l.rank, S.two)}"><b>${l.rank > 0 ? "+" : ""}${l.rank}</b>${l.items.map(i => `<span>${esc(String(D[i] ? D[i].w : "").replace(/\s*\(.*\)/, ""))}</span>`).join("")}</div>`).join("")}</div>`;
         const k = secs.indexOf(sc);
-        if (useMeter && opts.rows === false) return `<h3 class="gsec">🎚️ ${esc(sc.title)}</h3><div class="meterbox" data-mi="${k}"></div>`;
+        if (useMeter && mode === "meter") return `<h3 class="gsec">🎚️ ${esc(sc.title)}</h3><div class="gscale"><div class="meterbox" data-mi="${k}"></div></div>`;
         return `<h3 class="gsec">${useMeter ? "🎚️" : "📶"} ${esc(sc.title)}</h3><div class="gscale">${useMeter ? `<div class="meterbox" data-mi="${k}"></div>` : `<div class="gsbar"><b>${esc(S.left)}</b><span class="gsgrad${S.two ? "" : " one"}"></span><b>${esc(S.right)}</b></div>${strip}`}
-          ${S.levels.map(l => `<div class="gslv"><div class="gsr" style="background:${col(l.rank, S.two)}"><span>${l.rank > 0 ? "+" : ""}${l.rank}</span><small>${S.two ? lab2(l.rank) : lab1(l.rank)}${S.two && l.rank ? " · " + esc(l.rank < 0 ? S.left : S.right) : ""}</small></div><div class="gsw">${view(l.items)}</div></div>`).join("")}</div>`; }
+          ${S.levels.map(l => `<div class="gslv" data-rank="${l.rank}"><div class="gsr" style="background:${col(l.rank, S.two)}"><span>${l.rank > 0 ? "+" : ""}${l.rank}</span><small>${S.two ? lab2(l.rank) : lab1(l.rank)}${S.two && l.rank ? " · " + esc(l.rank < 0 ? S.left : S.right) : ""}</small></div><div class="gsw">${view(l.items)}</div></div>`).join("")}</div>`; }
       if (sc.sides) return `<h3 class="gsec">⇄ ${esc(sc.title)}</h3><div class="gopp">${sc.sides.map((sd, k) => `${k ? '<div class="gvs" aria-hidden="true">⇄</div>' : ""}<div><h4>${esc(sd.name)}</h4>${sd.items.length ? view(sd.items) : '<p class="muted">—</p>'}</div>`).join("")}</div>`;
       return (sc.title ? `<h3 class="gsec">${sc.icon} ${esc(sc.title)} <small>${sc.items.length} word${sc.items.length === 1 ? "" : "s"}</small></h3>` : "") + view(sc.items);
     }).join("");
@@ -211,8 +218,11 @@
   function mountMeters(root, secs, opts) {
     opts = opts || {}; if (!window.Meter || !root) return;
     root.querySelectorAll(".meterbox[data-mi]").forEach(box => { const sc = secs[+box.dataset.mi]; if (!sc || !sc.scale) return;
+      const wrap = box.closest(".gscale");
+      const onLevel = r => { if (opts.onLevel) opts.onLevel(sc.title, r); if (!wrap) return;
+        wrap.querySelectorAll(".gslv[data-rank]").forEach(row => { row.hidden = !!opts.follow && +row.dataset.rank !== r; }); };
       Meter.mount(box, { title: sc.title, left: sc.scale.left, right: sc.scale.right, two: sc.scale.two, levels: sc.scale.levels,
-        start: (opts.start || {})[sc.title], onAdd: opts.onAdd, addLabel: opts.addLabel }); });
+        start: (opts.start || {})[sc.title], onAdd: opts.onAdd, addLabel: opts.addLabel, onLevel }); });
   }
   // Say a word once: its recorded audio when there is one, otherwise the browser voice.
   // Returns a promise that resolves when the word has finished (or after a safety timeout).

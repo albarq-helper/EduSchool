@@ -93,7 +93,7 @@
 .parent .step{margin-top:12px}.parent .step b{display:block;margin-bottom:4px}
 .parent input[type=text]{width:100%;max-width:40rem}
 </style>
-<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261122g"></script><script src="js/icons.js?v=20261122g"></script><script src="js/app.js?v=20261122g"></script><script src="js/sets.js?v=20261122g"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261122g"></script><script src="js/storycore.js?v=20261122g"></script><script src="js/montage.js?v=20261122g"></script>
+<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261122h"></script><script src="js/icons.js?v=20261122h"></script><script src="js/app.js?v=20261122h"></script><script src="js/sets.js?v=20261122h"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261122h"></script><script src="js/storycore.js?v=20261122h"></script><script src="js/montage.js?v=20261122h"></script>
 </head><body>
 <div class="wrap" style="max-width:1280px">
   <div class="head2">
@@ -158,7 +158,7 @@ function setBox(id){BOX=boxOf(id).id;try{localStorage.setItem("storyBox",BOX);}c
   $("unitMount").hidden=b.kind!=="set";
   const old=$("groupMount"),n=old.cloneNode(false);old.replaceWith(n);
   const words=b.idx.map(i=>D[i]),hasScale=words.some(v=>(v.tags||[]).some(t=>/^📶/.test(t)));
-  GP=Sets.groupPicker(n,()=>drawLib(),{words,key:"wordGroupSel:"+BOX,kind:b.kind==="link"?"theme":(b.kind==="words"&&hasScale?"scale":"all")});
+  GP=Sets.groupPicker(n,()=>drawLib(),{words,key:"wordGroupSel:"+BOX,kind:b.kind==="link"?"theme":(b.kind==="words"&&hasScale?"scale":"all"),view:"meter",follow:true});
   drawBoxes();drawLib();}
 $("boxes").onclick=e=>{const b=e.target.closest("[data-box]");if(b){$("q").value="";setBox(b.dataset.box);}};
 // add a library word: linking words become the student's own words; others are vocabulary words
@@ -219,8 +219,9 @@ function drawLib(){const q=$("q").value.trim().toLowerCase();const used=new Map(
   let secs;
   if(q){secs=BOXES.map(b=>({title:b.title,icon:b.icon,items:b.idx.filter(i=>hit(D[i]))})).filter(x=>x.items.length);}
   else{const b=boxOf(BOX),L=b.idx.filter(i=>{const v=D[i];return (b.kind!=="set"||UP.match(v))&&GP.match(v);});secs=GP.sections(L);}
-  $("lib").innerHTML=secs.some(x=>(x.items||[]).length||x.scale||x.sides)?Sets.sectionsHTML(secs,grid,{rows:false}):`<p class="muted">No words match.</p>`;
-  Sets.mountMeters($("lib"),secs,{onAdd:i=>addIdx(i),start:START,addLabel:"+ Add to story"});
+  const vo=q?{mode:"both",follow:false}:GP.view();
+  $("lib").innerHTML=secs.some(x=>(x.items||[]).length||x.scale||x.sides)?Sets.sectionsHTML(secs,grid,vo):`<p class="muted">No words match.</p>`;
+  Sets.mountMeters($("lib"),secs,{onAdd:i=>addIdx(i),start:START,addLabel:"+ Add to story",follow:vo.follow,onLevel:(t,r)=>{START[t]=r;}});
   Sets.watchClips();}
 $("q").oninput=drawLib;
 $("lib").addEventListener("click",e=>{const mt=e.target.closest("[data-meter]");if(mt){const v=D[+mt.dataset.meter],sc=Sets.scaleOfWord(v);if(sc){START[sc.g]=sc.r;$("q").value="";if(v.box!==BOX)setBox(v.box);GP.set("scale",sc.g);$("lib").scrollIntoView({behavior:"smooth",block:"start"});}return;}

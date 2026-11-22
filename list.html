@@ -88,7 +88,7 @@ input.ok,textarea.ok{border-color:var(--good)!important;background:var(--good-so
 .empty-l{padding:30px;text-align:center;color:var(--muted)}
 @media print{#appbar,#setbar,.tools,.no-print,button.round{display:none!important}.d,.g,.b{box-shadow:none;break-inside:avoid}body{background:#fff}}
 </style>
-<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261122g"></script><script src="js/icons.js?v=20261122g"></script><script src="js/app.js?v=20261122g"></script><script src="js/sets.js?v=20261122g"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261122g"></script>
+<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261122h"></script><script src="js/icons.js?v=20261122h"></script><script src="js/app.js?v=20261122h"></script><script src="js/sets.js?v=20261122h"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261122h"></script>
 </head><body>
 <div class="wrap" style="max-width:1180px">
   <div class="head2">
@@ -134,7 +134,8 @@ document.querySelectorAll("[data-i]").forEach(el=>el.insertAdjacentHTML("afterbe
 const store={get(k,d){try{const v=localStorage.getItem("wl_"+k);return v===null?d:JSON.parse(v);}catch(e){return d;}},set(k,v){try{localStorage.setItem("wl_"+k,JSON.stringify(v));}catch(e){}}};
 const uname=x=>x.u?(x.name?`Unit ${x.u} · ${x.name}`:`Unit ${x.u}`):(x.name||"General");
 const UP=Sets.unitPicker($("unitMount"),()=>render());
-const GP=Sets.groupPicker($("groupMount"),()=>render());
+const METER_AT={};   // where each Feeling meter was left, so re-drawing keeps it
+const GP=Sets.groupPicker($("groupMount"),()=>render(),{view:"both",follow:true});
 let VIEW=store.get("view","detail"), SHOW=Object.assign({pic:true,syl:true,say:true,mean:true,ex:true,tr:true},store.get("show",{}));
 let ORDER=D.map((v,i)=>i), ST={};   // ST[i] = {cw, cm, typed, ok, mtyped, mrev, self}
 const S=i=>ST[i]||(ST[i]={});
@@ -205,7 +206,8 @@ function render(){const L=visible();
   const view=M=>VIEW==="list"?`<div class="card v-list" style="padding:0"><div class="tablewrap"><table><thead><tr>${SHOW.pic?"<th></th>":""}<th>Word</th><th></th><th>Meaning</th>${SHOW.tr&&D.some(x=>x.ar)?`<th>${esc(window.TL_NAME||"Translation")}</th>`:""}<th>Unit</th></tr></thead><tbody>${M.map(i=>card(i,"list")).join("")}</tbody></table></div></div>`
     :`<div class="v-${VIEW}">${M.map(i=>card(i,VIEW)).join("")}</div>`;
   // grouped by word type / theme / opposites (or one plain list)
-  const secs=GP.sections(L);$("out").innerHTML=Sets.sectionsHTML(secs,view);Sets.mountMeters($("out"),secs,{});
+  const secs=GP.sections(L),vo=GP.view();$("out").innerHTML=Sets.sectionsHTML(secs,view,vo);
+  Sets.mountMeters($("out"),secs,{follow:vo.follow,start:METER_AT,onLevel:(t,r)=>{METER_AT[t]=r;}});
   score();}
 function rerender(i,focus){const all=$("out").querySelectorAll(`[data-i="${i}"]`),el=all[0];if(!el||all.length>1){render();return;}
   const t=document.createElement(VIEW==="list"?"tbody":"div");t.innerHTML=card(i,VIEW);const n=t.firstElementChild;el.replaceWith(n);score();
