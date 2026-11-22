@@ -90,8 +90,8 @@
   <section class="panel read" id="read" hidden></section>
   <details class="panel parent" id="parent">
     <summary>For parents: turn this plan into a story and a movie</summary>
-    <div class="step"><b>1. Copy the AI prompt</b><span class="muted">It has the title, scenes, words in order, and each word's meaning. Paste it into Claude (or another AI).</span>
-      <div class="acts"><button class="btn small primary" id="copyPrompt" type="button"><span data-i="copy"></span>Copy AI prompt</button><span class="saved" id="copied"></span></div>
+    <div class="step"><b>1. Copy the prompt</b>
+      <div class="acts"><button class="btn small primary" id="copyPrompt" type="button"><span data-i="copy"></span>Copy the prompt</button><span class="saved" id="copied"></span></div>
       <textarea id="promptBox" readonly hidden></textarea></div>
     <div class="step"><b>2. Paste the finished story</b><textarea id="storyText" placeholder="Paste the story the AI wrote here…"></textarea>
       <div class="acts"><button class="btn small primary" id="saveStory" type="button"><span data-i="save"></span>Save story</button></div></div>
@@ -219,7 +219,7 @@ Vocabulary meanings:
 ${W.map(w=>`- ${clean(w)}: ${D[wi(w)]?.d||""}`).join("\n")}`;}
 $("copyPrompt").onclick=async()=>{if(!CUR||!CUR.blocks.some(b=>b.k==="w")){App.status("This story has no words yet.",false);return;}
   const p=buildPrompt();$("promptBox").value=p;$("promptBox").hidden=false;
-  try{await navigator.clipboard.writeText(p);$("copied").textContent="Copied ✓ Paste it into the AI.";}catch(e){$("promptBox").select();$("copied").textContent="Select the text below and copy it.";}};
+  try{await navigator.clipboard.writeText(p);$("copied").textContent="Copied ✓";}catch(e){$("promptBox").select();$("copied").textContent="Select the text below and copy it.";}};
 $("saveStory").onclick=async()=>{if(!CUR)return;const t=$("storyText").value.trim();if(await save({story_text:t,status:t?(CUR.video_url?"filmed":"written"):CUR.status}))App.status("Story saved 📖",true);};
 $("saveVideo").onclick=async()=>{if(!CUR)return;const u=$("videoUrl").value.trim();
   if(u&&!/^(https:\/\/|assets\/)/.test(u)){App.status("The link must start with https:// or assets/",false);return;}
