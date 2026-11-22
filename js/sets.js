@@ -193,7 +193,7 @@
     const I = n => (window.icon ? window.icon(n, 16) : "");
     const acts = [["set.html", "layout-grid", "Overview", true], ["list.html", "list-checks", "Word list", words.length > 0], ["cards.html", "layers", "Flashcards", words.length > 0],
       ["exam.html", "clipboard-check", "Exam", words.length >= 4], ["games.html", "puzzle", "Games", words.length >= 4],
-      ["spelling.html", "spell-check-2", "Spelling", words.length >= 2], ["quiz.html", "circle-help", "Quiz", questions.length > 0], ["songs.html", "music", "Songs", !!window.HAS_SONGS]];
+      ["spelling.html", "spell-check-2", "Spelling", words.length >= 2], ["quiz.html", "circle-help", "Quiz", questions.length > 0], ["songs.html", "music", "Songs & dialogs", !!window.HAS_SONGS]];
     const css = `#setbar{background:var(--ink,#1B2333);color:#fff;padding:10px 16px;display:flex;gap:10px 18px;align-items:center;flex-wrap:wrap;font:14px var(--f-body,system-ui)}
       #setbar .t{display:flex;flex-direction:column;min-width:0;flex:1 1 240px}#setbar .t b{font:800 1.02rem var(--f-display,system-ui);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
       #setbar .t span{color:#C9D1E3;font-size:.82rem}#setbar nav{display:flex;gap:4px;flex-wrap:wrap}
