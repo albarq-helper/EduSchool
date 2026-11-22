@@ -3,7 +3,7 @@
 <title>Edit study set · Helper Academy</title><link rel="icon" href="assets/icons/brilliant.png">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=Noto+Naskh+Arabic:wght@600&display=swap">
 <link rel="stylesheet" href="css/app.css">
-<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261122h"></script><script src="js/icons.js?v=20261122h"></script><script src="js/app.js?v=20261122h"></script><script src="js/sets.js?v=20261122h"></script>
+<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261122i"></script><script src="js/icons.js?v=20261122i"></script><script src="js/app.js?v=20261122i"></script><script src="js/sets.js?v=20261122i"></script>
 <style>
 .groupsbox{border:1px solid var(--rule);border-radius:12px;padding:10px 12px;margin:0 0 10px;background:var(--paper);display:grid;gap:8px}
 .tagf .ttype{gap:6px}.tbtn{font:700 .82rem var(--f-body);padding:5px 10px;border-radius:999px;border:1.5px solid var(--rule);background:var(--sheet);color:var(--ink);cursor:pointer}
@@ -143,7 +143,7 @@ function rowHTML(r,k){
     <button class="btn small danger" data-del="${k}" type="button" aria-label="Remove item ${k+1}">${icon("trash-2",14)}</button></span></div>`;
   if(r.kind==="term") return `<div class="erow">${head}<div class="g">
     <label class="f">Term<input data-f="term" data-k="${k}" value="${esc(r.term)}" maxlength="500" dir="auto"></label>
-    <label class="f">Meaning / definition<input data-f="meaning" data-k="${k}" value="${esc(r.meaning)}" maxlength="1500" dir="auto"></label>
+    <label class="f">Meaning / definition${r.set_meaning?` <span class="muted" style="font-weight:400" title="This set uses its own wording; the shared dictionary keeps its own meaning.">· this set's own wording</span>`:""}<input data-f="meaning" data-k="${k}" value="${esc(r.meaning)}" maxlength="1500" dir="auto"></label>
     <label class="f">Example sentence (optional)<input data-f="example" data-k="${k}" value="${esc(r.example)}" maxlength="600" dir="auto" placeholder="Put [brackets] round the term"></label>
     <label class="f">Translation (optional)<input data-f="translation" data-k="${k}" value="${esc(r.translation)}" maxlength="300" dir="auto"></label>
     <label class="f">Syllables (optional)<input data-f="syllables" data-k="${k}" value="${esc(r.syllables)}" maxlength="200" placeholder="e.g. pho-to-syn-the-sis"></label>
@@ -250,12 +250,12 @@ $("save").onclick=async()=>{const m=$("saveMsg"),err=validate();if(err){m.textCo
     if(sid){const r=await C.from("study_sets").update(meta).eq("id",sid);if(r.error)throw r.error;}
     else{const r=await C.from("study_sets").insert({...meta,owner_id:ME.id}).select("id").single();if(r.error)throw r.error;sid=r.data.id;}
     const rows=ROWS.map((r,k)=>{const o={id:r.id,set_id:sid,position:k+1,kind:r.kind,unit:r.unit,also_units:r.also_units||[],term:r.term.trim(),meaning:r.meaning.trim(),example:(r.example||"").trim(),
-      translation:(r.translation||"").trim(),syllables:(r.syllables||"").trim(),pronunciation:(r.pronunciation||"").trim(),sound_hint:(r.sound_hint||"").trim(),video_url:(r.video_url||"").trim(),emoji:(r.emoji||"").trim(),image_url:(r.image_url||"").trim(),anim_url:r.anim_url||"",audio_url:(r.audio_url||"").trim(),choices:[],answer:null,tags:r.kind==="term"?(r.tags||[]):[]};
+      translation:(r.translation||"").trim(),syllables:(r.syllables||"").trim(),pronunciation:(r.pronunciation||"").trim(),sound_hint:(r.sound_hint||"").trim(),video_url:(r.video_url||"").trim(),emoji:(r.emoji||"").trim(),image_url:(r.image_url||"").trim(),anim_url:r.anim_url||"",audio_url:(r.audio_url||"").trim(),choices:[],answer:null,tags:r.kind==="term"?(r.tags||[]):[],sense:r.sense||""};
       if(r.kind==="mcq"){const keep=r.choices.map((c,j)=>[c.trim(),j]).filter(x=>x[0]);o.choices=keep.map(x=>x[0]);o.answer=keep.findIndex(x=>x[1]===r.answer);}
       if(r.kind==="tf")o.answer=r.answer;return o;});
     const gone=[...ORIG].filter(id=>!rows.some(r=>r.id===id));
-    for(let k=0;k<gone.length;k+=100){const r=await C.from("set_items").delete().in("id",gone.slice(k,k+100));if(r.error)throw r.error;}
-    for(let k=0;k<rows.length;k+=200){const r=await C.from("set_items").upsert(rows.slice(k,k+200));if(r.error)throw r.error;}
+    // words live in the shared dictionary; the set keeps links (see save_set_items in supabase_v26_dictionary.sql)
+    {const r=await C.rpc("save_set_items",{p_set:sid,p_rows:rows,p_delete:gone});if(r.error)throw r.error;}
     for(const x of TEXTS)if(!x.title.trim())throw new Error("Give every text a title.");
     for(const x of SONGS)if(!x.title.trim())throw new Error("Give every song a title.");
     for(const x of SONGS)if(x.media_url&&!/^(https:\/\/|assets\/)/.test(x.media_url))throw new Error("Song links must start with https://");
