@@ -8,7 +8,27 @@
     "sad ⇄ happy": { "-5": "😭", "-4": "😩", "-3": "😢", "-2": "😞", "-1": "😕", "0": "😐", "1": "🙂", "2": "😊", "3": "😄", "4": "😁", "5": "🤩" },
     "calm → angry": { "0": "😌", "1": "😒", "2": "😤", "3": "😠", "4": "😡", "5": "🤬" },
     "calm → afraid": { "0": "😌", "1": "😬", "2": "😟", "3": "😨", "4": "😱", "5": "🫣" },
-    "full → hungry": { "0": "😌", "1": "🙂", "2": "🤔", "3": "😋", "4": "😫", "5": "😵" }
+    "full → hungry": { "0": "😌", "1": "🙂", "2": "🤔", "3": "😋", "4": "😫", "5": "😵" },
+    "tiny → gigantic": { "0": "🐜", "1": "🐭", "2": "🐕", "3": "🐘", "4": "🐋", "5": "🦕" },
+    "near → far": { "0": "🏠", "1": "🚶", "2": "🚲", "3": "🚗", "4": "✈️", "5": "🚀" },
+    "silent → deafening": { "0": "🤫", "1": "🔈", "2": "🔉", "3": "🔊", "4": "📢", "5": "💥" },
+    "safe → deadly": { "0": "😌", "1": "🙂", "2": "😬", "3": "⚠️", "4": "😱", "5": "☠️" },
+    "energetic → exhausted": { "0": "⚡", "1": "🙂", "2": "🥱", "3": "😪", "4": "😩", "5": "😴" },
+    "boring → thrilling": { "0": "😴", "1": "🥱", "2": "🙂", "3": "🤔", "4": "🤩", "5": "🎢" },
+    "okay → fantastic": { "0": "👌", "1": "👍", "2": "😀", "3": "🌟", "4": "✨", "5": "🎉" },
+    "clean → filthy": { "0": "✨", "1": "🧼", "2": "🤏", "3": "🟤", "4": "🐷", "5": "🤢" },
+    "minor → crucial": { "0": "🤷", "1": "🙂", "2": "👀", "3": "⭐", "4": "🔑", "5": "🚨" },
+    "unknown → renowned": { "0": "❓", "1": "🙂", "2": "👥", "3": "📣", "4": "🌟", "5": "🏆" },
+    "common → unique": { "0": "👥", "1": "🙂", "2": "🤨", "3": "💎", "4": "🦄", "5": "🌟" },
+    "poor → affluent": { "0": "🪙", "1": "💵", "2": "💳", "3": "🏠", "4": "💰", "5": "🏰" },
+    "timid → heroic": { "0": "🫣", "1": "🙂", "2": "😤", "3": "🦁", "4": "💪", "5": "🦸" },
+    "dry → soaked": { "0": "🏜️", "1": "🌱", "2": "🌫️", "3": "💧", "4": "🌧️", "5": "🌊" },
+    "dark → dazzling": { "0": "🌑", "1": "🌒", "2": "🌓", "3": "💡", "4": "☀️", "5": "🌞" },
+    "disgusting → delicious": { "0": "🤮", "1": "🤢", "2": "😐", "3": "😋", "4": "🤤", "5": "🤩" },
+    "gentle → ferocious": { "0": "🐑", "1": "🐶", "2": "🐱", "3": "🐗", "4": "🐺", "5": "🦁" },
+    "breeze → hurricane": { "0": "😌", "1": "🍃", "2": "💨", "3": "🌬️", "4": "🌪️", "5": "🌀" },
+    "glance → stare": { "0": "👀", "1": "🫣", "2": "👁️", "3": "📺", "4": "🔍", "5": "😳" },
+    "tiptoe → stomp": { "0": "🤫", "1": "🐭", "2": "🚶", "3": "🥁", "4": "🐘", "5": "🦖" }
   };
   const STRENGTH = ["", "a little", "some", "strong", "very strong", "strongest"];
   const css = `.mtr{--bg:#eef2f7;background:var(--bg);border-radius:18px;padding:16px;display:grid;gap:12px;transition:background .35s;user-select:none}
@@ -63,7 +83,7 @@
       const f = faces[String(l.rank)] || (D[l.items[0]] && D[l.items[0]].emoji) || "🙂";
       $face.text(f); if (animate) { $face.removeClass("pop"); void $face[0].offsetWidth; $face.addClass("pop"); }
       $m.css("--bg", color(l.rank, o.two)); $range.val(k);
-      const lab = l.rank === 0 ? (o.two ? "neutral: in the middle" : "calm") : `${STRENGTH[Math.min(5, a)]}${o.two ? " · " + (l.rank < 0 ? o.left : o.right) : ""}`;
+      const lab = l.rank === 0 ? (o.two ? "neutral: in the middle" : String(o.left || "lowest").toLowerCase()) : `${STRENGTH[Math.min(5, a)]}${o.two ? " · " + (l.rank < 0 ? o.left : o.right) : ""}`;
       $lv.text(`${l.rank > 0 ? "+" : ""}${l.rank} · ${lab}`); $mid.text(lab);
       $words.html(l.items.map(i => { const v = D[i] || {}; return `<div class="mtr-w${X.has(i) ? " x" : ""}"><b>${esc(v.emoji || "")} ${esc(clean(v.w))}${X.has(i) ? '<span class="mtr-xt" title="Not in this set: shown so you can see the whole scale">extra word</span>' : ""}</b><small>${esc(v.d || "")}</small>
         <div class="row"><button type="button" data-say="${i}">🔊 Hear</button>${o.onAdd ? `<button type="button" class="add" data-add="${i}">${esc(o.addLabel || "+ Add")}</button>` : ""}</div></div>`; }).join(""));

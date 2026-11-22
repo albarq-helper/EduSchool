@@ -94,38 +94,41 @@
     "Size, amount & distance": "📏", "Danger & safety": "⚠️", "Getting along": "🤝", "Government & law": "🏛️", "Good & great": "⭐",
     "Important & famous": "🏆", "Science": "🔬", "Time & change": "⏳", "Saying & thinking": "💬", "Places & travel": "🧭", "Character": "🧠", "How things are done": "⚙️", "Ways to show love": "💞", "Caring qualities": "🤲",
     "Time & order": "⏰", "Adding ideas": "➕", "Contrast": "⚖️", "Cause & effect": "💡", "Examples": "🔍", "Endings": "🎬" };
-  const isType = t => TYPES.some(x => x[0] === t), isOpp = t => /^⇄\s/.test(t), isScale = t => /^📶\s/.test(t);
+  const isType = t => TYPES.some(x => x[0] === t), isOpp = t => /^⇄\s/.test(t), isScale = t => /^📶\s/.test(t), isSim = t => /^≈\s/.test(t), simName = t => t.replace(/^≈\s*/, "").trim();
   // "📶 Hate ⇄ Love: -4" -> {g:"Hate ⇄ Love", r:-4}
   const scaleSplit = t => { const m = t.replace(/^📶\s*/, "").match(/^(.*?):\s*([+-]?\d+)\s*$/); return m ? { g: m[1].trim(), r: +m[2] } : { g: t.replace(/^📶\s*/, ""), r: 0 }; };
   const oppSplit = t => { const m = t.replace(/^⇄\s*/, "").match(/^(.*?):\s*(.+)$/); return m ? { g: m[1].trim(), side: m[2].trim() } : { g: t.replace(/^⇄\s*/, ""), side: "" }; };
-  const tagIcon = t => isType(t) ? TYPES.find(x => x[0] === t)[1] : isScale(t) ? "📶" : isOpp(t) ? "⇄" : THEME_ICONS[t] || "🏷️";
+  const tagIcon = t => isType(t) ? TYPES.find(x => x[0] === t)[1] : isScale(t) ? "📶" : isSim(t) ? "≈" : isOpp(t) ? "⇄" : THEME_ICONS[t] || "🏷️";
   // all groups present in a word list: {types:[{tag,n}], themes:[{tag,n}], opps:[{g, sides:[a,b], n}]}
   function groupsOf(D) {
-    const cnt = new Map(), opp = new Map(), scl = new Map();
-    D.forEach(v => (v.tags || []).forEach(t => { if (isScale(t)) { const x = scaleSplit(t); scl.set(x.g, (scl.get(x.g) || 0) + 1); } else if (isOpp(t)) { const o = oppSplit(t); if (!opp.has(o.g)) opp.set(o.g, new Map()); const m = opp.get(o.g); m.set(o.side, (m.get(o.side) || 0) + 1); } else cnt.set(t, (cnt.get(t) || 0) + 1); }));
+    const cnt = new Map(), opp = new Map(), scl = new Map(), sim = new Map();
+    D.forEach(v => (v.tags || []).forEach(t => { if (isScale(t)) { const x = scaleSplit(t); scl.set(x.g, (scl.get(x.g) || 0) + 1); } else if (isSim(t)) { const g = simName(t); sim.set(g, (sim.get(g) || 0) + 1); } else if (isOpp(t)) { const o = oppSplit(t); if (!opp.has(o.g)) opp.set(o.g, new Map()); const m = opp.get(o.g); m.set(o.side, (m.get(o.side) || 0) + 1); } else cnt.set(t, (cnt.get(t) || 0) + 1); }));
     const themes = [...cnt].filter(([t]) => !isType(t)).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([tag, n]) => ({ tag, n }));
     const types = TYPES.filter(([t]) => cnt.has(t)).map(([tag]) => ({ tag, n: cnt.get(tag) }));
     const opps = [...opp].map(([g, m]) => { const sides = [...m.keys()]; const want = g.split(/\s+vs\.?\s+/i).map(x => x.trim().toLowerCase());
       sides.sort((a, b) => (want.indexOf(a.toLowerCase()) + 1 || 9) - (want.indexOf(b.toLowerCase()) + 1 || 9)); return { g, sides, n: [...m.values()].reduce((a, b) => a + b, 0) }; })
       .sort((a, b) => b.n - a.n);
     const scales = [...scl].map(([g, n]) => ({ g, n })).sort((a, b) => b.n - a.n);
-    return { types, themes, opps, scales };
+    const sims = [...sim].filter(([g, n]) => n > 0).map(([g, n]) => ({ g, n })).sort((a, b) => b.n - a.n || a.g.localeCompare(b.g));
+    return { types, themes, opps, scales, sims };
   }
   // the groups one word belongs to: [{kind:"scale"|"opp"|"theme", tag, label, r?, side?}]
   function wordGroups(v) {
     const out = [];
     (v.tags || []).forEach(t => {
       if (isScale(t)) { const x = scaleSplit(t); out.push({ kind: "scale", tag: x.g, r: x.r, label: "🎚️ " + x.g + " · level " + (x.r > 0 && /⇄/.test(x.g) ? "+" : "") + x.r }); }
+      else if (isSim(t)) out.push({ kind: "sim", tag: simName(t), label: "≈ " + simName(t) });
       else if (isOpp(t)) { const o = oppSplit(t); out.push({ kind: "opp", tag: o.g, side: o.side, label: "⇄ " + o.g + (o.side ? " · " + o.side : "") }); }
       else if (!isType(t)) out.push({ kind: "theme", tag: t, label: tagIcon(t) + " " + t });
     });
-    return out;
+    const ord = { scale: 0, sim: 1, opp: 2, theme: 3 };
+    return out.sort((a, b) => ord[a.kind] - ord[b.kind]);
   }
   // Sets.groupPicker(mountEl, onChange, {words, key, kind}) -> { match(word), sections(indices), state(), set(kind, tag) }
   // words: the words whose groups to offer (default: all words); kind: the tab to open first.
   function groupPicker(mount, onChange, opts) {
     opts = opts || {}; const D = window.WORDS || [], G = groupsOf(opts.words || D), KEY = opts.key || "wordGroupSel";
-    if (!G.types.length && !G.themes.length && !G.opps.length && !G.scales.length) { mount.innerHTML = ""; return { match: () => true, sections: L => [{ items: L }], state: () => ({ kind: "all" }), view: () => ({ mode: "both", follow: false }), set: () => {}, has: () => false }; }
+    if (!G.types.length && !G.themes.length && !G.opps.length && !G.scales.length && !G.sims.length) { mount.innerHTML = ""; return { match: () => true, sections: L => [{ items: L }], state: () => ({ kind: "all" }), view: () => ({ mode: "both", follow: false }), set: () => {}, has: () => false }; }
     if (!document.getElementById("gpick-css")) document.head.insertAdjacentHTML("beforeend", `<style id="gpick-css">.gpick{display:flex;flex-direction:column;gap:8px;width:100%}
 .gpick .gk{display:inline-flex;flex-wrap:wrap;gap:4px;align-self:flex-start;border:1px solid var(--rule);border-radius:12px;padding:3px;background:var(--paper)}
 .gpick .gk button{border:0;background:transparent;font:700 .86rem var(--f-body);color:var(--muted);padding:6px 11px;border-radius:9px;cursor:pointer}
@@ -153,12 +156,12 @@
 @media (max-width:640px){.gslv{grid-template-columns:1fr}}</style>`);
     let st = { kind: opts.kind || "all", tag: "", view: opts.view || "both", follow: opts.follow !== false }; try { st = Object.assign(st, JSON.parse(localStorage.getItem(KEY) || "{}")); } catch (e) {}
     if (!["both", "meter", "list"].includes(st.view)) st.view = "both";
-    const kinds = [["all", "All words"], ["type", "🏃 Word type"], ["theme", "🏷️ Themes"], ["scale", "🎚️ Feeling meters"], ["opp", "⇄ Opposites"]].filter(([k]) => k === "all" || (k === "type" ? G.types.length : k === "theme" ? G.themes.length : k === "scale" ? G.scales.length : G.opps.length));
+    const kinds = [["all", "All words"], ["type", "🏃 Word type"], ["theme", "🏷️ Themes"], ["scale", "🎚️ Meters"], ["sim", "≈ Similar words"], ["opp", "⇄ Opposites"]].filter(([k]) => k === "all" || (k === "type" ? G.types.length : k === "theme" ? G.themes.length : k === "scale" ? G.scales.length : k === "sim" ? G.sims.length : G.opps.length));
     if (!kinds.some(k => k[0] === st.kind)) st = { kind: "all", tag: "" };
-    if (st.tag && !(st.kind === "opp" ? G.opps.some(x => x.g === st.tag) : st.kind === "scale" ? G.scales.some(x => x.g === st.tag) : (st.kind === "type" ? G.types : G.themes).some(x => x.tag === st.tag))) st.tag = "";
+    if (st.tag && !(st.kind === "opp" ? G.opps.some(x => x.g === st.tag) : st.kind === "scale" ? G.scales.some(x => x.g === st.tag) : st.kind === "sim" ? G.sims.some(x => x.g === st.tag) : (st.kind === "type" ? G.types : G.themes).some(x => x.tag === st.tag))) st.tag = "";
     function draw() {
       const chips = st.kind === "type" ? G.types.map(x => [x.tag, tagIcon(x.tag) + " " + x.tag, x.n]) : st.kind === "theme" ? G.themes.map(x => [x.tag, tagIcon(x.tag) + " " + x.tag, x.n])
-        : st.kind === "opp" ? G.opps.map(x => [x.g, x.sides.join(" ⇄ "), x.n]) : st.kind === "scale" ? G.scales.map(x => [x.g, "🎚️ " + x.g, x.n]) : [];
+        : st.kind === "sim" ? G.sims.map(x => [x.g, "≈ " + x.g, x.n]) : st.kind === "opp" ? G.opps.map(x => [x.g, x.sides.join(" ⇄ "), x.n]) : st.kind === "scale" ? G.scales.map(x => [x.g, "🎚️ " + x.g, x.n]) : [];
       const vrow = st.kind === "scale" ? `<div class="gv" role="group" aria-label="Show"><span>Show</span>${[["both", "🎚️ Meter + cards"], ["meter", "🎚️ Meter only"], ["list", "📋 Full list"]].map(([v, l]) => `<button type="button" data-view="${v}" aria-pressed="${st.view === v}">${l}</button>`).join("")}
         ${st.view === "both" ? `<span class="gvsep"></span><span>Cards</span><button type="button" data-follow="1" aria-pressed="${!!st.follow}">Follow the meter</button><button type="button" data-follow="0" aria-pressed="${!st.follow}">All levels</button>` : ""}</div>` : "";
       mount.innerHTML = `<div class="gpick"><div class="gk" role="group" aria-label="Group the words">${kinds.map(([k, l]) => `<button type="button" data-k="${k}" aria-pressed="${st.kind === k}">${l}</button>`).join("")}</div>
@@ -167,9 +170,9 @@
     mount.addEventListener("click", e => { const k = e.target.closest("[data-k]"), t = e.target.closest("[data-t]"), vw = e.target.closest("[data-view]"), fl = e.target.closest("[data-follow]");
       if (k) st = { ...st, kind: k.dataset.k, tag: "" }; else if (t) st.tag = t.dataset.t; else if (vw) st.view = vw.dataset.view; else if (fl) st.follow = fl.dataset.follow === "1"; else return;
       try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} draw(); onChange && onChange(); });
-    const has = (v, t) => (v.tags || []).includes(t), oppTags = (v, g) => (v.tags || []).filter(t => isOpp(t) && oppSplit(t).g === g);
+    const has = (v, t) => (v.tags || []).includes(t), simOf = (v, g) => (v.tags || []).some(t => isSim(t) && simName(t) === g), oppTags = (v, g) => (v.tags || []).filter(t => isOpp(t) && oppSplit(t).g === g);
     const scaleOf = (v, g) => { const t = (v.tags || []).find(t => isScale(t) && scaleSplit(t).g === g); return t ? scaleSplit(t).r : null; };
-    function match(v) { if (st.kind === "all" || !st.tag) return true; return st.kind === "opp" ? oppTags(v, st.tag).length > 0 : st.kind === "scale" ? scaleOf(v, st.tag) !== null : has(v, st.tag); }
+    function match(v) { if (st.kind === "all" || !st.tag) return true; return st.kind === "opp" ? oppTags(v, st.tag).length > 0 : st.kind === "sim" ? simOf(v, st.tag) : st.kind === "scale" ? scaleOf(v, st.tag) !== null : has(v, st.tag); }
     // sections for display: [{title, icon, items}] or [{title, sides:[{name, items}]}]
     function sections(L) {
       if (st.kind === "all") return [{ items: L }];
@@ -182,23 +185,32 @@
           D.forEach((v, i) => { if (inL.has(i) || scaleOf(v, o.g) === null) return; const t = String(v.w).toLowerCase(); if (terms.has(t)) return; terms.add(t); extra.push(i); put(i); });
           const poles = o.g.split(/\s*(?:⇄|→|->|<->|vs\.?)\s*/); const levels = [...lv].sort((a, b) => a[0] - b[0]).map(([rank, items]) => ({ rank, items }));
           return { title: o.g, icon: "📶", scale: { left: poles[0] || "", right: poles[1] || "", two: levels.some(l => l.rank < 0), levels, extra } }; }).filter(x => x.scale.levels.length); }
+      // words outside this list that belong to group test(v): other units and dictionary words ("extra words")
+      const extrasFor = (L, test) => { const inL = new Set(L), terms = new Set(L.map(i => String(D[i].w).toLowerCase())), out = [];
+        D.forEach((v, i) => { if (inL.has(i) || !test(v)) return; const t = String(v.w).toLowerCase(); if (terms.has(t)) return; terms.add(t); out.push(i); }); return out; };
+      if (st.kind === "sim") { const gs = st.tag ? G.sims.filter(x => x.g === st.tag) : G.sims;
+        return gs.map(o => { const items = L.filter(i => simOf(D[i], o.g)); return items.length ? { title: o.g, icon: "≈", items: items.concat(extrasFor(items, v => simOf(v, o.g))) } : null; }).filter(Boolean); }
       if (st.kind === "opp") { const gs = st.tag ? G.opps.filter(x => x.g === st.tag) : G.opps;
-        return gs.map(o => ({ title: o.g, icon: "⇄", sides: o.sides.map(sd => ({ name: sd, items: L.filter(i => oppTags(D[i], o.g).some(t => oppSplit(t).side === sd)) })) }))
-          .filter(x => x.sides.some(sd => sd.items.length)); }
+        return gs.map(o => { const mine = L.filter(i => oppTags(D[i], o.g).length); if (!mine.length) return null;
+          const all = mine.concat(extrasFor(mine, v => oppTags(v, o.g).length > 0)), sides = [...o.sides];
+          all.forEach(i => oppTags(D[i], o.g).forEach(t => { const sd = oppSplit(t).side; if (!sides.includes(sd)) sides.push(sd); }));
+          const want = o.g.split(/\s+vs\.?\s+/i).map(x => x.trim().toLowerCase());
+          sides.sort((a, b) => (want.indexOf(a.toLowerCase()) + 1 || 9) - (want.indexOf(b.toLowerCase()) + 1 || 9));
+          return { title: o.g, icon: "⇄", sides: sides.map(sd => ({ name: sd, items: all.filter(i => oppTags(D[i], o.g).some(t => oppSplit(t).side === sd)) })) }; }).filter(Boolean); }
       const list = st.tag ? [st.tag] : (st.kind === "type" ? G.types : G.themes).map(x => x.tag);
       const out = list.map(t => ({ title: t, icon: tagIcon(t), items: L.filter(i => has(D[i], t)) })).filter(x => x.items.length);
-      if (!st.tag) { const rest = L.filter(i => !(D[i].tags || []).some(t => st.kind === "type" ? isType(t) : !isType(t) && !isOpp(t) && !isScale(t))); if (rest.length) out.push({ title: st.kind === "type" ? "Other" : "No theme yet", icon: "🏷️", items: rest }); }
+      if (!st.tag) { const rest = L.filter(i => !(D[i].tags || []).some(t => st.kind === "type" ? isType(t) : !isType(t) && !isOpp(t) && !isScale(t) && !isSim(t))); if (rest.length) out.push({ title: st.kind === "type" ? "Other" : "No theme yet", icon: "🏷️", items: rest }); }
       return out;
     }
     draw();
-    const hasGroup = (k, t) => k === "opp" ? G.opps.some(x => x.g === t) : k === "scale" ? G.scales.some(x => x.g === t) : k === "theme" ? G.themes.some(x => x.tag === t) : G.types.some(x => x.tag === t);
+    const hasGroup = (k, t) => k === "opp" ? G.opps.some(x => x.g === t) : k === "scale" ? G.scales.some(x => x.g === t) : k === "sim" ? G.sims.some(x => x.g === t) : k === "theme" ? G.themes.some(x => x.tag === t) : G.types.some(x => x.tag === t);
     return { match, sections, has: hasGroup, state: () => ({ ...st }), view: () => ({ mode: st.view, follow: st.view === "both" && !!st.follow }), set: (kind, tag) => { st = { ...st, kind, tag: tag || "" }; try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} draw(); onChange && onChange(); } };
   }
   // Draw groupPicker sections. view(indices) returns the HTML for a list of words in the page's own style.
   function sectionsHTML(secs, view, opts) {
     opts = opts || {}; const mode = opts.mode || (opts.rows === false ? "meter" : "both"), useMeter = !!window.Meter && opts.meter !== false && mode !== "list";
     const lab2 = r => r === 0 ? "neutral" : ["", "a little", "some", "strong", "very strong", "strongest"][Math.min(5, Math.abs(r))];
-    const lab1 = r => r === 0 ? "calm" : ["", "a little", "some", "strong", "very strong", "strongest"][Math.min(5, r)];
+    const lab1 = (r, S) => r === 0 ? String((S && S.left) || "lowest").toLowerCase() : ["", "a little", "some", "strong", "very strong", "strongest"][Math.min(5, r)];
     const col = (r, two) => { const a = Math.min(5, Math.abs(r)); if (two) return r < 0 ? `hsl(0 75% ${92 - a * 9}%)` : r > 0 ? `hsl(145 55% ${92 - a * 9}%)` : "hsl(220 15% 90%)";
       return r <= 0 ? "hsl(145 55% 85%)" : `hsl(${40 - a * 8} 85% ${90 - a * 7}%)`; };
     return secs.map(sc => {
@@ -208,7 +220,7 @@
         const k = secs.indexOf(sc);
         if (useMeter && mode === "meter") return `<h3 class="gsec">🎚️ ${esc(sc.title)}</h3><div class="gscale"><div class="meterbox" data-mi="${k}"></div></div>`;
         return `<h3 class="gsec">${useMeter ? "🎚️" : "📶"} ${esc(sc.title)}</h3><div class="gscale">${useMeter ? `<div class="meterbox" data-mi="${k}"></div>` : `<div class="gsbar"><b>${esc(S.left)}</b><span class="gsgrad${S.two ? "" : " one"}"></span><b>${esc(S.right)}</b></div>${strip}`}
-          ${S.levels.map(l => `<div class="gslv" data-rank="${l.rank}"><div class="gsr" style="background:${col(l.rank, S.two)}"><span>${l.rank > 0 ? "+" : ""}${l.rank}</span><small>${S.two ? lab2(l.rank) : lab1(l.rank)}${S.two && l.rank ? " · " + esc(l.rank < 0 ? S.left : S.right) : ""}</small></div><div class="gsw">${view(l.items)}</div></div>`).join("")}</div>`; }
+          ${S.levels.map(l => `<div class="gslv" data-rank="${l.rank}"><div class="gsr" style="background:${col(l.rank, S.two)}"><span>${l.rank > 0 ? "+" : ""}${l.rank}</span><small>${S.two ? lab2(l.rank) : lab1(l.rank, S)}${S.two && l.rank ? " · " + esc(l.rank < 0 ? S.left : S.right) : ""}</small></div><div class="gsw">${view(l.items)}</div></div>`).join("")}</div>`; }
       if (sc.sides) return `<h3 class="gsec">⇄ ${esc(sc.title)}</h3><div class="gopp">${sc.sides.map((sd, k) => `${k ? '<div class="gvs" aria-hidden="true">⇄</div>' : ""}<div><h4>${esc(sd.name)}</h4>${sd.items.length ? view(sd.items) : '<p class="muted">—</p>'}</div>`).join("")}</div>`;
       return (sc.title ? `<h3 class="gsec">${sc.icon} ${esc(sc.title)} <small>${sc.items.length} word${sc.items.length === 1 ? "" : "s"}</small></h3>` : "") + view(sc.items);
     }).join("");
@@ -231,19 +243,25 @@
     return boxes;
   }
   // Meter companions: other dictionary words on the same scales as this set's words (e.g. Peckish … Hungry under Starving).
-  // They are added to window.WORDS with .companion = true and appear only on Feeling meters, marked "extra word".
+  // They are added to window.WORDS with .companion = true and appear only inside meters, similar-word and opposite groups, marked "extra word".
   async function loadCompanions() {
-    const D = window.WORDS || [], names = new Set();
-    D.forEach(v => (v.tags || []).forEach(t => { if (isScale(t)) names.add(scaleSplit(t).g); }));
-    if (!names.size) return 0;
-    const want = []; names.forEach(g => { for (let r = -5; r <= 5; r++) want.push(`📶 ${g}: ${r > 0 ? "+" : ""}${r}`); });
-    const r = await App.client.from("words").select("id,headword,meaning,example,translation,syllables,pronunciation,sound_hint,image_url,anim_url,audio_url,video_url,emoji,tags").overlaps("tags", want);
-    if (r.error || !r.data) return 0;
-    const have = new Set(D.map(v => String(v.w).toLowerCase()));
-    const rows = r.data.filter(x => !have.has(String(x.headword).toLowerCase()));
-    const m = mapItems({ units: [] }, rows.map(x => ({ ...x, kind: "term", term: x.headword, unit: 0, also_units: [] })));
-    m.words.forEach(w => { w.companion = true; D.push(w); });
-    return m.words.length;
+    if (window.__companions) return window.__companions;
+    return (window.__companions = (async () => {
+      const D = window.WORDS || [], want = new Set();
+      D.forEach(v => (v.tags || []).forEach(t => {
+        if (isScale(t)) { const g = scaleSplit(t).g; for (let r = -5; r <= 5; r++) want.add(`📶 ${g}: ${r > 0 ? "+" : ""}${r}`); }
+        else if (isSim(t)) want.add(t);
+        else if (isOpp(t)) { const g = oppSplit(t).g; g.split(/\s+vs\.?\s+/i).forEach(sd => want.add(`⇄ ${g}: ${sd.trim().toLowerCase()}`)); want.add(t); }
+      }));
+      if (!want.size) return 0;
+      const list = [...want], parts = []; for (let k = 0; k < list.length; k += 50) parts.push(list.slice(k, k + 50));
+      const res = await Promise.all(parts.map(p => App.client.from("words").select("id,headword,meaning,example,translation,syllables,pronunciation,sound_hint,image_url,anim_url,audio_url,video_url,emoji,tags").overlaps("tags", p)));
+      const have = new Set(D.map(v => String(v.w).toLowerCase())), rows = [];
+      res.forEach(r => (r.data || []).forEach(x => { const k = String(x.headword).toLowerCase(); if (have.has(k)) return; have.add(k); rows.push(x); }));
+      const m = mapItems({ units: [] }, rows.map(x => ({ ...x, kind: "term", term: x.headword, unit: 0, also_units: [] })));
+      m.words.forEach(w => { w.companion = true; D.push(w); });
+      return m.words.length;
+    })());
   }
   // Turn the meter boxes drawn by sectionsHTML into live Feeling meters. opts: {onAdd(i), start:{scaleTitle: rank}, addLabel}
   function mountMeters(root, secs, opts) {
