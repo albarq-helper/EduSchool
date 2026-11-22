@@ -111,11 +111,21 @@
     const scales = [...scl].map(([g, n]) => ({ g, n })).sort((a, b) => b.n - a.n);
     return { types, themes, opps, scales };
   }
+  // the groups one word belongs to: [{kind:"scale"|"opp"|"theme", tag, label, r?, side?}]
+  function wordGroups(v) {
+    const out = [];
+    (v.tags || []).forEach(t => {
+      if (isScale(t)) { const x = scaleSplit(t); out.push({ kind: "scale", tag: x.g, r: x.r, label: "🎚️ " + x.g + " · level " + (x.r > 0 && /⇄/.test(x.g) ? "+" : "") + x.r }); }
+      else if (isOpp(t)) { const o = oppSplit(t); out.push({ kind: "opp", tag: o.g, side: o.side, label: "⇄ " + o.g + (o.side ? " · " + o.side : "") }); }
+      else if (!isType(t)) out.push({ kind: "theme", tag: t, label: tagIcon(t) + " " + t });
+    });
+    return out;
+  }
   // Sets.groupPicker(mountEl, onChange, {words, key, kind}) -> { match(word), sections(indices), state(), set(kind, tag) }
   // words: the words whose groups to offer (default: all words); kind: the tab to open first.
   function groupPicker(mount, onChange, opts) {
     opts = opts || {}; const D = window.WORDS || [], G = groupsOf(opts.words || D), KEY = opts.key || "wordGroupSel";
-    if (!G.types.length && !G.themes.length && !G.opps.length && !G.scales.length) { mount.innerHTML = ""; return { match: () => true, sections: L => [{ items: L }], state: () => ({ kind: "all" }), view: () => ({ mode: "both", follow: false }), set: () => {} }; }
+    if (!G.types.length && !G.themes.length && !G.opps.length && !G.scales.length) { mount.innerHTML = ""; return { match: () => true, sections: L => [{ items: L }], state: () => ({ kind: "all" }), view: () => ({ mode: "both", follow: false }), set: () => {}, has: () => false }; }
     if (!document.getElementById("gpick-css")) document.head.insertAdjacentHTML("beforeend", `<style id="gpick-css">.gpick{display:flex;flex-direction:column;gap:8px;width:100%}
 .gpick .gk{display:inline-flex;flex-wrap:wrap;gap:4px;align-self:flex-start;border:1px solid var(--rule);border-radius:12px;padding:3px;background:var(--paper)}
 .gpick .gk button{border:0;background:transparent;font:700 .86rem var(--f-body);color:var(--muted);padding:6px 11px;border-radius:9px;cursor:pointer}
@@ -181,7 +191,8 @@
       return out;
     }
     draw();
-    return { match, sections, state: () => ({ ...st }), view: () => ({ mode: st.view, follow: st.view === "both" && !!st.follow }), set: (kind, tag) => { st = { ...st, kind, tag: tag || "" }; try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} draw(); onChange && onChange(); } };
+    const hasGroup = (k, t) => k === "opp" ? G.opps.some(x => x.g === t) : k === "scale" ? G.scales.some(x => x.g === t) : k === "theme" ? G.themes.some(x => x.tag === t) : G.types.some(x => x.tag === t);
+    return { match, sections, has: hasGroup, state: () => ({ ...st }), view: () => ({ mode: st.view, follow: st.view === "both" && !!st.follow }), set: (kind, tag) => { st = { ...st, kind, tag: tag || "" }; try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} draw(); onChange && onChange(); } };
   }
   // Draw groupPicker sections. view(indices) returns the HTML for a list of words in the page's own style.
   function sectionsHTML(secs, view, opts) {
@@ -408,5 +419,5 @@
     runPage();
   }
 
-  window.Sets = { boot, speak, sayWord, unitPicker, groupPicker, groupsOf, tagIcon, sectionsHTML, mountMeters, loadBoxes, loadCompanions, scaleOfWord: (v, g) => { const t = (v.tags || []).find(t => isScale(t) && (!g || scaleSplit(t).g === g)); return t ? scaleSplit(t) : null; }, TAG_TYPES: TYPES, TAG_THEMES: THEME_ICONS, playClip, stopClip, media, watchClips, tile, autoSyl, blankify, load, mapItems, G5, LANGS };
+  window.Sets = { boot, speak, sayWord, unitPicker, groupPicker, groupsOf, wordGroups, tagIcon, sectionsHTML, mountMeters, loadBoxes, loadCompanions, scaleOfWord: (v, g) => { const t = (v.tags || []).find(t => isScale(t) && (!g || scaleSplit(t).g === g)); return t ? scaleSplit(t) : null; }, TAG_TYPES: TYPES, TAG_THEMES: THEME_ICONS, playClip, stopClip, media, watchClips, tile, autoSyl, blankify, load, mapItems, G5, LANGS };
 })();
