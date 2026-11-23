@@ -121,7 +121,7 @@
 .bk .was{font:700 .72rem var(--f-body);color:var(--muted)}
 .bk .wxbtn{border:0;background:transparent;cursor:pointer;font-size:1rem;padding:2px}
 </style>
-<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261123i"></script><script src="js/icons.js?v=20261123i"></script><script src="js/app.js?v=20261123i"></script><script src="js/sets.js?v=20261123i"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261123i"></script><script src="js/storycore.js?v=20261123i"></script><script src="js/montage.js?v=20261123i"></script>
+<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261123j"></script><script src="js/icons.js?v=20261123j"></script><script src="js/app.js?v=20261123j"></script><script src="js/sets.js?v=20261123j"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261123j"></script><script src="js/storycore.js?v=20261123j"></script><script src="js/montage.js?v=20261123j"></script>
 </head><body>
 <div class="wrap" style="max-width:1280px">
   <div class="head2">
@@ -378,12 +378,22 @@ function wxGroups(i){const v=D[i],T=v.tags||[],all=D.map((_,j)=>j);
   const P=(window.PARTNERS_MAP&&v.wid&&window.PARTNERS_MAP.get(v.wid))||{own:[],also:[]};
   return {scales,sim,opp,partners:P.own.filter(x=>x.kind!=="saying")};}
 const WX_DESC=["adjective","adverb","idiom"],WX_AROUND=["verb","noun","preposition"],WX_KL={adjective:"🎨 Adjective",adverb:"⏩ Adverb",idiom:"💬 Idiom",verb:"🏃 Verbs",noun:"📦 Nouns",preposition:"🔗 Little words"};
+// "Describe it": one level per partner meter, shared by adjectives, adverbs and idioms (light rain ≈ rain lightly;
+// pouring rain ≈ rain relentlessly ≈ Raining cats and dogs). Idioms show only when one matches the current level.
+function wxDesc(b,G){const scs=Sets.partnerScales(G.partners).filter(s=>s.items.length>1&&s.kind!=="idiom"),g=(scs[0]||{}).g;
+  const rOf=x=>{const tt=g&&(x.tags||[]).find(t=>t.startsWith("📶 "+g+":"));return tt?+tt.split(":").pop():null;};
+  const have=new Set((b.p||[]).map(x=>x.toLowerCase())),chosen=G.partners.find(x=>have.has(x.phrase.toLowerCase())&&x.kind!=="idiom"&&rOf(x)!=null)||null;
+  let level=WX.lv[g];if(level==null&&chosen)level=rOf(chosen);
+  const idioms=G.partners.filter(x=>x.kind==="idiom"&&(rOf(x)==null||(level!=null&&rOf(x)===level)));
+  const kinds=["adjective","adverb"].filter(k=>G.partners.some(x=>x.kind===k));if(idioms.length)kinds.push("idiom");
+  return {scs,g,rOf,chosen,level,idioms,kinds};}
+function wxKindsHTML(D2){return D2.kinds.map(k=>`<button type="button" class="wxkind" data-wxk="${k}" aria-selected="${k===WX.kind}">${WX_KL[k]}${k==="idiom"?` (${D2.idioms.length})`:""}</button>`).join("");}
 function wxTabs(G){const tabs=[];G.scales.forEach((s,n)=>tabs.push({id:"m"+n,label:"🎚️ "+s.g,s}));if(G.sim.length)tabs.push({id:"sim",label:"≈ Similar"});if(G.opp.length)tabs.push({id:"opp",label:"⇄ Opposites"});
   if(G.partners.some(x=>WX_DESC.includes(x.kind)))tabs.push({id:"desc",label:"✨ Describe it"});
   if(G.partners.some(x=>WX_AROUND.includes(x.kind)))tabs.push({id:"around",label:"📖 Around the word"});return tabs;}
 function openWX(k){const b=CUR&&CUR.blocks[k];if(!b||b.k!=="w")return;const i=wi(b.w);if(i<0)return;
   const G=wxGroups(i),tabs=wxTabs(G);
-  WX={k,i,G,tabs,tab:(tabs.find(x=>x.id==="desc")||tabs[0]||{}).id,kind:"adjective"};drawWX();$("wxDlg").showModal();}
+  WX={k,i,G,tabs,tab:(tabs.find(x=>x.id==="desc")||tabs[0]||{}).id,kind:"adjective",lv:{}};drawWX();$("wxDlg").showModal();}
 function drawWX(){const b=CUR.blocks[WX.k],i=wi(b.w),v=D[i]||{},G=WX.G=wxGroups(i);
   const tabs=WX.tabs;if(!tabs.some(t=>t.id===WX.tab))WX.tab=(tabs[0]||{}).id;
   const subs=(b.p||[]).map((p,n)=>`<span class="wxsub">${esc(p)} <button type="button" data-unsub="${n}" aria-label="Remove ${esc(p)}">✕</button></span>`).join("");
@@ -391,25 +401,27 @@ function drawWX(){const b=CUR.blocks[WX.k],i=wi(b.w),v=D[i]||{},G=WX.G=wxGroups(
   if(!t)body=`<p class="muted">This word has no meter, similar words, opposites or partners yet.</p>`;
   else if(t.s)body=`<p class="muted">Slide to a softer or stronger word, then press <b>↺ Use this word</b>.</p><div id="wxMeter"></div>`;
   else if(t.id==="sim"||t.id==="opp")body=`<p class="muted">${t.id==="sim"?"Words that mean nearly the same. Which one fits your story best?":"Words that mean the opposite. What happens if you use one?"}</p><div class="wxlist">${(t.id==="sim"?G.sim:G.opp).map(j=>`<button type="button" class="wxw" data-use="${j}"><span>${esc(D[j].emoji||"")} <b>${esc(nmw(j))}</b></span><small>${esc(D[j].d||"")}</small><em>↺ Use</em></button>`).join("")}</div>`;
-  else if(t.id==="desc"){const kinds=WX_DESC.filter(k=>G.partners.some(x=>x.kind===k));if(!kinds.includes(WX.kind))WX.kind=kinds[0];
-    const have=new Set((b.p||[]).map(x=>x.toLowerCase())),sc=Sets.partnerScales(G.partners).find(s=>s.kind===WX.kind&&s.items.length>1);
-    const rest=G.partners.filter(x=>x.kind===WX.kind&&!(sc&&sc.items.some(y=>y.phrase===x.phrase)));
-    body=`<div class="wxkinds" role="tablist">${kinds.map(k=>`<button type="button" class="wxkind" data-wxk="${k}" aria-selected="${k===WX.kind}">${WX_KL[k]}</button>`).join("")}</div>
-      ${sc?`<div id="wxpm"></div><div id="wxsame" class="wxsame"></div>`:""}
-      ${rest.length?`<div class="wxpr">${sc?`<span class="wxk">More</span>`:""}${rest.map(x=>`<button type="button" class="wxp${have.has(x.phrase.toLowerCase())?" on":""}" data-sub="${esc(x.phrase)}">${x.kind==="idiom"?"💬 ":""}${esc(x.phrase)}</button>`).join("")}</div>`:""}`;}
+  else if(t.id==="desc"){const D2=wxDesc(b,G);if(!D2.kinds.includes(WX.kind))WX.kind=D2.kinds[0];
+    const have=new Set((b.p||[]).map(x=>x.toLowerCase()));
+    if(WX.kind==="idiom")body=`<div class="wxkinds" id="wxkinds">${wxKindsHTML(D2)}</div><div class="wxpr">${D2.idioms.map(x=>`<button type="button" class="wxp${have.has(x.phrase.toLowerCase())?" on":""}" data-sub="${esc(x.phrase)}">💬 ${esc(x.phrase)}</button>`).join("")}</div>${D2.idioms.some(x=>D2.rOf(x)!=null)&&D2.chosen?`<p class="muted">An idiom with the same strength as <b>${esc(D2.chosen.phrase)}</b>.</p>`:""}`;
+    else{const sc=D2.scs.find(s=>s.kind===WX.kind),rest=G.partners.filter(x=>x.kind===WX.kind&&!(sc&&sc.items.some(y=>y.phrase===x.phrase)));
+      body=`<div class="wxkinds" id="wxkinds">${wxKindsHTML(D2)}</div>${sc?`<div id="wxpm"></div>`:""}
+        ${rest.length?`<div class="wxpr">${sc?`<span class="wxk">More</span>`:""}${rest.map(x=>`<button type="button" class="wxp${have.has(x.phrase.toLowerCase())?" on":""}" data-sub="${esc(x.phrase)}">${esc(x.phrase)}</button>`).join("")}</div>`:""}`;}}
   else if(t.id==="around"){const have=new Set((b.p||[]).map(x=>x.toLowerCase()));
     body=`<p class="muted">Words that often come around <b>${esc(nmw(i))}</b> in a sentence.</p>`+WX_AROUND.map(k=>{const xs=G.partners.filter(x=>x.kind===k);return xs.length?`<div class="wxpr"><span class="wxk">${WX_KL[k]}</span>${xs.map(x=>`<button type="button" class="wxp${have.has(x.phrase.toLowerCase())?" on":""}" data-sub="${esc(x.phrase)}">${esc(x.phrase)}</button>`).join("")}</div>`:"";}).join("");}
   $("wxBody").innerHTML=`<div class="wxhead">${Sets.media(v,{cls:"wxpic",alt:""})}<div><h3>${esc(nmw(i))}</h3><p>${esc(v.d||"")}</p>
       ${b.from?`<p class="wxfrom">↺ You first chose <b>${esc(clean(b.from))}</b>. <button type="button" class="btn small" data-back="1">Go back to ${esc(clean(b.from))}</button></p>`:""}
       ${subs?`<div class="wxsubs">With: ${subs}</div>`:""}</div></div>
     <div class="wxtabs" role="tablist">${tabs.map(x=>`<button type="button" role="tab" class="wxt" data-wxt="${x.id}" aria-selected="${x.id===WX.tab}">${esc(x.label)}</button>`).join("")}</div>${body}`;
-  if(t&&t.id==="desc"){const sc=Sets.partnerScales(G.partners).find(s=>s.kind===WX.kind&&s.items.length>1);const el=$("wxpm");
-    if(sc&&el){const have=(b.p||[]).map(x=>x.toLowerCase()),cur=sc.items.find(x=>have.includes(x.phrase.toLowerCase()))||(()=>{const o=G.partners.find(x=>have.includes(x.phrase.toLowerCase())&&(x.tags||[]).some(tt=>tt.startsWith("📶 "+sc.g+":")));if(!o)return null;const r=+o.tags.find(tt=>tt.startsWith("📶 "+sc.g+":")).split(":").pop();return sc.items.slice().sort((p1,p2)=>Math.abs(p1.r-r)-Math.abs(p2.r-r))[0];})();
-      // other kinds at the same level of the same meter: light rain ≈ rain lightly; pouring rain ≈ Raining cats and dogs
-      const same=r=>{const xs=G.partners.filter(x=>x.kind!==WX.kind&&(x.tags||[]).some(tt=>tt.startsWith("📶 "+sc.g+":")&&+tt.split(":").pop()===r));const hv=new Set((b.p||[]).map(x=>x.toLowerCase()));
-        $("wxsame").innerHTML=xs.length?`<span class="wxk">Same strength</span>${xs.map(x=>`<button type="button" class="wxp${hv.has(x.phrase.toLowerCase())?" on":""}" data-sub="${esc(x.phrase)}">${x.kind==="idiom"?"💬 ":x.kind==="adverb"?"⏩ ":"🎨 "}${esc(x.phrase)}</button>`).join("")}`:"";};
-      Sets.mountPartnerMeter(el,sc,{emoji:v.emoji,start:cur?cur.r:undefined,addLabel:`+ Use with ${nmw(i)}`,onLevel:same,
-        onAdd:x=>{b.p=(b.p||[]).filter(p=>!sc.items.some(y=>y.phrase.toLowerCase()===p.toLowerCase()));if(b.p.length<4)b.p.push(x.phrase);changed();drawBoard();drawWX();}});}}
+  if(t&&t.id==="desc"&&WX.kind!=="idiom"){const D2=wxDesc(b,G),sc=D2.scs.find(s=>s.kind===WX.kind),el=$("wxpm");
+    if(sc&&el){const L=D2.level,start=L==null?undefined:sc.items.slice().sort((p1,p2)=>Math.abs(p1.r-L)-Math.abs(p2.r-L))[0].r;
+      Sets.mountPartnerMeter(el,sc,{emoji:v.emoji,start,addLabel:`+ Use with ${nmw(i)}`,
+        onLevel:r=>{WX.lv[D2.g]=r;const k=$("wxkinds");if(k)k.innerHTML=wxKindsHTML(wxDesc(b,G));   // the idiom count follows the level
+          const x=sc.items.find(y=>y.r===r),btn=el.querySelector(".mtr-w .add");if(!btn||!x)return;
+          if((b.p||[]).some(p=>p.toLowerCase()===x.phrase.toLowerCase())){btn.textContent="✓ Chosen";btn.disabled=true;}
+          else if(D2.chosen)btn.textContent=`↺ Use instead of ${D2.chosen.phrase}`;},
+        onAdd:x=>{b.p=(b.p||[]).filter(p=>{const o=G.partners.find(y=>y.phrase.toLowerCase()===p.toLowerCase());return !(o&&o.kind!=="idiom"&&D2.rOf(o)!=null);});   // one level per meter, in any word type
+          if(b.p.length<4)b.p.push(x.phrase);WX.lv[D2.g]=x.r;changed();drawBoard();drawWX();}});}}
   if(t&&t.s){const all=D.map((_,j)=>j),byR=new Map();
     all.forEach(j=>(D[j].tags||[]).forEach(tt=>{const m=tt.replace(/^📶\s*/,"").match(/^(.*):\s*([+-]?\d+)$/);if(/^📶\s/.test(tt)&&m&&m[1].trim()===t.s.g){const r=+m[2];if(!byR.has(r))byR.set(r,[]);if(!byR.get(r).some(x=>sameName(x,j)))byR.get(r).push(j);}}));
     const levels=[...byR].map(([rank,items])=>({rank,items})),ends=t.s.g.split(/\s*(?:→|⇄)\s*/);
@@ -417,7 +429,7 @@ function drawWX(){const b=CUR.blocks[WX.k],i=wi(b.w),v=D[i]||{},G=WX.G=wxGroups(
     Meter.mount($("wxMeter"),{title:t.s.g,left:ends[0],right:ends[1]||"",two:levels.some(l=>l.rank<0),levels,start:cur?cur.r:t.s.r,addLabel:"↺ Use this word",onAdd:j=>replaceWord(j)});}}
 function replaceWord(j){const b=CUR.blocks[WX.k];if(!b||!D[j])return;const nw=D[j].w;if(nw===b.w)return;
   if(!b.from)b.from=b.w;if(b.from===nw)delete b.from;b.w=nw;delete b.p;
-  changed();drawBoard();WX.i=j;WX.tabs=wxTabs(wxGroups(j));
+  changed();drawBoard();WX.i=j;WX.tabs=wxTabs(wxGroups(j));WX.lv={};
   drawWX();App.status(`Now: ${clean(nw)}`,true);}
 $("wxBody").addEventListener("click",e=>{const b=CUR.blocks[WX.k];
   const t=e.target.closest("[data-wxt]");if(t){WX.tab=t.dataset.wxt;drawWX();return;}
