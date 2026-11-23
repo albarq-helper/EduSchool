@@ -72,7 +72,11 @@
 .mtr-gauge .ndl{transition:transform .75s cubic-bezier(.34,1.56,.64,1);transform-box:view-box;transform-origin:0 0}
 .mtr-gauge .tk{cursor:pointer}
 .mtr-gauge .big{animation:mtrpop .45s ease;transform-box:fill-box;transform-origin:center}
-.mtr[data-sty="arc"] .mtr-gauge,.mtr[data-sty="dial"] .mtr-gauge{display:flex}
+.mtr[data-sty="arc"] .mtr-gauge,.mtr[data-sty="dial"] .mtr-gauge,.mtr[data-sty="thermo"] .mtr-gauge{display:flex}
+.mtr[data-sty="thermo"] .mtr-track,.mtr[data-sty="thermo"] .mtr-face{display:none}.mtr[data-sty="thermo"] .mtr-top{grid-template-columns:1fr}
+.mtr-gauge .hg{transition:transform .8s cubic-bezier(.34,1.56,.64,1),fill .4s;transform-box:fill-box;transform-origin:50% 100%}
+.mtr-gauge .bub{animation:mtrbub 1.6s ease-in infinite;opacity:0}
+@keyframes mtrbub{0%{transform:translateY(0);opacity:0}20%{opacity:.8}100%{transform:translateY(-60px);opacity:0}}
 .mtr[data-sty="arc"] .mtr-track,.mtr[data-sty="dial"] .mtr-track,.mtr[data-sty="arc"] .mtr-face,.mtr[data-sty="dial"] .mtr-face{display:none}
 .mtr[data-sty="arc"] .mtr-top,.mtr[data-sty="dial"] .mtr-top{grid-template-columns:1fr}
 @media (prefers-reduced-motion:reduce){.mtr-gauge .sg,.mtr-gauge .ndl{transition:none}}
@@ -95,7 +99,7 @@
     if (p.birth_date) { const b = new Date(p.birth_date), n = new Date(); let a = n.getFullYear() - b.getFullYear(); if (n.getMonth() < b.getMonth() || (n.getMonth() === b.getMonth() && n.getDate() < b.getDate())) a--; return a; }
     return p.birth_year ? new Date().getFullYear() - p.birth_year : null; }
   // what the parent allows (profiles.view_prefs); nothing set = everything on, chosen by age
-  const LOOKS = ["arc", "dial", "bar"];
+  const LOOKS = ["arc", "dial", "thermo", "bar"];
   function prefs() { const p = (window.App && App.profile && App.profile.view_prefs) || {}, a = age();
     const meters = (Array.isArray(p.meters) ? p.meters : LOOKS).filter(x => LOOKS.includes(x));
     const words = Array.isArray(p.words) ? p.words.filter(x => x === "wheel" || x === "venn") : (a != null && a <= 7 ? ["wheel"] : ["wheel", "venn"]);
@@ -118,7 +122,7 @@
     if (o.start != null && L[k].rank !== o.start) k = L.reduce((b, l, j) => Math.abs(l.rank - o.start) < Math.abs(L[b].rank - o.start) ? j : b, 0);
     let sty = o.style || style();
     const $m = $(`<div class="mtr" role="group" aria-label="${esc(o.title)} feeling meter" data-sty="${sty}">
-      <div class="mtr-head"${prefs().meters.length < 2 ? " hidden" : ""}><div class="mtr-sty" role="group" aria-label="Meter look">${[["arc", "🌈", "Rainbow"], ["dial", "⏱️", "Dial"], ["bar", "🎚️", "Slider"]].filter(x => prefs().meters.includes(x[0])).map(([k, i, t]) => `<button type="button" data-sty="${k}" title="${t}" aria-label="${t}" aria-pressed="${k === sty}">${i}</button>`).join("")}</div></div>
+      <div class="mtr-head"${prefs().meters.length < 2 ? " hidden" : ""}><div class="mtr-sty" role="group" aria-label="Meter look">${[["arc", "🌈", "Rainbow"], ["dial", "⏱️", "Dial"], ["thermo", "🌡️", "Thermometer"], ["bar", "🎚️", "Slider"]].filter(x => prefs().meters.includes(x[0])).map(([k, i, t]) => `<button type="button" data-sty="${k}" title="${t}" aria-label="${t}" aria-pressed="${k === sty}">${i}</button>`).join("")}</div></div>
       <div class="mtr-gauge"></div>
       <div class="mtr-top"><div class="mtr-face" aria-hidden="true"></div><div><div class="mtr-lv"></div><div class="mtr-words"></div></div></div>
       <div class="mtr-track" style="--grad:${grad}"><input type="range" min="0" max="${L.length - 1}" step="1" value="${k}" aria-label="Strength">
@@ -137,6 +141,19 @@
       if (sty === "arc") $g.html(`<svg viewBox="-160 -152 320 182">${L.map((l, j) => { const [a1, a2] = segA(j), [ex, ey] = P(106, (a1 + a2) / 2);
           return `<g class="sg" data-j="${j}"><path d="${arcD(72, 142, a1, a2)}" fill="${strong(l.rank)}"><title>${esc(l.items.map(i => clean(D[i] && D[i].w)).join(", "))}</title></path>${N <= 12 ? `<text x="${ex}" y="${ey}" font-size="${N > 8 ? 17 : 22}" text-anchor="middle" dominant-baseline="middle">${faceOf(l)}</text>` : ""}</g>`; }).join("")}
         <text class="cw" x="0" y="-18" font-size="24" font-weight="800" text-anchor="middle" fill="#1b2333"></text><text class="cl" x="0" y="4" font-size="11" font-weight="800" text-anchor="middle" fill="#475569"></text>${ends}</svg>`);
+      else if (sty === "thermo") { const top = 10, bot = 200, H = bot - top, yOf = j => bot - (j + .5) * H / N;
+        $g.html(`<svg viewBox="0 -10 380 270">
+          <rect x="58" y="${top - 6}" width="44" height="${H + 12}" rx="22" fill="#fff" stroke="#cbd5e1" stroke-width="3"/>
+          <rect class="hg" x="68" y="${top}" width="24" height="${H + 30}" rx="12" fill="${strong(L[0].rank)}"/>
+          <circle class="bulb" cx="80" cy="${bot + 28}" r="30" fill="${strong(L[0].rank)}" stroke="#fff" stroke-width="5"/>
+          <circle cx="71" cy="${bot + 19}" r="8" fill="rgba(255,255,255,.55)"/>
+          ${[0, 1, 2].map(b => `<circle class="bub" cx="${74 + b * 6}" cy="${bot + 10}" r="3" fill="rgba(255,255,255,.8)" style="animation-delay:${b * .5}s"/>`).join("")}
+          ${L.map((l, j) => { const y = yOf(j); return `<g class="tk" data-j="${j}"><line x1="104" y1="${y}" x2="118" y2="${y}" stroke="#334155" stroke-width="3" stroke-linecap="round"/>
+            <text x="34" y="${y + 1}" font-size="${N > 9 ? 15 : 19}" text-anchor="middle" dominant-baseline="middle">${faceOf(l)}</text>
+            <rect class="tl" x="124" y="${y - 11}" width="${Math.min(246, 22 + l.items.map(i => clean(D[i] && D[i].w)).join(", ").length * 6.4)}" height="22" rx="11" fill="rgba(255,255,255,.7)"/>
+            <text class="tt" x="134" y="${y + 1}" font-size="11.5" font-weight="700" dominant-baseline="middle" fill="#1b2333">${esc((l.rank > 0 ? "+" : "") + l.rank + " · " + (l.items.map(i => clean(D[i] && D[i].w)).join(", ").slice(0, 34)))}</text></g>`; }).join("")}
+          <text x="80" y="${bot + 74}" font-size="11" font-weight="800" text-anchor="middle" fill="#334155">${esc(String(o.left || "").toUpperCase())}</text>
+          <text x="80" y="${top - 16}" font-size="11" font-weight="800" text-anchor="middle" fill="#334155">${esc(String(o.right || "").toUpperCase())}</text></svg>`); }
       else $g.html(`<svg viewBox="-165 -165 330 195">${L.map((l, j) => { const [a1, a2] = segA(j); return `<path d="${arcD(118, 130, a1 + .01, a2 - .01)}" fill="${strong(l.rank)}"/>`; }).join("")}
         ${L.map((l, j) => { const [a1, a2] = segA(j), m = (a1 + a2) / 2, [x1, y1] = P(110, m), [x2, y2] = P(100, m), [tx, ty] = P(146, m);
           return `<g class="tk" data-j="${j}"><line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#334155" stroke-width="3" stroke-linecap="round"/><circle cx="${tx}" cy="${ty}" r="13" fill="rgba(255,255,255,.85)"/><text x="${tx}" y="${ty + 1}" font-size="10" font-weight="800" text-anchor="middle" dominant-baseline="middle" fill="#1b2333">${l.rank > 0 ? "+" : ""}${l.rank}</text></g>`; }).join("")}
@@ -150,6 +167,9 @@
       if (sty === "arc") { $m.find(".mtr-gauge .sg").each(function (j) { const [a1, a2] = segA(j), m = (a1 + a2) / 2, on = j === k;
           this.style.transform = on ? `translate(${(Math.cos(m) * 9).toFixed(1)}px,${(Math.sin(m) * 9).toFixed(1)}px) scale(1.04)` : ""; this.style.opacity = on ? 1 : .55; });
         $m.find(".mtr-gauge .cw").text(word1(l)); $m.find(".mtr-gauge .cl").text(`${l.rank > 0 ? "+" : ""}${l.rank}`); }
+      if (sty === "thermo") { const top = 10, bot = 200, Hr = bot - top + 30, yk = bot - (k + .5) * (bot - top) / N, frac = (top + Hr - yk) / Hr, c = strong(l.rank);
+        $m.find(".mtr-gauge .hg").css("transform", `scaleY(${frac.toFixed(3)})`).attr("fill", c); $m.find(".mtr-gauge .bulb").attr("fill", c);
+        $m.find(".mtr-gauge .tk").each(function (j) { $(this).find(".tl").attr("fill", j === k ? "#1b2333" : "rgba(255,255,255,.7)"); $(this).find(".tt").attr("fill", j === k ? "#fff" : "#1b2333"); }); }
       if (sty === "dial") { const [a1, a2] = segA(k), deg = ((a1 + a2) / 2) * 180 / PI - 270;
         $m.find(".mtr-gauge .ndl").css("transform", `rotate(${deg.toFixed(1)}deg)`); $m.find(".mtr-gauge .cw").text(word1(l));
         const $b = $m.find(".mtr-gauge .big"); $b.text(faceOf(l)); if (animate && $b[0]) { $b.removeClass("big"); void $b[0].getBBox; $b.addClass("big"); } }

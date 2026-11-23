@@ -3,7 +3,7 @@
 <title>Teacher Dashboard · Helper Academy</title><link rel="icon" href="assets/icons/brilliant.png">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
 <link rel="stylesheet" href="css/app.css">
-<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261123y"></script><script src="js/icons.js?v=20261123y"></script><script src="js/app.js?v=20261123y"></script>
+<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261123z"></script><script src="js/icons.js?v=20261123z"></script><script src="js/app.js?v=20261123z"></script>
 </head><body>
 <div class="wrap">
   <div class="thead">
@@ -48,8 +48,8 @@
       <button class="btn small" type="button" id="svBirthSave">Save</button><span class="muted" id="svAge" style="font-weight:600;font-size:.85rem"></span></div>
     <div id="svViews" style="display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;margin:0 0 8px;font-weight:700;background:var(--paper);border:1px solid var(--rule);border-radius:12px;padding:10px 12px">
       <span>🎨 Picture views</span>
-      <span style="display:flex;gap:10px;flex-wrap:wrap">Meters: <label><input type="checkbox" data-vm="arc"> 🌈 Rainbow</label><label><input type="checkbox" data-vm="dial"> ⏱️ Dial</label><label><input type="checkbox" data-vm="bar"> 🎚️ Slider</label></span>
-      <label>Start with <select id="svMeterDef" style="font:inherit;padding:4px 6px;border:1px solid var(--rule);border-radius:8px"><option value="auto">By age</option><option value="arc">🌈 Rainbow</option><option value="dial">⏱️ Dial</option><option value="bar">🎚️ Slider</option></select></label>
+      <span style="display:flex;gap:10px;flex-wrap:wrap">Meters: <label><input type="checkbox" data-vm="arc"> 🌈 Rainbow</label><label><input type="checkbox" data-vm="dial"> ⏱️ Dial</label><label><input type="checkbox" data-vm="thermo"> 🌡️ Thermometer</label><label><input type="checkbox" data-vm="bar"> 🎚️ Slider</label></span>
+      <label>Start with <select id="svMeterDef" style="font:inherit;padding:4px 6px;border:1px solid var(--rule);border-radius:8px"><option value="auto">By age</option><option value="arc">🌈 Rainbow</option><option value="dial">⏱️ Dial</option><option value="thermo">🌡️ Thermometer</option><option value="bar">🎚️ Slider</option></select></label>
       <span style="display:flex;gap:10px;flex-wrap:wrap">Word pictures: <label><input type="checkbox" data-vw="wheel"> 🎡 Wheel</label><label><input type="checkbox" data-vw="venn"> ⭕ Venn</label></span>
       <button class="btn small" type="button" id="svViewsSave">Save</button><span class="muted" id="svViewsNote" style="font-weight:600;font-size:.85rem"></span></div>
     <div><h3 class="sec-title" style="font-size:1rem;margin-bottom:8px"><i data-i="target"></i>Most-missed terms</h3><div class="words" id="svMissed"></div></div>
@@ -124,7 +124,7 @@ $("students").onkeydown=e=>{if(e.key==="Enter"){const r=e.target.closest("[data-
 $("copyCode").onclick=()=>{navigator.clipboard?.writeText(CUR.join_code).then(()=>App.status("Code copied",true),()=>{});};
 function ageOn(d){if(!d)return null;const b=new Date(d+"T00:00:00"),n=new Date();let a=n.getFullYear()-b.getFullYear();if(n.getMonth()<b.getMonth()||(n.getMonth()===b.getMonth()&&n.getDate()<b.getDate()))a--;return a;}
 // which picture views the student can use; nothing chosen = all on, meter look by age
-function showViews(){const p=SEL.views||{},a=ageOn(SEL.birth),M=Array.isArray(p.meters)?p.meters:["arc","dial","bar"],W=Array.isArray(p.words)?p.words:(a!=null&&a<=7?["wheel"]:["wheel","venn"]);
+function showViews(){const p=SEL.views||{},a=ageOn(SEL.birth),M=Array.isArray(p.meters)?p.meters:["arc","dial","thermo","bar"],W=Array.isArray(p.words)?p.words:(a!=null&&a<=7?["wheel"]:["wheel","venn"]);
   document.querySelectorAll("#svViews [data-vm]").forEach(c=>c.checked=M.includes(c.dataset.vm));document.querySelectorAll("#svViews [data-vw]").forEach(c=>c.checked=W.includes(c.dataset.vw));
   $("svMeterDef").value=p.meterDefault||"auto";const by=a==null||a<=11?"🌈 Rainbow":a<=14?"⏱️ Dial":"🎚️ Slider";
   $("svViewsNote").textContent=a!=null?`By age (${a}): ${by}. The student can switch between the meters you allow.`:"By age needs a birth date.";}
