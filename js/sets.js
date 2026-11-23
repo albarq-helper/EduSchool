@@ -213,7 +213,10 @@
   function sectionsHTML(secs, view, opts) {
     opts = opts || {}; const mode = opts.mode || (opts.rows === false ? "meter" : "both"), useMeter = !!window.Meter && opts.meter !== false && mode !== "list";
     const lab2 = r => r === 0 ? "neutral" : ["", "a little", "some", "strong", "very strong", "strongest"][Math.min(5, Math.abs(r))];
-    const lab1 = (r, S) => r === 0 ? String((S && S.left) || "lowest").toLowerCase() : ["", "a little", "some", "strong", "very strong", "strongest"][Math.min(5, r)];
+    // level names: 0 is the start (or, on a negative meter, the good end); minus levels count towards the left pole
+    const lab1 = (r, S) => { const neg = S && !S.two && (S.levels || []).some(l => l.rank < 0), str = ["", "a little", "some", "strong", "very strong", "strongest"][Math.min(5, Math.abs(r))];
+      if (r === 0) return String((S && (neg ? S.right : S.left)) || "lowest").toLowerCase();
+      return S && S.two ? `${str} · ${String(r < 0 ? S.left : S.right).toLowerCase()}` : neg ? `${str} · ${String(S.left || "").toLowerCase()}` : str; };
     // same colours as the meter: red (bad, left) → green (good, right); neutral meters in blue
     let colT = null; const col = (r, two, title, levels) => { if (window.Meter && Meter.color && levels) return Meter.color(r, Meter.tone(title, levels)); const a = Math.min(5, Math.abs(r)); if (two) return r < 0 ? `hsl(0 75% ${92 - a * 9}%)` : r > 0 ? `hsl(145 55% ${92 - a * 9}%)` : "hsl(220 15% 90%)";
       return r <= 0 ? "hsl(145 55% 85%)" : `hsl(${40 - a * 8} 85% ${90 - a * 7}%)`; };
