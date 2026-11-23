@@ -107,6 +107,7 @@ input.ok,textarea.ok{border-color:var(--good)!important;background:var(--good-so
 .partners .ph{font:800 .72rem var(--f-body);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .partners .pr{display:flex;flex-wrap:wrap;gap:5px;align-items:center}
 .partners .pk{font:700 .78rem var(--f-body);color:var(--muted);min-width:9.5em}
+.g .partners .pk{min-width:0;width:100%}
 .partners .pk small{font-weight:600;opacity:.8}
 .partners .pc{display:inline-flex;align-items:center;gap:4px;border:1.5px solid var(--rule);border-radius:999px;padding:2px 9px;background:var(--sheet);color:var(--ink)}
 .partners .pc b{color:var(--accent)}
@@ -114,7 +115,7 @@ input.ok,textarea.ok{border-color:var(--good)!important;background:var(--good-so
 .partners a.pc:hover,.partners button.pc:hover{border-color:var(--accent)}
 @media print{.partners .pc{border:0;padding:0 4px}}
 </style>
-<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261123b"></script><script src="js/icons.js?v=20261123b"></script><script src="js/app.js?v=20261123b"></script><script src="js/sets.js?v=20261123b"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261123b"></script>
+<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261123c"></script><script src="js/icons.js?v=20261123c"></script><script src="js/app.js?v=20261123c"></script><script src="js/sets.js?v=20261123c"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261123c"></script>
 </head><body>
 <div class="wrap" style="max-width:1180px">
   <div class="head2">
@@ -163,7 +164,7 @@ const UP=Sets.unitPicker($("unitMount"),()=>render());
 const METER_AT={};   // where each Feeling meter was left, so re-drawing keeps it
 const GP=Sets.groupPicker($("groupMount"),()=>render(),{view:"both",follow:true});
 Sets.loadCompanions().then(n=>{if(n)render();}).catch(()=>{});
-Sets.loadPartners(D).then(m=>{PARTNERS=m;if(m.size)render();}).catch(()=>{});   // whole-scale words for the Feeling meters
+Sets.loadPartners(D).then(m=>{PARTNERS=m;if(m.size)render();}).catch(e=>console.warn("partners",e));   // whole-scale words for the Feeling meters
 let VIEW=store.get("view","detail"), SHOW=Object.assign({pic:true,syl:true,say:true,mean:true,ex:true,tr:true},store.get("show",{}));
 let ORDER=D.map((v,i)=>i), ST={};   // ST[i] = {cw, cm, typed, ok, mtyped, mrev, self}
 const S=i=>ST[i]||(ST[i]={});
@@ -241,7 +242,7 @@ function showWord(i){const v=D[i];if(!v)return;if(!visible().includes(i)){$("q")
     if(!el)return;el.scrollIntoView({behavior:"smooth",block:"center"});el.classList.remove("hl");void el.offsetWidth;el.classList.add("hl");setTimeout(()=>el.classList.remove("hl"),2600);});}
 function wordIndex(w){const t=String(w||"").toLowerCase();let k=D.findIndex(v=>!v.companion&&String(v.w).toLowerCase()===t);if(k<0)k=D.findIndex(v=>String(v.w).toLowerCase()===t);return k;}
 // ---- word partners: the words that go with this word (heavy rain, rain heavily, make a mistake…) ----
-let PARTNERS=new Map();
+var PARTNERS=PARTNERS||new Map();   // var: the loader above may finish before this line runs
 const reEsc=x=>x.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
 function boldPartner(phrase,partner){let h=esc(phrase);String(partner||"").split(" … ").filter(Boolean).forEach(x=>{h=h.replace(new RegExp("("+reEsc(esc(x))+")","i"),"<b>$1</b>");});return h;}
 function partnerChip(x){const inner=x.kind==="idiom"?`💬 <b>${esc(x.phrase)}</b>`:boldPartner(x.phrase,x.partner);
@@ -257,7 +258,7 @@ function card(i,view){const v=D[i], hid=wordHidden(i);
   if(view==="detail")return `<article class="d" data-i="${i}">${SHOW.pic?picHTML(i,v):"<span></span>"}
     <div class="body"><div class="w">${wordHTML(i,v)}</div>${hid?"":pillsHTML(v)}${sayHTML(v,i)}${spellHTML(i,v)}${meanHTML(i,v)}${idiomHTML(i,v)}${exHTML(i,v)}${trHTML(i,v)}${partnersHTML(i,v)}${groupsHTML(i,v)}${coverBtns(i)}</div>
     <div class="side">${unitTag(v)}${hearBtn(i,v)}</div></article>`;
-  if(view==="grid")return `<article class="g" data-i="${i}">${picHTML(i,v)}<div class="w">${wordHTML(i,v)}${hearBtn(i,v)}</div>${hid?"":pillsHTML(v)}${sayHTML(v,i)}${spellHTML(i,v)}${meanHTML(i,v)}${idiomHTML(i,v)}${trHTML(i,v)}${groupsHTML(i,v)}${coverBtns(i)}</article>`;
+  if(view==="grid")return `<article class="g" data-i="${i}">${picHTML(i,v)}<div class="w">${wordHTML(i,v)}${hearBtn(i,v)}</div>${hid?"":pillsHTML(v)}${sayHTML(v,i)}${spellHTML(i,v)}${meanHTML(i,v)}${idiomHTML(i,v)}${trHTML(i,v)}${partnersHTML(i,v)}${groupsHTML(i,v)}${coverBtns(i)}</article>`;
   if(view==="blocks")return `<article class="b" data-i="${i}">${picHTML(i,v)}<div class="w bw" data-hear="${i}" role="button" tabindex="0" aria-label="Hear the word">${wordHTML(i,v)} ${icon("volume-2",15)}</div>${sayHTML(v,i)}${spellHTML(i,v)}${S(i).cm?meanHTML(i,v):""}${groupsHTML(i,v)}${coverBtns(i)}</article>`;
   return `<tr data-i="${i}">${SHOW.pic?`<td>${picHTML(i,v)}</td>`:""}<td><div class="w">${wordHTML(i,v)}</div>${sayHTML(v,i)}${spellHTML(i,v)}</td><td>${hearBtn(i,v)}</td>
     <td>${meanHTML(i,v)}${idiomHTML(i,v)}${partnersHTML(i,v)}${groupsHTML(i,v)}${coverBtns(i)}</td>${SHOW.tr&&D.some(x=>x.ar)?`<td class="tr" dir="auto">${S(i).cm&&!S(i).mrev?"":esc(v.ar)}</td>`:""}<td>${unitTag(v)}</td></tr>`;}
