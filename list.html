@@ -116,7 +116,7 @@ input.ok,textarea.ok{border-color:var(--good)!important;background:var(--good-so
 .partners a.pc:hover,.partners button.pc:hover{border-color:var(--accent)}
 @media print{.partners .pc{border:0;padding:0 4px}}
 </style>
-<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261123j"></script><script src="js/icons.js?v=20261123j"></script><script src="js/app.js?v=20261123j"></script><script src="js/sets.js?v=20261123j"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261123j"></script>
+<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261123k"></script><script src="js/icons.js?v=20261123k"></script><script src="js/app.js?v=20261123k"></script><script src="js/sets.js?v=20261123k"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261123k"></script>
 </head><body>
 <div class="wrap" style="max-width:1180px">
   <div class="head2">
@@ -257,7 +257,7 @@ function partnerChip(x,mode){const inner=mode==="word"?`<b>${esc(x.link?x.link.w
 function partnersHTML(i,v){if(wordHidden(i)||!v.wid)return "";const P=PARTNERS.get(v.wid);if(!P||!(P.own.length||P.also.length))return "";
   const SC=Sets.partnerScales(P.own),onMeter=new Set(SC.filter(s=>s.items.length>1).flatMap(s=>s.items.map(x=>x.phrase)));
   const KL={adjective:"adjectives",adverb:"adverbs",idiom:"idioms",verb:"verbs",noun:"nouns",preposition:"little words"};
-  const meters=SC.filter(s=>s.items.length>1).map((s,n)=>`<div class="pr"><span class="pk">🎚️ ${esc(s.g.split(" · ")[0])} · ${KL[s.kind]||s.kind}</span>${s.items.map(x=>`<span class="pc">${x.kind==="idiom"?"💬 "+esc(x.phrase):boldPartner(x.phrase,x.partner)}</span>`).join('<span class="arr">→</span>')}<button type="button" class="pc pmb" data-pm="${i}|${n}">🎚️ Open meter</button></div><div class="pmeter" id="pm-${i}-${n}" hidden></div>`).join("");
+  const meters=SC.filter(s=>s.items.length>1).map((s,n)=>`<div class="pr"><span class="pk">🎚️ ${esc(s.g.split(" · ").slice(0,/how long/.test(s.g)?2:1).join(" · "))} · ${KL[s.kind]||s.kind}</span>${s.items.map(x=>`<span class="pc">${x.kind==="idiom"?"💬 "+esc(x.phrase):boldPartner(x.phrase,x.partner)}</span>`).join('<span class="arr">→</span>')}<button type="button" class="pc pmb" data-pm="${i}|${n}">🎚️ Open meter</button></div><div class="pmeter" id="pm-${i}-${n}" hidden></div>`).join("");
   const rows=meters+Sets.PARTNER_KINDS.map(([k,lab,hint])=>{const xs=P.own.filter(x=>x.kind===k&&!onMeter.has(x.phrase));return xs.length?`<div class="pr"><span class="pk">${lab}${hint?` <small>${hint}</small>`:""}</span>${xs.map(x=>partnerChip(x)).join("")}</div>`:"";}).join("");
   const also=P.also.length?(v.author?`<div class="pr"><span class="pk">📖 Words in this saying</span>${P.also.map(x=>partnerChip(x,"word")).join("")}</div>`:`<div class="pr"><span class="pk">🔁 Also used in</span>${P.also.map(x=>partnerChip(x)).join("")}</div>`):"";
   return `<div class="partners"><span class="ph">${v.author?"🔗 Linked words":"🔗 Goes with"}</span>${rows}${also}</div>`;}

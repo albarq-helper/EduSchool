@@ -135,7 +135,12 @@ Impact|Impact · small → huge|adjective|small impact:small:1, big impact:big:3
 Nervous|Nervous · a bit → very|adverb|a bit nervous:a bit:1, very nervous:very:4
 Fortunate|Fortunate · very → extremely|adverb|very fortunate:very:3, extremely fortunate:extremely:5
 Obvious|Obvious · very → perfectly|adverb|very obvious:very:3, perfectly obvious:perfectly:5
-Rain|Rain · light → pouring|adverb|rain lightly:lightly:1, rain steadily:steadily:3, rain heavily:heavily:4, rain relentlessly:relentlessly:5
+Rain|Rain · light → pouring|adverb|rain lightly:lightly:1, rain steadily:steadily:3, rain heavily:heavily:4, rain really hard:really hard:5
+Rain|Rain · light → pouring|noun|a drop of rain:drop:0, a drizzle:drizzle:1, a shower:shower:3, a downpour:downpour:5
+Rain|Rain · how long: short → all day|adverb|rain briefly:briefly:1, rain on and off:on and off:2, rain all day:all day:4, rain relentlessly:relentlessly:5
+Wind|Wind · gentle → howling|noun|a breath of wind:breath:0, a breeze:breeze:1, a gust of wind:gust:3, a gale:gale:5
+Snow|Snow · light → heavy|noun|a snowflake:flake:0, a flurry:flurry:1, a snowfall:snowfall:3, a blizzard:blizzard:5
+Noise|Noise · faint → deafening|noun|a murmur:murmur:1, a racket:racket:4, an uproar:uproar:5
 Rain|Rain · light → pouring|idiom|Raining cats and dogs:Raining cats and dogs:5
 Wind|Wind · gentle → howling|adverb|blow gently:gently:1, blow hard:hard:4
 Snow|Snow · light → heavy|adverb|snow lightly:lightly:1, snow heavily:heavily:5

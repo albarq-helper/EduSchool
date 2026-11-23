@@ -7,7 +7,7 @@ from partners import PARTNER_SCALES
 q = lambda s: "'" + s.replace("'", "''") + "'"
 rows = []
 for line in PARTNER_SCALES.strip().splitlines():
-    head, g, kind, items = line.split("|"); assert ":" not in g, g
+    head, g, kind, items = line.split("|"); g = g.replace("how long:", "how long ·"); assert ":" not in g, g
     for it in items.split(","):
         ph, pa, r = [x.strip() for x in it.strip().split(":")]; r = int(r)
         assert pa.lower() in ph.lower(), ph
@@ -22,15 +22,22 @@ sql = f"""-- ===================================================================
 -- =====================================================================
 alter table public.word_partners add column if not exists tags text[] not null default '{{}}';
 
-insert into public.word_partners (word_id, kind, phrase, partner, position, tags, owner_id)
-select w.id, x.kind, x.phrase, x.partner, x.pos, array[x.tag], {owner}
+-- the meters below are the full truth for these words: first clear their old meter levels
+update public.word_partners p set tags = array(select t from unnest(p.tags) t where t not like '📶 %')
+from public.words w where w.id = p.word_id and w.lang = 'en' and w.sense = ''
+  and lower(w.headword) in (""" + ", ".join(sorted({q(h.lower()) for h, *_ in rows})) + f""") and exists (select 1 from unnest(p.tags) t where t like '📶 %');
+
+insert into public.word_partners (word_id, kind, phrase, partner, partner_word_id, position, tags, owner_id)
+select w.id, x.kind, x.phrase, x.partner,
+       (select d.id from public.words d where d.lang = 'en' and d.sense = '' and d.id <> w.id and lower(d.headword) = lower(case when x.kind = 'idiom' then x.phrase else x.partner end) limit 1),
+       x.pos, array[x.tag], {owner}
 from (values
 """ + ",\n".join(f"  ({q(h.lower())}, {q(k)}, {q(ph)}, {q(pa)}, {q(tg)}, {pos})" for h, k, ph, pa, tg, pos in rows) + """
 ) as x(hw, kind, phrase, partner, tag, pos)
 join public.words w on w.lang = 'en' and lower(w.headword) = x.hw and w.sense = ''
 on conflict (word_id, lower(phrase)) do update set
   tags = (select array(select distinct t from unnest(array(select t0 from unnest(public.word_partners.tags) t0 where t0 not like '📶 %') || excluded.tags) t)),
-  partner = excluded.partner;
+  partner = excluded.partner, partner_word_id = coalesce(public.word_partners.partner_word_id, excluded.partner_word_id);
 
 -- check
 select count(*) filter (where exists (select 1 from unnest(tags) t where t like '📶 %')) as partners_on_meters,
