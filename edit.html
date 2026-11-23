@@ -3,7 +3,7 @@
 <title>Edit study set · Helper Academy</title><link rel="icon" href="assets/icons/brilliant.png">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=Noto+Naskh+Arabic:wght@600&display=swap">
 <link rel="stylesheet" href="css/app.css">
-<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261123p"></script><script src="js/icons.js?v=20261123p"></script><script src="js/app.js?v=20261123p"></script><script src="js/sets.js?v=20261123p"></script>
+<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261123q"></script><script src="js/icons.js?v=20261123q"></script><script src="js/app.js?v=20261123q"></script><script src="js/sets.js?v=20261123q"></script>
 <style>
 .groupsbox{border:1px solid var(--rule);border-radius:12px;padding:10px 12px;margin:0 0 10px;background:var(--paper);display:grid;gap:8px}
 .tagf .ttype{gap:6px}.tbtn{font:700 .82rem var(--f-body);padding:5px 10px;border-radius:999px;border:1.5px solid var(--rule);background:var(--sheet);color:var(--ink);cursor:pointer}
@@ -30,6 +30,7 @@
       <label class="f">School or university<select id="inst"></select></label>
       <label class="f" id="newInstBox" hidden>New school / university name<span class="row" style="flex-wrap:nowrap"><input id="newInst" maxlength="120" style="flex:1"><select id="newKind" aria-label="Type"><option value="school">School</option><option value="university">University</option><option value="college">College</option><option value="institute">Institute</option></select></span><input id="newCountry" maxlength="60" placeholder="Country"></label>
       <label class="f">Who can see it<select id="vis"><option value="private">Private: me and the classes I assign it to</option><option value="public">Public: shared in the library</option></select></label>
+      <label class="f">Minimum age<select id="setAge"><option value="0">All ages</option><option value="7">7+</option><option value="10">10+</option><option value="13">13+</option><option value="16">16+</option><option value="18">18+</option></select></label>
       <label class="f wide">Description (optional)<textarea id="desc" maxlength="1000" placeholder="What is this set for? Which book, chapter or course?"></textarea></label>
     </div>
   </section>
@@ -146,6 +147,7 @@ function rowHTML(r,k){
     <label class="f">Term<input data-f="term" data-k="${k}" value="${esc(r.term)}" maxlength="500" dir="auto"></label>
     <label class="f">Meaning / definition${r.set_meaning?` <span class="muted" style="font-weight:400" title="This set uses its own wording; the shared dictionary keeps its own meaning.">· this set's own wording</span>`:""}<input data-f="meaning" data-k="${k}" value="${esc(r.meaning)}" maxlength="1500" dir="auto"></label>
     <label class="f">Example sentence (optional)<input data-f="example" data-k="${k}" value="${esc(r.example)}" maxlength="600" dir="auto" placeholder="Put [brackets] round the term"></label>
+    ${r.id?`<label class="f">Minimum age<select data-age="${k}"><option value="0">All ages</option><option value="7">7+</option><option value="10">10+</option><option value="13">13+</option><option value="16">16+</option><option value="18">18+</option></select></label>`:""}
     <label class="f">Translation (optional)<input data-f="translation" data-k="${k}" value="${esc(r.translation)}" maxlength="300" dir="auto"></label>
     <details class="f idiomf"${r.literal||r.literal_tr||r.equivalent?" open":""}><summary>Idiom fields (optional)</summary>
       <label class="f">Word-for-word meaning<input data-f="literal" data-k="${k}" value="${esc(r.literal||"")}" maxlength="300" dir="auto" placeholder="e.g. Above the moon."></label>
@@ -165,7 +167,11 @@ function rowHTML(r,k){
     :`<div class="row"><label class="row" style="gap:6px;font-weight:700"><input type="radio" name="ans${k}" data-tf="1" data-k="${k}" ${r.answer===1?"checked":""}>True</label><label class="row" style="gap:6px;font-weight:700"><input type="radio" name="ans${k}" data-tf="0" data-k="${k}" ${r.answer===0?"checked":""}>False</label></div>`;
   return `<div class="erow">${head}${qtop}${body}<div class="g"><label class="f">Explanation shown after answering (optional)<input data-f="meaning" data-k="${k}" value="${esc(r.meaning)}" maxlength="1500" dir="auto"></label>${media(r,k,"image_url","Picture (optional)","image/*")}</div></div>`;
 }
+// minimum age of one saved item: saved straight away (owner only, checked by the database)
+document.addEventListener("change",async e=>{const s=e.target.closest("select[data-age]");if(!s)return;const r=ROWS[+s.dataset.age];if(!r||!r.id)return;
+  const {error}=await App.client.rpc("set_item_min_age",{p_entry:r.id,p_age:+s.value});if(error)return App.status(error.message,false);r.min_age=+s.value;App.status(+s.value?`Only for ${s.value}+`:"For all ages",true);});
 function drawRows(){tagList();drawGroups();$("rows").innerHTML=ROWS.length?ROWS.map(rowHTML).join(""):'<p class="empty">No items yet. Add a term or a question, or paste rows from a spreadsheet above.</p>';
+  document.querySelectorAll("select[data-age]").forEach(x=>{const r=ROWS[+x.dataset.age];x.value=String((r&&r.min_age)||0);});
   const t=ROWS.filter(r=>r.kind==="term").length;$("nItems").textContent=`· ${t} terms, ${ROWS.length-t} questions`;}
 $("rows").oninput=e=>{const el=e.target,k=+el.dataset.k;if(isNaN(k)||el.dataset.tagin!==undefined)return;const r=ROWS[k];dirty=true;
   if(el.dataset.f){r[el.dataset.f]=el.dataset.f==="unit"?+el.value:el.value;if(el.dataset.f==="image_url"){const th=el.parentNode.querySelector(".thumb");if(th)th.src=el.value||Sets.tile(r.term||"?");}}
@@ -230,7 +236,7 @@ function fillMeta(){
   const fillCurr=()=>{const i=$("inst").value;$("curr").innerHTML=App.curriculumOptions(LK.curricula,$("curr").value||(SET?SET.curriculum_id:ME.curriculum_id)||"","Any curriculum",i&&i!=="__new"?LK.instCurr(i):[]);};
   fillCurr();
   $("inst").onchange=()=>{$("newInstBox").hidden=$("inst").value!=="__new";fillCurr();};
-  if(SET){$("title").value=SET.title;$("vis").value=SET.visibility;$("desc").value=SET.description;}
+  if(SET){$("title").value=SET.title;$("vis").value=SET.visibility;$("desc").value=SET.description;$("setAge").value=String(SET.min_age||0);}
   ["title","subject","curr","level","lang","tlang","inst","vis","desc"].forEach(id=>$(id).addEventListener("input",()=>dirty=true));
 }
 // ---------- save ----------
@@ -250,7 +256,7 @@ $("save").onclick=async()=>{const m=$("saveMsg"),err=validate();if(err){m.textCo
     if(inst==="__new"){const nm=$("newInst").value.trim();if(nm.length<2)throw new Error("Type the new school or university name.");
       const r=await C.rpc("add_institution",{p_name:nm,p_kind:$("newKind").value,p_country:$("newCountry").value.trim(),p_city:""});if(r.error)throw r.error;inst=r.data;}
     const meta={title:$("title").value.trim(),subject_id:+$("subject").value,curriculum_id:+$("curr").value||null,level_code:$("level").value||"any",language:$("lang").value,translation_lang:$("tlang").value,
-      institution_id:inst,visibility:$("vis").value,description:$("desc").value.trim(),units:UNITS.map(u=>({u:u.u,name:u.name.trim()}))};
+      institution_id:inst,visibility:$("vis").value,min_age:+$("setAge").value||0,description:$("desc").value.trim(),units:UNITS.map(u=>({u:u.u,name:u.name.trim()}))};
     if(meta.curriculum_id&&inst&&!LK.instCurr(inst).includes(meta.curriculum_id)&&(ME.is_admin||ME.institution_id===inst))
       await C.from("institution_curricula").insert({institution_id:inst,curriculum_id:meta.curriculum_id});   // the school now follows it too
     let sid=SET&&SET.id;

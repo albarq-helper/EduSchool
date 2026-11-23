@@ -125,8 +125,9 @@ input.ok,textarea.ok{border-color:var(--good)!important;background:var(--good-so
 .exbody .partners,.exbody .wgroups{margin-top:0}
 .says{display:grid;gap:8px}.say1{display:grid;gap:2px;text-decoration:none;color:var(--ink);border:1px solid var(--rule);border-radius:10px;padding:8px 10px;background:var(--paper)}
 .say1:hover{border-color:var(--accent)}.say1 b{font-style:italic}.say1 small{color:var(--muted);font-weight:700}.say1 span{font-size:.9rem}
+.agepill{background:#fde2e2;color:#9b1c1c;border-color:#f5b5b5}
 </style>
-<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261123p"></script><script src="js/icons.js?v=20261123p"></script><script src="js/app.js?v=20261123p"></script><script src="js/sets.js?v=20261123p"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261123p"></script>
+<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261123q"></script><script src="js/icons.js?v=20261123q"></script><script src="js/app.js?v=20261123q"></script><script src="js/sets.js?v=20261123q"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261123q"></script>
 </head><body>
 <div class="wrap" style="max-width:1180px">
   <div class="head2">
@@ -237,7 +238,9 @@ function meanHTML(i,v){const s=S(i);
   return `${s.mtyped?`<div class="mine"><span class="muted">You wrote:</span> ${esc(s.mtyped)}</div>`:""}<div class="mean"><b>Meaning:</b> ${esc(v.d)}</div>
     <div class="ans">${s.self===undefined?`<span class="muted" style="font-size:.88rem">Did you get it?</span><button class="btn small" type="button" data-self="${i}" data-val="1">${icon("check",14)}I got it</button><button class="btn small" type="button" data-self="${i}" data-val="0">${icon("x",14)}Not yet</button>`
       :s.self?`<span class="res ok">${icon("check",15)} Got it</span>`:`<span class="res no">${icon("rotate-ccw",15)} Practise again</span>`}</div>`;}
-const unitTag=v=>{if(v.companion)return `<span class="utag" title="Not in this set: shown so you can see the whole scale">Extra word</span>`;const x=U.find(u=>u.u===v.u);return `<span class="utag">${esc(x?uname(x):"")}</span>`;};
+const agePill=v=>v.minAge?`<span class="utag agepill" title="Only shown to students aged ${v.minAge} or older">${v.minAge}+</span>`:"";
+const unitTag=v=>agePill(v)+unitTag0(v);
+const unitTag0=v=>{if(v.companion)return `<span class="utag" title="Not in this set: shown so you can see the whole scale">Extra word</span>`;const x=U.find(u=>u.u===v.u);return `<span class="utag">${esc(x?uname(x):"")}</span>`;};
 
 // ---- groups this word belongs to: Feeling meters, opposites, themes (similar words) ----
 function groupURL(k,t,w){const q=new URLSearchParams(location.search);q.set("g",k+"|"+t);q.set("w",w);return location.pathname+"?"+q.toString();}

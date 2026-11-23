@@ -3,7 +3,7 @@
 <title>Teacher Dashboard · Helper Academy</title><link rel="icon" href="assets/icons/brilliant.png">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
 <link rel="stylesheet" href="css/app.css">
-<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261123p"></script><script src="js/icons.js?v=20261123p"></script><script src="js/app.js?v=20261123p"></script>
+<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261123q"></script><script src="js/icons.js?v=20261123q"></script><script src="js/app.js?v=20261123q"></script>
 </head><body>
 <div class="wrap">
   <div class="thead">
@@ -44,6 +44,8 @@
       <div class="stat t-teal"><div class="ib" data-i="chart-column"></div><div><b id="sAvg">–</b><span>Average</span></div></div>
       <div class="stat t-coral"><div class="ib" data-i="circle-alert"></div><div><b id="sMiss">–</b><span>Terms to review</span></div></div>
     </div>
+    <div class="ageset" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:4px 0 8px;font-weight:700"><label>🎂 Birth year <input id="svBirth" type="number" min="1990" max="2030" placeholder="e.g. 2015" inputmode="numeric" style="width:110px;font:inherit;padding:6px 8px;border:1px solid var(--rule);border-radius:8px"></label>
+      <button class="btn small" type="button" id="svBirthSave">Save</button><span class="muted" id="svAge" style="font-weight:600;font-size:.85rem"></span></div>
     <div><h3 class="sec-title" style="font-size:1rem;margin-bottom:8px"><i data-i="target"></i>Most-missed terms</h3><div class="words" id="svMissed"></div></div>
     <form class="row" id="assignForm" hidden><select id="listSet" aria-label="Study set for the list"></select><input id="listName" maxlength="100" style="flex:1 1 260px" aria-label="Practice list name">
       <button class="btn primary"><i data-i="list-checks"></i>Assign as practice list</button><span class="msg" id="assignMsg"></span></form>
@@ -78,8 +80,8 @@ $("newClass").onsubmit=async e=>{e.preventDefault();const name=$("className").va
 async function openClass(id){CUR=CLASSES.find(c=>c.id===id)||{id};$("studentView").hidden=true;$("classView").hidden=false;
   document.querySelectorAll("#classes [data-c]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.c===id));
   $("cvName").innerHTML=icon("users",20)+esc(CUR.name||"");$("cvCode").textContent=CUR.join_code||"";
-  const {data:mem}=await C.from("class_members").select("student_id, joined_at, profiles(full_name)").eq("class_id",id);
-  STU=(mem||[]).map(m=>({id:m.student_id,name:m.profiles?.full_name||"(no name)",joined:m.joined_at}));
+  const {data:mem}=await C.from("class_members").select("student_id, joined_at, profiles(full_name,birth_year)").eq("class_id",id);
+  STU=(mem||[]).map(m=>({id:m.student_id,name:m.profiles?.full_name||"(no name)",joined:m.joined_at,birth:m.profiles?.birth_year||null}));
   const ids=STU.map(s=>s.id);
   ATT=ids.length?((await C.from("attempts").select("id,student_id,activity,detail,units,word_list,score,total,created_at").in("student_id",ids).order("created_at",{ascending:false}).limit(1000)).data||[]):[];
   const aids=ATT.slice(0,400).map(a=>a.id);
@@ -114,7 +116,9 @@ $("assignSet").onsubmit=async e=>{e.preventDefault();const sid=$("setPick").valu
 $("students").onclick=e=>{const r=e.target.closest("[data-s]");if(r)openStudent(r.dataset.s);};
 $("students").onkeydown=e=>{if(e.key==="Enter"){const r=e.target.closest("[data-s]");if(r)openStudent(r.dataset.s);}};
 $("copyCode").onclick=()=>{navigator.clipboard?.writeText(CUR.join_code).then(()=>App.status("Code copied",true),()=>{});};
+function showAge(){const y=+$("svBirth").value;$("svAge").textContent=y?`About ${new Date().getFullYear()-y} years old: words, quotes and sets with a higher minimum age stay hidden.`:"No birth year yet: only all-ages content shows.";}
 async function openStudent(id){SEL=STU.find(s=>s.id===id);$("classView").hidden=true;$("studentView").hidden=false;
+  $("svBirth").value=SEL.birth||"";showAge();
   $("svName").textContent=SEL.name;$("svAv").textContent=ini(SEL.name);$("svSub").textContent="Joined "+new Date(SEL.joined).toLocaleDateString();
   const a=ATT.filter(x=>x.student_id===id), ids=new Set(a.map(x=>x.id)), ans=ANS.filter(x=>ids.has(x.attempt_id));
   const miss=missedFrom(ans);SEL.miss=miss;
@@ -150,6 +154,8 @@ $("addCurr").onsubmit=async e=>{e.preventDefault();const cid=+$("currPick").valu
 $("schoolCurr").onclick=async e=>{const b=e.target.closest("[data-rmc]");if(!b)return;const cid=+b.dataset.rmc;
   const {error}=await C.from("institution_curricula").delete().eq("institution_id",ME.institution_id).eq("curriculum_id",cid);
   if(!error){LK.links=LK.links.filter(x=>!(x.institution_id===ME.institution_id&&x.curriculum_id===cid));drawSchool();}};
+$("svBirthSave").onclick=async()=>{const y=$("svBirth").value?+$("svBirth").value:null;const {error}=await C.rpc("set_student_birth_year",{p_student:SEL.id,p_year:y});
+  if(error)return App.status(error.message,false);SEL.birth=y;showAge();App.status("Age saved",true);};
 App.requireUser({role:"teacher"}).then(async p=>{ME=p;C=App.client;LK=await App.lookups();$("hello").textContent="Hello, "+((p.full_name||"").trim()||"teacher");
   $("eyebrow").textContent="Teacher dashboard"+(LK.inst(p.institution_id)?" · "+LK.inst(p.institution_id).name:"");
   drawSchool();
