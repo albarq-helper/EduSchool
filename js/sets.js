@@ -137,6 +137,18 @@
 .gpick .gk button{border:0;background:transparent;font:700 .86rem var(--f-body);color:var(--muted);padding:6px 11px;border-radius:9px;cursor:pointer}
 .gpick .gk button[aria-pressed="true"]{background:var(--sheet);color:var(--ink);box-shadow:inset 0 0 0 2px var(--accent)}
 .gpick .gc{display:flex;flex-wrap:wrap;gap:6px}
+.gcombo{position:relative;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.gcbtn{display:flex;align-items:center;justify-content:space-between;gap:10px;min-width:260px;max-width:100%;font:700 .9rem var(--f-body);text-align:left;padding:8px 12px;border-radius:10px;border:1.5px solid var(--rule);background:var(--sheet);color:var(--ink);cursor:pointer}
+.gcbtn small{color:var(--muted);font-weight:700}.gcbtn[aria-expanded="true"]{border-color:var(--accent)}.gcchev{color:var(--muted)}
+.gcclear{font:700 .8rem var(--f-body);border:0;background:transparent;color:var(--muted);cursor:pointer;padding:6px}
+.gcpanel{position:absolute;top:calc(100% + 4px);left:0;z-index:30;width:min(420px,calc(100vw - 32px));background:var(--sheet);border:1.5px solid var(--rule);border-radius:12px;box-shadow:0 12px 30px rgba(0,0,0,.18);padding:8px;display:grid;gap:6px}
+.gcsearch{font:600 .92rem var(--f-body);padding:8px 10px;border:1.5px solid var(--rule);border-radius:8px;background:var(--paper);color:var(--ink);width:100%;box-sizing:border-box}
+.gcopts{max-height:300px;overflow:auto;display:grid;gap:2px}
+.gcopt{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center;padding:6px 8px;border-radius:8px;cursor:pointer;font:600 .9rem var(--f-body)}
+.gcopt:hover{background:var(--paper)}.gcopt small{color:var(--muted);font-weight:700}.gcopt input{accent-color:var(--accent);width:16px;height:16px}
+.gcnone{margin:6px 8px;color:var(--muted)}
+.gcfoot{display:flex;justify-content:space-between;align-items:center;font:700 .8rem var(--f-body);color:var(--muted);border-top:1px solid var(--rule);padding-top:6px}
+.gcfoot button{font:800 .85rem var(--f-body);border:0;border-radius:8px;padding:6px 14px;background:var(--accent);color:#fff;cursor:pointer}
 .gpick .gc button{font:700 .84rem var(--f-body);padding:5px 11px;border-radius:999px;border:1.5px solid var(--chip-edge,var(--rule));background:var(--chip,var(--paper));color:var(--ink);cursor:pointer}
 .gpick .gc button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
 .gpick .gc small{opacity:.7;font-weight:700;margin-left:3px}
@@ -161,25 +173,49 @@
     if (!["both", "meter", "list"].includes(st.view)) st.view = "both";
     const kinds = [["all", "All words"], ["type", "🔤 Word type"], ["theme", "🏷️ Themes"], ["scale", "🎚️ Meters"], ["sim", "≈ Similar words"], ["opp", "⇄ Opposites"]].filter(([k]) => k === "all" || (k === "type" ? G.types.length : k === "theme" ? G.themes.length : k === "scale" ? G.scales.length : k === "sim" ? G.sims.length : G.opps.length));
     if (!kinds.some(k => k[0] === st.kind)) st = { kind: "all", tag: "" };
-    if (st.tag && !(st.kind === "opp" ? G.opps.some(x => x.g === st.tag) : st.kind === "scale" ? G.scales.some(x => x.g === st.tag) : st.kind === "sim" ? G.sims.some(x => x.g === st.tag) : (st.kind === "type" ? G.types : G.themes).some(x => x.tag === st.tag))) st.tag = "";
+    const valid = (k, t) => k === "opp" ? G.opps.some(x => x.g === t) : k === "scale" ? G.scales.some(x => x.g === t) : k === "sim" ? G.sims.some(x => x.g === t) : k === "type" ? G.types.some(x => x.tag === t) : k === "theme" ? G.themes.some(x => x.tag === t) : false;
+    st.tags = (Array.isArray(st.tags) ? st.tags : st.tag ? [st.tag] : []).filter(t => valid(st.kind, t)); delete st.tag;
+    let open = false, q = "";   // the dropdown, and what is typed in its search box
+    const save = () => { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} };
     function draw() {
       const chips = st.kind === "type" ? G.types.map(x => [x.tag, tagIcon(x.tag) + " " + typeName(x.tag), x.n]) : st.kind === "theme" ? G.themes.map(x => [x.tag, tagIcon(x.tag) + " " + x.tag, x.n])
         : st.kind === "sim" ? G.sims.map(x => [x.g, "≈ " + x.g, x.n]) : st.kind === "opp" ? G.opps.map(x => [x.g, x.sides.join(" ⇄ "), x.n]) : st.kind === "scale" ? G.scales.map(x => [x.g, "🎚️ " + x.g, x.n]) : [];
       const vrow = st.kind === "scale" ? `<div class="gv" role="group" aria-label="Show"><span>Show</span>${[["both", "🎚️ Meter + cards"], ["meter", "🎚️ Meter only"], ["list", "📋 Full list"]].map(([v, l]) => `<button type="button" data-view="${v}" aria-pressed="${st.view === v}">${l}</button>`).join("")}
         ${st.view === "both" ? `<span class="gvsep"></span><span>Cards</span><button type="button" data-follow="1" aria-pressed="${!!st.follow}">Follow the meter</button><button type="button" data-follow="0" aria-pressed="${!st.follow}">All levels</button>` : ""}</div>` : "";
       mount.innerHTML = `<div class="gpick"><div class="gk" role="group" aria-label="Group the words">${kinds.map(([k, l]) => `<button type="button" data-k="${k}" aria-pressed="${st.kind === k}">${l}</button>`).join("")}</div>
-        ${chips.length ? `<div class="gc" role="group" aria-label="Choose a group"><button type="button" data-t="" aria-pressed="${!st.tag}">All groups</button>${chips.map(([t, l, n]) => `<button type="button" data-t="${esc(t)}" aria-pressed="${st.tag === t}">${esc(l)}<small>${n}</small></button>`).join("")}</div>` : ""}${vrow}</div>`;
+        ${chips.length ? comboHTML(chips) : ""}${vrow}</div>`;
+      const sb = mount.querySelector(".gcsearch"); if (sb) { sb.focus(); sb.setSelectionRange(sb.value.length, sb.value.length); }
     }
-    mount.addEventListener("click", e => { const k = e.target.closest("[data-k]"), t = e.target.closest("[data-t]"), vw = e.target.closest("[data-view]"), fl = e.target.closest("[data-follow]");
-      if (k) st = { ...st, kind: k.dataset.k, tag: "" }; else if (t) st.tag = t.dataset.t; else if (vw) st.view = vw.dataset.view; else if (fl) st.follow = fl.dataset.follow === "1"; else return;
-      try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} draw(); onChange && onChange(); });
+    // searchable multi-select: a button that shows what is chosen, a panel with a search box and tick boxes
+    function comboHTML(chips) {
+      const name = t => (chips.find(c => c[0] === t) || [t, t])[1], sel = st.tags;
+      const sum = !sel.length ? `All groups <small>${chips.length}</small>` : sel.length <= 2 ? sel.map(t => esc(name(t))).join(", ") : `${esc(name(sel[0]))} <small>+${sel.length - 1} more</small>`;
+      const ql = q.trim().toLowerCase(), shown = chips.filter(c => !ql || c[1].toLowerCase().includes(ql) || String(c[0]).toLowerCase().includes(ql));
+      return `<div class="gcombo"><button type="button" class="gcbtn" data-gc="toggle" aria-expanded="${open}" aria-haspopup="listbox"><span>${sum}</span><span class="gcchev">${open ? "▴" : "▾"}</span></button>
+        ${sel.length ? `<button type="button" class="gcclear" data-gc="clear" title="Show all groups">✕ Clear</button>` : ""}
+        ${open ? `<div class="gcpanel"><input class="gcsearch" type="search" placeholder="Search ${chips.length} groups…" value="${esc(q)}" aria-label="Search groups">
+          <div class="gcopts" role="listbox" aria-multiselectable="true">${shown.map(([t, l, n]) => `<label class="gcopt"><input type="checkbox" data-gt="${esc(t)}"${sel.includes(t) ? " checked" : ""}><span>${esc(l)}</span><small>${n}</small></label>`).join("") || `<p class="gcnone">No group matches “${esc(q)}”.</p>`}</div>
+          <div class="gcfoot"><span>${sel.length ? `${sel.length} chosen` : "None chosen: showing all"}</span><button type="button" data-gc="done">Done</button></div></div>` : ""}</div>`;
+    }
+    mount.addEventListener("click", e => { e.gcInside = true; const k = e.target.closest("[data-k]"), gc = e.target.closest("[data-gc]"), vw = e.target.closest("[data-view]"), fl = e.target.closest("[data-follow]");
+      if (e.target.closest(".gcopt") || e.target.closest(".gcsearch")) return;   // handled by "change" / "input"
+      if (k) { if (k.dataset.k === st.kind) return; st = { ...st, kind: k.dataset.k, tags: [] }; open = false; q = ""; }
+      else if (gc) { const a = gc.dataset.gc; if (a === "toggle") { open = !open; draw(); return; } if (a === "done") { open = false; draw(); return; } if (a === "clear") { st.tags = []; open = false; q = ""; } }
+      else if (vw) st.view = vw.dataset.view; else if (fl) st.follow = fl.dataset.follow === "1"; else return;
+      save(); draw(); onChange && onChange(); });
+    mount.addEventListener("change", e => { const c = e.target.closest("[data-gt]"); if (!c) return; const t = c.dataset.gt;
+      st.tags = c.checked ? [...new Set([...st.tags, t])] : st.tags.filter(x => x !== t); save(); draw(); onChange && onChange(); });
+    mount.addEventListener("input", e => { if (!e.target.classList.contains("gcsearch")) return; q = e.target.value; draw(); });
+    mount.addEventListener("keydown", e => { if (e.key === "Escape" && open) { open = false; draw(); mount.querySelector(".gcbtn")?.focus(); } });
+    document.addEventListener("click", e => { if (open && !e.gcInside && !mount.contains(e.target)) { open = false; draw(); } });
     const has = (v, t) => (v.tags || []).includes(t), simOf = (v, g) => (v.tags || []).some(t => isSim(t) && simName(t) === g), oppTags = (v, g) => (v.tags || []).filter(t => isOpp(t) && oppSplit(t).g === g);
     const scaleOf = (v, g) => { const t = (v.tags || []).find(t => isScale(t) && scaleSplit(t).g === g); return t ? scaleSplit(t).r : null; };
-    function match(v) { if (st.kind === "all" || !st.tag) return true; return st.kind === "opp" ? oppTags(v, st.tag).length > 0 : st.kind === "sim" ? simOf(v, st.tag) : st.kind === "scale" ? scaleOf(v, st.tag) !== null : has(v, st.tag); }
+    const one = (v, t) => st.kind === "opp" ? oppTags(v, t).length > 0 : st.kind === "sim" ? simOf(v, t) : st.kind === "scale" ? scaleOf(v, t) !== null : has(v, t);
+    function match(v) { if (st.kind === "all" || !st.tags.length) return true; return st.tags.some(t => one(v, t)); }
     // sections for display: [{title, icon, items}] or [{title, sides:[{name, items}]}]
     function sections(L) {
       if (st.kind === "all") return [{ items: L }];
-      if (st.kind === "scale") { const gs = st.tag ? G.scales.filter(x => x.g === st.tag) : G.scales;
+      if (st.kind === "scale") { const gs = st.tags.length ? G.scales.filter(x => st.tags.includes(x.g)) : G.scales;
         // the whole scale: this list's words, plus the same scale's words from other boxes and the dictionary ("extra words")
         const inL = new Set(L), terms = new Set(L.map(i => String(D[i].w).toLowerCase()));
         return gs.map(o => { const lv = new Map(), extra = [];
@@ -191,23 +227,23 @@
       // words outside this list that belong to group test(v): other units and dictionary words ("extra words")
       const extrasFor = (L, test) => { const inL = new Set(L), terms = new Set(L.map(i => String(D[i].w).toLowerCase())), out = [];
         D.forEach((v, i) => { if (inL.has(i) || !test(v)) return; const t = String(v.w).toLowerCase(); if (terms.has(t)) return; terms.add(t); out.push(i); }); return out; };
-      if (st.kind === "sim") { const gs = st.tag ? G.sims.filter(x => x.g === st.tag) : G.sims;
+      if (st.kind === "sim") { const gs = st.tags.length ? G.sims.filter(x => st.tags.includes(x.g)) : G.sims;
         return gs.map(o => { const items = L.filter(i => simOf(D[i], o.g)); return items.length ? { title: o.g, icon: "≈", items: items.concat(extrasFor(items, v => simOf(v, o.g))) } : null; }).filter(Boolean); }
-      if (st.kind === "opp") { const gs = st.tag ? G.opps.filter(x => x.g === st.tag) : G.opps;
+      if (st.kind === "opp") { const gs = st.tags.length ? G.opps.filter(x => st.tags.includes(x.g)) : G.opps;
         return gs.map(o => { const mine = L.filter(i => oppTags(D[i], o.g).length); if (!mine.length) return null;
           const all = mine.concat(extrasFor(mine, v => oppTags(v, o.g).length > 0)), sides = [...o.sides];
           all.forEach(i => oppTags(D[i], o.g).forEach(t => { const sd = oppSplit(t).side; if (!sides.includes(sd)) sides.push(sd); }));
           const want = o.g.split(/\s+vs\.?\s+/i).map(x => x.trim().toLowerCase());
           sides.sort((a, b) => (want.indexOf(a.toLowerCase()) + 1 || 9) - (want.indexOf(b.toLowerCase()) + 1 || 9));
           return { title: o.g, icon: "⇄", sides: sides.map(sd => ({ name: sd, items: all.filter(i => oppTags(D[i], o.g).some(t => oppSplit(t).side === sd)) })) }; }).filter(Boolean); }
-      const list = st.tag ? [st.tag] : (st.kind === "type" ? G.types : G.themes).map(x => x.tag);
+      const list = st.tags.length ? st.tags.slice() : (st.kind === "type" ? G.types : G.themes).map(x => x.tag);
       const out = list.map(t => ({ title: st.kind === "type" ? typeName(t) : t, icon: tagIcon(t), items: L.filter(i => has(D[i], t)) })).filter(x => x.items.length);
-      if (!st.tag) { const rest = L.filter(i => !(D[i].tags || []).some(t => st.kind === "type" ? isType(t) : !isType(t) && !isOpp(t) && !isScale(t) && !isSim(t))); if (rest.length) out.push({ title: st.kind === "type" ? "Other" : "No theme yet", icon: "🏷️", items: rest }); }
+      if (!st.tags.length) { const rest = L.filter(i => !(D[i].tags || []).some(t => st.kind === "type" ? isType(t) : !isType(t) && !isOpp(t) && !isScale(t) && !isSim(t))); if (rest.length) out.push({ title: st.kind === "type" ? "Other" : "No theme yet", icon: "🏷️", items: rest }); }
       return out;
     }
     draw();
     const hasGroup = (k, t) => k === "opp" ? G.opps.some(x => x.g === t) : k === "scale" ? G.scales.some(x => x.g === t) : k === "sim" ? G.sims.some(x => x.g === t) : k === "theme" ? G.themes.some(x => x.tag === t) : G.types.some(x => x.tag === t);
-    return { match, sections, has: hasGroup, state: () => ({ ...st }), view: () => ({ mode: st.view, follow: st.view === "both" && !!st.follow }), set: (kind, tag) => { st = { ...st, kind, tag: tag || "" }; try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} draw(); onChange && onChange(); } };
+    return { match, sections, has: hasGroup, state: () => ({ ...st, tag: st.tags[0] || "" }), view: () => ({ mode: st.view, follow: st.view === "both" && !!st.follow }), set: (kind, tag) => { st = { ...st, kind, tags: tag ? [tag] : [] }; open = false; q = ""; try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} draw(); onChange && onChange(); } };
   }
   // Draw groupPicker sections. view(indices) returns the HTML for a list of words in the page's own style.
   function sectionsHTML(secs, view, opts) {
