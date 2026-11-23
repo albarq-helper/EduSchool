@@ -7,17 +7,17 @@
   const FACES = {
     "hate ⇄ love": { "-5": "🤬", "-4": "😡", "-3": "😠", "-2": "😒", "-1": "🙁", "0": "😐", "1": "🙂", "2": "😊", "3": "🤗", "4": "🥰", "5": "😍" },
     "sad ⇄ happy": { "-5": "😭", "-4": "😩", "-3": "😢", "-2": "😞", "-1": "😕", "0": "😐", "1": "🙂", "2": "😊", "3": "😄", "4": "😁", "5": "🤩" },
-    "calm → angry": { "0": "😌", "1": "😒", "2": "😤", "3": "😠", "4": "😡", "5": "🤬" },
-    "calm → afraid": { "0": "😌", "1": "😬", "2": "😟", "3": "😨", "4": "😱", "5": "🫣" },
-    "full → hungry": { "0": "😌", "1": "🙂", "2": "🤔", "3": "😋", "4": "😫", "5": "😵" },
+    "angry → calm": { "0": "😌", "-1": "😒", "-2": "😤", "-3": "😠", "-4": "😡", "-5": "🤬" },
+    "afraid → calm": { "0": "😌", "-1": "😬", "-2": "😟", "-3": "😨", "-4": "😱", "-5": "🫣" },
+    "hungry → full": { "0": "😌", "-1": "🙂", "-2": "🤔", "-3": "😋", "-4": "😫", "-5": "😵" },
     "tiny → gigantic": { "0": "🐜", "1": "🐭", "2": "🐕", "3": "🐘", "4": "🐋", "5": "🦕" },
     "near → far": { "0": "🏠", "1": "🚶", "2": "🚲", "3": "🚗", "4": "✈️", "5": "🚀" },
-    "silent → deafening": { "0": "🤫", "1": "🔈", "2": "🔉", "3": "🔊", "4": "📢", "5": "💥" },
-    "safe → deadly": { "0": "😌", "1": "🙂", "2": "😬", "3": "⚠️", "4": "😱", "5": "☠️" },
-    "energetic → exhausted": { "0": "⚡", "1": "🙂", "2": "🥱", "3": "😪", "4": "😩", "5": "😴" },
+    "deafening → silent": { "0": "🤫", "-1": "🔈", "-2": "🔉", "-3": "🔊", "-4": "📢", "-5": "💥" },
+    "deadly → safe": { "0": "😌", "-1": "🙂", "-2": "😬", "-3": "⚠️", "-4": "😱", "-5": "☠️" },
+    "exhausted → energetic": { "0": "⚡", "-1": "🙂", "-2": "🥱", "-3": "😪", "-4": "😩", "-5": "😴" },
     "boring → thrilling": { "0": "😴", "1": "🥱", "2": "🙂", "3": "🤔", "4": "🤩", "5": "🎢" },
     "okay → fantastic": { "0": "👌", "1": "👍", "2": "😀", "3": "🌟", "4": "✨", "5": "🎉" },
-    "clean → filthy": { "0": "✨", "1": "🧼", "2": "🤏", "3": "🟤", "4": "🐷", "5": "🤢" },
+    "filthy → clean": { "0": "✨", "-1": "🧼", "-2": "🤏", "-3": "🟤", "-4": "🐷", "-5": "🤢" },
     "minor → crucial": { "0": "🤷", "1": "🙂", "2": "👀", "3": "⭐", "4": "🔑", "5": "🚨" },
     "unknown → renowned": { "0": "❓", "1": "🙂", "2": "👥", "3": "📣", "4": "🌟", "5": "🏆" },
     "common → unique": { "0": "👥", "1": "🙂", "2": "🤨", "3": "💎", "4": "🦄", "5": "🌟" },
@@ -26,8 +26,8 @@
     "dry → soaked": { "0": "🏜️", "1": "🌱", "2": "🌫️", "3": "💧", "4": "🌧️", "5": "🌊" },
     "dark → dazzling": { "0": "🌑", "1": "🌒", "2": "🌓", "3": "💡", "4": "☀️", "5": "🌞" },
     "disgusting → delicious": { "0": "🤮", "1": "🤢", "2": "😐", "3": "😋", "4": "🤤", "5": "🤩" },
-    "gentle → ferocious": { "0": "🐑", "1": "🐶", "2": "🐱", "3": "🐗", "4": "🐺", "5": "🦁" },
-    "breeze → hurricane": { "0": "😌", "1": "🍃", "2": "💨", "3": "🌬️", "4": "🌪️", "5": "🌀" },
+    "ferocious → gentle": { "0": "🐑", "-1": "🐶", "-2": "🐱", "-3": "🐗", "-4": "🐺", "-5": "🦁" },
+    "hurricane → breeze": { "0": "😌", "-1": "🍃", "-2": "💨", "-3": "🌬️", "-4": "🌪️", "-5": "🌀" },
     "glance → stare": { "0": "👀", "1": "🫣", "2": "👁️", "3": "📺", "4": "🔍", "5": "😳" },
     "tiptoe → stomp": { "0": "🤫", "1": "🐭", "2": "🚶", "3": "🥁", "4": "🐘", "5": "🦖" }
   };
@@ -59,9 +59,19 @@
 .mtr-nav button{font:800 .9rem var(--f-body,system-ui);border:0;border-radius:999px;padding:8px 14px;cursor:pointer;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.08)}
 .mtr-nav button:disabled{opacity:.35;cursor:default}
 .mtr-nav .mid{font:800 .85rem var(--f-body,system-ui);background:rgba(255,255,255,.7);border-radius:999px;padding:6px 12px}`;
-  function color(r, two) { const a = Math.min(5, Math.abs(r));
-    if (two) return r < 0 ? `hsl(0 80% ${94 - a * 6}%)` : r > 0 ? `hsl(145 60% ${94 - a * 6}%)` : "hsl(220 20% 93%)";
-    return r <= 0 ? "hsl(145 60% 90%)" : `hsl(${45 - a * 9} 90% ${92 - a * 5}%)`; }
+  // Every meter reads left → right as bad/negative (red) → good/positive (green). Meters that are neither
+  // (size, distance, how loud a voice is…) are NEUTRAL and use calm blues.
+  const NEUTRAL = new Set(["tiny → gigantic", "near → far", "dry → soaked", "dark → dazzling", "glance → stare", "tiptoe → stomp", "minor → crucial",
+    "rain · light → pouring", "rain · how long · short → all day", "snow · light → heavy", "sun · weak → blazing", "voice · whispering → booming",
+    "speak · whisper → shout", "laugh · quietly → loudly", "impact · small → huge", "obvious · very → perfectly", "decision · small → crucial"]);
+  // how a meter behaves: two-sided (−5 … +5), negative only (−5 … 0, 0 = the good end), or positive only (0 … +5)
+  function tone(title, levels) { const rs = (levels || []).map(l => l.rank), min = Math.min(0, ...rs), max = Math.max(0, ...rs);
+    const two = /⇄/.test(title || "") || (min < 0 && max > 0);
+    return { min, max, two, neg: !two && min < 0, neutral: NEUTRAL.has(String(title || "").toLowerCase()) }; }
+  function color(r, T) { const t = T.max === T.min ? 1 : (r - T.min) / (T.max - T.min);
+    if (T.neutral) return `hsl(210 70% ${93 - t * 16}%)`;
+    return `hsl(${Math.round(t * 140)} 75% ${88 - Math.abs(t - .5) * 8}%)`; }
+  function gradient(T) { return T.neutral ? "linear-gradient(90deg,hsl(205 80% 82%),hsl(225 70% 55%))" : "linear-gradient(90deg,hsl(0 80% 55%),hsl(45 90% 58%),hsl(140 60% 42%))"; }
   function mount(el, o) {
     if (!document.getElementById("meter-css")) $("head").append(`<style id="meter-css">${css}</style>`);
     const D = o.words || window.WORDS || [], L = (o.levels || []).slice().sort((a, b) => a.rank - b.rank);
@@ -70,8 +80,9 @@
     const X = new Set(o.extra || []);   // words from outside this list, shown to complete the scale
     const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
     const clean = w => String(w || "").replace(/\s*\(.*\)/, "");
-    const grad = o.two ? "linear-gradient(90deg,hsl(0 80% 55%),hsl(220 15% 82%),hsl(145 60% 42%))" : "linear-gradient(90deg,hsl(145 60% 55%),hsl(45 90% 58%),hsl(0 85% 52%))";
-    let k = Math.max(0, L.findIndex(l => l.rank === (o.start != null ? o.start : (o.two ? 0 : L[0].rank)))); if (k < 0) k = 0;
+    const T = tone(o.title, L), grad = gradient(T);
+    let k = Math.max(0, L.findIndex(l => l.rank === (o.start != null ? o.start : (T.two ? 0 : L[0].rank)))); if (k < 0) k = 0;
+    if (o.start != null && L[k].rank !== o.start) k = L.reduce((b, l, j) => Math.abs(l.rank - o.start) < Math.abs(L[b].rank - o.start) ? j : b, 0);
     const $m = $(`<div class="mtr" role="group" aria-label="${esc(o.title)} feeling meter">
       <div class="mtr-top"><div class="mtr-face" aria-hidden="true"></div><div><div class="mtr-lv"></div><div class="mtr-words"></div></div></div>
       <div class="mtr-track" style="--grad:${grad}"><input type="range" min="0" max="${L.length - 1}" step="1" value="${k}" aria-label="Strength">
@@ -83,8 +94,9 @@
       k = Math.max(0, Math.min(L.length - 1, j)); const l = L[k], a = Math.abs(l.rank);
       const f = faces[String(l.rank)] || (D[l.items[0]] && D[l.items[0]].emoji) || "🙂";
       $face.text(f); if (animate) { $face.removeClass("pop"); void $face[0].offsetWidth; $face.addClass("pop"); }
-      $m.css("--bg", color(l.rank, o.two)); $range.val(k);
-      const lab = l.rank === 0 ? (o.two ? "neutral: in the middle" : String(o.left || "lowest").toLowerCase()) : `${STRENGTH[Math.min(5, a)]}${o.two ? " · " + (l.rank < 0 ? o.left : o.right) : ""}`;
+      $m.css("--bg", color(l.rank, T)); $range.val(k);
+      const lab = l.rank === 0 ? (T.two ? "neutral: in the middle" : String((T.neg ? o.right : o.left) || "lowest").toLowerCase())
+        : `${STRENGTH[Math.min(5, a)]}${T.two ? " · " + (l.rank < 0 ? o.left : o.right) : T.neg ? " · " + String(o.left || "").toLowerCase() : ""}`;
       $lv.text(`${l.rank > 0 ? "+" : ""}${l.rank} · ${lab}`); $mid.text(lab);
       $words.html(l.items.map(i => { const v = D[i] || {}; return `<div class="mtr-w${X.has(i) ? " x" : ""}"><b>${esc(v.emoji || "")} ${esc(clean(v.w))}${X.has(i) ? '<span class="mtr-xt" title="Not in this set: shown so you can see the whole scale">extra word</span>' : ""}</b><small>${esc(v.d || "")}</small>
         <div class="row"><button type="button" data-say="${i}">🔊 Hear</button>${o.onAdd ? `<button type="button" class="add" data-add="${i}">${esc(o.addLabel || "+ Add")}</button>` : ""}</div></div>`; }).join(""));
@@ -101,5 +113,5 @@
     show(k, false);
     return { show: r => { const j = L.findIndex(l => l.rank === r); if (j >= 0) show(j, true); } };
   }
-  window.Meter = { mount };
+  window.Meter = { tone, color, mount };
 })(window.jQuery);

@@ -187,7 +187,7 @@
           L.forEach(put);
           D.forEach((v, i) => { if (inL.has(i) || scaleOf(v, o.g) === null) return; const t = String(v.w).toLowerCase(); if (terms.has(t)) return; terms.add(t); extra.push(i); put(i); });
           const poles = o.g.split(/\s*(?:⇄|→|->|<->|vs\.?)\s*/); const levels = [...lv].sort((a, b) => a[0] - b[0]).map(([rank, items]) => ({ rank, items }));
-          return { title: o.g, icon: "📶", scale: { left: poles[0] || "", right: poles[1] || "", two: levels.some(l => l.rank < 0), levels, extra } }; }).filter(x => x.scale.levels.length); }
+          return { title: o.g, icon: "📶", scale: { left: poles[0] || "", right: poles[1] || "", two: /⇄/.test(o.g) || (levels.some(l => l.rank < 0) && levels.some(l => l.rank > 0)), levels, extra } }; }).filter(x => x.scale.levels.length); }
       // words outside this list that belong to group test(v): other units and dictionary words ("extra words")
       const extrasFor = (L, test) => { const inL = new Set(L), terms = new Set(L.map(i => String(D[i].w).toLowerCase())), out = [];
         D.forEach((v, i) => { if (inL.has(i) || !test(v)) return; const t = String(v.w).toLowerCase(); if (terms.has(t)) return; terms.add(t); out.push(i); }); return out; };
@@ -214,16 +214,17 @@
     opts = opts || {}; const mode = opts.mode || (opts.rows === false ? "meter" : "both"), useMeter = !!window.Meter && opts.meter !== false && mode !== "list";
     const lab2 = r => r === 0 ? "neutral" : ["", "a little", "some", "strong", "very strong", "strongest"][Math.min(5, Math.abs(r))];
     const lab1 = (r, S) => r === 0 ? String((S && S.left) || "lowest").toLowerCase() : ["", "a little", "some", "strong", "very strong", "strongest"][Math.min(5, r)];
-    const col = (r, two) => { const a = Math.min(5, Math.abs(r)); if (two) return r < 0 ? `hsl(0 75% ${92 - a * 9}%)` : r > 0 ? `hsl(145 55% ${92 - a * 9}%)` : "hsl(220 15% 90%)";
+    // same colours as the meter: red (bad, left) → green (good, right); neutral meters in blue
+    let colT = null; const col = (r, two, title, levels) => { if (window.Meter && Meter.color && levels) return Meter.color(r, Meter.tone(title, levels)); const a = Math.min(5, Math.abs(r)); if (two) return r < 0 ? `hsl(0 75% ${92 - a * 9}%)` : r > 0 ? `hsl(145 55% ${92 - a * 9}%)` : "hsl(220 15% 90%)";
       return r <= 0 ? "hsl(145 55% 85%)" : `hsl(${40 - a * 8} 85% ${90 - a * 7}%)`; };
     return secs.map(sc => {
       if (sc.scale) { const S = sc.scale;
         const D = window.WORDS || [];
-        const strip = `<div class="gsstrip">${S.levels.map(l => `<div class="gss" style="background:${col(l.rank, S.two)}"><b>${l.rank > 0 ? "+" : ""}${l.rank}</b>${l.items.map(i => `<span>${esc(String(D[i] ? D[i].w : "").replace(/\s*\(.*\)/, ""))}</span>`).join("")}</div>`).join("")}</div>`;
+        const strip = `<div class="gsstrip">${S.levels.map(l => `<div class="gss" style="background:${col(l.rank, S.two, sc.title, S.levels)}"><b>${l.rank > 0 ? "+" : ""}${l.rank}</b>${l.items.map(i => `<span>${esc(String(D[i] ? D[i].w : "").replace(/\s*\(.*\)/, ""))}</span>`).join("")}</div>`).join("")}</div>`;
         const k = secs.indexOf(sc);
         if (useMeter && mode === "meter") return `<h3 class="gsec">🎚️ ${esc(sc.title)}</h3><div class="gscale"><div class="meterbox" data-mi="${k}"></div></div>`;
         return `<h3 class="gsec">${useMeter ? "🎚️" : "📶"} ${esc(sc.title)}</h3><div class="gscale">${useMeter ? `<div class="meterbox" data-mi="${k}"></div>` : `<div class="gsbar"><b>${esc(S.left)}</b><span class="gsgrad${S.two ? "" : " one"}"></span><b>${esc(S.right)}</b></div>${strip}`}
-          ${S.levels.map(l => `<div class="gslv" data-rank="${l.rank}"><div class="gsr" style="background:${col(l.rank, S.two)}"><span>${l.rank > 0 ? "+" : ""}${l.rank}</span><small>${S.two ? lab2(l.rank) : lab1(l.rank, S)}${S.two && l.rank ? " · " + esc(l.rank < 0 ? S.left : S.right) : ""}</small></div><div class="gsw">${view(l.items)}</div></div>`).join("")}</div>`; }
+          ${S.levels.map(l => `<div class="gslv" data-rank="${l.rank}"><div class="gsr" style="background:${col(l.rank, S.two, sc.title, S.levels)}"><span>${l.rank > 0 ? "+" : ""}${l.rank}</span><small>${S.two ? lab2(l.rank) : lab1(l.rank, S)}${S.two && l.rank ? " · " + esc(l.rank < 0 ? S.left : S.right) : ""}</small></div><div class="gsw">${view(l.items)}</div></div>`).join("")}</div>`; }
       if (sc.sides) return `<h3 class="gsec">⇄ ${esc(sc.title)}</h3><div class="gopp">${sc.sides.map((sd, k) => `${k ? '<div class="gvs" aria-hidden="true">⇄</div>' : ""}<div><h4>${esc(sd.name)}</h4>${sd.items.length ? view(sd.items) : '<p class="muted">—</p>'}</div>`).join("")}</div>`;
       return (sc.title ? `<h3 class="gsec">${sc.icon} ${esc(sc.title)} <small>${sc.items.length} word${sc.items.length === 1 ? "" : "s"}</small></h3>` : "") + view(sc.items);
     }).join("");
@@ -300,7 +301,7 @@
     const m = new Map();
     (list || []).forEach(x => (x.tags || []).forEach(t => { if (!isScale(t)) return; const s = scaleSplit(t), key = s.g + "|" + x.kind; if (!m.has(key)) m.set(key, { g: s.g, kind: x.kind, items: [] }); m.get(key).items.push({ ...x, r: s.r }); }));
     return [...m.values()].map(o => { const e = o.g.split(/\s*·\s*/).pop().split(/\s*(?:→|⇄)\s*/);
-      return { ...o, two: /⇄/.test(o.g) || o.items.some(i => i.r < 0), left: e[0], right: e[1] || "", items: o.items.sort((a, b) => a.r - b.r) }; });
+      return { ...o, two: /⇄/.test(o.g) || (o.items.some(i => i.r < 0) && o.items.some(i => i.r > 0)), left: e[0], right: e[1] || "", items: o.items.sort((a, b) => a.r - b.r) }; });
   }
   // the same meter slider as for words, filled with partner phrases
   function mountPartnerMeter(el, sc, o = {}) {

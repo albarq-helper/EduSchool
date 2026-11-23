@@ -63,12 +63,12 @@ ID = """
 1|Jump for joy|🤸|To be so happy you want to jump.|To jump up because of joy.|We [jumped for joy] when school closed for snow.|يفرح كثيراً|يقفز من الفرح|يرقص من الفرح|fe;📶 Sad ⇄ Happy: +4;≈ Happy
 1|Down in the dumps|😞|Sad and without hope.|Down low among the rubbish heaps.|He's been [down in the dumps] since his friend moved away.|حزين ومحبَط|في الأسفل بين أكوام القمامة|معنوياته في الحضيض|fe;📶 Sad ⇄ Happy: -3;≈ Sad
 1|Feel blue|💙|To feel sad.|To feel the colour blue.|I [feel blue] when it rains all day.|يشعر بالحزن|يشعر باللون الأزرق|ضاق صدره|fe;📶 Sad ⇄ Happy: -2;≈ Sad
-1|Butterflies in my stomach|🦋|A nervous feeling before something important.|Butterflies flying inside my tummy.|I had [butterflies in my stomach] before the play.|توتّر وقلق قبل أمر مهم|فراشات في معدتي|أعصابه مشدودة|fe;📶 Calm → Afraid: +2;≈ Worried
-1|Get cold feet|🥶|To become too nervous to do something you planned.|Your feet become cold.|He [got cold feet] and didn't sing on stage.|يتراجع خوفاً في آخر لحظة|تبرد قدماه|تراجع في آخر لحظة|fe;📶 Calm → Afraid: +3;⇄ Brave vs. scared: scared
-1|Scared stiff|😱|Extremely frightened.|So scared that your body goes hard.|I was [scared stiff] during the storm.|خائف جداً|خائف حتى تيبّس جسده|تجمّد الدم في عروقه|fe;📶 Calm → Afraid: +5;⇄ Brave vs. scared: scared
-1|Cool as a cucumber|🥒|Very calm, even when things are hard.|As cold as a cucumber.|She stayed [cool as a cucumber] in the exam.|هادئ جداً|بارد مثل الخيار|أعصابه باردة|fe;📶 Calm → Afraid: 0;≈ Calm
-1|Fed up|😒|Annoyed and tired of something.|Given so much food that you are full.|I'm [fed up] with this noise!|ضجِر ومنزعج|أُطعِم حتى شبع|طفح الكيل|fe;📶 Calm → Angry: +3;≈ Annoyed
-1|See red|😡|To become very angry.|To see the colour red.|My brother [sees red] when I touch his games.|يغضب بشدة|يرى اللون الأحمر|ثارت ثائرته|fe;📶 Calm → Angry: +5;⇄ Calm vs. angry: angry
+1|Butterflies in my stomach|🦋|A nervous feeling before something important.|Butterflies flying inside my tummy.|I had [butterflies in my stomach] before the play.|توتّر وقلق قبل أمر مهم|فراشات في معدتي|أعصابه مشدودة|fe;📶 Afraid → Calm: -2;≈ Worried
+1|Get cold feet|🥶|To become too nervous to do something you planned.|Your feet become cold.|He [got cold feet] and didn't sing on stage.|يتراجع خوفاً في آخر لحظة|تبرد قدماه|تراجع في آخر لحظة|fe;📶 Afraid → Calm: -3;⇄ Brave vs. scared: scared
+1|Scared stiff|😱|Extremely frightened.|So scared that your body goes hard.|I was [scared stiff] during the storm.|خائف جداً|خائف حتى تيبّس جسده|تجمّد الدم في عروقه|fe;📶 Afraid → Calm: -5;⇄ Brave vs. scared: scared
+1|Cool as a cucumber|🥒|Very calm, even when things are hard.|As cold as a cucumber.|She stayed [cool as a cucumber] in the exam.|هادئ جداً|بارد مثل الخيار|أعصابه باردة|fe;📶 Afraid → Calm: 0;≈ Calm
+1|Fed up|😒|Annoyed and tired of something.|Given so much food that you are full.|I'm [fed up] with this noise!|ضجِر ومنزعج|أُطعِم حتى شبع|طفح الكيل|fe;📶 Angry → Calm: -3;≈ Annoyed
+1|See red|😡|To become very angry.|To see the colour red.|My brother [sees red] when I touch his games.|يغضب بشدة|يرى اللون الأحمر|ثارت ثائرته|fe;📶 Angry → Calm: -5;⇄ Calm vs. angry: angry
 2|A piece of cake|🍰|Very easy.|A slice of cake.|The spelling test was [a piece of cake].|سهل جداً|قطعة من الكعك|أسهل من شربة ماء|ht
 2|Easier said than done|🧗|Harder to do than to talk about.|Easier to say than to do.|Cleaning my room in five minutes is [easier said than done].|الكلام أسهل من الفعل|أسهل قولاً من فعلاً|الكلام ليس كالفعل|ht
 2|Break the ice|🧊|To say or do something to help people feel relaxed together.|To crack the ice.|The teacher told a joke to [break the ice].|يبدأ حديثاً ودّياً ليزيل الحرج|يكسر الجليد|كسر الجليد|ga
@@ -100,7 +100,7 @@ ID = """
 6|Don't judge a book by its cover|📕|Don't decide what someone is like only from how they look.|Don't judge a book from its cover.|He looked shy but was so funny; [don't judge a book by its cover].|لا تحكم على الناس من مظهرهم|لا تحكم على الكتاب من غلافه|المظاهر خدّاعة|ch
 6|Practice makes perfect|🎯|If you practise a lot, you will become very good.|Practice makes things perfect.|Keep playing the piano; [practice makes perfect].|التمرين يوصل إلى الإتقان|التمرين يجعل الشيء كاملاً|التكرار يعلّم الشُّطّار|ch
 6|Don't cry over spilt milk|🥛|Don't be upset about something that cannot be changed.|Don't cry about milk that fell.|The vase is broken, but [don't cry over spilt milk].|لا تحزن على ما فات|لا تبكِ على الحليب المسكوب|لا تبكِ على اللبن المسكوب|fe
-6|Could eat a horse|🐴|Very, very hungry.|So hungry you could eat a whole horse.|After football, I [could eat a horse]!|جائع جداً|يستطيع أن يأكل حصاناً|ميّت من الجوع|fd;📶 Full → Hungry: +5;≈ Hungry
+6|Could eat a horse|🐴|Very, very hungry.|So hungry you could eat a whole horse.|After football, I [could eat a horse]!|جائع جداً|يستطيع أن يأكل حصاناً|ميّت من الجوع|fd;📶 Hungry → Full: -5;≈ Hungry
 7|In the same boat|⛵|In the same difficult situation as others.|Sitting in the same boat.|We all forgot our homework, so we're [in the same boat].|في الموقف الصعب نفسه|في القارب نفسه|كلّنا في الهوا سوا|ga
 7|The ball is in your court|🎾|It is your turn to decide or act.|The ball is on your side of the court.|I said sorry; now [the ball is in your court].|القرار الآن لك|الكرة في ملعبك|الكرة في ملعبك|ga
 7|Like two peas in a pod|🫛|Very similar to each other.|Like two peas inside one pod.|The twins are [like two peas in a pod].|متشابهان جداً|مثل حبّتي بازلاء في قرن واحد|نسخة طبق الأصل|ga

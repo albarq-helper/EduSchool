@@ -118,39 +118,39 @@ ADVERBS = "Relentlessly Deliberately Simultaneously Consistently Apparently Inte
 #   Head|meter name (no colon)|kind|phrase:partner:rank, …   (new phrases are added; existing ones get the tag)
 PARTNER_SCALES = """
 Rain|Rain · light → pouring|adjective|light rain:light:1, steady rain:steady:3, heavy rain:heavy:4, pouring rain:pouring:5
-Wind|Wind · gentle → howling|adjective|gentle wind:gentle:1, strong wind:strong:4, howling wind:howling:5
-Storm|Storm · mild → violent|adjective|mild storm:mild:1, heavy storm:heavy:4, violent storm:violent:5
+Wind|Wind · howling → gentle|adjective|gentle wind:gentle:-1, strong wind:strong:-4, howling wind:howling:-5
+Storm|Storm · violent → mild|adjective|mild storm:mild:-1, heavy storm:heavy:-4, violent storm:violent:-5
 Snow|Snow · light → heavy|adjective|light snow:light:1, steady snow:steady:3, heavy snow:heavy:5
 Sun|Sun · weak → blazing|adjective|weak sun:weak:1, bright sun:bright:3, hot sun:hot:4, blazing sun:blazing:5
-Noise|Noise · faint → deafening|adjective|faint noise:faint:1, loud noise:loud:4, deafening noise:deafening:5
+Noise|Noise · deafening → faint|adjective|faint noise:faint:-1, loud noise:loud:-4, deafening noise:deafening:-5
 Voice|Voice · whispering → booming|adjective|whispering voice:whispering:0, soft voice:soft:1, quiet voice:quiet:2, loud voice:loud:4, booming voice:booming:5
 Speak|Speak · whisper → shout|adverb|speak in a whisper:in a whisper:0, speak softly:softly:1, speak loudly:loudly:4, speak at the top of your voice:at the top of your voice:5
 Laugh|Laugh · quietly → loudly|adverb|laugh quietly:quietly:1, laugh happily:happily:3, laugh loudly:loudly:4
-Mistake|Mistake · tiny → terrible|adjective|tiny mistake:tiny:0, silly mistake:silly:1, careless mistake:careless:2, big mistake:big:4, terrible mistake:terrible:5
-Trouble|Trouble · a little → serious|adjective|a little trouble:a little:1, big trouble:big:4, serious trouble:serious:5
+Mistake|Mistake · terrible → tiny|adjective|tiny mistake:tiny:0, silly mistake:silly:-1, careless mistake:careless:-2, big mistake:big:-4, terrible mistake:terrible:-5
+Trouble|Trouble · serious → a little|adjective|a little trouble:a little:-1, big trouble:big:-4, serious trouble:serious:-5
 Effort|Effort · small → great|adjective|small effort:small:1, real effort:real:3, big effort:big:4, great effort:great:5
 Idea|Idea · bad ⇄ brilliant|adjective|bad idea:bad:-3, good idea:good:2, clever idea:clever:4, great idea:great:4, brilliant idea:brilliant:5
 Fun|Fun · a little → great|adjective|a little fun:a little:1, lots of fun:lots of:4, great fun:great:5
 Impact|Impact · small → huge|adjective|small impact:small:1, big impact:big:3, huge impact:huge:5
-Nervous|Nervous · a bit → very|adverb|a bit nervous:a bit:1, very nervous:very:4
+Nervous|Nervous · very → a bit|adverb|a bit nervous:a bit:-1, very nervous:very:-4
 Fortunate|Fortunate · very → extremely|adverb|very fortunate:very:3, extremely fortunate:extremely:5
 Obvious|Obvious · very → perfectly|adverb|very obvious:very:3, perfectly obvious:perfectly:5
 Rain|Rain · light → pouring|adverb|rain lightly:lightly:1, rain steadily:steadily:3, rain heavily:heavily:4, rain really hard:really hard:5
 Rain|Rain · light → pouring|noun|a drop of rain:drop:0, a drizzle:drizzle:1, a shower:shower:3, a downpour:downpour:5
 Rain|Rain · how long: short → all day|adverb|rain briefly:briefly:1, rain on and off:on and off:2, rain all day:all day:4, rain relentlessly:relentlessly:5
-Wind|Wind · gentle → howling|noun|a breath of wind:breath:0, a breeze:breeze:1, a gust of wind:gust:3, a gale:gale:5
+Wind|Wind · howling → gentle|noun|a breath of wind:breath:0, a breeze:breeze:-1, a gust of wind:gust:-3, a gale:gale:-5
 Snow|Snow · light → heavy|noun|a snowflake:flake:0, a flurry:flurry:1, a snowfall:snowfall:3, a blizzard:blizzard:5
-Noise|Noise · faint → deafening|noun|a murmur:murmur:1, a racket:racket:4, an uproar:uproar:5
+Noise|Noise · deafening → faint|noun|a murmur:murmur:-1, a racket:racket:-4, an uproar:uproar:-5
 Rain|Rain · light → pouring|idiom|Raining cats and dogs:Raining cats and dogs:5
-Wind|Wind · gentle → howling|adverb|blow gently:gently:1, blow hard:hard:4
+Wind|Wind · howling → gentle|adverb|blow gently:gently:-1, blow hard:hard:-4
 Snow|Snow · light → heavy|adverb|snow lightly:lightly:1, snow heavily:heavily:5
 Sleep|Sleep · light → deep|adjective|light sleep:light:1, good sleep:good:3, deep sleep:deep:5
 Sleep|Sleep · light → deep|adverb|sleep lightly:lightly:1, sleep peacefully:peacefully:3, sleep soundly:soundly:5
-Trouble|Trouble · a little → serious|idiom|In hot water:In hot water:4
-Test|Test · easy → hard|adjective|easy test:easy:0, hard test:hard:4
-Test|Test · easy → hard|idiom|A piece of cake:A piece of cake:0
-Homework|Homework · easy → difficult|adjective|easy homework:easy:0, difficult homework:difficult:4
-Question|Question · easy → tricky|adjective|easy question:easy:0, good question:good:2, tricky question:tricky:4
+Trouble|Trouble · serious → a little|idiom|In hot water:In hot water:-4
+Test|Test · hard → easy|adjective|easy test:easy:0, hard test:hard:-4
+Test|Test · hard → easy|idiom|A piece of cake:A piece of cake:0
+Homework|Homework · difficult → easy|adjective|easy homework:easy:0, difficult homework:difficult:-4
+Question|Question · tricky → easy|adjective|easy question:easy:0, good question:good:-2, tricky question:tricky:-4
 Decision|Decision · small → crucial|adjective|small decision:small:1, big decision:big:3, difficult decision:difficult:4, crucial decision:crucial:5
 Attention|Attention · close → full|adjective|close attention:close:3, full attention:full:5
 Attention|Attention · close → full|idiom|Keep an eye on:Keep an eye on:3, All ears:All ears:5
