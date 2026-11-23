@@ -1,0 +1,145 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Who said it? · Helper Academy</title><link rel="icon" href="assets/icons/brilliant.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<link rel="stylesheet" href="css/app.css">
+<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261123t"></script><script src="js/icons.js?v=20261123t"></script><script src="js/app.js?v=20261123t"></script>
+<style>
+.qhead{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;justify-content:space-between;margin-bottom:14px}
+.qhead h1{margin:0}.qhead p{margin:4px 0 0;color:var(--muted);max-width:62ch}
+.prog{min-width:280px;flex:1 1 300px;max-width:460px}
+.prog .bar{display:flex;height:12px;border-radius:999px;overflow:hidden;background:var(--chip);margin:6px 0}
+.prog .bar i{display:block}.prog .bar .v{background:var(--good)}.prog .bar .d{background:var(--warn)}.prog .bar .u{background:var(--sky-soft,#cfe0ff)}
+.prog .leg{display:flex;flex-wrap:wrap;gap:10px;font:700 .82rem var(--f-body);color:var(--muted)}
+.tabs{display:flex;gap:6px;margin:0 0 12px;border-bottom:2px solid var(--rule)}
+.tab{all:unset;cursor:pointer;padding:10px 14px;font:800 .95rem var(--f-body);color:var(--muted);border-bottom:3px solid transparent;margin-bottom:-2px}
+.tab[aria-selected="true"]{color:var(--accent);border-color:var(--accent)}
+.filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}
+.filters input,.filters select{font:600 .95rem var(--f-body);padding:8px 10px;border:1.5px solid var(--rule);border-radius:10px;background:var(--paper);color:var(--ink)}
+.filters input[type=search]{flex:1 1 240px}
+.qlist{display:grid;gap:10px}
+.qc{background:var(--sheet);border:1.5px solid var(--rule);border-left-width:6px;border-radius:14px;padding:12px 14px;display:grid;gap:8px}
+.qc.st-verified{border-left-color:var(--good)}.qc.st-disputed{border-left-color:var(--warn)}.qc.st-unchecked{border-left-color:var(--sky-soft,#cfe0ff)}
+.qc .top{display:flex;gap:10px;align-items:flex-start}
+.qc .n{font:800 .8rem var(--f-body);color:var(--muted);min-width:2.4em;padding-top:4px}
+.qc .say{flex:1;font:700 1.08rem/1.4 var(--f-display)}
+.qc .meta{display:flex;flex-wrap:wrap;gap:6px;font:700 .78rem var(--f-body);color:var(--muted);margin-top:3px}
+.qc .meta span{background:var(--paper);border:1px solid var(--rule);border-radius:999px;padding:1px 8px}
+.qc .meta .age{background:var(--warn-soft);border-color:transparent;color:var(--ink)}
+.qc .play{border:1.5px solid var(--rule);background:var(--paper);border-radius:50%;width:34px;height:34px;cursor:pointer;flex:none}
+.qc .who{display:grid;grid-template-columns:minmax(180px,1.3fr) 150px minmax(140px,1fr);gap:8px}
+.qc .more{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media (max-width:760px){.qc .who,.qc .more{grid-template-columns:1fr}}
+.qc label{display:grid;gap:3px;font:700 .75rem var(--f-body);color:var(--muted)}
+.qc input,.qc select{font:600 .93rem var(--f-body);padding:7px 9px;border:1.5px solid var(--rule);border-radius:9px;background:var(--paper);color:var(--ink);min-width:0}
+.qc .acts{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.qc .acts .look{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
+.qc .acts .look a{font:700 .82rem var(--f-body);color:var(--accent);text-decoration:none;border:1px dashed var(--accent);border-radius:999px;padding:3px 10px}
+.stb{border:1.5px solid var(--rule);background:var(--paper);border-radius:999px;padding:6px 12px;font:800 .85rem var(--f-body);cursor:pointer;color:var(--ink)}
+.stb[aria-pressed="true"].v{background:var(--good-soft);border-color:var(--good);color:var(--good)}
+.stb[aria-pressed="true"].d{background:var(--warn-soft);border-color:var(--warn)}
+.stb[aria-pressed="true"].u{background:var(--chip);border-color:var(--ink)}
+.qc .when{font-size:.78rem;color:var(--muted)}
+.moreb{justify-self:center;margin-top:6px}
+table.pp{width:100%;border-collapse:collapse;background:var(--sheet);border:1px solid var(--rule);border-radius:12px;overflow:hidden}
+table.pp th,table.pp td{padding:8px 10px;border-bottom:1px solid var(--rule);text-align:left;font-size:.92rem;vertical-align:top}
+table.pp th{font:800 .78rem var(--f-body);color:var(--muted);text-transform:uppercase;letter-spacing:.05em;background:var(--paper)}
+table.pp td b{font:800 1rem var(--f-display)}
+.pform{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;padding:10px;background:var(--paper);border-radius:10px}
+.pform label{display:grid;gap:3px;font:700 .75rem var(--f-body);color:var(--muted)}.pform .wide{grid-column:1/-1}
+.pform input,.pform select{font:600 .93rem var(--f-body);padding:7px 9px;border:1.5px solid var(--rule);border-radius:9px;background:var(--sheet);color:var(--ink)}
+.linkb{all:unset;cursor:pointer;color:var(--accent);font-weight:800}
+</style>
+</head><body>
+<div class="wrap" style="max-width:1100px">
+  <div class="qhead">
+    <div><span class="eyebrow">Parent tools</span><h1>📜 Who said it?</h1>
+      <p>Check every quote one by one: who really said it, where and when, and a link to the source. What you save here shows on the word lists and goes into the stories.</p></div>
+    <div class="prog" id="prog"></div>
+  </div>
+  <div class="tabs" role="tablist"><button class="tab" role="tab" data-tab="q" aria-selected="true">Quotes</button><button class="tab" role="tab" data-tab="p" aria-selected="false">People</button></div>
+  <div id="pane"><div class="empty">Loading the quotes…</div></div>
+</div>
+<datalist id="peopleList"></datalist>
+<script>
+const $=id=>document.getElementById(id),esc=App.esc;let C=null,Q=[],P=[],TAB="q",SHOW=40,PEDIT=null;
+const F={q:"",st:"todo",set:"",person:""};
+const ROLES=[["said","Said it"],["attributed","Said to have said it"],["misattributed","Wrongly credited to"],["popularized","Made it famous"],["proverb","Proverb / saying"]];
+const KINDS=[["person","Person"],["unknown","Unknown"],["proverb","Proverb"],["book","Book"],["film","Film"],["group","Group"]];
+const opts=(L,v)=>L.map(([k,l])=>`<option value="${k}"${k===v?" selected":""}>${l}</option>`).join("");
+const counts=()=>{const c={verified:0,disputed:0,unchecked:0,none:0};Q.forEach(x=>{if(!x.person)c.none++;else c[x.status||"unchecked"]++;});return c;};
+function drawProg(){const c=counts(),t=Q.length||1,pc=n=>(100*n/t).toFixed(1)+"%";
+  $("prog").innerHTML=`<b>${c.verified} of ${Q.length} checked</b><div class="bar"><i class="v" style="width:${pc(c.verified)}"></i><i class="d" style="width:${pc(c.disputed)}"></i><i class="u" style="width:${pc(c.unchecked)}"></i></div>
+    <div class="leg"><span>✓ ${c.verified} verified</span><span>⚠️ ${c.disputed} disputed</span><span>🕓 ${c.unchecked} person given, not checked</span><span>○ ${c.none} no person yet</span></div>`;}
+function match(x){if(F.q){const s=F.q.toLowerCase();if(!(x.quote.toLowerCase().includes(s)||(x.person||"").toLowerCase().includes(s)||(x.work||"").toLowerCase().includes(s)))return false;}
+  if(F.person&&x.person_id!==F.person)return false;if(F.set&&!(x.sets||"").split(", ").includes(F.set))return false;
+  if(F.st==="todo")return x.status!=="verified";if(F.st==="none")return !x.person;if(F.st)return x.person&&x.status===F.st;return true;}
+function card(x){const i=Q.indexOf(x),st=x.person?(x.status||"unchecked"):"none",gq=encodeURIComponent(`"${x.quote.replace(/[.!?]+$/,"")}"`);
+  return `<article class="qc st-${st}" data-q="${i}"><div class="top"><span class="n">#${i+1}</span>
+    <div style="flex:1"><div class="say">“${esc(x.quote)}”</div><div class="meta">${x.sets?`<span>${esc(x.sets)}${x.unit_names?" · "+esc(x.unit_names):""}</span>`:""}${x.min_age?`<span class="age">${x.min_age}+</span>`:""}${x.author?`<span>Shown as: ${esc(x.author)}</span>`:""}</div></div>
+    ${x.audio_url?`<button type="button" class="play" data-play="${esc(x.audio_url)}" title="Play" aria-label="Play the clip">▶</button>`:""}</div>
+    <div class="who"><label>Who said it?<input data-f="person" list="peopleList" value="${esc(x.person||"")}" placeholder="Name, Unknown, or Arabic proverb" maxlength="120"></label>
+      <label>Link<select data-f="role">${opts(ROLES,x.role||"said")}</select></label>
+      <label>Where / when<input data-f="work" value="${esc(x.work||"")}" placeholder="e.g. Hamlet (1600), a speech (1961)" maxlength="120"></label></div>
+    <div class="more"><label>Source link<input data-f="source" type="url" value="${esc(x.source_url||"")}" placeholder="https://…" maxlength="500"></label>
+      <label>Note<input data-f="note" value="${esc(x.note||"")}" placeholder="What you found" maxlength="1000"></label></div>
+    <div class="acts"><button type="button" class="stb v" data-st="verified" aria-pressed="${x.person&&x.status==="verified"}">✓ Verified</button><button type="button" class="stb d" data-st="disputed" aria-pressed="${x.person&&x.status==="disputed"}">⚠️ Disputed</button><button type="button" class="stb u" data-st="unchecked" aria-pressed="${!!x.person&&x.status==="unchecked"}">🕓 Not checked</button>
+      ${x.checked_at?`<span class="when">checked ${new Date(x.checked_at).toLocaleDateString()}</span>`:""}
+      <span class="look"><a href="https://www.google.com/search?q=${gq}" target="_blank" rel="noopener">🔍 Search</a><a href="https://quoteinvestigator.com/?s=${encodeURIComponent(x.quote.split(/\s+/).slice(0,6).join(" "))}" target="_blank" rel="noopener">Quote Investigator</a><a href="https://en.wikiquote.org/w/index.php?search=${gq}" target="_blank" rel="noopener">Wikiquote</a></span></div></article>`;}
+function drawQ(){const L=Q.filter(match),sets=[...new Set(Q.flatMap(x=>(x.sets||"").split(", ").filter(Boolean)))].sort(),pp=F.person&&P.find(p=>p.id===F.person);
+  $("pane").innerHTML=`<div class="filters"><input type="search" id="fq" placeholder="Search quotes, people, works…" value="${esc(F.q)}" aria-label="Search">
+    <select id="fst" aria-label="Status">${opts([["todo","Still to check"],["","All quotes"],["none","No person yet"],["unchecked","Person given, not checked"],["verified","✓ Verified"],["disputed","⚠️ Disputed"]],F.st)}</select>
+    <select id="fset" aria-label="Set"><option value="">All sets</option>${sets.map(s=>`<option${s===F.set?" selected":""}>${esc(s)}</option>`).join("")}</select>
+    ${pp?`<button type="button" class="btn small" id="fpx">👤 ${esc(pp.name)} ✕</button>`:""}<span class="muted">${L.length} quote${L.length===1?"":"s"}</span></div>
+    <div class="qlist">${L.slice(0,SHOW).map(card).join("")||`<div class="empty">Nothing here. 🎉</div>`}</div>
+    ${L.length>SHOW?`<div style="display:grid"><button type="button" class="btn moreb" id="more">Show ${Math.min(40,L.length-SHOW)} more</button></div>`:""}`;
+  $("fq").oninput=e=>{F.q=e.target.value;SHOW=40;const p=e.target.selectionStart;drawQ();$("fq").focus();$("fq").setSelectionRange(p,p);};
+  $("fst").onchange=e=>{F.st=e.target.value;SHOW=40;drawQ();};$("fset").onchange=e=>{F.set=e.target.value;SHOW=40;drawQ();};
+  if($("fpx"))$("fpx").onclick=()=>{F.person="";drawQ();};if($("more"))$("more").onclick=()=>{SHOW+=40;drawQ();};}
+async function saveQ(el,status){const x=Q[+el.dataset.q],g=k=>el.querySelector(`[data-f="${k}"]`).value.trim();
+  const name=g("person");if(!name&&status!=="unchecked"){App.status("Type who said it first (or Unknown).",false);el.querySelector('[data-f="person"]').focus();return;}
+  const {data,error}=await C.rpc("set_quote_person",{p_word:x.word_id,p_name:name,p_role:g("role"),p_status:status,p_source:g("source"),p_note:g("note"),p_work:g("work")});
+  if(error){App.status("Not saved: "+error.message,false);return;}
+  const known=P.find(p=>p.name.toLowerCase()===name.toLowerCase());
+  if(name&&!known)P.push({id:data,name,kind:/^unknown$/i.test(name)?"unknown":/proverb/i.test(name)?"proverb":"person",born:"",died:"",nationality:"",known_for:"",wiki_url:"",emoji:"",notes:""});
+  const kind=(known||P.find(p=>p.id===data)||{}).kind;
+  Object.assign(x,{person_id:name?data:null,person:name?(known?known.name:name):"",person_kind:kind||"",role:g("role"),status:name?status:"",work:g("work"),source_url:g("source"),note:g("note"),checked_at:status==="unchecked"?null:new Date().toISOString()});
+  x.author=!name||kind==="unknown"||x.role==="misattributed"?"":x.person+(x.work?" · "+x.work:"");
+  App.status(status==="verified"?"Checked ✓":status==="disputed"?"Marked as disputed":"Saved",true);drawList();drawProg();
+  if(F.st==="todo"&&status==="verified"){const n=document.querySelector(`.qc[data-q]`);if(n)n.querySelector('[data-f="person"]').focus();}else{const e2=document.querySelector(`.qc[data-q="${Q.indexOf(x)}"]`);if(e2)e2.scrollIntoView({block:"nearest"});}}
+const drawList=()=>{drawPeopleList();TAB==="q"?drawQ():drawP();};
+function drawPeopleList(){$("peopleList").innerHTML=P.slice().sort((a,b)=>a.name.localeCompare(b.name)).map(p=>`<option value="${esc(p.name)}">`).join("");}
+function drawP(){const n=id=>Q.filter(x=>x.person_id===id).length,L=P.slice().sort((a,b)=>(a.kind==="unknown")-(b.kind==="unknown")||n(b.id)-n(a.id)||a.name.localeCompare(b.name));
+  $("pane").innerHTML=`<p class="muted">Everyone linked to a quote. New people are added when you type a new name on a quote. Edit a person to add their details.</p>
+   <table class="pp"><thead><tr><th></th><th>Name</th><th>Lived</th><th>From</th><th>Known for</th><th>Quotes</th><th></th></tr></thead><tbody>
+   ${L.map(p=>PEDIT===p.id?`<tr><td colspan="7"><div class="pform" data-p="${p.id}">
+      <label>Name<input data-pf="name" value="${esc(p.name)}" maxlength="120"></label><label>Kind<select data-pf="kind">${opts(KINDS,p.kind)}</select></label>
+      <label>Emoji<input data-pf="emoji" value="${esc(p.emoji||"")}" maxlength="8" placeholder="🎭"></label>
+      <label>Born<input data-pf="born" value="${esc(p.born||"")}" maxlength="40" placeholder="1564"></label><label>Died<input data-pf="died" value="${esc(p.died||"")}" maxlength="40" placeholder="1616"></label>
+      <label>From<input data-pf="nationality" value="${esc(p.nationality||"")}" maxlength="80" placeholder="England"></label>
+      <label class="wide">Known for<input data-pf="known_for" value="${esc(p.known_for||"")}" maxlength="200" placeholder="Playwright: Hamlet, Romeo and Juliet"></label>
+      <label class="wide">Wikipedia link<input data-pf="wiki_url" value="${esc(p.wiki_url||"")}" maxlength="300" placeholder="https://en.wikipedia.org/wiki/…"></label>
+      <label class="wide">Notes<input data-pf="notes" value="${esc(p.notes||"")}" maxlength="1000"></label>
+      <div class="wide" style="display:flex;gap:6px"><button type="button" class="btn small primary" data-psave="${p.id}">Save</button><button type="button" class="btn small" data-pcancel="1">Cancel</button></div></div></td></tr>`
+     :`<tr><td style="font-size:1.4rem">${esc(p.emoji||(p.kind==="unknown"?"❔":p.kind==="proverb"?"🗣️":"👤"))}</td><td><b>${esc(p.name)}</b><br><small class="muted">${esc((KINDS.find(k=>k[0]===p.kind)||KINDS[0])[1])}</small></td>
+       <td>${esc([p.born,p.died].filter(Boolean).join("–"))}</td><td>${esc(p.nationality||"")}</td><td>${esc(p.known_for||"")}${p.wiki_url?` <a href="${esc(p.wiki_url)}" target="_blank" rel="noopener">↗</a>`:""}</td>
+       <td><button type="button" class="linkb" data-pq="${p.id}">${n(p.id)}</button></td><td><button type="button" class="btn small" data-pedit="${p.id}">✏️ Edit</button></td></tr>`).join("")}</tbody></table>`;}
+document.addEventListener("click",async e=>{const t=e.target;
+  const tb=t.closest("[data-tab]");if(tb){TAB=tb.dataset.tab;document.querySelectorAll("[data-tab]").forEach(b=>b.setAttribute("aria-selected",b===tb));PEDIT=null;drawList();return;}
+  const pl=t.closest("[data-play]");if(pl){const a=window.__qa||(window.__qa=new Audio());if(a.dataset&&a.src.endsWith(pl.dataset.play)&&!a.paused){a.pause();return;}a.src=pl.dataset.play;a.play().catch(()=>App.status("Could not play the clip",false));return;}
+  const sb=t.closest("[data-st]");if(sb){saveQ(sb.closest(".qc"),sb.dataset.st);return;}
+  const pq=t.closest("[data-pq]");if(pq){F.person=pq.dataset.pq;F.st="";F.q="";TAB="q";document.querySelectorAll("[data-tab]").forEach(b=>b.setAttribute("aria-selected",b.dataset.tab==="q"));drawQ();return;}
+  const pe=t.closest("[data-pedit]");if(pe){PEDIT=pe.dataset.pedit;drawP();return;}
+  if(t.closest("[data-pcancel]")){PEDIT=null;drawP();return;}
+  const ps=t.closest("[data-psave]");if(ps){const f=ps.closest(".pform"),g=k=>f.querySelector(`[data-pf="${k}"]`).value.trim(),p=P.find(x=>x.id===ps.dataset.psave);
+    const v={name:g("name"),kind:g("kind"),born:g("born"),died:g("died"),nationality:g("nationality"),known_for:g("known_for"),wiki_url:g("wiki_url"),emoji:g("emoji"),notes:g("notes")};
+    const {error}=await C.rpc("save_person",{p_id:p.id,p_name:v.name,p_kind:v.kind,p_born:v.born,p_died:v.died,p_nationality:v.nationality,p_known_for:v.known_for,p_wiki:v.wiki_url,p_emoji:v.emoji,p_notes:v.notes});
+    if(error){App.status("Not saved: "+error.message,false);return;}
+    Object.assign(p,v);Q.forEach(x=>{if(x.person_id===p.id){x.person=p.name;x.person_kind=p.kind;x.author=p.kind==="unknown"||x.role==="misattributed"?"":p.name+(x.work?" · "+x.work:"");}});
+    PEDIT=null;App.status("Saved",true);drawList();}});
+App.requireUser({role:"teacher"}).then(async()=>{C=App.client;
+  const [r,p]=await Promise.all([C.rpc("quote_review"),C.from("people").select("id,name,kind,born,died,nationality,known_for,wiki_url,emoji,notes")]);
+  if(r.error){$("pane").innerHTML=`<div class="empty">Could not load the quotes: ${esc(r.error.message)}</div>`;return;}
+  Q=r.data||[];P=p.data||[];drawProg();drawList();}).catch(()=>{});
+</script>
+</body></html>
