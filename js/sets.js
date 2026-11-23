@@ -88,7 +88,10 @@
   }
   // ---------- word groups (tags) ----------
   // Tag kinds: word type (fixed names), opposites ("⇄ Group: side"), and themes (everything else).
-  const TYPES = [["Action", "🏃"], ["Describing", "🎨"], ["Naming: people", "🧑"], ["Naming: things & places", "📦"]];
+  // word types: [stored tag, icon, grammar name shown to children]
+  const TYPES = [["Naming: things & places", "📦", "Noun · thing or place"], ["Naming: people", "🧑", "Noun · person"], ["Action", "🏃", "Verb · action"],
+    ["Describing", "🎨", "Adjective · describes a noun"], ["Adverb", "⏩", "Adverb · how, when, how often"], ["Phrasal verb", "🧩", "Phrasal verb"], ["Idiom", "💬", "Idiom"]];
+  const typeName = t => { const x = TYPES.find(y => y[0] === t); return x ? x[2] : t; };
   const THEME_ICONS = { "Feelings & moods": "😊", "Homes & buildings": "🏠", "Animals": "🐾", "Plants, nature & weather": "🌿", "Health & body": "🩺",
     "Food & drink": "🍵", "Money & work": "💼", "Words & books": "📚", "Looking & seeing": "👀", "Ways of moving": "🦶", "Light & sound": "🔆",
     "Size, amount & distance": "📏", "Danger & safety": "⚠️", "Getting along": "🤝", "Government & law": "🏛️", "Good & great": "⭐",
@@ -156,11 +159,11 @@
 @media (max-width:640px){.gslv{grid-template-columns:1fr}}</style>`);
     let st = { kind: opts.kind || "all", tag: "", view: opts.view || "both", follow: opts.follow !== false }; try { st = Object.assign(st, JSON.parse(localStorage.getItem(KEY) || "{}")); } catch (e) {}
     if (!["both", "meter", "list"].includes(st.view)) st.view = "both";
-    const kinds = [["all", "All words"], ["type", "🏃 Word type"], ["theme", "🏷️ Themes"], ["scale", "🎚️ Meters"], ["sim", "≈ Similar words"], ["opp", "⇄ Opposites"]].filter(([k]) => k === "all" || (k === "type" ? G.types.length : k === "theme" ? G.themes.length : k === "scale" ? G.scales.length : k === "sim" ? G.sims.length : G.opps.length));
+    const kinds = [["all", "All words"], ["type", "🔤 Word type"], ["theme", "🏷️ Themes"], ["scale", "🎚️ Meters"], ["sim", "≈ Similar words"], ["opp", "⇄ Opposites"]].filter(([k]) => k === "all" || (k === "type" ? G.types.length : k === "theme" ? G.themes.length : k === "scale" ? G.scales.length : k === "sim" ? G.sims.length : G.opps.length));
     if (!kinds.some(k => k[0] === st.kind)) st = { kind: "all", tag: "" };
     if (st.tag && !(st.kind === "opp" ? G.opps.some(x => x.g === st.tag) : st.kind === "scale" ? G.scales.some(x => x.g === st.tag) : st.kind === "sim" ? G.sims.some(x => x.g === st.tag) : (st.kind === "type" ? G.types : G.themes).some(x => x.tag === st.tag))) st.tag = "";
     function draw() {
-      const chips = st.kind === "type" ? G.types.map(x => [x.tag, tagIcon(x.tag) + " " + x.tag, x.n]) : st.kind === "theme" ? G.themes.map(x => [x.tag, tagIcon(x.tag) + " " + x.tag, x.n])
+      const chips = st.kind === "type" ? G.types.map(x => [x.tag, tagIcon(x.tag) + " " + typeName(x.tag), x.n]) : st.kind === "theme" ? G.themes.map(x => [x.tag, tagIcon(x.tag) + " " + x.tag, x.n])
         : st.kind === "sim" ? G.sims.map(x => [x.g, "≈ " + x.g, x.n]) : st.kind === "opp" ? G.opps.map(x => [x.g, x.sides.join(" ⇄ "), x.n]) : st.kind === "scale" ? G.scales.map(x => [x.g, "🎚️ " + x.g, x.n]) : [];
       const vrow = st.kind === "scale" ? `<div class="gv" role="group" aria-label="Show"><span>Show</span>${[["both", "🎚️ Meter + cards"], ["meter", "🎚️ Meter only"], ["list", "📋 Full list"]].map(([v, l]) => `<button type="button" data-view="${v}" aria-pressed="${st.view === v}">${l}</button>`).join("")}
         ${st.view === "both" ? `<span class="gvsep"></span><span>Cards</span><button type="button" data-follow="1" aria-pressed="${!!st.follow}">Follow the meter</button><button type="button" data-follow="0" aria-pressed="${!st.follow}">All levels</button>` : ""}</div>` : "";
@@ -198,7 +201,7 @@
           sides.sort((a, b) => (want.indexOf(a.toLowerCase()) + 1 || 9) - (want.indexOf(b.toLowerCase()) + 1 || 9));
           return { title: o.g, icon: "⇄", sides: sides.map(sd => ({ name: sd, items: all.filter(i => oppTags(D[i], o.g).some(t => oppSplit(t).side === sd)) })) }; }).filter(Boolean); }
       const list = st.tag ? [st.tag] : (st.kind === "type" ? G.types : G.themes).map(x => x.tag);
-      const out = list.map(t => ({ title: t, icon: tagIcon(t), items: L.filter(i => has(D[i], t)) })).filter(x => x.items.length);
+      const out = list.map(t => ({ title: st.kind === "type" ? typeName(t) : t, icon: tagIcon(t), items: L.filter(i => has(D[i], t)) })).filter(x => x.items.length);
       if (!st.tag) { const rest = L.filter(i => !(D[i].tags || []).some(t => st.kind === "type" ? isType(t) : !isType(t) && !isOpp(t) && !isScale(t) && !isSim(t))); if (rest.length) out.push({ title: st.kind === "type" ? "Other" : "No theme yet", icon: "🏷️", items: rest }); }
       return out;
     }
@@ -260,9 +263,40 @@
       res.forEach(r => (r.data || []).forEach(x => { const k = String(x.headword).toLowerCase(); if (have.has(k)) return; have.add(k); rows.push(x); }));
       const m = mapItems({ units: [] }, rows.map(x => ({ ...x, kind: "term", term: x.headword, unit: 0, also_units: [] })));
       m.words.forEach(w => { w.companion = true; D.push(w); });
+      rows.forEach((x, k) => { if (m.words[k]) m.words[k].wid = x.id; });
       return m.words.length;
     })());
   }
+  // Word partners (collocations) for the words on the page: Map(word id -> {own: [...], also: [...]})
+  //   own: partners stored on the word (heavy rain); also: phrases on other words that use this word (rain relentlessly, on Relentlessly)
+  //   each: {kind, phrase, partner, link: {w, set} | null}  (set null = the word is on this page)
+  async function loadPartners(words) {
+    const list = words || window.WORDS || [], ids = [...new Set(list.map(v => v.wid).filter(Boolean))], out = new Map();
+    if (!ids.length) return out;
+    const chunks = []; for (let k = 0; k < ids.length; k += 100) chunks.push(ids.slice(k, k + 100));
+    const cols = "word_id,kind,phrase,partner,partner_word_id,position";
+    const res = await Promise.all(chunks.flatMap(c => [App.client.from("word_partners").select(cols).in("word_id", c), App.client.from("word_partners").select(cols).in("partner_word_id", c)]));
+    const rows = []; res.forEach(r => (r.data || []).forEach(x => rows.push(x)));
+    const here = new Map(list.filter(v => v.wid).map(v => [v.wid, v])), where = new Map();
+    const look = [...new Set(rows.flatMap(x => [x.word_id, x.partner_word_id]).filter(id => id && !here.has(id)))];
+    for (let k = 0; k < look.length; k += 100) {
+      const r = await App.client.from("set_items").select("set_id,word_id,term").in("word_id", look.slice(k, k + 100));
+      (r.data || []).forEach(x => { if (!where.has(x.word_id)) where.set(x.word_id, { w: x.term, set: x.set_id }); });
+    }
+    const link = id => !id ? null : here.has(id) ? { w: here.get(id).w, set: null } : where.get(id) || null;
+    const box = id => { if (!out.has(id)) out.set(id, { own: [], also: [] }); return out.get(id); }, seen = new Set();
+    const uniq = rows.sort((a, b) => a.position - b.position).filter(x => { const key = x.word_id + "|" + x.phrase.toLowerCase(); if (seen.has(key)) return false; seen.add(key); return true; });
+    uniq.forEach(x => { if (here.has(x.word_id)) box(x.word_id).own.push({ kind: x.kind, phrase: x.phrase, partner: x.partner, link: link(x.partner_word_id) }); });
+    uniq.forEach(x => {
+      if (x.partner_word_id && here.has(x.partner_word_id) && x.partner_word_id !== x.word_id) {
+        const o = box(x.partner_word_id); if (!o.own.some(y => y.phrase.toLowerCase() === x.phrase.toLowerCase())) o.also.push({ kind: x.kind, phrase: x.phrase, partner: "", link: link(x.word_id) });
+      }
+    });
+    return out;
+  }
+  const PARTNER_KINDS = [["adjective", "🎨 Adjectives", "what kind?"], ["adverb", "⏩ Adverbs", "how?"], ["verb", "🏃 Verbs", "what happens?"], ["noun", "📦 Nouns", "what?"],
+    ["preposition", "🔗 Little words", "at, for, with…"], ["idiom", "💬 Idioms & phrasal verbs", ""]];
+
   // Turn the meter boxes drawn by sectionsHTML into live Feeling meters. opts: {onAdd(i), start:{scaleTitle: rank}, addLabel}
   function mountMeters(root, secs, opts) {
     opts = opts || {}; if (!window.Meter || !root) return;
@@ -366,7 +400,7 @@
       id: x.id, w: x.term, d: x.meaning, s: blankify(x.example, x.term), ar: x.translation || "",
       u: x.unit, also: x.also_units || [], img: x.anim_url || (x.emoji ? tile(x.term, x.emoji) : "") || x.image_url || tile(x.term), emoji: x.emoji || "",   // clip first (vid), then animated emoji, emoji, photo
       photo: (x.anim_url || x.emoji) && x.image_url ? x.image_url : "", au: x.audio_url || "tts",
-      lit: x.literal || "", litAr: x.literal_tr || "", eq: x.equivalent || "", vid: x.video_url || "", tags: Array.isArray(x.tags) ? x.tags : [], pron: x.pronunciation || "", hint: x.sound_hint || "", syl: (x.syllables || (/\s/.test(x.term) ? x.term.toLowerCase() : autoSyl(x.term))).toLowerCase(), real: !!(x.anim_url || x.image_url)
+      lit: x.literal || "", litAr: x.literal_tr || "", eq: x.equivalent || "", wid: x.word_id || null, vid: x.video_url || "", tags: Array.isArray(x.tags) ? x.tags : [], pron: x.pronunciation || "", hint: x.sound_hint || "", syl: (x.syllables || (/\s/.test(x.term) ? x.term.toLowerCase() : autoSyl(x.term))).toLowerCase(), real: !!(x.anim_url || x.image_url)
     }));
     const named = new Map((set.units || []).map(u => [Number(u.u), u.name || ""]));
     const counts = new Map(); words.forEach(w => counts.set(w.u, (counts.get(w.u) || 0) + 1));
@@ -437,5 +471,5 @@
     runPage();
   }
 
-  window.Sets = { boot, speak, sayWord, unitPicker, groupPicker, groupsOf, wordGroups, tagIcon, sectionsHTML, mountMeters, loadBoxes, loadCompanions, scaleOfWord: (v, g) => { const t = (v.tags || []).find(t => isScale(t) && (!g || scaleSplit(t).g === g)); return t ? scaleSplit(t) : null; }, TAG_TYPES: TYPES, TAG_THEMES: THEME_ICONS, playClip, stopClip, media, watchClips, tile, autoSyl, blankify, load, mapItems, G5, LANGS };
+  window.Sets = { boot, speak, sayWord, unitPicker, groupPicker, groupsOf, wordGroups, tagIcon, typeName, loadPartners, PARTNER_KINDS, sectionsHTML, mountMeters, loadBoxes, loadCompanions, scaleOfWord: (v, g) => { const t = (v.tags || []).find(t => isScale(t) && (!g || scaleSplit(t).g === g)); return t ? scaleSplit(t) : null; }, TAG_TYPES: TYPES, TAG_THEMES: THEME_ICONS, playClip, stopClip, media, watchClips, tile, autoSyl, blankify, load, mapItems, G5, LANGS };
 })();

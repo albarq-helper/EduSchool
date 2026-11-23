@@ -103,8 +103,18 @@ input.ok,textarea.ok{border-color:var(--good)!important;background:var(--good-so
 .idiom .il{font:800 .72rem var(--f-body);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);min-width:7.5em}
 .idiom .ar{font-size:1.05rem}
 .idiom .sep{color:var(--muted)}
+.partners{margin-top:8px;display:grid;gap:4px;font-size:.92rem}
+.partners .ph{font:800 .72rem var(--f-body);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.partners .pr{display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+.partners .pk{font:700 .78rem var(--f-body);color:var(--muted);min-width:9.5em}
+.partners .pk small{font-weight:600;opacity:.8}
+.partners .pc{display:inline-flex;align-items:center;gap:4px;border:1.5px solid var(--rule);border-radius:999px;padding:2px 9px;background:var(--sheet);color:var(--ink)}
+.partners .pc b{color:var(--accent)}
+.partners a.pc,.partners button.pc{cursor:pointer;text-decoration:none;font:inherit}
+.partners a.pc:hover,.partners button.pc:hover{border-color:var(--accent)}
+@media print{.partners .pc{border:0;padding:0 4px}}
 </style>
-<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261123a"></script><script src="js/icons.js?v=20261123a"></script><script src="js/app.js?v=20261123a"></script><script src="js/sets.js?v=20261123a"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261123a"></script>
+<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261123b"></script><script src="js/icons.js?v=20261123b"></script><script src="js/app.js?v=20261123b"></script><script src="js/sets.js?v=20261123b"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261123b"></script>
 </head><body>
 <div class="wrap" style="max-width:1180px">
   <div class="head2">
@@ -152,7 +162,8 @@ const uname=x=>x.u?(x.name?`Unit ${x.u} · ${x.name}`:`Unit ${x.u}`):(x.name||"G
 const UP=Sets.unitPicker($("unitMount"),()=>render());
 const METER_AT={};   // where each Feeling meter was left, so re-drawing keeps it
 const GP=Sets.groupPicker($("groupMount"),()=>render(),{view:"both",follow:true});
-Sets.loadCompanions().then(n=>{if(n)render();}).catch(()=>{});   // whole-scale words for the Feeling meters
+Sets.loadCompanions().then(n=>{if(n)render();}).catch(()=>{});
+Sets.loadPartners(D).then(m=>{PARTNERS=m;if(m.size)render();}).catch(()=>{});   // whole-scale words for the Feeling meters
 let VIEW=store.get("view","detail"), SHOW=Object.assign({pic:true,syl:true,say:true,mean:true,ex:true,tr:true},store.get("show",{}));
 let ORDER=D.map((v,i)=>i), ST={};   // ST[i] = {cw, cm, typed, ok, mtyped, mrev, self}
 const S=i=>ST[i]||(ST[i]={});
@@ -225,16 +236,31 @@ function jumpTo(kind,tag,i){const v=D[i];
   requestAnimationFrame(()=>{const el=$("out").querySelector(`[data-i="${i}"]`);
     if(!el){const sec=$("out").querySelector(".gsec");if(sec)sec.scrollIntoView({behavior:"smooth",block:"start"});return;}
     el.scrollIntoView({behavior:"smooth",block:"center"});el.classList.remove("hl");void el.offsetWidth;el.classList.add("hl");setTimeout(()=>el.classList.remove("hl"),2600);});}
+function showWord(i){const v=D[i];if(!v)return;if(!visible().includes(i)){$("q").value="";if(!visible().includes(i))GP.set("all","");}
+  requestAnimationFrame(()=>{let el=$("out").querySelector(`[data-i="${i}"]`);if(!el){$("q").value=v.w;render();el=$("out").querySelector(`[data-i="${i}"]`);}
+    if(!el)return;el.scrollIntoView({behavior:"smooth",block:"center"});el.classList.remove("hl");void el.offsetWidth;el.classList.add("hl");setTimeout(()=>el.classList.remove("hl"),2600);});}
 function wordIndex(w){const t=String(w||"").toLowerCase();let k=D.findIndex(v=>!v.companion&&String(v.w).toLowerCase()===t);if(k<0)k=D.findIndex(v=>String(v.w).toLowerCase()===t);return k;}
+// ---- word partners: the words that go with this word (heavy rain, rain heavily, make a mistake…) ----
+let PARTNERS=new Map();
+const reEsc=x=>x.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
+function boldPartner(phrase,partner){let h=esc(phrase);String(partner||"").split(" … ").filter(Boolean).forEach(x=>{h=h.replace(new RegExp("("+reEsc(esc(x))+")","i"),"<b>$1</b>");});return h;}
+function partnerChip(x){const inner=x.kind==="idiom"?`💬 <b>${esc(x.phrase)}</b>`:boldPartner(x.phrase,x.partner);
+  if(!x.link)return `<span class="pc">${inner}</span>`;
+  if(!x.link.set){const k=wordIndex(x.link.w);return k>=0?`<button type="button" class="pc" data-pw="${k}" title="Go to ${esc(x.link.w)}">${inner} ↓</button>`:`<span class="pc">${inner}</span>`;}
+  const q=new URLSearchParams({set:x.link.set,w:x.link.w});return `<a class="pc" href="list.html?${q}" target="_blank" rel="noopener" title="Open ${esc(x.link.w)} in a new tab">${inner} ↗</a>`;}
+function partnersHTML(i,v){if(wordHidden(i)||!v.wid)return "";const P=PARTNERS.get(v.wid);if(!P||!(P.own.length||P.also.length))return "";
+  const rows=Sets.PARTNER_KINDS.map(([k,lab,hint])=>{const xs=P.own.filter(x=>x.kind===k);return xs.length?`<div class="pr"><span class="pk">${lab}${hint?` <small>${hint}</small>`:""}</span>${xs.map(partnerChip).join("")}</div>`:"";}).join("");
+  const also=P.also.length?`<div class="pr"><span class="pk">🔁 Also used in</span>${P.also.map(partnerChip).join("")}</div>`:"";
+  return `<div class="partners"><span class="ph">🔗 Goes with</span>${rows}${also}</div>`;}
 // ---- views ----
 function card(i,view){const v=D[i], hid=wordHidden(i);
   if(view==="detail")return `<article class="d" data-i="${i}">${SHOW.pic?picHTML(i,v):"<span></span>"}
-    <div class="body"><div class="w">${wordHTML(i,v)}</div>${hid?"":pillsHTML(v)}${sayHTML(v,i)}${spellHTML(i,v)}${meanHTML(i,v)}${idiomHTML(i,v)}${exHTML(i,v)}${trHTML(i,v)}${groupsHTML(i,v)}${coverBtns(i)}</div>
+    <div class="body"><div class="w">${wordHTML(i,v)}</div>${hid?"":pillsHTML(v)}${sayHTML(v,i)}${spellHTML(i,v)}${meanHTML(i,v)}${idiomHTML(i,v)}${exHTML(i,v)}${trHTML(i,v)}${partnersHTML(i,v)}${groupsHTML(i,v)}${coverBtns(i)}</div>
     <div class="side">${unitTag(v)}${hearBtn(i,v)}</div></article>`;
   if(view==="grid")return `<article class="g" data-i="${i}">${picHTML(i,v)}<div class="w">${wordHTML(i,v)}${hearBtn(i,v)}</div>${hid?"":pillsHTML(v)}${sayHTML(v,i)}${spellHTML(i,v)}${meanHTML(i,v)}${idiomHTML(i,v)}${trHTML(i,v)}${groupsHTML(i,v)}${coverBtns(i)}</article>`;
   if(view==="blocks")return `<article class="b" data-i="${i}">${picHTML(i,v)}<div class="w bw" data-hear="${i}" role="button" tabindex="0" aria-label="Hear the word">${wordHTML(i,v)} ${icon("volume-2",15)}</div>${sayHTML(v,i)}${spellHTML(i,v)}${S(i).cm?meanHTML(i,v):""}${groupsHTML(i,v)}${coverBtns(i)}</article>`;
   return `<tr data-i="${i}">${SHOW.pic?`<td>${picHTML(i,v)}</td>`:""}<td><div class="w">${wordHTML(i,v)}</div>${sayHTML(v,i)}${spellHTML(i,v)}</td><td>${hearBtn(i,v)}</td>
-    <td>${meanHTML(i,v)}${idiomHTML(i,v)}${groupsHTML(i,v)}${coverBtns(i)}</td>${SHOW.tr&&D.some(x=>x.ar)?`<td class="tr" dir="auto">${S(i).cm&&!S(i).mrev?"":esc(v.ar)}</td>`:""}<td>${unitTag(v)}</td></tr>`;}
+    <td>${meanHTML(i,v)}${idiomHTML(i,v)}${partnersHTML(i,v)}${groupsHTML(i,v)}${coverBtns(i)}</td>${SHOW.tr&&D.some(x=>x.ar)?`<td class="tr" dir="auto">${S(i).cm&&!S(i).mrev?"":esc(v.ar)}</td>`:""}<td>${unitTag(v)}</td></tr>`;}
 function visible(){const q=$("q").value.trim().toLowerCase();
   return ORDER.filter(i=>{const v=D[i];return UP.match(v)&&GP.match(v)&&(!q||(v.w+" "+v.d+" "+v.ar+" "+(v.lit||"")+" "+(v.eq||"")).toLowerCase().includes(q));});}
 function render(){const L=visible();
@@ -260,6 +286,7 @@ const norm=s=>String(s).trim().toLowerCase().replace(/[’']/g,"'").replace(/\s+
 function check(i){const inp=$("out").querySelector(`[data-spell="${i}"]`);const typed=inp?inp.value:"";if(!typed.trim())return false;
   Object.assign(S(i),{typed,ok:norm(typed)===norm(D[i].w)});rerender(i);return true;}
 $("out").addEventListener("click",e=>{const b=e.target.closest("[data-gk]");if(!b)return;jumpTo(b.dataset.gk,b.dataset.gt,+b.dataset.gi);});
+$("out").addEventListener("click",e=>{const b=e.target.closest("[data-pw]");if(!b)return;showWord(+b.dataset.pw);});
 $("out").addEventListener("click",e=>{const b=e.target.closest("[data-hear],[data-check],[data-giveup],[data-again],[data-mshow],[data-self],[data-cw],[data-cm]");if(!b)return;
   if(b.dataset.hear!==undefined){hear(+b.dataset.hear);return;}
   if(b.dataset.cw!==undefined){const i=+b.dataset.cw,s=S(i);if(s.cw){delete s.cw;delete s.typed;delete s.ok;rerender(i);}else{s.cw=true;rerender(i,"[data-spell]");}return;}
@@ -292,7 +319,7 @@ $("checkAll").onclick=()=>{const L=visible().filter(i=>S(i).cw);L.forEach(i=>{co
     .then(x=>{if(x.error)App.status("Result not saved: "+x.error.message,false);else if(x.id)App.status(`Result saved: ${r} of ${n}`,true);});};
 press("views","v",VIEW);render();
 // opened from a ↗ link: ?g=<kind>|<group>&w=<word>
-(function(){const q=new URLSearchParams(location.search),g=q.get("g");if(!g)return;const k=g.indexOf("|"),kind=g.slice(0,k),tag=g.slice(k+1);
+(function(){const q=new URLSearchParams(location.search),g=q.get("g");if(!g){const w=q.get("w");if(w){const i=wordIndex(w);if(i>=0)showWord(i);}return;}const k=g.indexOf("|"),kind=g.slice(0,k),tag=g.slice(k+1);
   const go=()=>{const i=wordIndex(q.get("w"));if(i>=0){jumpTo(kind,tag,i);return true;}if(GP.has(kind,tag))GP.set(kind,tag);return false;};
   if(!go())Sets.loadCompanions().then(()=>go()).catch(()=>{});})();
 // touch screens have no hover: a tap on the word opens / closes its syllables
