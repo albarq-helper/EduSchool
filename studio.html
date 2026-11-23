@@ -46,7 +46,7 @@ textarea.mid{width:100%;min-height:70px;font:14px/1.5 var(--f-body);padding:8px 
 .empty{padding:40px 20px;text-align:center;color:var(--muted)}
 .note{padding:10px 12px;border-radius:10px;background:var(--sky-soft);font-size:.9rem;margin-bottom:12px}
 </style>
-<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261123c"></script><script src="js/icons.js?v=20261123c"></script><script src="js/app.js?v=20261123c"></script><script src="js/sets.js?v=20261123c"></script><script src="js/storycore.js?v=20261123c"></script><script src="js/montage.js?v=20261123c"></script>
+<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261123d"></script><script src="js/icons.js?v=20261123d"></script><script src="js/app.js?v=20261123d"></script><script src="js/sets.js?v=20261123d"></script><script src="js/storycore.js?v=20261123d"></script><script src="js/montage.js?v=20261123d"></script>
 </head><body>
 <div class="wrap" style="max-width:1320px">
   <div class="head2">
@@ -103,7 +103,7 @@ function drawWs(){if(!CUR){$("ws").innerHTML=`<div class="empty">Choose a story 
 // ---------- 1. Script ----------
 function planHTML(){const sc=[[]];(CUR.blocks||[]).forEach(b=>b.k==="s"?sc.push([]):sc[sc.length-1].push(b));const S=CUR.sentences||{};
   return sc.filter(x=>x.length).map((x,k)=>{const n=k+1,sen=Object.entries(S).filter(([key])=>key==="s"+n||key.startsWith(n+"|")).map(([,v])=>v).filter(v=>(v||"").trim());
-    return `<div class="sc"><h4>Scene ${n}</h4><div class="flow">${x.map(b=>{if(b.k!=="w")return `<span class="t">${esc(b.t||"")}</span>`;const v=wv(b.w);
+    return `<div class="sc"><h4>Scene ${n}</h4><div class="flow">${x.map(b=>{if(b.k==="q")return `<span class="t">📜 ${esc(b.by||"Voice-over")}: “${esc(b.w)}”${b.a?` <small class="muted">— ${esc(b.a)}</small>`:""}</span>`;if(b.k!=="w")return `<span class="t">${esc(b.t||"")}</span>`;const v=wv(b.w);
       return `<span class="w" title="${esc(v?v.d:"")}">${v?(v.vid?`<video src="${esc(v.vid)}" muted playsinline preload="metadata"></video>`:`<img src="${esc(v.img)}" alt="">`):""}${esc(K.clean(b.w))}</span>`;}).join(" ")}</div>
       ${sen.map(t=>`<div class="sen">✍️ ${esc(t)}</div>`).join("")}</div>`;}).join("")||`<p class="muted">This story has no steps yet.</p>`;}
 function drawScript(){const L=K.lvl(CUR);

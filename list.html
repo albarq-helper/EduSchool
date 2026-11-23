@@ -115,7 +115,7 @@ input.ok,textarea.ok{border-color:var(--good)!important;background:var(--good-so
 .partners a.pc:hover,.partners button.pc:hover{border-color:var(--accent)}
 @media print{.partners .pc{border:0;padding:0 4px}}
 </style>
-<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261123c"></script><script src="js/icons.js?v=20261123c"></script><script src="js/app.js?v=20261123c"></script><script src="js/sets.js?v=20261123c"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261123c"></script>
+<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261123d"></script><script src="js/icons.js?v=20261123d"></script><script src="js/app.js?v=20261123d"></script><script src="js/sets.js?v=20261123d"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261123d"></script>
 </head><body>
 <div class="wrap" style="max-width:1180px">
   <div class="head2">
@@ -202,12 +202,16 @@ const picHTML=(i,v)=>!SHOW.pic?"":v.vid?`<div class="vwrap">${Sets.media(v,{cls:
 const exHTML=(i,v)=>{if(!SHOW.ex||!v.s||/^\[[^\]]*\]$/.test(v.s))return "";
   const t=S(i).cw&&S(i).ok===undefined?esc(v.s).replace(/\[([^\]]*)\]/,(m,x)=>"_".repeat(Math.max(4,x.length))):esc(v.s).replace(/\[([^\]]*)\]/,"<b>$1</b>");return `<div class="ex">${t}</div>`;};
 // idioms: the word-for-word meaning, the Arabic saying with the same idea, and the real meaning in Arabic
-const idiomHTML=(i,v)=>{if(!(v.lit||v.eq)||(S(i).cm&&!S(i).mrev))return "";const rows=[];
+const idiomHTML=(i,v)=>{if(!(v.lit||v.eq||v.author)||(S(i).cm&&!S(i).mrev))return "";const rows=[];
+  if(v.author)rows.push(`<div class="ir"><span class="il">✍️ Said by</span><span>${esc(v.author)}</span></div>`);
+  if(v.author&&SHOW.tr&&v.ar)rows.push(`<div class="ir"><span class="il">🌍 In Arabic</span><span class="ar" dir="rtl" lang="ar">${esc(v.ar)}</span></div>`);
+  if(v.author&&SHOW.tr&&v.eq&&v.eq!==v.ar.replace(/[.،]$/,""))rows.push(`<div class="ir"><span class="il">🗣️ We say</span><span class="ar" dir="rtl" lang="ar">${esc(v.eq)}</span></div>`);
+  if(v.author)return `<div class="idiom">${rows.join("")}</div>`;
   if(SHOW.mean&&(v.lit||v.litAr))rows.push(`<div class="ir"><span class="il">🔤 Word for word</span><span>${esc(v.lit)}</span>${SHOW.tr&&v.litAr?`<span class="sep">·</span><span class="ar" dir="rtl" lang="ar">${esc(v.litAr)}</span>`:""}</div>`);
   if(SHOW.tr&&v.eq)rows.push(`<div class="ir"><span class="il">🌍 We say</span><span class="ar" dir="rtl" lang="ar">${esc(v.eq)}</span></div>`);
   if(SHOW.tr&&v.ar)rows.push(`<div class="ir"><span class="il">💡 It means</span><span class="ar" dir="rtl" lang="ar">${esc(v.ar)}</span></div>`);
   return rows.length?`<div class="idiom">${rows.join("")}</div>`:"";};
-const trHTML=(i,v)=>SHOW.tr&&v.ar&&!(v.lit||v.eq)&&!(S(i).cm&&!S(i).mrev)?`<div class="tr" dir="auto">${esc(v.ar)}</div>`:"";
+const trHTML=(i,v)=>SHOW.tr&&v.ar&&!(v.lit||v.eq||v.author)&&!(S(i).cm&&!S(i).mrev)?`<div class="tr" dir="auto">${esc(v.ar)}</div>`:"";
 const wordHidden=i=>S(i).cw&&S(i).ok===undefined;
 function wordHTML(i,v){
   if(!wordHidden(i))return sylHTML(v);
@@ -245,14 +249,14 @@ function wordIndex(w){const t=String(w||"").toLowerCase();let k=D.findIndex(v=>!
 var PARTNERS=PARTNERS||new Map();   // var: the loader above may finish before this line runs
 const reEsc=x=>x.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
 function boldPartner(phrase,partner){let h=esc(phrase);String(partner||"").split(" … ").filter(Boolean).forEach(x=>{h=h.replace(new RegExp("("+reEsc(esc(x))+")","i"),"<b>$1</b>");});return h;}
-function partnerChip(x){const inner=x.kind==="idiom"?`💬 <b>${esc(x.phrase)}</b>`:boldPartner(x.phrase,x.partner);
+function partnerChip(x,mode){const inner=mode==="word"?`<b>${esc(x.link?x.link.w:x.partner)}</b>`:x.kind==="idiom"?`💬 <b>${esc(x.phrase)}</b>`:x.kind==="saying"?`📜 “${esc(x.phrase)}”`:boldPartner(x.phrase,x.partner);
   if(!x.link)return `<span class="pc">${inner}</span>`;
   if(!x.link.set){const k=wordIndex(x.link.w);return k>=0?`<button type="button" class="pc" data-pw="${k}" title="Go to ${esc(x.link.w)}">${inner} ↓</button>`:`<span class="pc">${inner}</span>`;}
   const q=new URLSearchParams({set:x.link.set,w:x.link.w});return `<a class="pc" href="list.html?${q}" target="_blank" rel="noopener" title="Open ${esc(x.link.w)} in a new tab">${inner} ↗</a>`;}
 function partnersHTML(i,v){if(wordHidden(i)||!v.wid)return "";const P=PARTNERS.get(v.wid);if(!P||!(P.own.length||P.also.length))return "";
-  const rows=Sets.PARTNER_KINDS.map(([k,lab,hint])=>{const xs=P.own.filter(x=>x.kind===k);return xs.length?`<div class="pr"><span class="pk">${lab}${hint?` <small>${hint}</small>`:""}</span>${xs.map(partnerChip).join("")}</div>`:"";}).join("");
-  const also=P.also.length?`<div class="pr"><span class="pk">🔁 Also used in</span>${P.also.map(partnerChip).join("")}</div>`:"";
-  return `<div class="partners"><span class="ph">🔗 Goes with</span>${rows}${also}</div>`;}
+  const rows=Sets.PARTNER_KINDS.map(([k,lab,hint])=>{const xs=P.own.filter(x=>x.kind===k);return xs.length?`<div class="pr"><span class="pk">${lab}${hint?` <small>${hint}</small>`:""}</span>${xs.map(x=>partnerChip(x)).join("")}</div>`:"";}).join("");
+  const also=P.also.length?(v.author?`<div class="pr"><span class="pk">📖 Words in this saying</span>${P.also.map(x=>partnerChip(x,"word")).join("")}</div>`:`<div class="pr"><span class="pk">🔁 Also used in</span>${P.also.map(x=>partnerChip(x)).join("")}</div>`):"";
+  return `<div class="partners"><span class="ph">${v.author?"🔗 Linked words":"🔗 Goes with"}</span>${rows}${also}</div>`;}
 // ---- views ----
 function card(i,view){const v=D[i], hid=wordHidden(i);
   if(view==="detail")return `<article class="d" data-i="${i}">${SHOW.pic?picHTML(i,v):"<span></span>"}

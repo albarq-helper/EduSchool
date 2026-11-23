@@ -44,7 +44,7 @@
 .bk .num{font:800 .8rem var(--f-body);color:var(--muted);min-width:1.4em;text-align:right}
 .bk .th{width:46px;height:46px;border-radius:8px;object-fit:cover;flex:none;background:var(--chip)}
 .bk .tx{flex:1;min-width:0;display:flex;flex-direction:column}
-.bk .tx b{font:800 1.05rem var(--f-display)}.bk .tx small{color:var(--muted);font-size:.8rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bk .tx b{font:800 1.05rem var(--f-display)}.bk .tx b.qt{font:700 1rem var(--f-body);font-style:italic;white-space:normal}.bk .qth{display:grid;place-items:center;font-size:1.6rem}.bk .by{display:flex;gap:6px;align-items:center;font:700 .8rem var(--f-body);color:var(--muted);margin-top:4px}.bk .by input{flex:1;min-width:0;padding:4px 8px;border:1.5px solid var(--rule);border-radius:8px;font:600 .9rem var(--f-body)}.bk .tx small{color:var(--muted);font-size:.8rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .bk.t{background:var(--sun-soft)}
 .bk.t input{flex:1;min-width:0;font:700 1rem var(--f-body);border:1px solid transparent;background:transparent;padding:6px;border-radius:8px;color:var(--ink)}
 .bk.t input:focus{border-color:var(--accent);background:var(--paper);outline:none}
@@ -93,7 +93,7 @@
 .parent .step{margin-top:12px}.parent .step b{display:block;margin-bottom:4px}
 .parent input[type=text]{width:100%;max-width:40rem}
 </style>
-<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261123c"></script><script src="js/icons.js?v=20261123c"></script><script src="js/app.js?v=20261123c"></script><script src="js/sets.js?v=20261123c"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261123c"></script><script src="js/storycore.js?v=20261123c"></script><script src="js/montage.js?v=20261123c"></script>
+<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261123d"></script><script src="js/icons.js?v=20261123d"></script><script src="js/app.js?v=20261123d"></script><script src="js/sets.js?v=20261123d"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261123d"></script><script src="js/storycore.js?v=20261123d"></script><script src="js/montage.js?v=20261123d"></script>
 </head><body>
 <div class="wrap" style="max-width:1280px">
   <div class="head2">
@@ -162,7 +162,9 @@ function setBox(id){BOX=boxOf(id).id;try{localStorage.setItem("storyBox",BOX);}c
   drawBoxes();drawLib();}
 $("boxes").onclick=e=>{const b=e.target.closest("[data-box]");if(b){$("q").value="";setBox(b.dataset.box);}};
 // add a library word: linking words become the student's own words; others are vocabulary words
-function addIdx(i,at){const v=D[i];if(!v)return;addBlock(v.boxKind==="link"?{k:"t",t:clean(v.w)}:{k:"w",w:v.w},at);}
+function addIdx(i,at){const v=D[i];if(!v)return;addBlock(v.boxKind==="link"?{k:"t",t:clean(v.w)}:(v.boxKind==="sayings"||v.author)?{k:"q",w:v.w,a:v.author||"",by:"Voice-over"}:{k:"w",w:v.w},at);}
+// who can say a famous saying: a voice-over, or the people and animals already in the story
+function speakers(){const s=new Set(["Voice-over","Narrator"]);(CUR?.blocks||[]).forEach(b=>{if(b.k==="q"&&(b.by||"").trim())s.add(b.by.trim());if(b.k!=="w")return;const v=D[wi(b.w)];if(v&&(v.tags||[]).some(t=>t==="Naming: people"||t==="Animals"))s.add(clean(b.w));});return [...s];}
 const QUICK=["One day,","Then","Suddenly,","After that,","Because","But","In the end,"];
 const STATUS=StoryCore.STATUS;
 // Levels 1-10: what she must do (checked here, free) and how many small mistakes the AI allows (tol).
@@ -211,7 +213,7 @@ const ME=App.profile||{};
 const blank=()=>({id:null,owner_id:ME.id,title:"",blocks:[],status:"draft",story_text:"",video_url:"",level:DEF_LEVEL,sentences:{},feedback:""});
 
 // ---------- library ----------
-function drawLib(){const q=$("q").value.trim().toLowerCase();const used=new Map();(CUR?.blocks||[]).forEach(b=>{const t=b.k==="w"?b.w:b.k==="t"?clean(b.t||""):"";if(t)used.set(t,(used.get(t)||0)+1);});
+function drawLib(){const q=$("q").value.trim().toLowerCase();const used=new Map();(CUR?.blocks||[]).forEach(b=>{const t=b.k==="w"||b.k==="q"?b.w:b.k==="t"?clean(b.t||""):"";if(t)used.set(t,(used.get(t)||0)+1);});
   const hit=v=>v.w.toLowerCase().includes(q)||String(v.d).toLowerCase().includes(q);
   const card=i=>{const v=D[i],u=used.get(v.w)||used.get(clean(v.w)),sc=Sets.scaleOfWord(v);
     return `<div class="lw${u?" used":""}${v.boxKind==="link"?" link":""}" draggable="true" data-i="${i}">${u?`<span class="n">✓ ${u}</span>`:""}${sc?`<button class="mt" type="button" data-meter="${i}" title="See it on the ${esc(sc.g)} meter">🎚️</button>`:""}${Sets.media(v,{cls:"lm",alt:""})}<b>${esc(clean(v.w))}</b><small>${esc(v.d||"")}</small>${q&&v.box!==BOX?`<span class="from">in ${esc(boxOf(v.box).title)}</span>`:""}<button class="add" type="button" data-add="${i}">+ Add</button></div>`;};
@@ -241,14 +243,17 @@ function drawBoard(){const B=CUR?CUR.blocks:[];let scene=1,n=0;
     n++;const cls=`bk ${b.k}${k===SEL?" sel":""}`,grip=`<span class="grip" title="Drag to move">${icon("grip-vertical",16)}</span><span class="num">${n}</span>`;
     if(b.k==="w"){const i=wi(b.w),v=D[i];
       rows.push(`<li class="${cls}" data-k="${k}" draggable="true">${grip}${v?(v.vid?`<video class="th" src="${esc(v.vid)}" muted loop playsinline preload="none" data-auto></video>`:`<img class="th" src="${esc(v.img)}" alt="">`):""}<span class="tx"><b>${esc(clean(b.w))}</b><small>${esc(v?v.d:"")}</small></span>${ctl}</li>`);}
+    else if(b.k==="q")rows.push(`<li class="${cls}" data-k="${k}" draggable="true">${grip}<span class="th qth">📜</span><span class="tx"><b class="qt">“${esc(b.w)}”</b><small>${esc(b.a||"")}</small><label class="by">🎙️ Who says it? <input value="${esc(b.by||"")}" list="speakerList" maxlength="60" placeholder="Voice-over, or a character" data-by="${k}"></label></span>${ctl}</li>`);
     else rows.push(`<li class="${cls}" data-k="${k}" draggable="true">${grip}<input value="${esc(b.t||"")}" maxlength="300" placeholder="Type your own words…" aria-label="My own words" data-t="${k}">${ctl}</li>`);});
+  let SL=$("speakerList");if(!SL){SL=document.createElement("datalist");SL.id="speakerList";document.body.appendChild(SL);}
+  SL.innerHTML=speakers().map(x=>`<option value="${esc(x)}">`).join("");
   $("board").innerHTML=B.length?rows.join(""):`<li class="empty">Your story is empty.<br>Add words from the library, or press <b>✏️ Add my own words</b>.</li>`;
   Sets.watchClips();drawPreview();drawLib();drawWrite();}
 function drawPreview(){const B=CUR?CUR.blocks:[];if(!B.some(b=>b.k!=="s")){$("preview").innerHTML=`<h3>My story so far</h3><p class="muted">Your words will appear here as you build.</p>`;return;}
   const S_=CUR.sentences||{},L=LV();
   if(L.mode!=="none"&&Object.values(S_).some(v=>(v||"").trim())){const its=items();
     $("preview").innerHTML=`<h3>My story so far</h3>`+scenesOf().map(x=>`<p><span class="muted">Scene ${x.n}:</span> ${its.filter(it=>it.scene===x.n).map(it=>esc((S_[it.key]||"").trim())).filter(Boolean).join(" ")||'<span class="muted">…</span>'}</p>`).join("");return;}
-  const sc=[[]];B.forEach(b=>b.k==="s"?sc.push([]):sc[sc.length-1].push(b.k==="w"?`<b>${esc(clean(b.w))}</b>`:esc(b.t||"")));
+  const sc=[[]];B.forEach(b=>b.k==="s"?sc.push([]):sc[sc.length-1].push(b.k==="w"?`<b>${esc(clean(b.w))}</b>`:b.k==="q"?`<i>${esc(b.by||"Voice-over")}: “${esc(b.w)}”</i>`:esc(b.t||"")));
   $("preview").innerHTML=`<h3>My story so far</h3>`+sc.filter(s=>s.length).map((s,k)=>`<p><span class="muted">Scene ${k+1}:</span> ${s.join(" ")}</p>`).join("");}
 function move(k,d){const B=CUR.blocks,j=k+d;if(j<0||j>=B.length)return;[B[k],B[j]]=[B[j],B[k]];SEL=j;changed();drawBoard();}
 $("board").addEventListener("click",e=>{const b=e.target.closest("button");
@@ -257,7 +262,7 @@ $("board").addEventListener("click",e=>{const b=e.target.closest("button");
   const li=e.target.closest("li[data-k]");if(li&&!e.target.closest("input")){SEL=+li.dataset.k===SEL?-1:+li.dataset.k;drawBoard();
     const v=li.querySelector("video.th");if(v&&SEL>=0){const w=CUR.blocks[SEL];Sets.playClip(v,D[wi(w.w)]);}}});
 $("board").addEventListener("focusin",e=>{const i=e.target.closest("input[data-t]");if(i){SEL=+i.dataset.t;document.querySelectorAll(".bk.sel").forEach(x=>x.classList.remove("sel"));i.closest(".bk").classList.add("sel");}});
-$("board").addEventListener("input",e=>{const i=e.target.closest("input[data-t]");if(!i)return;CUR.blocks[+i.dataset.t].t=i.value;changed();drawPreview();drawChecks();});
+$("board").addEventListener("input",e=>{const q=e.target.closest("input[data-by]");if(q){CUR.blocks[+q.dataset.by].by=q.value;changed();drawPreview();return;}const i=e.target.closest("input[data-t]");if(!i)return;CUR.blocks[+i.dataset.t].t=i.value;changed();drawPreview();drawChecks();});
 $("write").addEventListener("input",e=>{const t=e.target.closest("textarea[data-key]");if(!t)return;CUR.sentences=CUR.sentences||{};CUR.sentences[t.dataset.key]=t.value;changed();
   const it=items().find(x=>x.key===t.dataset.key);if(it)drawItemStatus(it);drawChecks();drawPreview();});
 // drag to reorder / drop new words

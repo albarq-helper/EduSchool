@@ -16,6 +16,8 @@
   const FILM_STYLE = "Cinematic soft 3D cartoon animation for children, warm friendly colours, gentle camera movement, consistent characters in every shot, no text, no letters, no words on screen, no speech, only soft music and natural sound effects.";
   const SHOT_COST = 0.85; // US$ per 5-second 720p shot (approximate)
   const clean = w => String(w).replace(/\s*\(.*\)/, "");
+  // a famous saying block: {k:"q", w: saying, a: author, by: who says it ("Voice-over" or a character)}
+  const sayingLine = b => `FAMOUS SAYING (said by ${(b.by || "").trim() || "Voice-over"}): "${b.w}"${b.a ? ` — ${b.a}` : ""}`;
   const lvl = s => LEVELS[(s && s.level) || 3];
   // [{n, words:[term], texts:[own words]}]
   function scenes(s) {
@@ -41,7 +43,8 @@
     const B = s.blocks || [], sc = [[]];
     B.forEach(b => b.k === "s" ? sc.push([]) : sc[sc.length - 1].push(b));
     const nW = new Set(B.filter(b => b.k === "w").map(b => b.w)).size;
-    const plan = sc.filter(x => x.length).map((x, k) => `Scene ${k + 1}: ` + x.map(b => b.k === "w" ? `[${clean(b.w)}]` : `"${(b.t || "").trim()}"`).filter(t => t !== '""').join(" → ")).join("\n");
+    const plan = sc.filter(x => x.length).map((x, k) => `Scene ${k + 1}: ` + x.map(b => b.k === "w" ? `[${clean(b.w)}]` : b.k === "q" ? sayingLine(b) : `"${(b.t || "").trim()}"`).filter(t => t !== '""').join(" → ")).join("\n");
+    const hasQ = B.some(b => b.k === "q");
     return `Please write a short children's story for my daughter, a Grade 5 student learning English vocabulary. She planned it herself in a story builder.
 
 Her title: ${(s.title || "").trim() || "(no title yet — please suggest one)"}
@@ -51,7 +54,7 @@ ${plan}
 
 Rules:
 - Keep her order, her scenes and her ideas. Fill the gaps so it reads as a real story.
-- Use EVERY vocabulary word at least once (you may change the form, e.g. insist → insisted). Make each meaning clear from the sentence.
+${hasQ ? `- A FAMOUS SAYING must appear word for word, spoken by the character named (or by a narrator, as a voice-over, if it says Voice-over). You may mention who first said it.\n` : ""}- Use EVERY vocabulary word at least once (you may change the form, e.g. insist → insisted). Make each meaning clear from the sentence.
 - Grade 5 reading level, warm and fun, about ${Math.min(600, Math.max(180, nW * 30))} words. One short paragraph per scene. No violence beyond what the words need.
 - ${videoRule}
 
@@ -98,5 +101,5 @@ ${meanings(s, D)}`;
   }
   const planText = (cast, shots) => (cast ? `CAST: ${cast}\n` : "") + shots.map((x, k) => `VIDEO SCENE ${k + 1}: ${x.text}`).join("\n");
   const paragraphs = t => String(t || "").split(/\n\s*\n|\n/).map(x => x.trim()).filter(Boolean);
-  window.StoryCore = { LEVELS, STATUS, FILM_STYLE, SHOT_COST, clean, lvl, scenes, items, writePrompt, checkPrompt, prompt, apiPrompt, sections, parsePlan, planText, paragraphs };
+  window.StoryCore = { sayingLine, LEVELS, STATUS, FILM_STYLE, SHOT_COST, clean, lvl, scenes, items, writePrompt, checkPrompt, prompt, apiPrompt, sections, parsePlan, planText, paragraphs };
 })();

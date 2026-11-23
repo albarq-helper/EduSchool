@@ -90,7 +90,7 @@
   // Tag kinds: word type (fixed names), opposites ("⇄ Group: side"), and themes (everything else).
   // word types: [stored tag, icon, grammar name shown to children]
   const TYPES = [["Naming: things & places", "📦", "Noun · thing or place"], ["Naming: people", "🧑", "Noun · person"], ["Action", "🏃", "Verb · action"],
-    ["Describing", "🎨", "Adjective · describes a noun"], ["Adverb", "⏩", "Adverb · how, when, how often"], ["Phrasal verb", "🧩", "Phrasal verb"], ["Idiom", "💬", "Idiom"]];
+    ["Describing", "🎨", "Adjective · describes a noun"], ["Adverb", "⏩", "Adverb · how, when, how often"], ["Phrasal verb", "🧩", "Phrasal verb"], ["Idiom", "💬", "Idiom"], ["Saying", "📜", "Famous saying"]];
   const typeName = t => { const x = TYPES.find(y => y[0] === t); return x ? x[2] : t; };
   const THEME_ICONS = { "Feelings & moods": "😊", "Homes & buildings": "🏠", "Animals": "🐾", "Plants, nature & weather": "🌿", "Health & body": "🩺",
     "Food & drink": "🍵", "Money & work": "💼", "Words & books": "📚", "Looking & seeing": "👀", "Ways of moving": "🦶", "Light & sound": "🔆",
@@ -241,7 +241,7 @@
       const got = await load(b.id); if (!got) continue;
       const m = mapItems(got.set, got.items), start = D.length;
       m.words.forEach(w => { w.box = b.id; w.boxKind = b.story_box; w.boxUnits = m.units; D.push(w); });
-      boxes.push({ id: b.id, title: b.title, kind: b.story_box, icon: b.story_box === "link" ? "🔗" : /feel/i.test(b.title) ? "💗" : "📦", idx: m.words.map((w, j) => start + j) });
+      boxes.push({ id: b.id, title: b.title, kind: b.story_box, icon: b.story_box === "link" ? "🔗" : b.story_box === "sayings" ? "📜" : /feel/i.test(b.title) ? "💗" : "📦", idx: m.words.map((w, j) => start + j) });
     }
     return boxes;
   }
@@ -295,7 +295,7 @@
     return out;
   }
   const PARTNER_KINDS = [["adjective", "🎨 Adjectives", "what kind?"], ["adverb", "⏩ Adverbs", "how?"], ["verb", "🏃 Verbs", "what happens?"], ["noun", "📦 Nouns", "what?"],
-    ["preposition", "🔗 Little words", "at, for, with…"], ["idiom", "💬 Idioms & phrasal verbs", ""]];
+    ["preposition", "🔗 Little words", "at, for, with…"], ["idiom", "💬 Idioms & phrasal verbs", ""], ["saying", "📜 Famous sayings", ""]];
 
   // Turn the meter boxes drawn by sectionsHTML into live Feeling meters. opts: {onAdd(i), start:{scaleTitle: rank}, addLabel}
   function mountMeters(root, secs, opts) {
@@ -400,7 +400,7 @@
       id: x.id, w: x.term, d: x.meaning, s: blankify(x.example, x.term), ar: x.translation || "",
       u: x.unit, also: x.also_units || [], img: x.anim_url || (x.emoji ? tile(x.term, x.emoji) : "") || x.image_url || tile(x.term), emoji: x.emoji || "",   // clip first (vid), then animated emoji, emoji, photo
       photo: (x.anim_url || x.emoji) && x.image_url ? x.image_url : "", au: x.audio_url || "tts",
-      lit: x.literal || "", litAr: x.literal_tr || "", eq: x.equivalent || "", wid: x.word_id || null, vid: x.video_url || "", tags: Array.isArray(x.tags) ? x.tags : [], pron: x.pronunciation || "", hint: x.sound_hint || "", syl: (x.syllables || (/\s/.test(x.term) ? x.term.toLowerCase() : autoSyl(x.term))).toLowerCase(), real: !!(x.anim_url || x.image_url)
+      author: x.author || "", lit: x.literal || "", litAr: x.literal_tr || "", eq: x.equivalent || "", wid: x.word_id || null, vid: x.video_url || "", tags: Array.isArray(x.tags) ? x.tags : [], pron: x.pronunciation || "", hint: x.sound_hint || "", syl: (x.syllables || (/\s/.test(x.term) ? x.term.toLowerCase() : autoSyl(x.term))).toLowerCase(), real: !!(x.anim_url || x.image_url)
     }));
     const named = new Map((set.units || []).map(u => [Number(u.u), u.name || ""]));
     const counts = new Map(); words.forEach(w => counts.set(w.u, (counts.get(w.u) || 0) + 1));
