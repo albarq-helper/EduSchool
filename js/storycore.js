@@ -21,18 +21,19 @@
   const lvl = s => LEVELS[(s && s.level) || 3];
   // [{n, words:[term], texts:[own words]}]
   function scenes(s) {
-    const sc = [{ n: 1, words: [], texts: [] }];
+    const sc = [{ n: 1, words: [], texts: [], cam: [], music: [], trans: [] }];
     (s && s.blocks || []).forEach(b => {
-      if (b.k === "s") sc.push({ n: sc.length + 1, words: [], texts: [] });
+      if (b.k === "s") sc.push({ n: sc.length + 1, words: [], texts: [], cam: [], music: [], trans: [] });
       else if (b.k === "w") sc[sc.length - 1].words.push(b.w);
+      else if (b.k === "c") { const x = sc[sc.length - 1]; if (b.m) x.music.push({ w: b.w, f: b.f || b.w }); else if (b.tr) x.trans.push(b.w); else x.cam.push({ w: b.w, f: b.f || b.w }); }
       else if ((b.t || "").trim()) sc[sc.length - 1].texts.push(b.t.trim());
     });
-    return sc.filter(x => x.words.length || x.texts.length);
+    return sc.filter(x => x.words.length || x.texts.length || x.cam.length || x.music.length);
   }
   // what the student has to write at this level
   function items(s) {
     const L = lvl(s), sc = scenes(s);
-    if (L.mode === "scene") return sc.map(x => ({ key: "s" + x.n, scene: x.n, words: x.words }));
+    if (L.mode === "scene") return sc.filter(x => x.words.length || x.texts.length).map(x => ({ key: "s" + x.n, scene: x.n, words: x.words }));
     if (L.mode === "word") return sc.flatMap(x => [...new Set(x.words)].map(w => ({ key: x.n + "|" + w, scene: x.n, words: [w] })));
     return [];
   }
@@ -43,7 +44,7 @@
     const B = s.blocks || [], sc = [[]];
     B.forEach(b => b.k === "s" ? sc.push([]) : sc[sc.length - 1].push(b));
     const nW = new Set(B.filter(b => b.k === "w").map(b => b.w)).size;
-    const plan = sc.filter(x => x.length).map((x, k) => `Scene ${k + 1}: ` + x.map(b => b.k === "w" ? `[${clean(b.w)}]${(b.p || []).length ? ` (with: ${b.p.join(", ")})` : ""}` : b.k === "q" ? sayingLine(b) : `"${(b.t || "").trim()}"`).filter(t => t !== '""').join(" → ")).join("\n");
+    const plan = sc.filter(x => x.length).map((x, k) => `Scene ${k + 1}: ` + x.map(b => b.k === "w" ? `[${clean(b.w)}]${(b.p || []).length ? ` (with: ${b.p.join(", ")})` : ""}` : b.k === "q" ? sayingLine(b) : b.k === "c" ? `${b.m ? "MUSIC" : b.tr ? "TRANSITION" : "CAMERA"}: ${b.w}` : `"${(b.t || "").trim()}"`).filter(t => t !== '""').join(" → ")).join("\n");
     const hasQ = B.some(b => b.k === "q");
     return `Please write a short children's story for my daughter, a Grade 5 student learning English vocabulary. She planned it herself in a story builder.
 
@@ -54,7 +55,7 @@ ${plan}
 
 Rules:
 - Keep her order, her scenes and her ideas. Fill the gaps so it reads as a real story.
-${hasQ ? `- A FAMOUS SAYING must appear word for word, spoken by the character named (or by a narrator, as a voice-over, if it says Voice-over). You may mention who first said it.\n` : ""}${B.some(b => (b.p || []).length) ? `- "(with: …)" after a word lists word partners or idioms she chose for it (e.g. heavy rain). Use each one with its word.\n` : ""}- Use EVERY vocabulary word at least once (you may change the form, e.g. insist → insisted). Make each meaning clear from the sentence.
+${B.some(b => b.k === "c" && !b.m && !b.tr) ? `- CAMERA notes are her director choices (shot, angle, camera move, light). Put them in that scene's VIDEO line.\n` : ""}${B.some(b => b.k === "c" && b.m) ? `- MUSIC notes are for the soundtrack only; do not describe music in the story or the VIDEO lines.\n` : ""}${hasQ ? `- A FAMOUS SAYING must appear word for word, spoken by the character named (or by a narrator, as a voice-over, if it says Voice-over). You may mention who first said it.\n` : ""}${B.some(b => (b.p || []).length) ? `- "(with: …)" after a word lists word partners or idioms she chose for it (e.g. heavy rain). Use each one with its word.\n` : ""}- Use EVERY vocabulary word at least once (you may change the form, e.g. insist → insisted). Make each meaning clear from the sentence.
 - Grade 5 reading level, warm and fun, about ${Math.min(600, Math.max(180, nW * 30))} words. One short paragraph per scene. No violence beyond what the words need.
 - ${videoRule}
 

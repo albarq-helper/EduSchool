@@ -118,7 +118,7 @@
 .bk .was{font:700 .72rem var(--f-body);color:var(--muted)}
 .bk .wxbtn{border:0;background:transparent;cursor:pointer;font-size:1rem;padding:2px}
 </style>
-<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261123f"></script><script src="js/icons.js?v=20261123f"></script><script src="js/app.js?v=20261123f"></script><script src="js/sets.js?v=20261123f"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261123f"></script><script src="js/storycore.js?v=20261123f"></script><script src="js/montage.js?v=20261123f"></script>
+<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261123g"></script><script src="js/icons.js?v=20261123g"></script><script src="js/app.js?v=20261123g"></script><script src="js/sets.js?v=20261123g"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261123g"></script><script src="js/storycore.js?v=20261123g"></script><script src="js/montage.js?v=20261123g"></script>
 </head><body>
 <div class="wrap" style="max-width:1280px">
   <div class="head2">
@@ -188,7 +188,7 @@ function setBox(id){BOX=boxOf(id).id;try{localStorage.setItem("storyBox",BOX);}c
   drawBoxes();drawLib();}
 $("boxes").onclick=e=>{const b=e.target.closest("[data-box]");if(b){$("q").value="";setBox(b.dataset.box);}};
 // add a library word: linking words become the student's own words; others are vocabulary words
-function addIdx(i,at){const v=D[i];if(!v)return;addBlock(v.boxKind==="link"?{k:"t",t:clean(v.w)}:(v.boxKind==="sayings"||v.author)?{k:"q",w:v.w,a:v.author||"",by:"Voice-over"}:{k:"w",w:v.w},at);}
+function addIdx(i,at){const v=D[i];if(!v)return;addBlock(v.boxKind==="link"?{k:"t",t:clean(v.w)}:(v.boxKind==="sayings"||v.author)?{k:"q",w:v.w,a:v.author||"",by:"Voice-over"}:(v.boxKind==="director"||v.film)?{k:"c",w:v.w,f:v.film||"",m:(v.tags||[]).includes("Music")||undefined,tr:(v.tags||[]).includes("🎬 Transitions")||undefined}:{k:"w",w:v.w},at);}
 // who can say a famous saying: a voice-over, or the people and animals already in the story
 function speakers(){const s=new Set(["Voice-over","Narrator","A wise old man","A wise old woman","A wise owl","Grandma","Grandpa","The teacher"]);(CUR?.blocks||[]).forEach(b=>{if(b.k==="q"&&(b.by||"").trim())s.add(b.by.trim());if(b.k!=="w")return;const v=D[wi(b.w)];if(v&&(v.tags||[]).some(t=>t==="Naming: people"||t==="Animals"))s.add(clean(b.w));});return [...s];}
 const QUICK=["One day,","Then","Suddenly,","After that,","Because","But","In the end,"];
@@ -239,7 +239,7 @@ const ME=App.profile||{};
 const blank=()=>({id:null,owner_id:ME.id,title:"",blocks:[],status:"draft",story_text:"",video_url:"",level:DEF_LEVEL,sentences:{},feedback:""});
 
 // ---------- library ----------
-function drawLib(){const q=$("q").value.trim().toLowerCase();const used=new Map();(CUR?.blocks||[]).forEach(b=>{const t=b.k==="w"||b.k==="q"?b.w:b.k==="t"?clean(b.t||""):"";if(t)used.set(t,(used.get(t)||0)+1);});
+function drawLib(){const q=$("q").value.trim().toLowerCase();const used=new Map();(CUR?.blocks||[]).forEach(b=>{const t=b.k==="w"||b.k==="q"||b.k==="c"?b.w:b.k==="t"?clean(b.t||""):"";if(t)used.set(t,(used.get(t)||0)+1);});
   const hit=v=>v.w.toLowerCase().includes(q)||String(v.d).toLowerCase().includes(q);
   const card=i=>{const v=D[i],u=used.get(v.w)||used.get(clean(v.w)),sc=Sets.scaleOfWord(v);
     return `<div class="lw${u?" used":""}${v.boxKind==="link"?" link":""}" draggable="true" data-i="${i}">${u?`<span class="n">✓ ${u}</span>`:""}${sc?`<button class="mt" type="button" data-meter="${i}" title="See it on the ${esc(sc.g)} meter">🎚️</button>`:""}${Sets.media(v,{cls:"lm",alt:""})}<b>${esc(clean(v.w))}</b><small>${esc(v.d||"")}</small>${q&&v.box!==BOX?`<span class="from">in ${esc(boxOf(v.box).title)}</span>`:""}<button class="add" type="button" data-add="${i}">+ Add</button></div>`;};
@@ -269,6 +269,7 @@ function drawBoard(){const B=CUR?CUR.blocks:[];let scene=1,n=0;
     n++;const cls=`bk ${b.k}${k===SEL?" sel":""}`,grip=`<span class="grip" title="Drag to move">${icon("grip-vertical",16)}</span><span class="num">${n}</span>`;
     if(b.k==="w"){const i=wi(b.w),v=D[i];
       rows.push(`<li class="${cls}" data-k="${k}" draggable="true">${grip}${v?(v.vid?`<video class="th" src="${esc(v.vid)}" muted loop playsinline preload="none" data-auto></video>`:`<img class="th" src="${esc(v.img)}" alt="">`):""}<span class="tx"><b>${esc(clean(b.w))}</b>${b.from?`<span class="was">↺ instead of ${esc(clean(b.from))}</span>`:""}<small>${esc(v?v.d:"")}</small>${(b.p||[]).length?`<span class="subs">${b.p.map(x=>`<span>${esc(x)}</span>`).join("")}</span>`:""}</span><button type="button" class="wxbtn" data-wx="${k}" title="Explore: stronger, softer, similar, opposite, partners" aria-label="Explore this word">🔍</button>${ctl}</li>`);}
+    else if(b.k==="c"){const v=D[wi(b.w)];rows.push(`<li class="${cls}" data-k="${k}" draggable="true">${grip}<span class="th qth">${b.m?"🎵":b.tr?"🎞️":"🎥"}</span><span class="tx"><b>${esc(v&&v.emoji?v.emoji+" ":"")}${esc(b.w)}</b><small>${b.m?"Music":b.tr?"Transition":"Camera"} · ${esc(v?v.d:"")}</small></span>${ctl}</li>`);}
     else if(b.k==="q")rows.push(`<li class="${cls}" data-k="${k}" draggable="true">${grip}<span class="th qth">📜</span><span class="tx"><b class="qt">“${esc(b.w)}”</b><small>${esc(b.a||"")}</small><label class="by">🎙️ Who says it? <input value="${esc(b.by||"")}" list="speakerList" maxlength="60" placeholder="Voice-over, or a character" data-by="${k}"></label></span>${ctl}</li>`);
     else rows.push(`<li class="${cls}" data-k="${k}" draggable="true">${grip}<input value="${esc(b.t||"")}" maxlength="300" placeholder="Type your own words…" aria-label="My own words" data-t="${k}">${ctl}</li>`);});
   let SL=$("speakerList");if(!SL){SL=document.createElement("datalist");SL.id="speakerList";document.body.appendChild(SL);}
@@ -279,7 +280,7 @@ function drawPreview(){const B=CUR?CUR.blocks:[];if(!B.some(b=>b.k!=="s")){$("pr
   const S_=CUR.sentences||{},L=LV();
   if(L.mode!=="none"&&Object.values(S_).some(v=>(v||"").trim())){const its=items();
     $("preview").innerHTML=`<h3>My story so far</h3>`+scenesOf().map(x=>`<p><span class="muted">Scene ${x.n}:</span> ${its.filter(it=>it.scene===x.n).map(it=>esc((S_[it.key]||"").trim())).filter(Boolean).join(" ")||'<span class="muted">…</span>'}</p>`).join("");return;}
-  const sc=[[]];B.forEach(b=>b.k==="s"?sc.push([]):sc[sc.length-1].push(b.k==="w"?`<b>${esc(clean(b.w))}</b>${(b.p||[]).length?` <i class="muted">(${esc(b.p.join(", "))})</i>`:""}`:b.k==="q"?`<i>${esc(b.by||"Voice-over")}: “${esc(b.w)}”</i>`:esc(b.t||"")));
+  const sc=[[]];B.forEach(b=>b.k==="s"?sc.push([]):sc[sc.length-1].push(b.k==="w"?`<b>${esc(clean(b.w))}</b>${(b.p||[]).length?` <i class="muted">(${esc(b.p.join(", "))})</i>`:""}`:b.k==="q"?`<i>${esc(b.by||"Voice-over")}: “${esc(b.w)}”</i>`:b.k==="c"?`<span class="muted">[${b.m?"🎵":b.tr?"🎞️":"🎥"} ${esc(b.w)}]</span>`:esc(b.t||"")));
   $("preview").innerHTML=`<h3>My story so far</h3>`+sc.filter(s=>s.length).map((s,k)=>`<p><span class="muted">Scene ${k+1}:</span> ${s.join(" ")}</p>`).join("");}
 function move(k,d){const B=CUR.blocks,j=k+d;if(j<0||j>=B.length)return;[B[k],B[j]]=[B[j],B[k]];SEL=j;changed();drawBoard();}
 $("board").addEventListener("click",e=>{const b=e.target.closest("button");
@@ -340,7 +341,9 @@ let delArm=0;$("delBtn").onclick=async()=>{if(!CUR||!CUR.id){openStory(blank());
 
 // ---------- the finished story (and movie) ----------
 const SHOTS={};   // story id -> finished takes (loaded when the movie has been released)
-async function loadShots(id){const r=await C.from("story_shots").select("scene,status,video_url,created_at").eq("story_id",id);SHOTS[id]=Montage.latest(r.data||[]);}
+const MUSIC={};
+async function loadShots(id){const r=await C.from("story_shots").select("scene,status,video_url,created_at").eq("story_id",id);SHOTS[id]=Montage.latest(r.data||[]);
+  try{const m=await C.from("story_music").select("scene,audio_url,status,created_at").eq("story_id",id).order("created_at");const film=(m.data||[]).filter(t=>t.scene===0&&t.audio_url).slice(-1)[0],sc={};(m.data||[]).filter(t=>t.scene>0&&t.audio_url).forEach(t=>sc[t.scene]=t.audio_url);MUSIC[id]={film:film?film.audio_url:"",scenes:sc};}catch(e){}}
 function drawRead(){const box=$("read");if(!CUR||!(CUR.story_text||CUR.video_url||CUR.status==="filmed")){box.hidden=true;return;}
   if(CUR.status==="filmed"&&CUR.id&&!SHOTS[CUR.id]){loadShots(CUR.id).then(()=>drawRead());}
   const words=[...new Set(CUR.blocks.filter(b=>b.k==="w").map(b=>b.w))].map(w=>({w,i:wi(w)})).filter(x=>x.i>=0);
@@ -351,7 +354,7 @@ function drawRead(){const box=$("read");if(!CUR||!(CUR.story_text||CUR.video_url
   const film=CUR.status==="filmed"&&(SHOTS[CUR.id]||[]).length;
   box.innerHTML=`<h2>${icon("book-open",20)} ${esc(CUR.title||"My story")}</h2>${film?`<h3 style="margin:0 0 8px">🎬 My movie</h3><div id="movie" style="margin-bottom:16px"></div>`:CUR.video_url?`<video src="${esc(CUR.video_url)}" controls playsinline preload="metadata"></video>`:""}
     ${CUR.story_text?`<div class="story">${CUR.story_text.split(/\n\s*\n|\n/).filter(x=>x.trim()).map(p=>`<p>${para(p)}</p>`).join("")}</div><p class="muted" style="font-size:.88rem">Tap a highlighted word to hear it.</p>`:""}`;
-  if(film)Montage.mount($("movie"),{title:CUR.title,by:(ME.full_name||"me").split(" ")[0],shots:SHOTS[CUR.id],captions:StoryCore.paragraphs(CUR.story_text)});}
+  if(film)Montage.mount($("movie"),{title:CUR.title,by:(ME.full_name||"me").split(" ")[0],shots:SHOTS[CUR.id],captions:StoryCore.paragraphs(CUR.story_text),music:MUSIC[CUR.id],trans:StoryCore.scenes(CUR).map(x=>x.trans||[])});}
 $("read").addEventListener("click",e=>{const m=e.target.closest("mark[data-i]");if(m)Sets.sayWord(D[+m.dataset.i]);});
 
 $("infoLevels").innerHTML=LEVELS.slice(1).map((L,k)=>`<tr><td>${k+1}</td><td>${esc(L.n)}</td><td>${esc(L.d)}</td></tr>`).join("");

@@ -45,8 +45,13 @@ textarea.mid{width:100%;min-height:70px;font:14px/1.5 var(--f-body);padding:8px 
 @keyframes sp{to{transform:rotate(360deg)}}
 .empty{padding:40px 20px;text-align:center;color:var(--muted)}
 .note{padding:10px 12px;border-radius:10px;background:var(--sky-soft);font-size:.9rem;margin-bottom:12px}
+.dir{margin:4px 0 6px;font-size:.88rem;background:var(--sky-soft,#e8f0ff);border-radius:8px;padding:4px 8px}
+.camsel{margin-top:6px;width:100%;font:inherit;font-size:.88rem;padding:6px 8px;border:1px solid var(--rule);border-radius:8px;background:var(--sheet);color:var(--ink)}
+.mus{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}.mus label{display:grid;gap:4px;font:700 .85rem var(--f-body)}
+.mus .wide{grid-column:1/-1}.mus select,.mus input{font:inherit;padding:7px 9px;border:1px solid var(--rule);border-radius:8px;background:var(--sheet);color:var(--ink)}
+.tracks{display:grid;gap:8px;margin-top:12px}.trk{display:flex;flex-wrap:wrap;gap:8px;align-items:center;border:1px solid var(--rule);border-radius:10px;padding:8px 10px}.trk audio{flex:1 1 260px;height:36px}
 </style>
-<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261123f"></script><script src="js/icons.js?v=20261123f"></script><script src="js/app.js?v=20261123f"></script><script src="js/sets.js?v=20261123f"></script><script src="js/storycore.js?v=20261123f"></script><script src="js/montage.js?v=20261123f"></script>
+<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261123g"></script><script src="js/icons.js?v=20261123g"></script><script src="js/app.js?v=20261123g"></script><script src="js/sets.js?v=20261123g"></script><script src="js/storycore.js?v=20261123g"></script><script src="js/montage.js?v=20261123g"></script>
 </head><body>
 <div class="wrap" style="max-width:1320px">
   <div class="head2">
@@ -89,7 +94,7 @@ async function usage(){const since=new Date(Date.now()-864e5).toISOString();
 
 // ---------- workspace ----------
 async function openStory(s){CUR=s;TAB=s.status==="written"||s.status==="filmed"?"board":"script";TAKES=[];
-  const r=await C.from("story_shots").select("*").eq("story_id",s.id).order("created_at",{ascending:true});TAKES=r.data||[];
+  const r=await C.from("story_shots").select("*").eq("story_id",s.id).order("created_at",{ascending:true});TAKES=r.data||[];try{await loadTracks();}catch(e){}
   drawInbox();drawWs();startPoll();try{localStorage.setItem("studioCur",s.id);}catch(e){}}
 function drawHead(){const h=$("wsHead");if(!h||!CUR)return;
   h.innerHTML=`<h2>${esc(CUR.title||"My story")}</h2><span class="muted">by ${esc(who(CUR))}</span><span class="pill ${CUR.status}">${esc(K.STATUS[CUR.status]||CUR.status)}</span><span class="use" id="use"></span>`;usage();}
@@ -140,7 +145,9 @@ async function askAI(){if(!(CUR.blocks||[]).some(b=>b.k==="w")){App.status("This
 function plan(){const p=K.parsePlan(CUR.video_plan);if(!p.shots.length){const paras=K.paragraphs(CUR.story_text);p.shots=K.scenes(CUR).map((x,k)=>({n:k+1,text:paras[k]||x.words.map(K.clean).join(", ")}));}return p;}
 const latestTake=n=>TAKES.filter(t=>t.scene===n).slice(-1)[0];
 const readyTake=n=>TAKES.filter(t=>t.scene===n&&t.status==="ready").slice(-1)[0];
-function fullPrompt(text){const p=plan();return `${text.trim()}${p.cast?` Characters: ${p.cast}`:""} ${(CUR.film_style||K.FILM_STYLE).trim()}`;}
+const dirOf=n=>K.scenes(CUR)[n-1]||{cam:[],music:[],trans:[]};
+function fullPrompt(text,n){const p=plan(),cam=n?dirOf(n).cam.map(c=>c.f).filter(f=>!text.toLowerCase().includes(f.toLowerCase())):[];
+  return `${text.trim()}${cam.length?` Camera: ${cam.join(", ")}.`:""}${p.cast?` Characters: ${p.cast}`:""} ${(CUR.film_style||K.FILM_STYLE).trim()}`;}
 function drawBoard(){const p=plan(),paras=K.paragraphs(CUR.story_text),missing=p.shots.filter(x=>!readyTake(x.n)&&!(latestTake(x.n)||{}).status?.match(/queued|shooting/));
   $("pane").innerHTML=`${!CUR.story_text?`<div class="note">Tip: write the story first (tab 1). The AI also writes the cast and one shot per scene for you.</div>`:""}
    <div class="blk"><h3>Cast</h3><p class="hint">Describe the main characters once. It's added to every shot so they look the same in every scene.</p>
@@ -152,7 +159,9 @@ function drawBoard(){const p=plan(),paras=K.paragraphs(CUR.story_text),missing=p
      <div class="shots">${p.shots.map((x,k)=>{const n=k+1,t=latestTake(n),rt=readyTake(n),busy=t&&/queued|shooting/.test(t.status);
        return `<div class="shot" data-n="${n}"><div><h4>Scene ${n}<button class="btn small" type="button" data-del="${n}" title="Remove this scene" style="margin-left:auto">✕</button></h4>
          ${paras[k]?`<p class="cap">“${esc(paras[k].slice(0,220))}${paras[k].length>220?"…":""}”</p>`:""}
+         ${(()=>{const d=dirOf(n);return d.cam.length||d.music.length||d.trans.length?`<p class="dir">🎬 ${esc(who(CUR))}'s choices: ${d.cam.map(c=>`🎥 ${esc(c.w)}`).concat(d.trans.map(t=>`🎞️ ${esc(t)}`),d.music.map(m=>`🎵 ${esc(m.w)}`)).join(" · ")}</p>`:"";})()}
          <textarea class="mid" data-p="${n}" aria-label="What scene ${n} shows">${esc(x.text)}</textarea>
+         ${TOOLS.cam.length?`<select class="camsel" data-cam="${n}" aria-label="Add a camera idea to scene ${n}"><option value="">🎥 Add a camera or light idea…</option>${TOOLS.cam.map(c=>`<option value="${esc(c.film)}">${esc(c.emoji+" "+c.w)} — ${esc(c.d)}</option>`).join("")}</select>`:""}
          <div class="row" style="margin-top:6px"><button class="btn small ${rt?"":"primary"}" type="button" data-shoot="${n}" ${busy?"disabled":""}>🎬 ${rt?"Retake":"Shoot"} (~$${K.SHOT_COST.toFixed(2)})</button>
            <span class="muted">${busy?`<span class="spin"></span> Filming… (usually 1–3 minutes)`:t&&t.status==="failed"?`⚠️ Last take failed: ${esc(t.error||"")}`:""}</span></div></div>
          <div><div class="take">${rt?`<video src="${esc(rt.video_url)}" controls playsinline preload="metadata"></video>`:busy?`<span><span class="spin"></span><br>Filming…</span>`:`<span>No take yet</span>`}</div>
@@ -165,6 +174,7 @@ function drawBoard(){const p=plan(),paras=K.paragraphs(CUR.story_text),missing=p
     await save({video_plan:K.planText($("cast").value.trim(),shots),film_style:$("style").value.trim()});drawBoard();};
   $("pane").querySelectorAll("[data-del]").forEach(b=>b.onclick=async()=>{const n=+b.dataset.del,shots=[...document.querySelectorAll("[data-p]")].map(t=>({text:t.value.trim()})).filter((x,k)=>k+1!==n);
     await save({video_plan:K.planText($("cast").value.trim(),shots)});drawBoard();});
+  $("pane").querySelectorAll("[data-cam]").forEach(s=>s.onchange=()=>{if(!s.value)return;const t=$("pane").querySelector(`[data-p="${s.dataset.cam}"]`);t.value=(t.value.trim().replace(/\.?$/,". ")+s.value.charAt(0).toUpperCase()+s.value.slice(1)+".").trim();s.value="";persist();});
   $("pane").querySelectorAll("[data-shoot]").forEach(b=>b.onclick=async()=>{await persist();shoot([+b.dataset.shoot]);});
   $("shootAll").onclick=async()=>{const ns=missing.map(x=>x.n);if(!ns.length)return;
     if(Date.now()-SHOTARM>6000){SHOTARM=Date.now();$("boardMsg").textContent=`This will shoot ${ns.length} scene${ns.length>1?"s":""} for about $${(ns.length*K.SHOT_COST).toFixed(2)}. Press again to confirm.`;return;}
@@ -172,7 +182,7 @@ function drawBoard(){const p=plan(),paras=K.paragraphs(CUR.story_text),missing=p
   $("toPremiere").onclick=()=>{TAB="premiere";drawWs();};}
 async function shoot(ns){const p=plan();
   for(const n of ns){const x=p.shots[n-1];if(!x)continue;
-    const r=await C.functions.invoke("film",{body:{action:"shoot",story_id:CUR.id,scene:n,prompt:fullPrompt(x.text)}});
+    const r=await C.functions.invoke("film",{body:{action:"shoot",story_id:CUR.id,scene:n,prompt:fullPrompt(x.text,n)}});
     let data=r.data;if(r.error){try{data=await r.error.context.json();}catch(e){data={error:r.error.message};}}
     if(!data||data.error){App.status("Scene "+n+": "+((data&&data.error)||"could not start"),false);break;}
     TAKES.push(data.shot);}
@@ -186,15 +196,59 @@ function startPoll(){clearInterval(POLL);POLL=setInterval(async()=>{const busy=T
 function drawPremiere(){const p=plan(),ready=Montage.latest(TAKES),miss=p.shots.map((x,k)=>k+1).filter(n=>!ready.some(r=>r.scene===n));
   $("pane").innerHTML=`${miss.length?`<div class="note">${ready.length?"Still to shoot":"Nothing shot yet"}: scene${miss.length>1?"s":""} ${miss.join(", ")}. ${ready.length?"The movie plays the scenes that are ready.":"Go to the storyboard to shoot them."}</div>`:""}
     <div id="movie"></div>
+    <div id="musicBox" style="margin-top:16px"></div>
     <div class="row" style="margin-top:14px">${CUR.status==="filmed"?`<span class="pill filmed">Released to ${esc(who(CUR))} ✓</span><button class="btn small" id="unrelease" type="button">Hide from student</button>`
       :`<button class="btn primary" id="release" type="button" ${ready.length?"":"disabled"}>🎉 Release the movie to ${esc(who(CUR))}</button>`}</div>`;
-  Montage.mount($("movie"),{title:CUR.title,by:who(CUR),shots:ready,captions:K.paragraphs(CUR.story_text)});
+  drawMusic(p);
+  Montage.mount($("movie"),{title:CUR.title,by:who(CUR),shots:ready,captions:K.paragraphs(CUR.story_text),music:musicFor(),trans:p.shots.map((x,k)=>dirOf(k+1).trans)});
   const rl=$("release");if(rl)rl.onclick=async()=>{if(await save({status:"filmed"})){App.status("The movie is out! 🍿",true);drawPremiere();}};
   const ur=$("unrelease");if(ur)ur.onclick=async()=>{if(await save({status:CUR.story_text?"written":"sent"}))drawPremiere();};}
 
+// ---------- 🎵 Soundtrack (ElevenLabs Music, made by the "music" Edge Function) ----------
+let TOOLS={cam:[],music:[]},TRACKS=[],MUSICARM=0;
+async function loadTools(){try{const r=await C.from("set_items").select("term,meaning,emoji,film,tags").eq("set_id","00000000-0000-4000-8000-00000000d1ec").order("position");
+  (r.data||[]).forEach(x=>{const o={w:x.term,d:x.meaning,emoji:x.emoji||"",film:x.film||x.term};if((x.tags||[]).includes("Music"))TOOLS.music.push(o);else if(!(x.tags||[]).includes("🎬 Transitions"))TOOLS.cam.push(o);});}catch(e){}}
+async function loadTracks(){TRACKS=[];if(!CUR)return;const r=await C.from("story_music").select("*").eq("story_id",CUR.id).order("created_at");TRACKS=(r.data||[]).filter(t=>t.status==="ready"&&t.audio_url);}
+// the newest track for the whole film, and the newest for each scene
+function musicFor(){const film=TRACKS.filter(t=>t.scene===0).slice(-1)[0],scenes={};TRACKS.filter(t=>t.scene>0).forEach(t=>scenes[t.scene]=t.audio_url);return {film:film?film.audio_url:"",scenes};}
+function drawMusic(p){const el=$("musicBox");if(!el)return;const n=p.shots.length||1,secs=Math.max(10,n*5+2),picked=[];
+  p.shots.forEach((x,k)=>dirOf(k+1).music.forEach(m=>picked.push({n:k+1,...m})));
+  const opts=TOOLS.music.map(m=>`<option value="${esc(m.film)}">${esc(m.emoji+" "+m.w)}</option>`).join("");
+  el.innerHTML=`<div class="blk"><h3>🎵 Soundtrack</h3><p class="hint">Original music written by AI (ElevenLabs Music) for this movie. It plays with the film; each clip's own sound is kept softly underneath. Uses your ElevenLabs credits, at most 6 tracks a day.</p>
+    ${picked.length?`<p class="dir">🎬 ${esc(who(CUR))} chose: ${picked.map(m=>`🎵 ${esc(m.w)} <span class="muted">(scene ${m.n})</span>`).join(" · ")}</p>`:""}
+    <div class="mus">
+      <label>For<select id="mScope"><option value="0">The whole movie (${secs} s)</option>${p.shots.map((x,k)=>`<option value="${k+1}">Scene ${k+1} only (7 s)</option>`).join("")}</select></label>
+      <label>Style<select id="mStyle"><option value="">Choose a style…</option>${opts}<option value="custom">✏️ My own description</option></select></label>
+      <label>Singing<select id="mVoice"><option value="none">No singing (instrumental)</option><option value="story">A song about the story (AI writes the words)</option><option value="mine">A song with my own words</option></select></label>
+      <label class="wide" id="mCustomL" hidden>Describe the music<input id="mCustom" maxlength="300" placeholder="e.g. gentle harp and flute, like a fairy tale"></label>
+      <label class="wide" id="mLyricsL" hidden>Song words<textarea id="mLyrics" class="mid" maxlength="1200" placeholder="Write the words of the song…"></textarea></label>
+    </div>
+    <div class="row" style="margin-top:8px"><button class="btn primary" id="mMake" type="button">🎵 Make the music</button><span class="muted" id="mMsg"></span></div>
+    ${TRACKS.length?`<div class="tracks">${TRACKS.slice().reverse().map(t=>`<div class="trk"><b>${t.scene?`Scene ${t.scene}`:"Whole movie"}</b> <span class="muted">${esc(t.style||"")} · ${new Date(t.created_at).toLocaleString()}</span>${(t.scene===0&&t===TRACKS.filter(z=>z.scene===0).slice(-1)[0])||(t.scene>0&&t===TRACKS.filter(z=>z.scene===t.scene).slice(-1)[0])?` <span class="pill">♪ in the movie</span>`:""}<audio src="${esc(t.audio_url)}" controls preload="none"></audio><button class="btn small" type="button" data-mdel="${t.id}">Remove</button></div>`).join("")}</div>`:""}</div>`;
+  const sync=()=>{$("mCustomL").hidden=$("mStyle").value!=="custom";$("mLyricsL").hidden=$("mVoice").value!=="mine";};
+  $("mStyle").onchange=sync;$("mVoice").onchange=sync;
+  $("mScope").onchange=()=>{const n=+$("mScope").value,m=n?dirOf(n).music[0]:picked[0];if(m){const o=[...$("mStyle").options].find(x=>x.value===m.f);if(o)$("mStyle").value=o.value;sync();}};
+  if(picked[0]){const o=[...$("mStyle").options].find(x=>x.value===picked[0].f);if(o)$("mStyle").value=o.value;}
+  $("mMake").onclick=makeMusic;
+  el.querySelectorAll("[data-mdel]").forEach(b=>b.onclick=async()=>{await C.from("story_music").delete().eq("id",b.dataset.mdel);await loadTracks();drawPremiere();});}
+async function makeMusic(){const scope=+$("mScope").value,styleSel=$("mStyle"),voice=$("mVoice").value;
+  const style=styleSel.value==="custom"?$("mCustom").value.trim():styleSel.value;
+  if(!style){$("mMsg").textContent="Choose a style first.";return;}
+  const n=plan().shots.length||1,secs=scope?7:Math.max(10,n*5+2);
+  const story=(CUR.story_text||"").replace(/\s+/g," ").slice(0,1200),scene=scope?K.paragraphs(CUR.story_text)[scope-1]||"":"";
+  let prompt=`${style}. Music for a short animated children's film called "${CUR.title||"My story"}"${scene?`, for this scene: ${scene.slice(0,500)}`:story?`. The story: ${story}`:""}. Friendly and suitable for young children.`;
+  if(voice==="none")prompt+=" Instrumental only, no vocals.";
+  else if(voice==="story")prompt+=" A short happy song with simple English words about the story, sung clearly by a friendly voice, with a catchy chorus.";
+  else{const ly=$("mLyrics").value.trim();if(!ly){$("mMsg").textContent="Write the song words first.";return;}prompt+=` A song sung clearly by a friendly voice, with these words: ${ly}`;}
+  if(Date.now()-MUSICARM>6000){MUSICARM=Date.now();$("mMsg").textContent=`This makes ${secs} seconds of music with your ElevenLabs credits. Press again to confirm.`;return;}
+  MUSICARM=0;$("mMake").disabled=true;$("mMsg").innerHTML=`<span class="spin"></span> Composing… (usually under a minute)`;
+  const r=await C.functions.invoke("music",{body:{action:"compose",story_id:CUR.id,scene:scope,prompt,style:styleSel.value==="custom"?"Custom":styleSel.selectedOptions[0].textContent+(voice!=="none"?" · song":""),length_ms:secs*1000}});
+  let d=r.data;if(r.error){try{d=await r.error.context.json();}catch(e){d={error:r.error.message};}}
+  if(!d||d.error){$("mMake").disabled=false;$("mMsg").textContent="⚠️ "+((d&&d.error)||"Could not make the music");return;}
+  App.status(`Music ready 🎵 (${d.used}/${d.limit} today)`,true);await loadTracks();drawPremiere();}
 // ---------- start ----------
 (async()=>{if(ME.role!=="teacher"){$("denied").hidden=false;return;}
-  $("studio").hidden=false;
+  $("studio").hidden=false;loadTools();
   const r=await C.from("stories").select("id,owner_id,title,blocks,status,story_text,video_url,video_plan,film_style,level,sentences,feedback,updated_at").eq("set_id",SET.id).order("updated_at",{ascending:false});
   if(r.error){$("ws").innerHTML=`<div class="empty">Can't load stories: ${esc(r.error.message)}</div>`;return;}
   try{await Sets.loadBoxes(SET);}catch(e){}   // words from every word box (feelings, linking words…) for pictures and meanings
