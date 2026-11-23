@@ -127,7 +127,7 @@ input.ok,textarea.ok{border-color:var(--good)!important;background:var(--good-so
 .say1:hover{border-color:var(--accent)}.say1 b{font-style:italic}.say1 small{color:var(--muted);font-weight:700}.say1 span{font-size:.9rem}.say1 .lesson{color:var(--good)}
 .agepill{background:#fde2e2;color:#9b1c1c;border-color:#f5b5b5}
 </style>
-<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261123x"></script><script src="js/icons.js?v=20261123x"></script><script src="js/app.js?v=20261123x"></script><script src="js/sets.js?v=20261123x"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261123x"></script><script src="js/views.js?v=20261123x"></script>
+<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261123y"></script><script src="js/icons.js?v=20261123y"></script><script src="js/app.js?v=20261123y"></script><script src="js/sets.js?v=20261123y"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261123y"></script><script src="js/views.js?v=20261123y"></script>
 </head><body>
 <div class="wrap" style="max-width:1180px">
   <div class="head2">
@@ -362,6 +362,7 @@ $("checkAll").onclick=()=>{const L=visible().filter(i=>S(i).cw);L.forEach(i=>{co
   const n=L.length,r=L.filter(i=>S(i).ok).length;if(!n)return;
   App.saveAttempt({activity:"spell-test",detail:"Word list",units:[...new Set(L.map(i=>D[i].u))],score:r,total:n,answers:L.map(i=>({word:D[i].w,unit:D[i].u,given:S(i).typed,correct:S(i).ok}))})
     .then(x=>{if(x.error)App.status("Result not saved: "+x.error.message,false);else if(x.id)App.status(`Result saved: ${r} of ${n}`,true);});};
+{const W=Meter.prefs().words;["wheel","venn"].forEach(k=>{const b=document.querySelector(`#views [data-v="${k}"]`);if(b&&!W.includes(k))b.remove();});if((VIEW==="wheel"||VIEW==="venn")&&!W.includes(VIEW))VIEW="detail";}
 press("views","v",VIEW);render();
 // opened from a ↗ link: ?g=<kind>|<group>&w=<word>
 (function(){const q=new URLSearchParams(location.search),g=q.get("g");if(!g){const w=q.get("w");if(w){const i=wordIndex(w);if(i>=0)showWord(i);}return;}const k=g.indexOf("|"),kind=g.slice(0,k),tag=g.slice(k+1);

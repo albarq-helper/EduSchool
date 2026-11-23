@@ -94,7 +94,15 @@
   function age() { const p = window.App && App.profile; if (!p || p.role === "teacher" || p.is_admin) return null;
     if (p.birth_date) { const b = new Date(p.birth_date), n = new Date(); let a = n.getFullYear() - b.getFullYear(); if (n.getMonth() < b.getMonth() || (n.getMonth() === b.getMonth() && n.getDate() < b.getDate())) a--; return a; }
     return p.birth_year ? new Date().getFullYear() - p.birth_year : null; }
-  function style() { try { const s = localStorage.getItem("meterStyle"); if (s) return s; } catch (e) {} const a = age(); return a == null || a <= 11 ? "arc" : a <= 14 ? "dial" : "bar"; }
+  // what the parent allows (profiles.view_prefs); nothing set = everything on, chosen by age
+  const LOOKS = ["arc", "dial", "bar"];
+  function prefs() { const p = (window.App && App.profile && App.profile.view_prefs) || {}, a = age();
+    const meters = (Array.isArray(p.meters) ? p.meters : LOOKS).filter(x => LOOKS.includes(x));
+    const words = Array.isArray(p.words) ? p.words.filter(x => x === "wheel" || x === "venn") : (a != null && a <= 7 ? ["wheel"] : ["wheel", "venn"]);
+    return { meters: meters.length ? meters : LOOKS, meterDefault: LOOKS.includes(p.meterDefault) ? p.meterDefault : "auto", words }; }
+  function style() { const P = prefs(); try { const s = localStorage.getItem("meterStyle"); if (s && P.meters.includes(s)) return s; } catch (e) {}
+    if (P.meterDefault !== "auto" && P.meters.includes(P.meterDefault)) return P.meterDefault;
+    const a = age(), byAge = a == null || a <= 11 ? "arc" : a <= 14 ? "dial" : "bar"; return P.meters.includes(byAge) ? byAge : P.meters[0]; }
   const MOUNTED = new Set();
   function setStyle(s) { try { localStorage.setItem("meterStyle", s); } catch (e) {} MOUNTED.forEach(f => { if (!document.body.contains(f.el)) MOUNTED.delete(f); else f.restyle(s); }); }
   function mount(el, o) {
@@ -110,7 +118,7 @@
     if (o.start != null && L[k].rank !== o.start) k = L.reduce((b, l, j) => Math.abs(l.rank - o.start) < Math.abs(L[b].rank - o.start) ? j : b, 0);
     let sty = o.style || style();
     const $m = $(`<div class="mtr" role="group" aria-label="${esc(o.title)} feeling meter" data-sty="${sty}">
-      <div class="mtr-head"><div class="mtr-sty" role="group" aria-label="Meter look">${[["arc", "🌈", "Rainbow"], ["dial", "⏱️", "Dial"], ["bar", "🎚️", "Slider"]].map(([k, i, t]) => `<button type="button" data-sty="${k}" title="${t}" aria-label="${t}" aria-pressed="${k === sty}">${i}</button>`).join("")}</div></div>
+      <div class="mtr-head"${prefs().meters.length < 2 ? " hidden" : ""}><div class="mtr-sty" role="group" aria-label="Meter look">${[["arc", "🌈", "Rainbow"], ["dial", "⏱️", "Dial"], ["bar", "🎚️", "Slider"]].filter(x => prefs().meters.includes(x[0])).map(([k, i, t]) => `<button type="button" data-sty="${k}" title="${t}" aria-label="${t}" aria-pressed="${k === sty}">${i}</button>`).join("")}</div></div>
       <div class="mtr-gauge"></div>
       <div class="mtr-top"><div class="mtr-face" aria-hidden="true"></div><div><div class="mtr-lv"></div><div class="mtr-words"></div></div></div>
       <div class="mtr-track" style="--grad:${grad}"><input type="range" min="0" max="${L.length - 1}" step="1" value="${k}" aria-label="Strength">
@@ -173,5 +181,5 @@
     gauge(); show(k, false);
     return { show: r => { const j = L.findIndex(l => l.rank === r); if (j >= 0) show(j, true); } };
   }
-  window.Meter = { tone, color, mount, style, setStyle, age };
+  window.Meter = { tone, color, mount, style, setStyle, age, prefs };
 })(window.jQuery);

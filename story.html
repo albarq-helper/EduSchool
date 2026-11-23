@@ -155,7 +155,7 @@
 .fitq .fq b{font-style:italic}.fitq .fq span{display:block;font-size:.82rem;font-weight:700}.fitq .linkb{all:unset;cursor:pointer;color:var(--accent);font-weight:800;font-size:.88rem}
 #checks .how{display:block;font-weight:600;font-size:.8rem;color:var(--muted);margin:1px 0 2px 1.2em}
 </style>
-<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261123x"></script><script src="js/icons.js?v=20261123x"></script><script src="js/app.js?v=20261123x"></script><script src="js/sets.js?v=20261123x"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261123x"></script><script src="js/views.js?v=20261123x"></script><script src="js/storycore.js?v=20261123x"></script><script src="js/montage.js?v=20261123x"></script>
+<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261123y"></script><script src="js/icons.js?v=20261123y"></script><script src="js/app.js?v=20261123y"></script><script src="js/sets.js?v=20261123y"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261123y"></script><script src="js/views.js?v=20261123y"></script><script src="js/storycore.js?v=20261123y"></script><script src="js/montage.js?v=20261123y"></script>
 </head><body>
 <div class="wrap" style="max-width:1280px">
   <div class="head2">
@@ -443,6 +443,7 @@ function libIdx(){const b=boxOf(BOX);return b.idx.filter(i=>{const v=D[i];return
 function drawVW(){const b=boxOf(BOX),units=b.kind==="set"?(window.UNITS_LIST||[]):((D[b.idx[0]]||{}).boxUnits||[]);
   document.querySelectorAll("#vwSeg [data-vk]").forEach(x=>x.setAttribute("aria-pressed",x.dataset.vk===VWK));
   Views[VWK]($("vwBody"),{D,idx:libIdx(),units,unitsOn:b.kind==="set"?UP.selected():null,addLabel:"+ Add to my story",onAdd:i=>addIdx(i)});}
+{const W=Meter.prefs().words;if(!W.length)$("wheelBtn").hidden=true;else{if(!W.includes(VWK))VWK=W[0];document.querySelectorAll("#vwSeg [data-vk]").forEach(b=>{if(!W.includes(b.dataset.vk))b.remove();});if(W.length<2)$("vwSeg").hidden=true;$("wheelBtn").textContent=W.includes("wheel")?"🎡 Wheel":"⭕ Venn";}}
 $("wheelBtn").onclick=()=>{drawVW();$("vwDlg").showModal();};
 $("vwClose").onclick=()=>$("vwDlg").close();
 $("vwSeg").onclick=e=>{const k=e.target.closest("[data-vk]");if(!k)return;VWK=k.dataset.vk;drawVW();};
