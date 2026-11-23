@@ -17,7 +17,7 @@
   const SHOT_COST = 0.85; // US$ per 5-second 720p shot (approximate)
   const clean = w => String(w).replace(/\s*\(.*\)/, "");
   // a famous saying block: {k:"q", w: saying, a: author, by: who says it ("Voice-over" or a character)}
-  const sayingLine = b => `FAMOUS SAYING (said by ${(b.by || "").trim() || "Voice-over"}): "${b.w}"${b.a ? ` — ${b.a}` : ""}`;
+  const sayingLine = b => `FAMOUS SAYING (${(b.by || "").trim() ? `said by ${b.by.trim()}` : "part of the story: weave it in naturally"}): "${b.w}"${b.a ? ` — ${b.a}` : ""}`;
   const lvl = s => LEVELS[(s && s.level) || 3];
   // her characters: [{name, age, look, role, emoji}] -> prompt lines; the CAST line must keep them
   const ROLE_NAMES = { hero: "hero", friend: "friend", wise: "wise one", family: "family", animal: "animal", rival: "rival", other: "" };
@@ -49,7 +49,7 @@
     const B = s.blocks || [], sc = [[]];
     B.forEach(b => b.k === "s" ? sc.push([]) : sc[sc.length - 1].push(b));
     const nW = new Set(B.filter(b => b.k === "w").map(b => b.w)).size;
-    const plan = sc.filter(x => x.length).map((x, k) => `Scene ${k + 1}: ` + x.map(b => b.k === "w" ? `[${clean(b.w)}]${(b.p || []).length ? ` (with: ${b.p.join(", ")})` : ""}` : b.k === "q" ? sayingLine(b) : b.k === "c" ? `${b.m ? "MUSIC" : b.tr ? "TRANSITION" : "CAMERA"}: ${b.w}` : `"${(b.t || "").trim()}"`).filter(t => t !== '""').join(" → ")).join("\n");
+    const plan = sc.filter(x => x.length).map((x, k) => `Scene ${k + 1}: ` + x.map(b => b.k === "w" ? `${(b.by || "").trim() ? `${b.by.trim()} SAYS: ` : ""}[${clean(b.w)}]${(b.p || []).length ? ` (with: ${b.p.join(", ")})` : ""}` : b.k === "q" ? sayingLine(b) : b.k === "c" ? `${b.m ? "MUSIC" : b.tr ? "TRANSITION" : "CAMERA"}: ${b.w}` : `"${(b.t || "").trim()}"`).filter(t => t !== '""').join(" → ")).join("\n");
     const hasQ = B.some(b => b.k === "q");
     return `Please write a short children's story for my daughter, a Grade 5 student learning English vocabulary. She planned it herself in a story builder.
 
@@ -60,7 +60,7 @@ ${plan}
 
 Rules:
 - Keep her order, her scenes and her ideas. Fill the gaps so it reads as a real story.
-${castLines(s) ? `- Use her characters with their names. A FAMOUS SAYING said by one of them is spoken by that character in the story, in quotes.\n` : ""}${B.some(b => b.k === "c" && !b.m && !b.tr) ? `- CAMERA notes are her director choices (shot, angle, camera move, light). Put them in that scene's VIDEO line.\n` : ""}${B.some(b => b.k === "c" && b.m) ? `- MUSIC notes are for the soundtrack only; do not describe music in the story or the VIDEO lines.\n` : ""}${hasQ ? `- A FAMOUS SAYING must appear word for word, spoken by the character named (or by a narrator, as a voice-over, if it says Voice-over). You may mention who first said it.\n` : ""}${B.some(b => (b.p || []).length) ? `- "(with: …)" after a word lists word partners or idioms she chose for it (e.g. heavy rain). Use each one with its word.\n` : ""}- Use EVERY vocabulary word at least once (you may change the form, e.g. insist → insisted). Make each meaning clear from the sentence.
+${castLines(s) ? `- Use her characters with their names. A FAMOUS SAYING said by one of them is spoken by that character in the story, in quotes.\n` : ""}${B.some(b => b.k === "c" && !b.m && !b.tr) ? `- CAMERA notes are her director choices (shot, angle, camera move, light). Put them in that scene's VIDEO line.\n` : ""}${B.some(b => b.k === "c" && b.m) ? `- MUSIC notes are for the soundtrack only; do not describe music in the story or the VIDEO lines.\n` : ""}${hasQ ? `- A FAMOUS SAYING must appear word for word, spoken by the character named (or by a narrator, as a voice-over, if it says Voice-over; if it says part of the story, weave it in naturally). You may mention who first said it.\n` : ""}${B.some(b => b.k === "w" && (b.by || "").trim()) ? `- "NAME SAYS: [words]" means that character says those words aloud, in quotes, in the story.\n` : ""}${B.some(b => (b.p || []).length) ? `- "(with: …)" after a word lists word partners or idioms she chose for it (e.g. heavy rain). Use each one with its word.\n` : ""}- Use EVERY vocabulary word at least once (you may change the form, e.g. insist → insisted). Make each meaning clear from the sentence.
 - Grade 5 reading level, warm and fun, about ${Math.min(600, Math.max(180, nW * 30))} words. One short paragraph per scene. No violence beyond what the words need.
 - ${videoRule}
 

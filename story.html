@@ -137,8 +137,21 @@
 .cbtns{display:flex;gap:6px;flex-wrap:wrap}
 .castbody [data-cnew]{border:1.5px dashed var(--accent);background:transparent;color:var(--accent);border-radius:12px;padding:9px;font:800 .9rem var(--f-body);cursor:pointer}
 .bk .by select{flex:1;min-width:0;padding:4px 8px;border:1.5px solid var(--rule);border-radius:8px;font:600 .9rem var(--f-body);background:var(--paper);color:var(--ink)}
+.thw{position:relative;display:inline-flex;flex:none}
+.spk{position:absolute;right:-6px;bottom:-6px;width:28px;height:28px;border-radius:50%;border:2px dashed var(--accent);background:var(--paper);color:var(--accent);font:800 .95rem/1 var(--f-body);display:grid;place-items:center;cursor:pointer;padding:0;box-shadow:0 1px 3px rgba(0,0,0,.15)}
+.thw.nopic .spk{position:static;width:34px;height:34px}
+.spk.on{border-style:solid;font-size:1.05rem;background:var(--sheet)}
+.spk:hover,.spk:focus-visible{transform:scale(1.12);outline:none;box-shadow:0 0 0 3px var(--accent-soft)}
+.saidby{display:inline-block;width:fit-content;align-self:flex-start;margin:2px 0;font:800 .8rem var(--f-body);color:var(--accent);background:var(--accent-soft);border-radius:999px;padding:1px 8px}
+#spkMenu{position:absolute;z-index:60;min-width:220px;background:var(--paper);border:1.5px solid var(--rule);border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.18);padding:8px;display:grid;gap:2px}
+#spkMenu>b{font:800 .85rem var(--f-body);color:var(--muted);padding:2px 8px 4px}
+#spkMenu button{display:flex;align-items:center;gap:8px;text-align:left;border:0;background:transparent;border-radius:9px;padding:7px 8px;font:700 .95rem var(--f-body);color:var(--ink);cursor:pointer}
+#spkMenu button span{width:1.4em;text-align:center;font-size:1.1rem}#spkMenu button small{color:var(--muted)}
+#spkMenu button:hover,#spkMenu button:focus-visible{background:var(--sheet);outline:none}
+#spkMenu button[aria-checked="true"]{background:var(--accent-soft)}
+#spkMenu hr{border:0;border-top:1px solid var(--rule);margin:4px 0}#spkMenu .muted{margin:2px 8px;font-size:.85rem}
 </style>
-<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261123r"></script><script src="js/icons.js?v=20261123r"></script><script src="js/app.js?v=20261123r"></script><script src="js/sets.js?v=20261123r"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261123r"></script><script src="js/storycore.js?v=20261123r"></script><script src="js/montage.js?v=20261123r"></script>
+<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261123s"></script><script src="js/icons.js?v=20261123s"></script><script src="js/app.js?v=20261123s"></script><script src="js/sets.js?v=20261123s"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261123s"></script><script src="js/storycore.js?v=20261123s"></script><script src="js/montage.js?v=20261123s"></script>
 </head><body>
 <div class="wrap" style="max-width:1280px">
   <div class="head2">
@@ -289,9 +302,10 @@ function drawBoard(){const B=CUR?CUR.blocks:[];let scene=1,n=0;
     if(b.k==="s"){scene++;rows.push(`<li class="scene bk-s" data-k="${k}" draggable="true">Scene ${scene}${ctl}</li>`);return;}
     n++;const cls=`bk ${b.k}${k===SEL?" sel":""}`,grip=`<span class="grip" title="Drag to move">${icon("grip-vertical",16)}</span><span class="num">${n}</span>`;
     if(b.k==="w"){const i=wi(b.w),v=D[i];
-      rows.push(`<li class="${cls}" data-k="${k}" draggable="true">${grip}${v?(v.vid?`<video class="th" src="${esc(v.vid)}" muted loop playsinline preload="none" data-auto></video>`:`<img class="th" src="${esc(v.img)}" alt="">`):""}<span class="tx"><b>${esc(clean(b.w))}</b>${b.from?`<span class="was">↺ instead of ${esc(clean(b.from))}</span>`:""}<small>${esc(v?v.d:"")}</small>${(b.p||[]).length?`<span class="subs">${b.p.map(x=>`<span>${esc(x)}</span>`).join("")}</span>`:""}</span><button type="button" class="wxbtn" data-wx="${k}" title="Explore: stronger, softer, similar, opposite, partners" aria-label="Explore this word">🔍</button>${ctl}</li>`);}
+      const say=isSay(b,v),pic=v?(v.vid?`<video class="th" src="${esc(v.vid)}" muted loop playsinline preload="none" data-auto></video>`:`<img class="th" src="${esc(v.img)}" alt="">`):"";
+      rows.push(`<li class="${cls}" data-k="${k}" draggable="true">${grip}${say?`<span class="thw${pic?"":" nopic"}">${pic}${spkDot(b,k)}</span>`:pic}<span class="tx"><b>${esc(clean(b.w))}</b>${say?spkLine(b):""}${b.from?`<span class="was">↺ instead of ${esc(clean(b.from))}</span>`:""}<small>${esc(v?v.d:"")}</small>${(b.p||[]).length?`<span class="subs">${b.p.map(x=>`<span>${esc(x)}</span>`).join("")}</span>`:""}</span><button type="button" class="wxbtn" data-wx="${k}" title="Explore: stronger, softer, similar, opposite, partners" aria-label="Explore this word">🔍</button>${ctl}</li>`);}
     else if(b.k==="c"){const v=D[wi(b.w)];rows.push(`<li class="${cls}" data-k="${k}" draggable="true">${grip}<span class="th qth">${b.m?"🎵":b.tr?"🎞️":"🎥"}</span><span class="tx"><b>${esc(v&&v.emoji?v.emoji+" ":"")}${esc(b.w)}</b><small>${b.m?"Music":b.tr?"Transition":"Camera"} · ${esc(v?v.d:"")}</small></span>${ctl}</li>`);}
-    else if(b.k==="q")rows.push(`<li class="${cls}" data-k="${k}" draggable="true">${grip}<span class="th qth">📜</span><span class="tx"><b class="qt">“${esc(b.w)}”</b><small>${esc(b.a||"")}</small><label class="by">🎙️ Who says it? ${speakerSelect(b,k)}</label></span>${ctl}</li>`);
+    else if(b.k==="q")rows.push(`<li class="${cls}" data-k="${k}" draggable="true">${grip}<span class="thw"><span class="th qth">📜</span>${spkDot(b,k)}</span><span class="tx"><b class="qt">“${esc(b.w)}”</b>${spkLine(b)}<small>${esc(b.a||"")}</small></span>${ctl}</li>`);
     else rows.push(`<li class="${cls}" data-k="${k}" draggable="true">${grip}<input value="${esc(b.t||"")}" maxlength="300" placeholder="Type your own words…" aria-label="My own words" data-t="${k}">${ctl}</li>`);});
   let SL=$("speakerList");if(!SL){SL=document.createElement("datalist");SL.id="speakerList";document.body.appendChild(SL);}
   SL.innerHTML=speakers().map(x=>`<option value="${esc(x)}">`).join("");
@@ -301,7 +315,7 @@ function drawPreview(){const B=CUR?CUR.blocks:[];if(!B.some(b=>b.k!=="s")){$("pr
   const S_=CUR.sentences||{},L=LV();
   if(L.mode!=="none"&&Object.values(S_).some(v=>(v||"").trim())){const its=items();
     $("preview").innerHTML=`<h3>My story so far</h3>`+scenesOf().map(x=>`<p><span class="muted">Scene ${x.n}:</span> ${its.filter(it=>it.scene===x.n).map(it=>esc((S_[it.key]||"").trim())).filter(Boolean).join(" ")||'<span class="muted">…</span>'}</p>`).join("");return;}
-  const sc=[[]];B.forEach(b=>b.k==="s"?sc.push([]):sc[sc.length-1].push(b.k==="w"?`<b>${esc(clean(b.w))}</b>${(b.p||[]).length?` <i class="muted">(${esc(b.p.join(", "))})</i>`:""}`:b.k==="q"?`<i>${esc(b.by||"Voice-over")}: “${esc(b.w)}”</i>`:b.k==="c"?`<span class="muted">[${b.m?"🎵":b.tr?"🎞️":"🎥"} ${esc(b.w)}]</span>`:esc(b.t||"")));
+  const sc=[[]];B.forEach(b=>b.k==="s"?sc.push([]):sc[sc.length-1].push(b.k==="w"?`${b.by?`<i>${esc(b.by)}:</i> `:""}<b>${esc(clean(b.w))}</b>${(b.p||[]).length?` <i class="muted">(${esc(b.p.join(", "))})</i>`:""}`:b.k==="q"?`<i>${b.by?esc(b.by)+": ":""}“${esc(b.w)}”</i>`:b.k==="c"?`<span class="muted">[${b.m?"🎵":b.tr?"🎞️":"🎥"} ${esc(b.w)}]</span>`:esc(b.t||"")));
   $("preview").innerHTML=`<h3>My story so far</h3>`+sc.filter(s=>s.length).map((s,k)=>`<p><span class="muted">Scene ${k+1}:</span> ${s.join(" ")}</p>`).join("");}
 function move(k,d){const B=CUR.blocks,j=k+d;if(j<0||j>=B.length)return;[B[k],B[j]]=[B[j],B[k]];SEL=j;changed();drawBoard();}
 $("board").addEventListener("click",e=>{const b=e.target.closest("button");
@@ -340,7 +354,7 @@ let CASTOPEN=false,CASTEDIT=null;   // the section is open; the character being 
 const cast=()=>(CUR&&CUR.characters)||[];
 const castName=c=>(c&&c.name||"").trim();
 // who a saying is spoken by, by default: the wise one, if there is one
-const defaultSpeaker=()=>{const w=cast().find(c=>c.role==="wise");return w?castName(w):"Voice-over";};
+const defaultSpeaker=()=>"";
 function drawCast(){const el=$("cast");if(!el)return;const C2=cast();
   const form=i=>{const c=i==="new"?{name:"",age:"",look:"",role:"friend",emoji:"🧒"}:C2[i];
     return `<div class="cform" data-cf="${i}"><div class="cgrid">
@@ -366,11 +380,11 @@ document.addEventListener("click",e=>{if(!$("cast")||!$("cast").contains(e.targe
   const sv=e.target.closest("[data-csave]");if(sv){const i=sv.dataset.csave,c=castForm(i);if(!c.name){App.status("Give your character a name",false);return;}
     CUR.characters=cast().slice();
     if(i==="new"){if(CUR.characters.some(x=>castName(x).toLowerCase()===c.name.toLowerCase())){App.status("You already have a character with that name",false);return;}c.id="c"+Date.now().toString(36);CUR.characters.push(c);}
-    else{const old=CUR.characters[+i];c.id=old.id;CUR.characters[+i]=c;if(castName(old)!==c.name)CUR.blocks.forEach(b=>{if(b.k==="q"&&(b.cid===old.id||b.by===castName(old))){b.by=c.name;b.cid=c.id;}});}
+    else{const old=CUR.characters[+i];c.id=old.id;CUR.characters[+i]=c;if(castName(old)!==c.name)CUR.blocks.forEach(b=>{if((b.k==="q"||b.k==="w")&&(b.cid===old.id||b.by===castName(old))){b.by=c.name;b.cid=c.id;}});}
     if(WANT_SPEAKER!=null&&CUR.blocks[WANT_SPEAKER]){CUR.blocks[WANT_SPEAKER].by=c.name;CUR.blocks[WANT_SPEAKER].cid=c.id;WANT_SPEAKER=null;}
     CASTEDIT=null;changed();drawCast();drawBoard();drawPreview();return;}
   const dl=e.target.closest("[data-cdel]");if(dl){const old=cast()[+dl.dataset.cdel];CUR.characters=cast().filter((_,j)=>j!==+dl.dataset.cdel);
-    CUR.blocks.forEach(b=>{if(b.k==="q"&&(b.cid===old.id||b.by===castName(old))){b.by="Voice-over";delete b.cid;}});CASTEDIT=null;changed();drawCast();drawBoard();drawPreview();}});
+    CUR.blocks.forEach(b=>{if((b.k==="q"||b.k==="w")&&(b.cid===old.id||b.by===castName(old))){delete b.by;delete b.cid;}});CASTEDIT=null;changed();drawCast();drawBoard();drawPreview();}});
 let WANT_SPEAKER=null;   // a saying waiting for a new character to speak it
 // the "Who says it?" menu on a saying: the characters, the narrator, a voice-over, or a new character
 function speakerSelect(b,k){const names=cast().map(castName).filter(Boolean),cur=(b.by||"").trim()||"Voice-over",extra=!names.includes(cur)&&!["Voice-over","Narrator"].includes(cur)?[cur]:[];
@@ -379,6 +393,28 @@ function speakerSelect(b,k){const names=cast().map(castName).filter(Boolean),cur
 document.addEventListener("change",e=>{const s=e.target.closest("select[data-bysel]");if(!s)return;const k=+s.dataset.bysel,b=CUR.blocks[k];
   if(s.value==="__new"){WANT_SPEAKER=k;CASTOPEN=true;CASTEDIT="new";drawCast();$("cast").scrollIntoView({behavior:"smooth",block:"center"});setTimeout(()=>$("cast").querySelector('[data-cv="name"]')?.focus(),300);s.value=b.by||"Voice-over";return;}
   b.by=s.value;const c=cast().find(x=>castName(x)===s.value);if(c)b.cid=c.id;else delete b.cid;changed();drawPreview();});
+// ---------- 🗣️ the little circle on a saying: tap it to choose who says it (empty = part of the story) ----------
+const isSay=(b,v)=>b.k==="q"||!!(v&&(v.boxKind==="sayings"||v.author||(v.tags||[]).includes("Saying")||(v.tags||[]).includes("Idiom")))||clean(b.w).trim().split(/\s+/).length>=4;
+const whoOf=b=>{const n=(b.by||"").trim();if(!n)return null;const c=cast().find(x=>x.id===b.cid)||cast().find(x=>castName(x)===n);
+  return c?{n:castName(c),e:c.emoji||"🙂"}:{n,e:n==="Narrator"?"📖":n==="Voice-over"?"🎙️":"🗣️"};};
+function spkDot(b,k){const w=whoOf(b);return `<button type="button" class="spk${w?" on":""}" data-spk="${k}" title="${w?esc(w.n)+" says it — tap to change":"Who says it? Tap to choose a character"}" aria-label="${w?"Said by "+esc(w.n):"Choose who says it"}">${w?esc(w.e):"+"}</button>`;}
+const spkLine=b=>{const w=whoOf(b);return w?`<span class="saidby">🗣️ ${esc(w.n)} says it</span>`:"";};
+function openSpk(k,btn){closeSpk();const b=CUR.blocks[k],cur=(b.by||"").trim(),m=document.createElement("div");m.id="spkMenu";m.setAttribute("role","menu");
+  const opt=(val,label,on)=>`<button type="button" role="menuitemradio" aria-checked="${on}" data-spkv="${esc(val)}">${label}</button>`;
+  m.innerHTML=`<b>Who says it?</b>${cast().map(c=>opt(castName(c),`<span>${esc(c.emoji||"🙂")}</span> ${esc(castName(c))}${c.age?` <small>${esc(c.age)}</small>`:""}`,castName(c)===cur)).join("")}
+    ${cast().length?"":`<p class="muted">No characters yet.</p>`}${opt("__new","<span>➕</span> New character…",false)}<hr>
+    ${opt("Narrator","<span>📖</span> Narrator",cur==="Narrator")}${opt("Voice-over","<span>🎙️</span> Voice-over",cur==="Voice-over")}${opt("","<span>○</span> Nobody — part of the story",!cur)}`;
+  m.dataset.k=k;document.body.appendChild(m);const r=btn.getBoundingClientRect();
+  m.style.left=Math.max(8,Math.min(window.innerWidth-m.offsetWidth-8,r.left+window.scrollX))+"px";m.style.top=(r.bottom+window.scrollY+6)+"px";
+  (m.querySelector('[aria-checked="true"]')||m.querySelector("button")).focus();}
+const closeSpk=()=>{const m=$("spkMenu");if(m)m.remove();};
+document.addEventListener("click",e=>{const d=e.target.closest("[data-spk]");if(d){e.stopPropagation();const open=$("spkMenu");if(open&&open.dataset.k===d.dataset.spk){closeSpk();return;}openSpk(+d.dataset.spk,d);return;}
+  const o=e.target.closest("#spkMenu [data-spkv]");if(o){const k=+$("spkMenu").dataset.k,b=CUR.blocks[k],v=o.dataset.spkv;closeSpk();if(!b)return;
+    if(v==="__new"){WANT_SPEAKER=k;CASTOPEN=true;CASTEDIT="new";drawCast();$("cast").scrollIntoView({behavior:"smooth",block:"center"});setTimeout(()=>$("cast").querySelector('[data-cv="name"]')?.focus(),300);return;}
+    if(v){b.by=v;const c=cast().find(x=>castName(x)===v);if(c)b.cid=c.id;else delete b.cid;}else{delete b.by;delete b.cid;}
+    changed();drawBoard();return;}
+  if(!e.target.closest("#spkMenu"))closeSpk();},true);
+document.addEventListener("keydown",e=>{if(e.key==="Escape")closeSpk();});
 // ---------- saving ----------
 function changed(){$("saved").textContent="Saving…";clearTimeout(timer);timer=setTimeout(save,1200);}
 async function save(extra={}){if(!CUR)return;clearTimeout(timer);Object.assign(CUR,extra);
@@ -522,7 +558,7 @@ $("wxBody").addEventListener("click",e=>{const b=CUR.blocks[WX.k];
   const u=e.target.closest("[data-use]");if(u){replaceWord(+u.dataset.use);return;}
   const s=e.target.closest("[data-sub]");if(s){const p=s.dataset.sub;b.p=b.p||[];const n=b.p.findIndex(x=>x.toLowerCase()===p.toLowerCase());if(n>=0)b.p.splice(n,1);else if(b.p.length<4)b.p.push(p);else App.status("Up to 4 partners for one word",false);if(!b.p.length)delete b.p;changed();drawBoard();drawWX();return;}
   const x=e.target.closest("[data-unsub]");if(x){b.p.splice(+x.dataset.unsub,1);if(!b.p.length)delete b.p;changed();drawBoard();drawWX();return;}
-  const aq=e.target.closest("[data-addq]");if(aq){const q=D[+aq.dataset.addq];CUR.blocks.splice(WX.k+1,0,{k:"q",w:q.w,a:q.author||"",by:defaultSpeaker()});changed();drawBoard();drawPreview();drawWX();App.status(`Saying added: ${defaultSpeaker()} says it (change it on the board)`,true);return;}
+  const aq=e.target.closest("[data-addq]");if(aq){const q=D[+aq.dataset.addq];CUR.blocks.splice(WX.k+1,0,{k:"q",w:q.w,a:q.author||"",by:defaultSpeaker()});changed();drawBoard();drawPreview();drawWX();App.status("Saying added. Tap the little circle on it to choose who says it.",true);return;}
   if(e.target.closest("[data-back]")){const j=wi(b.from);if(j>=0)replaceWord(j);}});
 $("wxClose").onclick=()=>$("wxDlg").close();
 $("wxDlg").addEventListener("click",e=>{if(e.target===$("wxDlg"))$("wxDlg").close();});
