@@ -92,10 +92,10 @@
 .parent textarea{width:100%;min-height:140px;font:14px/1.5 var(--f-body);padding:10px;border:1px solid var(--rule);border-radius:10px;background:var(--paper);color:var(--ink)}
 .parent .step{margin-top:12px}.parent .step b{display:block;margin-bottom:4px}
 .parent input[type=text]{width:100%;max-width:40rem}
-#wxDlg{border:0;border-radius:18px;padding:0;width:min(720px,calc(100vw - 24px));max-height:calc(100vh - 32px);background:var(--sheet);color:var(--ink);box-shadow:0 20px 50px rgba(0,0,0,.3)}
-#wxDlg::backdrop{background:rgba(15,20,35,.45)}
-#wxDlg .wxin{padding:18px;display:grid;gap:12px;position:relative}
-#wxDlg .close{position:absolute;top:12px;right:12px}
+#wxDlg,#vwDlg{border:0;border-radius:18px;padding:0;width:min(720px,calc(100vw - 24px));max-height:calc(100vh - 32px);background:var(--sheet);color:var(--ink);box-shadow:0 20px 50px rgba(0,0,0,.3)}
+#wxDlg::backdrop,#vwDlg::backdrop{background:rgba(15,20,35,.45)}
+#wxDlg .wxin,#vwDlg .wxin{padding:18px;display:grid;gap:12px;position:relative}
+#wxDlg .close,#vwDlg .close{position:absolute;top:12px;right:12px}
 .wxhead{display:grid;grid-template-columns:90px 1fr;gap:14px;align-items:start;padding-right:70px}
 .wxhead .wxpic{width:90px;height:90px;border-radius:12px;object-fit:cover}
 .wxhead h3{margin:0;font:800 1.5rem var(--f-display)}.wxhead p{margin:2px 0}
@@ -155,7 +155,7 @@
 .fitq .fq b{font-style:italic}.fitq .fq span{display:block;font-size:.82rem;font-weight:700}.fitq .linkb{all:unset;cursor:pointer;color:var(--accent);font-weight:800;font-size:.88rem}
 #checks .how{display:block;font-weight:600;font-size:.8rem;color:var(--muted);margin:1px 0 2px 1.2em}
 </style>
-<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261123w"></script><script src="js/icons.js?v=20261123w"></script><script src="js/app.js?v=20261123w"></script><script src="js/sets.js?v=20261123w"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261123w"></script><script src="js/storycore.js?v=20261123w"></script><script src="js/montage.js?v=20261123w"></script>
+<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261123x"></script><script src="js/icons.js?v=20261123x"></script><script src="js/app.js?v=20261123x"></script><script src="js/sets.js?v=20261123x"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261123x"></script><script src="js/views.js?v=20261123x"></script><script src="js/storycore.js?v=20261123x"></script><script src="js/montage.js?v=20261123x"></script>
 </head><body>
 <div class="wrap" style="max-width:1280px">
   <div class="head2">
@@ -164,7 +164,7 @@
   </div>
   <div class="sb">
     <section class="panel lib" aria-label="Word library">
-      <h2><span data-i="book-open"></span>Word library</h2>
+      <h2><span data-i="book-open"></span>Word library<button type="button" class="btn small" id="wheelBtn" style="margin-left:auto" title="See the words of this box as a wheel or circles">🎡 Wheel</button></h2>
       <div class="boxes" id="boxes" role="tablist" aria-label="Word boxes"></div>
       <div class="r"><label class="q"><span data-i="search"></span><input id="q" type="search" placeholder="Search every word box…" aria-label="Search every word box"></label><div id="unitMount"></div></div>
       <div id="groupMount" style="margin-bottom:10px"></div>
@@ -190,6 +190,7 @@
   <section class="panel read" id="read" hidden></section>
   
 </div>
+<dialog id="vwDlg" aria-label="Word wheel"><div class="wxin"><button class="btn small close" type="button" id="vwClose">✕ Close</button><div class="seg" role="group" aria-label="Picture" id="vwSeg" style="margin-bottom:8px"><button type="button" data-vk="wheel" aria-pressed="true">🎡 Wheel</button><button type="button" data-vk="venn" aria-pressed="false">⭕ Venn</button></div><div id="vwBody"></div></div></dialog>
 <dialog id="wxDlg" aria-label="Word explorer"><div class="wxin"><button class="btn small close" type="button" id="wxClose">✕ Close</button><div id="wxBody"></div></div></dialog>
 <dialog id="infoDlg" aria-labelledby="infoTitle"><div class="ib"><button class="btn small close" type="button" id="infoClose">✕ Close</button>
   <h2 id="infoTitle">How the Story builder works</h2>
@@ -436,6 +437,15 @@ function drawFit(){const el=$("fitq");if(!el)return;const L=fitQuotes();if(!L.le
 document.addEventListener("click",e=>{const a=e.target.closest("[data-fitadd]");if(a){const q=D[+a.dataset.fitadd];addBlock({k:"q",w:q.w,a:q.author||"",by:defaultSpeaker()});App.status("Quote added. Tap its little circle to choose who says it.",true);return;}
   if(e.target.closest("[data-fitall]")){FITALL=!FITALL;drawFit();return;}
   if(e.target.closest("[data-wxsayall]")){WX.sayAll=1;drawWX();}});
+// ---------- 🎡 the words of the open box as a wheel or a Venn diagram ----------
+let VWK="wheel";
+function libIdx(){const b=boxOf(BOX);return b.idx.filter(i=>{const v=D[i];return (b.kind!=="set"||UP.match(v))&&GP.match(v);});}
+function drawVW(){const b=boxOf(BOX),units=b.kind==="set"?(window.UNITS_LIST||[]):((D[b.idx[0]]||{}).boxUnits||[]);
+  document.querySelectorAll("#vwSeg [data-vk]").forEach(x=>x.setAttribute("aria-pressed",x.dataset.vk===VWK));
+  Views[VWK]($("vwBody"),{D,idx:libIdx(),units,unitsOn:b.kind==="set"?UP.selected():null,addLabel:"+ Add to my story",onAdd:i=>addIdx(i)});}
+$("wheelBtn").onclick=()=>{drawVW();$("vwDlg").showModal();};
+$("vwClose").onclick=()=>$("vwDlg").close();
+$("vwSeg").onclick=e=>{const k=e.target.closest("[data-vk]");if(!k)return;VWK=k.dataset.vk;drawVW();};
 // ---------- saving ----------
 function changed(){$("saved").textContent="Saving…";clearTimeout(timer);timer=setTimeout(save,1200);}
 async function save(extra={}){if(!CUR)return;clearTimeout(timer);Object.assign(CUR,extra);

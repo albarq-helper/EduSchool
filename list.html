@@ -127,7 +127,7 @@ input.ok,textarea.ok{border-color:var(--good)!important;background:var(--good-so
 .say1:hover{border-color:var(--accent)}.say1 b{font-style:italic}.say1 small{color:var(--muted);font-weight:700}.say1 span{font-size:.9rem}.say1 .lesson{color:var(--good)}
 .agepill{background:#fde2e2;color:#9b1c1c;border-color:#f5b5b5}
 </style>
-<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261123w"></script><script src="js/icons.js?v=20261123w"></script><script src="js/app.js?v=20261123w"></script><script src="js/sets.js?v=20261123w"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261123w"></script>
+<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261123x"></script><script src="js/icons.js?v=20261123x"></script><script src="js/app.js?v=20261123x"></script><script src="js/sets.js?v=20261123x"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261123x"></script><script src="js/views.js?v=20261123x"></script>
 </head><body>
 <div class="wrap" style="max-width:1180px">
   <div class="head2">
@@ -141,7 +141,7 @@ input.ok,textarea.ok{border-color:var(--good)!important;background:var(--good-so
       <label class="q"><i data-i="search"></i><input id="q" type="search" placeholder="Filter words or meanings…" aria-label="Filter words"></label>
       <div id="unitMount" aria-label="Units"></div>
       <div class="seg" role="group" aria-label="View" id="views">
-        <button type="button" data-v="detail" aria-pressed="true">Detail</button><button type="button" data-v="grid" aria-pressed="false">Grid</button><button type="button" data-v="list" aria-pressed="false">List</button><button type="button" data-v="blocks" aria-pressed="false">Blocks</button>
+        <button type="button" data-v="detail" aria-pressed="true">Detail</button><button type="button" data-v="grid" aria-pressed="false">Grid</button><button type="button" data-v="list" aria-pressed="false">List</button><button type="button" data-v="blocks" aria-pressed="false">Blocks</button><button type="button" data-v="wheel" aria-pressed="false" title="A wheel of the words, by family">🎡 Wheel</button><button type="button" data-v="venn" aria-pressed="false" title="Overlapping circles: which words belong to two groups">⭕ Venn</button>
       </div>
     </div>
     <div class="r"><div id="groupMount" style="width:100%"></div></div>
@@ -306,6 +306,7 @@ function visible(){const q=$("q").value.trim().toLowerCase();
 function render(){const L=visible();
   $("count").textContent=L.length+(L.length===1?" word":" words");
   if(!L.length){$("out").innerHTML='<div class="card empty-l">No words match.</div>';score();return;}
+  if(VIEW==="wheel"||VIEW==="venn"){$("out").innerHTML='<div class="card" id="vwHost"></div>';Views[VIEW]($("vwHost"),{D,idx:L,units:U,unitsOn:UP.selected()});score();return;}
   const view=M=>VIEW==="list"?`<div class="card v-list" style="padding:0"><div class="tablewrap"><table><thead><tr>${SHOW.pic?"<th></th>":""}<th>Word</th><th></th><th>Meaning</th>${SHOW.tr&&D.some(x=>x.ar)?`<th>${esc(window.TL_NAME||"Translation")}</th>`:""}<th>Unit</th></tr></thead><tbody>${M.map(i=>card(i,"list")).join("")}</tbody></table></div></div>`
     :`<div class="v-${VIEW}">${M.map(i=>card(i,VIEW)).join("")}</div>`;
   // grouped by word type / theme / opposites (or one plain list)

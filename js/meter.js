@@ -60,6 +60,22 @@
 .mtr-nav{display:flex;justify-content:space-between;align-items:center;gap:8px}
 .mtr-nav button{font:800 .9rem var(--f-body,system-ui);border:0;border-radius:999px;padding:8px 14px;cursor:pointer;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.08)}
 .mtr-nav button:disabled{opacity:.35;cursor:default}
+.mtr-head{display:flex;justify-content:flex-end;margin:-6px -6px -4px 0}
+.mtr-sty{display:inline-flex;background:rgba(255,255,255,.6);border-radius:999px;padding:2px}
+.mtr-sty button{border:0;background:transparent;border-radius:999px;font-size:1rem;padding:3px 9px;cursor:pointer;opacity:.6}
+.mtr-sty button[aria-pressed="true"]{background:#fff;opacity:1;box-shadow:0 1px 4px rgba(0,0,0,.12)}
+.mtr-gauge{display:none;justify-content:center}
+.mtr-gauge svg{width:min(100%,460px);height:auto;overflow:visible}
+.mtr-gauge text{font-family:var(--f-body,system-ui);pointer-events:none}
+.mtr-gauge .sg{cursor:pointer;transition:transform .35s cubic-bezier(.34,1.56,.64,1),filter .2s;transform-box:view-box;transform-origin:0 0;stroke:#fff;stroke-width:3}
+.mtr-gauge .sg:hover{filter:brightness(1.08)}
+.mtr-gauge .ndl{transition:transform .75s cubic-bezier(.34,1.56,.64,1);transform-box:view-box;transform-origin:0 0}
+.mtr-gauge .tk{cursor:pointer}
+.mtr-gauge .big{animation:mtrpop .45s ease;transform-box:fill-box;transform-origin:center}
+.mtr[data-sty="arc"] .mtr-gauge,.mtr[data-sty="dial"] .mtr-gauge{display:flex}
+.mtr[data-sty="arc"] .mtr-track,.mtr[data-sty="dial"] .mtr-track,.mtr[data-sty="arc"] .mtr-face,.mtr[data-sty="dial"] .mtr-face{display:none}
+.mtr[data-sty="arc"] .mtr-top,.mtr[data-sty="dial"] .mtr-top{grid-template-columns:1fr}
+@media (prefers-reduced-motion:reduce){.mtr-gauge .sg,.mtr-gauge .ndl{transition:none}}
 .mtr-nav .mid{font:800 .85rem var(--f-body,system-ui);background:rgba(255,255,255,.7);border-radius:999px;padding:6px 12px}`;
   // Every meter reads left → right as bad/negative (red) → good/positive (green). Meters that are neither
   // (size, distance, how loud a voice is…) are NEUTRAL and use calm blues.
@@ -74,6 +90,13 @@
     if (T.neutral) return `hsl(210 70% ${93 - t * 16}%)`;
     return `hsl(${Math.round(t * 140)} 75% ${88 - Math.abs(t - .5) * 8}%)`; }
   function gradient(T) { return T.neutral ? "linear-gradient(90deg,hsl(205 80% 82%),hsl(225 70% 55%))" : "linear-gradient(90deg,hsl(0 80% 55%),hsl(45 90% 58%),hsl(140 60% 42%))"; }
+  // how meters look: 🌈 rainbow arc (young children), ⏱️ dial with a needle, 🎚️ slider. Chosen by age; the child can switch.
+  function age() { const p = window.App && App.profile; if (!p || p.role === "teacher" || p.is_admin) return null;
+    if (p.birth_date) { const b = new Date(p.birth_date), n = new Date(); let a = n.getFullYear() - b.getFullYear(); if (n.getMonth() < b.getMonth() || (n.getMonth() === b.getMonth() && n.getDate() < b.getDate())) a--; return a; }
+    return p.birth_year ? new Date().getFullYear() - p.birth_year : null; }
+  function style() { try { const s = localStorage.getItem("meterStyle"); if (s) return s; } catch (e) {} const a = age(); return a == null || a <= 11 ? "arc" : a <= 14 ? "dial" : "bar"; }
+  const MOUNTED = new Set();
+  function setStyle(s) { try { localStorage.setItem("meterStyle", s); } catch (e) {} MOUNTED.forEach(f => { if (!document.body.contains(f.el)) MOUNTED.delete(f); else f.restyle(s); }); }
   function mount(el, o) {
     if (!document.getElementById("meter-css")) $("head").append(`<style id="meter-css">${css}</style>`);
     const D = o.words || window.WORDS || [], L = (o.levels || []).slice().sort((a, b) => a.rank - b.rank);
@@ -85,12 +108,44 @@
     const T = tone(o.title, L), grad = gradient(T);
     let k = Math.max(0, L.findIndex(l => l.rank === (o.start != null ? o.start : (T.two ? 0 : L[0].rank)))); if (k < 0) k = 0;
     if (o.start != null && L[k].rank !== o.start) k = L.reduce((b, l, j) => Math.abs(l.rank - o.start) < Math.abs(L[b].rank - o.start) ? j : b, 0);
-    const $m = $(`<div class="mtr" role="group" aria-label="${esc(o.title)} feeling meter">
+    let sty = o.style || style();
+    const $m = $(`<div class="mtr" role="group" aria-label="${esc(o.title)} feeling meter" data-sty="${sty}">
+      <div class="mtr-head"><div class="mtr-sty" role="group" aria-label="Meter look">${[["arc", "🌈", "Rainbow"], ["dial", "⏱️", "Dial"], ["bar", "🎚️", "Slider"]].map(([k, i, t]) => `<button type="button" data-sty="${k}" title="${t}" aria-label="${t}" aria-pressed="${k === sty}">${i}</button>`).join("")}</div></div>
+      <div class="mtr-gauge"></div>
       <div class="mtr-top"><div class="mtr-face" aria-hidden="true"></div><div><div class="mtr-lv"></div><div class="mtr-words"></div></div></div>
       <div class="mtr-track" style="--grad:${grad}"><input type="range" min="0" max="${L.length - 1}" step="1" value="${k}" aria-label="Strength">
         <div class="mtr-ticks">${L.map((l, j) => `<button type="button" data-j="${j}" title="${esc(l.items.map(i => clean(D[i] && D[i].w)).join(", "))}">${l.rank > 0 ? "+" : ""}${l.rank}</button>`).join("")}</div></div>
       <div class="mtr-nav"><button type="button" data-step="-1">◀ ${esc(o.left ? "more " + o.left : "less")}</button><span class="mid"></span><button type="button" data-step="1">${esc(o.right ? "more " + o.right : "more")} ▶</button></div></div>`);
     $(el).empty().append($m);
+    const N = L.length, PI = Math.PI, P = (r, a) => [+(r * Math.cos(a)).toFixed(1), +(r * Math.sin(a)).toFixed(1)];
+    const segA = j => [PI + j * PI / N, PI + (j + 1) * PI / N];
+    const arcD = (r1, r2, a1, a2) => { const [x1, y1] = P(r2, a1), [x2, y2] = P(r2, a2), [x3, y3] = P(r1, a2), [x4, y4] = P(r1, a1); return `M${x1},${y1}A${r2},${r2} 0 0 1 ${x2},${y2}L${x3},${y3}A${r1},${r1} 0 0 0 ${x4},${y4}Z`; };
+    const strong = r => { const t = T.max === T.min ? 1 : (r - T.min) / (T.max - T.min); return T.neutral ? `hsl(${205 + t * 20} 75% ${72 - t * 26}%)` : `hsl(${Math.round(t * 130)} 72% 52%)`; };
+    const faceOf = l => faces[String(l.rank)] || (D[l.items[0]] && D[l.items[0]].emoji) || "🙂";
+    const word1 = l => clean(D[l.items[0]] && D[l.items[0]].w);
+    function gauge() {
+      const $g = $m.find(".mtr-gauge"); if (sty === "bar") { $g.empty(); return; }
+      const ends = `<text x="-150" y="22" font-size="11" font-weight="800" text-anchor="start" fill="#334155">${esc(String(o.left || "").toUpperCase())}</text><text x="150" y="22" font-size="11" font-weight="800" text-anchor="end" fill="#334155">${esc(String(o.right || "").toUpperCase())}</text>`;
+      if (sty === "arc") $g.html(`<svg viewBox="-160 -152 320 182">${L.map((l, j) => { const [a1, a2] = segA(j), [ex, ey] = P(106, (a1 + a2) / 2);
+          return `<g class="sg" data-j="${j}"><path d="${arcD(72, 142, a1, a2)}" fill="${strong(l.rank)}"><title>${esc(l.items.map(i => clean(D[i] && D[i].w)).join(", "))}</title></path>${N <= 12 ? `<text x="${ex}" y="${ey}" font-size="${N > 8 ? 17 : 22}" text-anchor="middle" dominant-baseline="middle">${faceOf(l)}</text>` : ""}</g>`; }).join("")}
+        <text class="cw" x="0" y="-18" font-size="24" font-weight="800" text-anchor="middle" fill="#1b2333"></text><text class="cl" x="0" y="4" font-size="11" font-weight="800" text-anchor="middle" fill="#475569"></text>${ends}</svg>`);
+      else $g.html(`<svg viewBox="-165 -165 330 195">${L.map((l, j) => { const [a1, a2] = segA(j); return `<path d="${arcD(118, 130, a1 + .01, a2 - .01)}" fill="${strong(l.rank)}"/>`; }).join("")}
+        ${L.map((l, j) => { const [a1, a2] = segA(j), m = (a1 + a2) / 2, [x1, y1] = P(110, m), [x2, y2] = P(100, m), [tx, ty] = P(146, m);
+          return `<g class="tk" data-j="${j}"><line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#334155" stroke-width="3" stroke-linecap="round"/><circle cx="${tx}" cy="${ty}" r="13" fill="rgba(255,255,255,.85)"/><text x="${tx}" y="${ty + 1}" font-size="10" font-weight="800" text-anchor="middle" dominant-baseline="middle" fill="#1b2333">${l.rank > 0 ? "+" : ""}${l.rank}</text></g>`; }).join("")}
+        <text x="-150" y="-6" font-size="26" text-anchor="middle">${faceOf(L[0])}</text><text x="150" y="-6" font-size="26" text-anchor="middle">${faceOf(L[N - 1])}</text>
+        <text class="big" x="0" y="-62" font-size="40" text-anchor="middle" dominant-baseline="middle"></text>
+        <g class="ndl"><path d="M-7,0 L0,-112 L7,0 Z" fill="#dc2626"/><circle r="12" fill="#1b2333"/><circle r="5" fill="#fff"/></g>
+        <text class="cw" x="0" y="26" font-size="17" font-weight="800" text-anchor="middle" fill="#1b2333"></text>${ends.replace(/y="22"/g, 'y="26"')}</svg>`);
+    }
+    function paint(animate) {
+      const l = L[k];
+      if (sty === "arc") { $m.find(".mtr-gauge .sg").each(function (j) { const [a1, a2] = segA(j), m = (a1 + a2) / 2, on = j === k;
+          this.style.transform = on ? `translate(${(Math.cos(m) * 9).toFixed(1)}px,${(Math.sin(m) * 9).toFixed(1)}px) scale(1.04)` : ""; this.style.opacity = on ? 1 : .55; });
+        $m.find(".mtr-gauge .cw").text(word1(l)); $m.find(".mtr-gauge .cl").text(`${l.rank > 0 ? "+" : ""}${l.rank}`); }
+      if (sty === "dial") { const [a1, a2] = segA(k), deg = ((a1 + a2) / 2) * 180 / PI - 270;
+        $m.find(".mtr-gauge .ndl").css("transform", `rotate(${deg.toFixed(1)}deg)`); $m.find(".mtr-gauge .cw").text(word1(l));
+        const $b = $m.find(".mtr-gauge .big"); $b.text(faceOf(l)); if (animate && $b[0]) { $b.removeClass("big"); void $b[0].getBBox; $b.addClass("big"); } }
+    }
     const $face = $m.find(".mtr-face"), $lv = $m.find(".mtr-lv"), $words = $m.find(".mtr-words"), $range = $m.find("input"), $mid = $m.find(".mid");
     function show(j, animate) {
       k = Math.max(0, Math.min(L.length - 1, j)); const l = L[k], a = Math.abs(l.rank);
@@ -102,7 +157,7 @@
       $lv.text(`${l.rank > 0 ? "+" : ""}${l.rank} · ${lab}`); $mid.text(lab);
       $words.html(l.items.map(i => { const v = D[i] || {}; return `<div class="mtr-w${X.has(i) ? " x" : ""}"><b>${esc(v.emoji || "")} ${esc(clean(v.w))}${X.has(i) ? '<span class="mtr-xt" title="Not in this set: shown so you can see the whole scale">extra word</span>' : ""}</b><small>${esc(v.d || "")}</small>
         <div class="row"><button type="button" data-say="${i}">🔊 Hear</button>${o.onAdd ? `<button type="button" class="add" data-add="${i}">${esc(o.addLabel || "+ Add")}</button>` : ""}</div></div>`; }).join(""));
-      $m.find(".mtr-ticks button").removeClass("on").eq(k).addClass("on");
+      $m.find(".mtr-ticks button").removeClass("on").eq(k).addClass("on"); paint(animate);
       $m.find('[data-step="-1"]').prop("disabled", k === 0); $m.find('[data-step="1"]').prop("disabled", k === L.length - 1);
       o.onLevel && o.onLevel(l.rank);
     }
@@ -112,8 +167,11 @@
     $m.on("click", "[data-say]", function () { const i = +$(this).data("say"); if (o.onSay) o.onSay(i); else if (window.Sets) Sets.sayWord(D[i]); });
     $m.on("click", "[data-add]", function () { const i = +$(this).data("add"); o.onAdd && o.onAdd(i); $(this).text("✓ Added"); });
     $m.on("keydown", function (e) { if (e.target.tagName === "INPUT") return; if (e.key === "ArrowLeft") { show(k - 1, true); e.preventDefault(); } if (e.key === "ArrowRight") { show(k + 1, true); e.preventDefault(); } });
-    show(k, false);
+    $m.on("click", "[data-sty]", function () { setStyle(String($(this).data("sty"))); });
+    const me = { el: $m[0], restyle(s) { sty = s; $m.attr("data-sty", s); $m.find(".mtr-sty button").each(function () { this.setAttribute("aria-pressed", this.dataset.sty === s); }); gauge(); paint(false); } };
+    MOUNTED.add(me);
+    gauge(); show(k, false);
     return { show: r => { const j = L.findIndex(l => l.rank === r); if (j >= 0) show(j, true); } };
   }
-  window.Meter = { tone, color, mount };
+  window.Meter = { tone, color, mount, style, setStyle, age };
 })(window.jQuery);
