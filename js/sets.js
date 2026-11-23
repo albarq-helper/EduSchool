@@ -274,7 +274,7 @@
     const list = words || window.WORDS || [], ids = [...new Set(list.map(v => v.wid).filter(Boolean))], out = new Map();
     if (!ids.length) return out;
     const chunks = []; for (let k = 0; k < ids.length; k += 100) chunks.push(ids.slice(k, k + 100));
-    const cols = "word_id,kind,phrase,partner,partner_word_id,position";
+    const cols = "word_id,kind,phrase,partner,partner_word_id,position,tags";
     const res = await Promise.all(chunks.flatMap(c => [App.client.from("word_partners").select(cols).in("word_id", c), App.client.from("word_partners").select(cols).in("partner_word_id", c)]));
     const rows = []; res.forEach(r => (r.data || []).forEach(x => rows.push(x)));
     const here = new Map(list.filter(v => v.wid).map(v => [v.wid, v])), where = new Map();
@@ -286,13 +286,28 @@
     const link = id => !id ? null : here.has(id) ? { w: here.get(id).w, set: null } : where.get(id) || null;
     const box = id => { if (!out.has(id)) out.set(id, { own: [], also: [] }); return out.get(id); }, seen = new Set();
     const uniq = rows.sort((a, b) => a.position - b.position).filter(x => { const key = x.word_id + "|" + x.phrase.toLowerCase(); if (seen.has(key)) return false; seen.add(key); return true; });
-    uniq.forEach(x => { if (here.has(x.word_id)) box(x.word_id).own.push({ kind: x.kind, phrase: x.phrase, partner: x.partner, link: link(x.partner_word_id) }); });
+    uniq.forEach(x => { if (here.has(x.word_id)) box(x.word_id).own.push({ kind: x.kind, phrase: x.phrase, partner: x.partner, tags: x.tags || [], link: link(x.partner_word_id) }); });
     uniq.forEach(x => {
       if (x.partner_word_id && here.has(x.partner_word_id) && x.partner_word_id !== x.word_id) {
         const o = box(x.partner_word_id); if (!o.own.some(y => y.phrase.toLowerCase() === x.phrase.toLowerCase())) o.also.push({ kind: x.kind, phrase: x.phrase, partner: "", link: link(x.word_id) });
       }
     });
     return out;
+  }
+  // partners that sit on a meter (light rain → pouring rain): [{g, two, left, right, items:[partner + r]}]
+  function partnerScales(list) {
+    const m = new Map();
+    (list || []).forEach(x => (x.tags || []).forEach(t => { if (!isScale(t)) return; const s = scaleSplit(t); if (!m.has(s.g)) m.set(s.g, []); m.get(s.g).push({ ...x, r: s.r }); }));
+    return [...m].map(([g, items]) => { const e = g.split(/\s*·\s*/).pop().split(/\s*(?:→|⇄)\s*/);
+      return { g, two: /⇄/.test(g) || items.some(i => i.r < 0), left: e[0], right: e[1] || "", items: items.sort((a, b) => a.r - b.r) }; });
+  }
+  // the same meter slider as for words, filled with partner phrases
+  function mountPartnerMeter(el, sc, o = {}) {
+    const words = sc.items.map(x => ({ w: x.phrase, d: "", emoji: o.emoji || "" })), byR = new Map();
+    sc.items.forEach((x, k) => { if (!byR.has(x.r)) byR.set(x.r, []); byR.get(x.r).push(k); });
+    const start = o.start != null ? o.start : sc.items[0].r;
+    Meter.mount(el, { title: sc.g, left: sc.left, right: sc.right, two: sc.two, words, levels: [...byR].map(([rank, items]) => ({ rank, items })), start,
+      onAdd: o.onAdd ? k => o.onAdd(sc.items[k]) : null, addLabel: o.addLabel, onSay: k => speak(sc.items[k].phrase) });
   }
   const PARTNER_KINDS = [["adjective", "🎨 Adjectives", "what kind?"], ["adverb", "⏩ Adverbs", "how?"], ["verb", "🏃 Verbs", "what happens?"], ["noun", "📦 Nouns", "what?"],
     ["preposition", "🔗 Little words", "at, for, with…"], ["idiom", "💬 Idioms & phrasal verbs", ""], ["saying", "📜 Famous sayings", ""]];
@@ -471,5 +486,5 @@
     runPage();
   }
 
-  window.Sets = { boot, speak, sayWord, unitPicker, groupPicker, groupsOf, wordGroups, tagIcon, typeName, loadPartners, PARTNER_KINDS, sectionsHTML, mountMeters, loadBoxes, loadCompanions, scaleOfWord: (v, g) => { const t = (v.tags || []).find(t => isScale(t) && (!g || scaleSplit(t).g === g)); return t ? scaleSplit(t) : null; }, TAG_TYPES: TYPES, TAG_THEMES: THEME_ICONS, playClip, stopClip, media, watchClips, tile, autoSyl, blankify, load, mapItems, G5, LANGS };
+  window.Sets = { boot, speak, sayWord, unitPicker, groupPicker, groupsOf, wordGroups, tagIcon, typeName, loadPartners, PARTNER_KINDS, partnerScales, mountPartnerMeter, sectionsHTML, mountMeters, loadBoxes, loadCompanions, scaleOfWord: (v, g) => { const t = (v.tags || []).find(t => isScale(t) && (!g || scaleSplit(t).g === g)); return t ? scaleSplit(t) : null; }, TAG_TYPES: TYPES, TAG_THEMES: THEME_ICONS, playClip, stopClip, media, watchClips, tile, autoSyl, blankify, load, mapItems, G5, LANGS };
 })();

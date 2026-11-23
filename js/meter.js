@@ -1,6 +1,7 @@
 // Helper Academy — Feeling meter (jQuery): slide along a scale of words, from one pole to the other.
 // A big face changes with the strength, the words at that level pop up, and each can be heard or added.
-// Meter.mount(el, {title, left, right, two, levels:[{rank, items:[wordIndex]}], start, onAdd(i), onSay(i), addLabel})
+// Meter.mount(el, {title, left, right, two, levels:[{rank, items:[wordIndex]}], start, onAdd(i), onSay(i), addLabel, words})
+//   words: optional list of {w, d, emoji} to use instead of window.WORDS (e.g. word partners: light rain … pouring rain)
 (function ($) {
   if (!$) return;
   const FACES = {
@@ -63,7 +64,7 @@
     return r <= 0 ? "hsl(145 60% 90%)" : `hsl(${45 - a * 9} 90% ${92 - a * 5}%)`; }
   function mount(el, o) {
     if (!document.getElementById("meter-css")) $("head").append(`<style id="meter-css">${css}</style>`);
-    const D = window.WORDS || [], L = (o.levels || []).slice().sort((a, b) => a.rank - b.rank);
+    const D = o.words || window.WORDS || [], L = (o.levels || []).slice().sort((a, b) => a.rank - b.rank);
     if (!L.length) { $(el).empty(); return null; }
     const faces = FACES[String(o.title || "").toLowerCase()] || {};
     const X = new Set(o.extra || []);   // words from outside this list, shown to complete the scale

@@ -113,3 +113,26 @@ Unique: d: *truly* unique | n: unique *chance*
 """
 
 ADVERBS = "Relentlessly Deliberately Simultaneously Consistently Apparently Intentionally Constantly Always Seemingly Accidentally".split()
+
+# Partner meters (v33): partners that are steps on one scale, from weak to strong.
+#   Head|meter name (no colon)|kind|phrase:partner:rank, …   (new phrases are added; existing ones get the tag)
+PARTNER_SCALES = """
+Rain|Rain · light → pouring|adjective|light rain:light:1, steady rain:steady:3, heavy rain:heavy:4, pouring rain:pouring:5
+Wind|Wind · gentle → howling|adjective|gentle wind:gentle:1, strong wind:strong:4, howling wind:howling:5
+Storm|Storm · mild → violent|adjective|mild storm:mild:1, heavy storm:heavy:4, violent storm:violent:5
+Snow|Snow · light → heavy|adjective|light snow:light:1, steady snow:steady:3, heavy snow:heavy:5
+Sun|Sun · weak → blazing|adjective|weak sun:weak:1, bright sun:bright:3, hot sun:hot:4, blazing sun:blazing:5
+Noise|Noise · faint → deafening|adjective|faint noise:faint:1, loud noise:loud:4, deafening noise:deafening:5
+Voice|Voice · whispering → booming|adjective|whispering voice:whispering:0, soft voice:soft:1, quiet voice:quiet:2, loud voice:loud:4, booming voice:booming:5
+Speak|Speak · whisper → shout|adverb|speak in a whisper:in a whisper:0, speak softly:softly:1, speak loudly:loudly:4, speak at the top of your voice:at the top of your voice:5
+Laugh|Laugh · quietly → loudly|adverb|laugh quietly:quietly:1, laugh happily:happily:3, laugh loudly:loudly:4
+Mistake|Mistake · tiny → terrible|adjective|tiny mistake:tiny:0, silly mistake:silly:1, careless mistake:careless:2, big mistake:big:4, terrible mistake:terrible:5
+Trouble|Trouble · a little → serious|adjective|a little trouble:a little:1, big trouble:big:4, serious trouble:serious:5
+Effort|Effort · small → great|adjective|small effort:small:1, real effort:real:3, big effort:big:4, great effort:great:5
+Idea|Idea · bad ⇄ brilliant|adjective|bad idea:bad:-3, good idea:good:2, clever idea:clever:4, great idea:great:4, brilliant idea:brilliant:5
+Fun|Fun · a little → great|adjective|a little fun:a little:1, lots of fun:lots of:4, great fun:great:5
+Impact|Impact · small → huge|adjective|small impact:small:1, big impact:big:3, huge impact:huge:5
+Nervous|Nervous · a bit → very|adverb|a bit nervous:a bit:1, very nervous:very:4
+Fortunate|Fortunate · very → extremely|adverb|very fortunate:very:3, extremely fortunate:extremely:5
+Obvious|Obvious · very → perfectly|adverb|very obvious:very:3, perfectly obvious:perfectly:5
+"""

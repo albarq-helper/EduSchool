@@ -118,7 +118,7 @@
 .bk .was{font:700 .72rem var(--f-body);color:var(--muted)}
 .bk .wxbtn{border:0;background:transparent;cursor:pointer;font-size:1rem;padding:2px}
 </style>
-<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261123g"></script><script src="js/icons.js?v=20261123g"></script><script src="js/app.js?v=20261123g"></script><script src="js/sets.js?v=20261123g"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261123g"></script><script src="js/storycore.js?v=20261123g"></script><script src="js/montage.js?v=20261123g"></script>
+<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261123h"></script><script src="js/icons.js?v=20261123h"></script><script src="js/app.js?v=20261123h"></script><script src="js/sets.js?v=20261123h"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261123h"></script><script src="js/storycore.js?v=20261123h"></script><script src="js/montage.js?v=20261123h"></script>
 </head><body>
 <div class="wrap" style="max-width:1280px">
   <div class="head2">
@@ -389,11 +389,14 @@ function drawWX(){const b=CUR.blocks[WX.k],i=wi(b.w),v=D[i]||{},G=WX.G=wxGroups(
   else if(t.s)body=`<p class="muted">Slide to a softer or stronger word, then press <b>↺ Use this word</b>.</p><div id="wxMeter"></div>`;
   else if(t.id==="sim"||t.id==="opp")body=`<p class="muted">${t.id==="sim"?"Words that mean nearly the same. Which one fits your story best?":"Words that mean the opposite. What happens if you use one?"}</p><div class="wxlist">${(t.id==="sim"?G.sim:G.opp).map(j=>`<button type="button" class="wxw" data-use="${j}"><span>${esc(D[j].emoji||"")} <b>${esc(nmw(j))}</b></span><small>${esc(D[j].d||"")}</small><em>↺ Use</em></button>`).join("")}</div>`;
   else{const K=Sets.PARTNER_KINDS.filter(([k])=>k!=="saying");const have=new Set((b.p||[]).map(x=>x.toLowerCase()));
-    body=`<p class="muted">Tap to add a partner to <b>${esc(nmw(i))}</b>. Tap again to take it off.</p>`+K.map(([k,lab,hint])=>{const xs=G.partners.filter(x=>x.kind===k);return xs.length?`<div class="wxpr"><span class="wxk">${lab}${hint?` <small>${hint}</small>`:""}</span>${xs.map(x=>`<button type="button" class="wxp${have.has(x.phrase.toLowerCase())?" on":""}" data-sub="${esc(x.phrase)}">${x.kind==="idiom"?"💬 ":""}${esc(x.phrase)}</button>`).join("")}</div>`:"";}).join("");}
+    const SC=Sets.partnerScales(G.partners),onM=new Set(SC.flatMap(s=>s.items.map(x=>x.phrase)));
+    body=`<p class="muted">Tap to add a partner to <b>${esc(nmw(i))}</b>. Tap again to take it off.</p>`+SC.map((s,n)=>`<div class="wxpr"><span class="wxk">🎚️ ${esc(s.g.split(" · ")[0])} meter <small>how strong?</small></span></div><div id="wxpm${n}"></div>`).join("")+K.map(([k,lab,hint])=>{const xs=G.partners.filter(x=>x.kind===k&&!onM.has(x.phrase));return xs.length?`<div class="wxpr"><span class="wxk">${lab}${hint?` <small>${hint}</small>`:""}</span>${xs.map(x=>`<button type="button" class="wxp${have.has(x.phrase.toLowerCase())?" on":""}" data-sub="${esc(x.phrase)}">${x.kind==="idiom"?"💬 ":""}${esc(x.phrase)}</button>`).join("")}</div>`:"";}).join("");}
   $("wxBody").innerHTML=`<div class="wxhead">${Sets.media(v,{cls:"wxpic",alt:""})}<div><h3>${esc(nmw(i))}</h3><p>${esc(v.d||"")}</p>
       ${b.from?`<p class="wxfrom">↺ You first chose <b>${esc(clean(b.from))}</b>. <button type="button" class="btn small" data-back="1">Go back to ${esc(clean(b.from))}</button></p>`:""}
       ${subs?`<div class="wxsubs">With: ${subs}</div>`:""}</div></div>
     <div class="wxtabs" role="tablist">${tabs.map(x=>`<button type="button" role="tab" class="wxt" data-wxt="${x.id}" aria-selected="${x.id===WX.tab}">${esc(x.label)}</button>`).join("")}</div>${body}`;
+  if(t&&t.id==="par"){const have=(b.p||[]).map(x=>x.toLowerCase());Sets.partnerScales(G.partners).forEach((s,n)=>{const el=$("wxpm"+n);if(!el)return;const cur=s.items.find(x=>have.includes(x.phrase.toLowerCase()));
+    Sets.mountPartnerMeter(el,s,{emoji:v.emoji,start:cur?cur.r:undefined,addLabel:`+ Use with ${nmw(i)}`,onAdd:x=>{b.p=(b.p||[]).filter(p=>!s.items.some(y=>y.phrase.toLowerCase()===p.toLowerCase()));if(b.p.length<4)b.p.push(x.phrase);changed();drawBoard();drawWX();}});});}
   if(t&&t.s){const all=D.map((_,j)=>j),byR=new Map();
     all.forEach(j=>(D[j].tags||[]).forEach(tt=>{const m=tt.replace(/^📶\s*/,"").match(/^(.*):\s*([+-]?\d+)$/);if(/^📶\s/.test(tt)&&m&&m[1].trim()===t.s.g){const r=+m[2];if(!byR.has(r))byR.set(r,[]);if(!byR.get(r).some(x=>sameName(x,j)))byR.get(r).push(j);}}));
     const levels=[...byR].map(([rank,items])=>({rank,items})),ends=t.s.g.split(/\s*(?:→|⇄)\s*/);

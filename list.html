@@ -111,11 +111,12 @@ input.ok,textarea.ok{border-color:var(--good)!important;background:var(--good-so
 .partners .pk small{font-weight:600;opacity:.8}
 .partners .pc{display:inline-flex;align-items:center;gap:4px;border:1.5px solid var(--rule);border-radius:999px;padding:2px 9px;background:var(--sheet);color:var(--ink)}
 .partners .pc b{color:var(--accent)}
+.partners .arr{color:var(--muted);font-weight:800}.partners .pmeter{margin:6px 0}
 .partners a.pc,.partners button.pc{cursor:pointer;text-decoration:none;font:inherit}
 .partners a.pc:hover,.partners button.pc:hover{border-color:var(--accent)}
 @media print{.partners .pc{border:0;padding:0 4px}}
 </style>
-<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261123g"></script><script src="js/icons.js?v=20261123g"></script><script src="js/app.js?v=20261123g"></script><script src="js/sets.js?v=20261123g"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261123g"></script>
+<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261123h"></script><script src="js/icons.js?v=20261123h"></script><script src="js/app.js?v=20261123h"></script><script src="js/sets.js?v=20261123h"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261123h"></script>
 </head><body>
 <div class="wrap" style="max-width:1180px">
   <div class="head2">
@@ -254,7 +255,9 @@ function partnerChip(x,mode){const inner=mode==="word"?`<b>${esc(x.link?x.link.w
   if(!x.link.set){const k=wordIndex(x.link.w);return k>=0?`<button type="button" class="pc" data-pw="${k}" title="Go to ${esc(x.link.w)}">${inner} ↓</button>`:`<span class="pc">${inner}</span>`;}
   const q=new URLSearchParams({set:x.link.set,w:x.link.w});return `<a class="pc" href="list.html?${q}" target="_blank" rel="noopener" title="Open ${esc(x.link.w)} in a new tab">${inner} ↗</a>`;}
 function partnersHTML(i,v){if(wordHidden(i)||!v.wid)return "";const P=PARTNERS.get(v.wid);if(!P||!(P.own.length||P.also.length))return "";
-  const rows=Sets.PARTNER_KINDS.map(([k,lab,hint])=>{const xs=P.own.filter(x=>x.kind===k);return xs.length?`<div class="pr"><span class="pk">${lab}${hint?` <small>${hint}</small>`:""}</span>${xs.map(x=>partnerChip(x)).join("")}</div>`:"";}).join("");
+  const SC=Sets.partnerScales(P.own),onMeter=new Set(SC.flatMap(s=>s.items.map(x=>x.phrase)));
+  const meters=SC.map((s,n)=>`<div class="pr"><span class="pk">🎚️ ${esc(s.g.split(" · ")[0])} meter</span>${s.items.map(x=>`<span class="pc"><b>${esc(x.partner)}</b>&nbsp;${esc(x.phrase.replace(new RegExp(x.partner.replace(/[.*+?^${}()|[\]\\]/g,"\\$&"),"i"),"").trim())}</span>`).join('<span class="arr">→</span>')}<button type="button" class="pc pmb" data-pm="${i}|${n}">🎚️ Open meter</button></div><div class="pmeter" id="pm-${i}-${n}" hidden></div>`).join("");
+  const rows=meters+Sets.PARTNER_KINDS.map(([k,lab,hint])=>{const xs=P.own.filter(x=>x.kind===k&&!onMeter.has(x.phrase));return xs.length?`<div class="pr"><span class="pk">${lab}${hint?` <small>${hint}</small>`:""}</span>${xs.map(x=>partnerChip(x)).join("")}</div>`:"";}).join("");
   const also=P.also.length?(v.author?`<div class="pr"><span class="pk">📖 Words in this saying</span>${P.also.map(x=>partnerChip(x,"word")).join("")}</div>`:`<div class="pr"><span class="pk">🔁 Also used in</span>${P.also.map(x=>partnerChip(x)).join("")}</div>`):"";
   return `<div class="partners"><span class="ph">${v.author?"🔗 Linked words":"🔗 Goes with"}</span>${rows}${also}</div>`;}
 // ---- views ----
@@ -292,6 +295,8 @@ function check(i){const inp=$("out").querySelector(`[data-spell="${i}"]`);const 
   Object.assign(S(i),{typed,ok:norm(typed)===norm(D[i].w)});rerender(i);return true;}
 $("out").addEventListener("click",e=>{const b=e.target.closest("[data-gk]");if(!b)return;jumpTo(b.dataset.gk,b.dataset.gt,+b.dataset.gi);});
 $("out").addEventListener("click",e=>{const b=e.target.closest("[data-pw]");if(!b)return;showWord(+b.dataset.pw);});
+$("out").addEventListener("click",e=>{const b=e.target.closest("[data-pm]");if(!b)return;const [i,n]=b.dataset.pm.split("|").map(Number),el=$(`pm-${i}-${n}`);if(!el)return;
+  el.hidden=!el.hidden;b.textContent=el.hidden?"🎚️ Open meter":"✕ Close meter";if(!el.hidden&&!el.dataset.on){el.dataset.on=1;const v=D[i],sc=Sets.partnerScales(PARTNERS.get(v.wid).own)[n];Sets.mountPartnerMeter(el,sc,{emoji:v.emoji});}});
 $("out").addEventListener("click",e=>{const b=e.target.closest("[data-hear],[data-check],[data-giveup],[data-again],[data-mshow],[data-self],[data-cw],[data-cm]");if(!b)return;
   if(b.dataset.hear!==undefined){hear(+b.dataset.hear);return;}
   if(b.dataset.cw!==undefined){const i=+b.dataset.cw,s=S(i);if(s.cw){delete s.cw;delete s.typed;delete s.ok;rerender(i);}else{s.cw=true;rerender(i,"[data-spell]");}return;}

@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Word Games · Helper Academy</title><link rel="icon" href="assets/icons/brilliant.png"><style>*,*::before,*::after{box-sizing:border-box}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style><script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261123g"></script><script src="js/icons.js?v=20261123g"></script><script src="js/app.js?v=20261123g"></script><script src="js/sets.js?v=20261123g"></script></head><body><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=Noto+Naskh+Arabic:wght@600&display=swap">
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Word Games · Helper Academy</title><link rel="icon" href="assets/icons/brilliant.png"><style>*,*::before,*::after{box-sizing:border-box}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style><script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261123h"></script><script src="js/icons.js?v=20261123h"></script><script src="js/app.js?v=20261123h"></script><script src="js/sets.js?v=20261123h"></script></head><body><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=Noto+Naskh+Arabic:wght@600&display=swap">
 <style>
 /* Layout: one column; game tabs; a board of target cards above a sticky word tray. Same ink-and-paper tokens as the exam page. */
 :root{
@@ -413,8 +413,13 @@ function meterQs(P,n){const seen=new Set(),out=[];
     const ranks=[...byR.keys()];if(ranks.length<3)continue;seen.add(s.g);
     const use=pick(ranks.filter(r=>r!==s.r),Math.min(4,ranks.length-1)).concat([s.r]).sort((a,b)=>a-b);
     const words=use.map(r=>r===s.r?i:byR.get(r)[Math.floor(Math.random()*byR.get(r).length)]);
-    const ends=s.g.split(/\s*(?:→|⇄)\s*/);out.push({i,g:s.g,left:ends[0],right:ends[1]||"",items:words.map((j,k)=>({j,r:use[k]}))});}
-  return out;}
+    const ends=s.g.split(/\s*(?:→|⇄)\s*/);out.push({i,g:s.g,left:ends[0],right:ends[1]||"",items:words.map((j,k)=>({j,name:nm(j),emoji:DATA[j].emoji||"",r:use[k]}))});}
+  // partner meters: light rain → pouring rain
+  const M=window.PARTNERS_MAP;if(M)for(const i of shuffle(P)){if(out.length>=n)break;const o=M.get(DATA[i].wid);if(!o)continue;
+    for(const sc of Sets.partnerScales(o.own)){if(seen.has(sc.g)||out.length>=n)continue;const byR=new Map();sc.items.forEach(x=>{if(!byR.has(x.r))byR.set(x.r,x);});
+      const ranks=[...byR.keys()].sort((a,b)=>a-b);if(ranks.length<3)continue;seen.add(sc.g);const use=pick(ranks,Math.min(5,ranks.length)).sort((a,b)=>a-b);
+      out.push({i,g:sc.g,left:sc.left,right:sc.right,items:use.map(r=>({j:i,name:byR.get(r).phrase,emoji:"",r}))});}}
+  return shuffle(out);}
 let Q=null;
 function newRound(kind){
   const P=pool();if(kind==="meter"){const qs=meterQs(P,4);Q={kind,qs,k:0,right:0,missed:[],ans:[]};if(!qs.length)return noQ(kind);return meterShow();}
@@ -437,17 +442,17 @@ function meterShow(){const q=Q.qs[Q.k];q.built=[];const order=shuffle(q.items.ma
   $("#game").innerHTML=`<div class="mq"><span class="prog">Meter ${Q.k+1} of ${Q.qs.length}</span>
     <div class="mqp">Put these words in order on the <b>${esc(q.g)}</b> meter, from <b>${esc(q.left)}</b> to <b>${esc(q.right)}</b>.</div>
     <div class="mline"><span class="end">${esc(q.left)}</span><div class="mslots" id="mslots">${q.items.map(()=>`<span class="ms"></span>`).join("")}</div><span class="end">${esc(q.right)}</span></div>
-    <div class="chips" id="mbank">${order.map(k=>`<button type="button" class="chip" data-m="${k}">${esc(DATA[q.items[k].j].emoji||"")} ${esc(nm(q.items[k].j))}</button>`).join("")}</div>
+    <div class="chips" id="mbank">${order.map(k=>`<button type="button" class="chip" data-m="${k}">${esc(q.items[k].emoji)} ${esc(q.items[k].name)}</button>`).join("")}</div>
     <div class="trayrow"><button class="btn" id="mundo">Undo</button><button class="btn primary" id="mcheck" disabled>Check</button></div><div id="mqmsg"></div></div><div id="result"></div>`;
-  const draw=()=>{const sl=[...document.querySelectorAll("#mslots .ms")];sl.forEach((s,k)=>{const m=q.built[k];s.innerHTML=m===undefined?"":`<span class="chip">${esc(nm(q.items[m].j))}</span>`;});
+  const draw=()=>{const sl=[...document.querySelectorAll("#mslots .ms")];sl.forEach((s,k)=>{const m=q.built[k];s.innerHTML=m===undefined?"":`<span class="chip">${esc(q.items[m].name)}</span>`;});
     document.querySelectorAll("#mbank .chip").forEach(c=>c.disabled=q.built.includes(+c.dataset.m));$("#mcheck").disabled=q.built.length!==q.items.length;};
   $("#mbank").onclick=e=>{const c=e.target.closest(".chip");if(!c||q.done||c.disabled)return;q.built.push(+c.dataset.m);draw();};
   $("#mundo").onclick=()=>{if(q.done)return;q.built.pop();draw();};
   $("#mcheck").onclick=()=>{q.done=true;const ok=q.built.every((m,k)=>m===k),v=DATA[q.i];
     [...document.querySelectorAll("#mslots .ms")].forEach((s,k)=>s.classList.add(q.built[k]===k?"ok":"no"));
-    if(ok){Q.right++;markRight(q.i);}else Q.missed.push(q.i);Q.ans.push({word:v.w,unit:v.u,given:q.built.map(m=>nm(q.items[m].j)).join(" < "),correct:ok});
+    if(ok){Q.right++;markRight(q.i);}else Q.missed.push(q.i);Q.ans.push({word:v.w,unit:v.u,given:q.built.map(m=>q.items[m].name).join(" < "),correct:ok});
     $("#mqmsg").innerHTML=`<div class="review"><span class="msg ${ok?"ok":"no"}">${ok?"Correct!":"Not quite. The right order:"}</span>
-      <span>${q.items.map(x=>`<b>${esc(nm(x.j))}</b> <small class="muted">(${x.r>0&&/⇄/.test(q.g)?"+":""}${x.r})</small>`).join(" → ")}</span>
+      <span>${q.items.map(x=>`<b>${esc(x.name)}</b> <small class="muted">(${x.r>0&&/⇄/.test(q.g)?"+":""}${x.r})</small>`).join(" → ")}</span>
       <div><button class="btn primary" id="mqnext">${Q.k+1<Q.qs.length?"Next meter":"See score"}</button></div></div>`;$("#mqnext").onclick=mcqNext;$("#mcheck").disabled=true;};}
 /* which new tabs this set can play (after extra words and partners have loaded) */
 async function setupNewGames(){
