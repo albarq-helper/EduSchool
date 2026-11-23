@@ -275,8 +275,8 @@ function partnersHTML(i,v){if(wordHidden(i)||!v.wid)return "";const P=PARTNERS.g
   const also=P.also.length?(v.author?`<div class="pr"><span class="pk">📖 Words in this saying</span>${P.also.map(x=>partnerChip(x,"word")).join("")}</div>`:`<div class="pr"><span class="pk">🔁 Also used in</span>${P.also.map(x=>partnerChip(x)).join("")}</div>`):"";
   return `<div class="partners">${rows}${also}</div>`;}
 // ---- the card's "explore" row: Word family · Goes with · Sayings, each opens in place (one at a time) ----
-const SAYSET="00000000-0000-4000-8000-000000005a1d";let SAYS=[];
-App.client.from("set_items").select("term,author,meaning,tags").eq("set_id",SAYSET).then(r=>{SAYS=((r&&r.data)||[]).filter(x=>x.author);if(SAYS.length)render();},()=>{});
+const SAYSET="00000000-0000-4000-8000-000000009007";let SAYS=[];
+App.client.from("set_items").select("term,author,meaning,tags").eq("set_id",SAYSET).then(r=>{SAYS=((r&&r.data)||[]).filter(x=>x.author||(x.tags||[]).some(t=>/^(≈|⇄)\s/.test(t)));if(SAYS.length)render();},()=>{});
 // sayings with the same idea: shared similar-words group (≈) or opposite side (⇄), or the saying uses the word; best first
 function sayingsFor(v){if(v.author||!SAYS.length)return [];const idea=t=>/^(≈|⇄)\s/.test(t),own=(v.tags||[]).filter(idea),out=[];
   SAYS.forEach(s=>{if(s.term===v.w)return;const n=(s.tags||[]).filter(t=>idea(t)&&own.includes(t)).length;if(n)out.push({s,n});});
