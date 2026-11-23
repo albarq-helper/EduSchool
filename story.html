@@ -92,8 +92,33 @@
 .parent textarea{width:100%;min-height:140px;font:14px/1.5 var(--f-body);padding:10px;border:1px solid var(--rule);border-radius:10px;background:var(--paper);color:var(--ink)}
 .parent .step{margin-top:12px}.parent .step b{display:block;margin-bottom:4px}
 .parent input[type=text]{width:100%;max-width:40rem}
+#wxDlg{border:0;border-radius:18px;padding:0;width:min(720px,calc(100vw - 24px));max-height:calc(100vh - 32px);background:var(--sheet);color:var(--ink);box-shadow:0 20px 50px rgba(0,0,0,.3)}
+#wxDlg::backdrop{background:rgba(15,20,35,.45)}
+#wxDlg .wxin{padding:18px;display:grid;gap:12px;position:relative}
+#wxDlg .close{position:absolute;top:12px;right:12px}
+.wxhead{display:grid;grid-template-columns:90px 1fr;gap:14px;align-items:start;padding-right:70px}
+.wxhead .wxpic{width:90px;height:90px;border-radius:12px;object-fit:cover}
+.wxhead h3{margin:0;font:800 1.5rem var(--f-display)}.wxhead p{margin:2px 0}
+.wxfrom{font-size:.9rem;background:var(--sky-soft,#e8f0ff);border-radius:10px;padding:6px 10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.wxsubs{display:flex;gap:6px;flex-wrap:wrap;align-items:center;font:700 .85rem var(--f-body)}
+.wxsub{background:var(--chip,#fff3d6);border:1.5px solid var(--chip-edge,#e7b84a);border-radius:999px;padding:2px 4px 2px 10px}
+.wxsub button{border:0;background:transparent;cursor:pointer;font-weight:800}
+.wxtabs{display:flex;gap:6px;flex-wrap:wrap}
+.wxt{font:700 .88rem var(--f-body);padding:7px 12px;border-radius:999px;border:1.5px solid var(--rule);background:var(--paper);color:var(--ink);cursor:pointer}
+.wxt[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+.wxlist{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}
+.wxw{display:grid;gap:2px;text-align:left;padding:10px 12px;border-radius:12px;border:1.5px solid var(--rule);background:var(--paper);color:var(--ink);cursor:pointer;font:inherit}
+.wxw:hover{border-color:var(--accent)}.wxw small{color:var(--muted);font-size:.8rem}.wxw em{font:800 .8rem var(--f-body);color:var(--accent);font-style:normal}
+.wxpr{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:6px}
+.wxk{font:700 .8rem var(--f-body);color:var(--muted);min-width:9em}
+.wxp{font:600 .92rem var(--f-body);padding:5px 11px;border-radius:999px;border:1.5px solid var(--rule);background:var(--paper);color:var(--ink);cursor:pointer}
+.wxp.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.bk .subs{display:flex;gap:4px;flex-wrap:wrap;margin-top:3px}
+.bk .subs span{font:700 .74rem var(--f-body);background:var(--chip,#fff3d6);border:1px solid var(--chip-edge,#e7b84a);border-radius:999px;padding:0 7px}
+.bk .was{font:700 .72rem var(--f-body);color:var(--muted)}
+.bk .wxbtn{border:0;background:transparent;cursor:pointer;font-size:1rem;padding:2px}
 </style>
-<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261123e"></script><script src="js/icons.js?v=20261123e"></script><script src="js/app.js?v=20261123e"></script><script src="js/sets.js?v=20261123e"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261123e"></script><script src="js/storycore.js?v=20261123e"></script><script src="js/montage.js?v=20261123e"></script>
+<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261123f"></script><script src="js/icons.js?v=20261123f"></script><script src="js/app.js?v=20261123f"></script><script src="js/sets.js?v=20261123f"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261123f"></script><script src="js/storycore.js?v=20261123f"></script><script src="js/montage.js?v=20261123f"></script>
 </head><body>
 <div class="wrap" style="max-width:1280px">
   <div class="head2">
@@ -126,6 +151,7 @@
   <section class="panel read" id="read" hidden></section>
   
 </div>
+<dialog id="wxDlg" aria-label="Word explorer"><div class="wxin"><button class="btn small close" type="button" id="wxClose">✕ Close</button><div id="wxBody"></div></div></dialog>
 <dialog id="infoDlg" aria-labelledby="infoTitle"><div class="ib"><button class="btn small close" type="button" id="infoClose">✕ Close</button>
   <h2 id="infoTitle">How the Story builder works</h2>
   <p>Build your own story from vocabulary words: pick them, put them in order, add your own words and scenes. Then send it to your parent, who turns it into a finished story and a movie.</p>
@@ -164,7 +190,7 @@ $("boxes").onclick=e=>{const b=e.target.closest("[data-box]");if(b){$("q").value
 // add a library word: linking words become the student's own words; others are vocabulary words
 function addIdx(i,at){const v=D[i];if(!v)return;addBlock(v.boxKind==="link"?{k:"t",t:clean(v.w)}:(v.boxKind==="sayings"||v.author)?{k:"q",w:v.w,a:v.author||"",by:"Voice-over"}:{k:"w",w:v.w},at);}
 // who can say a famous saying: a voice-over, or the people and animals already in the story
-function speakers(){const s=new Set(["Voice-over","Narrator"]);(CUR?.blocks||[]).forEach(b=>{if(b.k==="q"&&(b.by||"").trim())s.add(b.by.trim());if(b.k!=="w")return;const v=D[wi(b.w)];if(v&&(v.tags||[]).some(t=>t==="Naming: people"||t==="Animals"))s.add(clean(b.w));});return [...s];}
+function speakers(){const s=new Set(["Voice-over","Narrator","A wise old man","A wise old woman","A wise owl","Grandma","Grandpa","The teacher"]);(CUR?.blocks||[]).forEach(b=>{if(b.k==="q"&&(b.by||"").trim())s.add(b.by.trim());if(b.k!=="w")return;const v=D[wi(b.w)];if(v&&(v.tags||[]).some(t=>t==="Naming: people"||t==="Animals"))s.add(clean(b.w));});return [...s];}
 const QUICK=["One day,","Then","Suddenly,","After that,","Because","But","In the end,"];
 const STATUS=StoryCore.STATUS;
 // Levels 1-10: what she must do (checked here, free) and how many small mistakes the AI allows (tol).
@@ -242,7 +268,7 @@ function drawBoard(){const B=CUR?CUR.blocks:[];let scene=1,n=0;
     if(b.k==="s"){scene++;rows.push(`<li class="scene bk-s" data-k="${k}" draggable="true">Scene ${scene}${ctl}</li>`);return;}
     n++;const cls=`bk ${b.k}${k===SEL?" sel":""}`,grip=`<span class="grip" title="Drag to move">${icon("grip-vertical",16)}</span><span class="num">${n}</span>`;
     if(b.k==="w"){const i=wi(b.w),v=D[i];
-      rows.push(`<li class="${cls}" data-k="${k}" draggable="true">${grip}${v?(v.vid?`<video class="th" src="${esc(v.vid)}" muted loop playsinline preload="none" data-auto></video>`:`<img class="th" src="${esc(v.img)}" alt="">`):""}<span class="tx"><b>${esc(clean(b.w))}</b><small>${esc(v?v.d:"")}</small></span>${ctl}</li>`);}
+      rows.push(`<li class="${cls}" data-k="${k}" draggable="true">${grip}${v?(v.vid?`<video class="th" src="${esc(v.vid)}" muted loop playsinline preload="none" data-auto></video>`:`<img class="th" src="${esc(v.img)}" alt="">`):""}<span class="tx"><b>${esc(clean(b.w))}</b>${b.from?`<span class="was">↺ instead of ${esc(clean(b.from))}</span>`:""}<small>${esc(v?v.d:"")}</small>${(b.p||[]).length?`<span class="subs">${b.p.map(x=>`<span>${esc(x)}</span>`).join("")}</span>`:""}</span><button type="button" class="wxbtn" data-wx="${k}" title="Explore: stronger, softer, similar, opposite, partners" aria-label="Explore this word">🔍</button>${ctl}</li>`);}
     else if(b.k==="q")rows.push(`<li class="${cls}" data-k="${k}" draggable="true">${grip}<span class="th qth">📜</span><span class="tx"><b class="qt">“${esc(b.w)}”</b><small>${esc(b.a||"")}</small><label class="by">🎙️ Who says it? <input value="${esc(b.by||"")}" list="speakerList" maxlength="60" placeholder="Voice-over, or a character" data-by="${k}"></label></span>${ctl}</li>`);
     else rows.push(`<li class="${cls}" data-k="${k}" draggable="true">${grip}<input value="${esc(b.t||"")}" maxlength="300" placeholder="Type your own words…" aria-label="My own words" data-t="${k}">${ctl}</li>`);});
   let SL=$("speakerList");if(!SL){SL=document.createElement("datalist");SL.id="speakerList";document.body.appendChild(SL);}
@@ -253,13 +279,16 @@ function drawPreview(){const B=CUR?CUR.blocks:[];if(!B.some(b=>b.k!=="s")){$("pr
   const S_=CUR.sentences||{},L=LV();
   if(L.mode!=="none"&&Object.values(S_).some(v=>(v||"").trim())){const its=items();
     $("preview").innerHTML=`<h3>My story so far</h3>`+scenesOf().map(x=>`<p><span class="muted">Scene ${x.n}:</span> ${its.filter(it=>it.scene===x.n).map(it=>esc((S_[it.key]||"").trim())).filter(Boolean).join(" ")||'<span class="muted">…</span>'}</p>`).join("");return;}
-  const sc=[[]];B.forEach(b=>b.k==="s"?sc.push([]):sc[sc.length-1].push(b.k==="w"?`<b>${esc(clean(b.w))}</b>`:b.k==="q"?`<i>${esc(b.by||"Voice-over")}: “${esc(b.w)}”</i>`:esc(b.t||"")));
+  const sc=[[]];B.forEach(b=>b.k==="s"?sc.push([]):sc[sc.length-1].push(b.k==="w"?`<b>${esc(clean(b.w))}</b>${(b.p||[]).length?` <i class="muted">(${esc(b.p.join(", "))})</i>`:""}`:b.k==="q"?`<i>${esc(b.by||"Voice-over")}: “${esc(b.w)}”</i>`:esc(b.t||"")));
   $("preview").innerHTML=`<h3>My story so far</h3>`+sc.filter(s=>s.length).map((s,k)=>`<p><span class="muted">Scene ${k+1}:</span> ${s.join(" ")}</p>`).join("");}
 function move(k,d){const B=CUR.blocks,j=k+d;if(j<0||j>=B.length)return;[B[k],B[j]]=[B[j],B[k]];SEL=j;changed();drawBoard();}
 $("board").addEventListener("click",e=>{const b=e.target.closest("button");
+  if(b?.dataset.wx!=null)return openWX(+b.dataset.wx);
   if(b?.dataset.up!=null)return move(+b.dataset.up,-1);if(b?.dataset.down!=null)return move(+b.dataset.down,1);
   if(b?.dataset.del!=null){CUR.blocks.splice(+b.dataset.del,1);SEL=Math.min(SEL,CUR.blocks.length-1);changed();return drawBoard();}
-  const li=e.target.closest("li[data-k]");if(li&&!e.target.closest("input")){SEL=+li.dataset.k===SEL?-1:+li.dataset.k;drawBoard();
+  const li=e.target.closest("li[data-k]");
+  if(li&&li.classList.contains("w")&&!e.target.closest("input,button")){const k=+li.dataset.k,now=Date.now();if(TAP.k===k&&now-TAP.t<450){TAP={};return openWX(k);}TAP={k,t:now};}
+  if(li&&!e.target.closest("input")){SEL=+li.dataset.k===SEL?-1:+li.dataset.k;drawBoard();
     const v=li.querySelector("video.th");if(v&&SEL>=0){const w=CUR.blocks[SEL];Sets.playClip(v,D[wi(w.w)]);}}});
 $("board").addEventListener("focusin",e=>{const i=e.target.closest("input[data-t]");if(i){SEL=+i.dataset.t;document.querySelectorAll(".bk.sel").forEach(x=>x.classList.remove("sel"));i.closest(".bk").classList.add("sel");}});
 $("board").addEventListener("input",e=>{const q=e.target.closest("input[data-by]");if(q){CUR.blocks[+q.dataset.by].by=q.value;changed();drawPreview();return;}const i=e.target.closest("input[data-t]");if(!i)return;CUR.blocks[+i.dataset.t].t=i.value;changed();drawPreview();drawChecks();});
@@ -327,6 +356,64 @@ $("read").addEventListener("click",e=>{const m=e.target.closest("mark[data-i]");
 
 $("infoLevels").innerHTML=LEVELS.slice(1).map((L,k)=>`<tr><td>${k+1}</td><td>${esc(L.n)}</td><td>${esc(L.d)}</td></tr>`).join("");
 document.addEventListener("click",e=>{if(e.target.closest("[data-info]")){e.preventDefault();$("infoDlg").showModal();}});
+// ---------- Word explorer: double-click / long-press / 🔍 on a word in the story ----------
+// Meters (slider: pick a stronger or softer word), similar words, opposites → replace the word (we remember the first choice in b.from).
+// Goes with (adjectives, adverbs, verbs, nouns, idioms) → add as sub words of this word (b.p = ["heavy rain", …]).
+let WX=null;
+const nmw=i=>clean(D[i]?D[i].w:"");
+const sameName=(i,j)=>nmw(i).toLowerCase()===nmw(j).toLowerCase();
+function uniqIdx(list,not){const seen=new Set([String(nmw(not)).toLowerCase()]);return list.filter(j=>{const k=nmw(j).toLowerCase();if(!k||seen.has(k))return false;seen.add(k);return true;});}
+function wxGroups(i){const v=D[i],T=v.tags||[],all=D.map((_,j)=>j);
+  const scales=T.filter(t=>/^📶\s/.test(t)).map(t=>{const m=t.replace(/^📶\s*/,"").match(/^(.*):\s*([+-]?\d+)$/);return m?{g:m[1].trim(),r:+m[2]}:null;}).filter(Boolean);
+  const sims=T.filter(t=>/^≈\s/.test(t));
+  const opps=T.filter(t=>/^⇄\s/.test(t)).map(t=>{const m=t.replace(/^⇄\s*/,"").match(/^(.*):\s*(.*)$/);return m?{g:m[1].trim(),side:m[2].trim()}:null;}).filter(Boolean);
+  const sim=uniqIdx(all.filter(j=>j!==i&&(D[j].tags||[]).some(t=>sims.includes(t))),i);
+  const opp=uniqIdx(all.filter(j=>(D[j].tags||[]).some(t=>opps.some(o=>t.startsWith("⇄ "+o.g+":")&&!t.endsWith(": "+o.side)))),i);
+  const P=(window.PARTNERS_MAP&&v.wid&&window.PARTNERS_MAP.get(v.wid))||{own:[],also:[]};
+  return {scales,sim,opp,partners:P.own.filter(x=>x.kind!=="saying")};}
+function openWX(k){const b=CUR&&CUR.blocks[k];if(!b||b.k!=="w")return;const i=wi(b.w);if(i<0)return;
+  const G=wxGroups(i),tabs=[];
+  G.scales.forEach((s,n)=>tabs.push({id:"m"+n,label:"🎚️ "+s.g,s}));
+  if(G.sim.length)tabs.push({id:"sim",label:"≈ Similar words"});
+  if(G.opp.length)tabs.push({id:"opp",label:"⇄ Opposites"});
+  if(G.partners.length)tabs.push({id:"par",label:"🔗 Goes with"});
+  WX={k,i,G,tabs,tab:(tabs[0]||{}).id};drawWX();$("wxDlg").showModal();}
+function drawWX(){const b=CUR.blocks[WX.k],i=wi(b.w),v=D[i]||{},G=WX.G=wxGroups(i);
+  const tabs=WX.tabs;if(!tabs.some(t=>t.id===WX.tab))WX.tab=(tabs[0]||{}).id;
+  const subs=(b.p||[]).map((p,n)=>`<span class="wxsub">${esc(p)} <button type="button" data-unsub="${n}" aria-label="Remove ${esc(p)}">✕</button></span>`).join("");
+  let body="";const t=tabs.find(x=>x.id===WX.tab);
+  if(!t)body=`<p class="muted">This word has no meter, similar words, opposites or partners yet.</p>`;
+  else if(t.s)body=`<p class="muted">Slide to a softer or stronger word, then press <b>↺ Use this word</b>.</p><div id="wxMeter"></div>`;
+  else if(t.id==="sim"||t.id==="opp")body=`<p class="muted">${t.id==="sim"?"Words that mean nearly the same. Which one fits your story best?":"Words that mean the opposite. What happens if you use one?"}</p><div class="wxlist">${(t.id==="sim"?G.sim:G.opp).map(j=>`<button type="button" class="wxw" data-use="${j}"><span>${esc(D[j].emoji||"")} <b>${esc(nmw(j))}</b></span><small>${esc(D[j].d||"")}</small><em>↺ Use</em></button>`).join("")}</div>`;
+  else{const K=Sets.PARTNER_KINDS.filter(([k])=>k!=="saying");const have=new Set((b.p||[]).map(x=>x.toLowerCase()));
+    body=`<p class="muted">Tap to add a partner to <b>${esc(nmw(i))}</b>. Tap again to take it off.</p>`+K.map(([k,lab,hint])=>{const xs=G.partners.filter(x=>x.kind===k);return xs.length?`<div class="wxpr"><span class="wxk">${lab}${hint?` <small>${hint}</small>`:""}</span>${xs.map(x=>`<button type="button" class="wxp${have.has(x.phrase.toLowerCase())?" on":""}" data-sub="${esc(x.phrase)}">${x.kind==="idiom"?"💬 ":""}${esc(x.phrase)}</button>`).join("")}</div>`:"";}).join("");}
+  $("wxBody").innerHTML=`<div class="wxhead">${Sets.media(v,{cls:"wxpic",alt:""})}<div><h3>${esc(nmw(i))}</h3><p>${esc(v.d||"")}</p>
+      ${b.from?`<p class="wxfrom">↺ You first chose <b>${esc(clean(b.from))}</b>. <button type="button" class="btn small" data-back="1">Go back to ${esc(clean(b.from))}</button></p>`:""}
+      ${subs?`<div class="wxsubs">With: ${subs}</div>`:""}</div></div>
+    <div class="wxtabs" role="tablist">${tabs.map(x=>`<button type="button" role="tab" class="wxt" data-wxt="${x.id}" aria-selected="${x.id===WX.tab}">${esc(x.label)}</button>`).join("")}</div>${body}`;
+  if(t&&t.s){const all=D.map((_,j)=>j),byR=new Map();
+    all.forEach(j=>(D[j].tags||[]).forEach(tt=>{const m=tt.replace(/^📶\s*/,"").match(/^(.*):\s*([+-]?\d+)$/);if(/^📶\s/.test(tt)&&m&&m[1].trim()===t.s.g){const r=+m[2];if(!byR.has(r))byR.set(r,[]);if(!byR.get(r).some(x=>sameName(x,j)))byR.get(r).push(j);}}));
+    const levels=[...byR].map(([rank,items])=>({rank,items})),ends=t.s.g.split(/\s*(?:→|⇄)\s*/);
+    const cur=Sets.scaleOfWord(D[i],t.s.g);
+    Meter.mount($("wxMeter"),{title:t.s.g,left:ends[0],right:ends[1]||"",two:levels.some(l=>l.rank<0),levels,start:cur?cur.r:t.s.r,addLabel:"↺ Use this word",onAdd:j=>replaceWord(j)});}}
+function replaceWord(j){const b=CUR.blocks[WX.k];if(!b||!D[j])return;const nw=D[j].w;if(nw===b.w)return;
+  if(!b.from)b.from=b.w;if(b.from===nw)delete b.from;b.w=nw;delete b.p;
+  changed();drawBoard();WX.i=j;WX.tabs=(()=>{const G=wxGroups(j),t=[];G.scales.forEach((s,n)=>t.push({id:"m"+n,label:"🎚️ "+s.g,s}));if(G.sim.length)t.push({id:"sim",label:"≈ Similar words"});if(G.opp.length)t.push({id:"opp",label:"⇄ Opposites"});if(G.partners.length)t.push({id:"par",label:"🔗 Goes with"});return t;})();
+  drawWX();App.status(`Now: ${clean(nw)}`,true);}
+$("wxBody").addEventListener("click",e=>{const b=CUR.blocks[WX.k];
+  const t=e.target.closest("[data-wxt]");if(t){WX.tab=t.dataset.wxt;drawWX();return;}
+  const u=e.target.closest("[data-use]");if(u){replaceWord(+u.dataset.use);return;}
+  const s=e.target.closest("[data-sub]");if(s){const p=s.dataset.sub;b.p=b.p||[];const n=b.p.findIndex(x=>x.toLowerCase()===p.toLowerCase());if(n>=0)b.p.splice(n,1);else if(b.p.length<4)b.p.push(p);else App.status("Up to 4 partners for one word",false);if(!b.p.length)delete b.p;changed();drawBoard();drawWX();return;}
+  const x=e.target.closest("[data-unsub]");if(x){b.p.splice(+x.dataset.unsub,1);if(!b.p.length)delete b.p;changed();drawBoard();drawWX();return;}
+  if(e.target.closest("[data-back]")){const j=wi(b.from);if(j>=0)replaceWord(j);}});
+$("wxClose").onclick=()=>$("wxDlg").close();
+$("wxDlg").addEventListener("click",e=>{if(e.target===$("wxDlg"))$("wxDlg").close();});
+let TAP={};   // two quick taps on a word (a double-click) open the explorer
+let LP=null;   // long press on touch screens
+$("board").addEventListener("pointerdown",e=>{const li=e.target.closest("li.bk.w[data-k]");if(!li||e.target.closest("button,input"))return;const x=e.clientX,y=e.clientY;
+  LP={t:setTimeout(()=>{LP=null;openWX(+li.dataset.k);},550),x,y};});
+["pointerup","pointercancel","dragstart"].forEach(ev=>$("board").addEventListener(ev,()=>{if(LP){clearTimeout(LP.t);LP=null;}}));
+$("board").addEventListener("pointermove",e=>{if(LP&&Math.hypot(e.clientX-LP.x,e.clientY-LP.y)>8){clearTimeout(LP.t);LP=null;}});
 $("infoClose").onclick=()=>$("infoDlg").close();
 $("infoDlg").addEventListener("click",e=>{if(e.target===$("infoDlg"))$("infoDlg").close();});
 // ---------- start ----------
@@ -339,6 +426,7 @@ $("infoDlg").addEventListener("click",e=>{if(e.target===$("infoDlg"))$("infoDlg"
   openStory(STORIES.find(s=>s.id===last)||STORIES[0]||null);
   try{BOXES=await Sets.loadBoxes(SET);}catch(e){}
   try{await Sets.loadCompanions();}catch(e){}
+  try{window.PARTNERS_MAP=await Sets.loadPartners(D);}catch(e){window.PARTNERS_MAP=new Map();}
   let sb="";try{sb=localStorage.getItem("storyBox")||"";}catch(e){}
   setBox(BOXES.some(b=>b.id===sb)?sb:SET.id);drawBoard();})();
 </script><script>Sets.boot({min:2})</script></body></html>

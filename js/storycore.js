@@ -43,7 +43,7 @@
     const B = s.blocks || [], sc = [[]];
     B.forEach(b => b.k === "s" ? sc.push([]) : sc[sc.length - 1].push(b));
     const nW = new Set(B.filter(b => b.k === "w").map(b => b.w)).size;
-    const plan = sc.filter(x => x.length).map((x, k) => `Scene ${k + 1}: ` + x.map(b => b.k === "w" ? `[${clean(b.w)}]` : b.k === "q" ? sayingLine(b) : `"${(b.t || "").trim()}"`).filter(t => t !== '""').join(" → ")).join("\n");
+    const plan = sc.filter(x => x.length).map((x, k) => `Scene ${k + 1}: ` + x.map(b => b.k === "w" ? `[${clean(b.w)}]${(b.p || []).length ? ` (with: ${b.p.join(", ")})` : ""}` : b.k === "q" ? sayingLine(b) : `"${(b.t || "").trim()}"`).filter(t => t !== '""').join(" → ")).join("\n");
     const hasQ = B.some(b => b.k === "q");
     return `Please write a short children's story for my daughter, a Grade 5 student learning English vocabulary. She planned it herself in a story builder.
 
@@ -54,7 +54,7 @@ ${plan}
 
 Rules:
 - Keep her order, her scenes and her ideas. Fill the gaps so it reads as a real story.
-${hasQ ? `- A FAMOUS SAYING must appear word for word, spoken by the character named (or by a narrator, as a voice-over, if it says Voice-over). You may mention who first said it.\n` : ""}- Use EVERY vocabulary word at least once (you may change the form, e.g. insist → insisted). Make each meaning clear from the sentence.
+${hasQ ? `- A FAMOUS SAYING must appear word for word, spoken by the character named (or by a narrator, as a voice-over, if it says Voice-over). You may mention who first said it.\n` : ""}${B.some(b => (b.p || []).length) ? `- "(with: …)" after a word lists word partners or idioms she chose for it (e.g. heavy rain). Use each one with its word.\n` : ""}- Use EVERY vocabulary word at least once (you may change the form, e.g. insist → insisted). Make each meaning clear from the sentence.
 - Grade 5 reading level, warm and fun, about ${Math.min(600, Math.max(180, nW * 30))} words. One short paragraph per scene. No violence beyond what the words need.
 - ${videoRule}
 

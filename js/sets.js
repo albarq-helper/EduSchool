@@ -241,7 +241,7 @@
       const got = await load(b.id); if (!got) continue;
       const m = mapItems(got.set, got.items), start = D.length;
       m.words.forEach(w => { w.box = b.id; w.boxKind = b.story_box; w.boxUnits = m.units; D.push(w); });
-      boxes.push({ id: b.id, title: b.title, kind: b.story_box, icon: b.story_box === "link" ? "🔗" : b.story_box === "sayings" ? "📜" : /feel/i.test(b.title) ? "💗" : "📦", idx: m.words.map((w, j) => start + j) });
+      boxes.push({ id: b.id, title: b.story_box === "sayings" ? "Wise sayings & advice" : b.title, kind: b.story_box, icon: b.story_box === "link" ? "🔗" : b.story_box === "sayings" ? "📜" : /feel/i.test(b.title) ? "💗" : "📦", idx: m.words.map((w, j) => start + j) });
     }
     return boxes;
   }
