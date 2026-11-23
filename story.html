@@ -92,10 +92,10 @@
 .parent textarea{width:100%;min-height:140px;font:14px/1.5 var(--f-body);padding:10px;border:1px solid var(--rule);border-radius:10px;background:var(--paper);color:var(--ink)}
 .parent .step{margin-top:12px}.parent .step b{display:block;margin-bottom:4px}
 .parent input[type=text]{width:100%;max-width:40rem}
-#wxDlg,#vwDlg{border:0;border-radius:18px;padding:0;width:min(720px,calc(100vw - 24px));max-height:calc(100vh - 32px);background:var(--sheet);color:var(--ink);box-shadow:0 20px 50px rgba(0,0,0,.3)}
-#wxDlg::backdrop,#vwDlg::backdrop{background:rgba(15,20,35,.45)}
-#wxDlg .wxin,#vwDlg .wxin{padding:18px;display:grid;gap:12px;position:relative}
-#wxDlg .close,#vwDlg .close{position:absolute;top:12px;right:12px}
+#wxDlg,#vwDlg,#shotDlg{border:0;border-radius:18px;padding:0;width:min(720px,calc(100vw - 24px));max-height:calc(100vh - 32px);background:var(--sheet);color:var(--ink);box-shadow:0 20px 50px rgba(0,0,0,.3)}
+#wxDlg::backdrop,#vwDlg::backdrop,#shotDlg::backdrop{background:rgba(15,20,35,.45)}
+#wxDlg .wxin,#vwDlg .wxin,#shotDlg .wxin{padding:18px;display:grid;gap:12px;position:relative}
+#wxDlg .close,#vwDlg .close,#shotDlg .close{position:absolute;top:12px;right:12px}
 .wxhead{display:grid;grid-template-columns:90px 1fr;gap:14px;align-items:start;padding-right:70px}
 .wxhead .wxpic{width:90px;height:90px;border-radius:12px;object-fit:cover}
 .wxhead h3{margin:0;font:800 1.5rem var(--f-display)}.wxhead p{margin:2px 0}
@@ -154,8 +154,15 @@
 .fitq h3{margin:0;font:800 .95rem var(--f-body)}.fitq .fq{display:flex;gap:10px;align-items:center;justify-content:space-between;background:var(--paper);border-radius:10px;padding:8px 10px}
 .fitq .fq b{font-style:italic}.fitq .fq span{display:block;font-size:.82rem;font-weight:700}.fitq .linkb{all:unset;cursor:pointer;color:var(--accent);font-weight:800;font-size:.88rem}
 #checks .how{display:block;font-weight:600;font-size:.8rem;color:var(--muted);margin:1px 0 2px 1.2em}
+.shotb{margin-left:6px;border:1.5px dashed var(--accent);background:var(--paper);color:var(--accent);border-radius:999px;padding:3px 10px;font:800 .75rem var(--f-body);letter-spacing:0;text-transform:none;cursor:pointer;max-width:70%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.shotb.on{border-style:solid;background:var(--accent-soft)}
+#shotBody h3{margin:0;padding-right:70px;font:800 1.15rem var(--f-display)}
+.shotrow{display:grid;gap:5px;padding:8px 0;border-top:1px solid var(--rule)}.shotrow>b{font:800 .85rem var(--f-body)}
+.shotopts{display:flex;flex-wrap:wrap;gap:6px}
+.sho{border:1.5px solid var(--rule);background:var(--paper);border-radius:999px;padding:5px 11px;font:700 .88rem var(--f-body);cursor:pointer;color:var(--ink)}
+.sho:hover{border-color:var(--accent)}.sho.on{background:var(--accent);border-color:var(--accent);color:#fff}
 </style>
-<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261123z"></script><script src="js/icons.js?v=20261123z"></script><script src="js/app.js?v=20261123z"></script><script src="js/sets.js?v=20261123z"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261123z"></script><script src="js/views.js?v=20261123z"></script><script src="js/storycore.js?v=20261123z"></script><script src="js/montage.js?v=20261123z"></script>
+<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261123za"></script><script src="js/icons.js?v=20261123za"></script><script src="js/app.js?v=20261123za"></script><script src="js/sets.js?v=20261123za"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261123za"></script><script src="js/views.js?v=20261123za"></script><script src="js/storycore.js?v=20261123za"></script><script src="js/montage.js?v=20261123za"></script>
 </head><body>
 <div class="wrap" style="max-width:1280px">
   <div class="head2">
@@ -191,6 +198,7 @@
   
 </div>
 <dialog id="vwDlg" aria-label="Word wheel"><div class="wxin"><button class="btn small close" type="button" id="vwClose">✕ Close</button><div class="seg" role="group" aria-label="Picture" id="vwSeg" style="margin-bottom:8px"><button type="button" data-vk="wheel" aria-pressed="true">🎡 Wheel</button><button type="button" data-vk="venn" aria-pressed="false">⭕ Venn</button></div><div id="vwBody"></div></div></dialog>
+<dialog id="shotDlg" aria-label="Scene shot"><div class="wxin"><button class="btn small close" type="button" onclick="this.closest('dialog').close()">✕ Close</button><div id="shotBody"></div></div></dialog>
 <dialog id="wxDlg" aria-label="Word explorer"><div class="wxin"><button class="btn small close" type="button" id="wxClose">✕ Close</button><div id="wxBody"></div></div></dialog>
 <dialog id="infoDlg" aria-labelledby="infoTitle"><div class="ib"><button class="btn small close" type="button" id="infoClose">✕ Close</button>
   <h2 id="infoTitle">How the Story builder works</h2>
@@ -304,9 +312,10 @@ function addBlock(b,at){if(!CUR)CUR=blank();if(CUR.blocks.length>=200){App.statu
   if(b.k==="t"){const inp=$("board").querySelector(`[data-k="${k}"] input`);if(inp){inp.focus();inp.setSelectionRange(inp.value.length,inp.value.length);}}
   else $("board").querySelector(`[data-k="${k}"]`)?.scrollIntoView({block:"nearest"});}
 function drawBoard(){const B=CUR?CUR.blocks:[];let scene=1,n=0;
-  const rows=[`<li class="scene">Scene 1</li>`];
+  const rows=[`<li class="scene" data-scene="1">Scene 1${shotChip(1)}</li>`];
   B.forEach((b,k)=>{const ctl=`<span class="ctl"><button type="button" data-up="${k}" aria-label="Move up" title="Move up">▲</button><button type="button" data-down="${k}" aria-label="Move down" title="Move down">▼</button><button type="button" data-del="${k}" aria-label="Remove" title="Remove">✕</button></span>`;
-    if(b.k==="s"){scene++;rows.push(`<li class="scene bk-s" data-k="${k}" draggable="true">Scene ${scene}${ctl}</li>`);return;}
+    if(b.k==="s"){scene++;rows.push(`<li class="scene bk-s" data-k="${k}" draggable="true">Scene ${scene}${shotChip(scene)}${ctl}</li>`);return;}
+    if(b.k==="c"&&DIRCATS().length)return;   // camera, light, transition and music cards live in the scene's 🎬 shot holder
     n++;const cls=`bk ${b.k}${k===SEL?" sel":""}`,grip=`<span class="grip" title="Drag to move">${icon("grip-vertical",16)}</span><span class="num">${n}</span>`;
     if(b.k==="w"){const i=wi(b.w),v=D[i];
       const say=isSay(b,v),pic=v?(v.vid?`<video class="th" src="${esc(v.vid)}" muted loop playsinline preload="none" data-auto></video>`:`<img class="th" src="${esc(v.img)}" alt="">`):"";
@@ -447,6 +456,27 @@ function drawVW(){const b=boxOf(BOX),units=b.kind==="set"?(window.UNITS_LIST||[]
 $("wheelBtn").onclick=()=>{drawVW();$("vwDlg").showModal();};
 $("vwClose").onclick=()=>$("vwDlg").close();
 $("vwSeg").onclick=e=>{const k=e.target.closest("[data-vk]");if(!k)return;VWK=k.dataset.vk;drawVW();};
+// ---------- 🎬 the shot holder of each scene: one card per Director's Toolbox category, or ✨ Auto (the AI chooses) ----------
+// The cards are still ordinary director blocks (k:"c") at the start of the scene, so the story, the AI prompt and the studio use them as before.
+const DIRIDX=()=>{const all=D.map((v,i)=>i),I=all.filter(i=>D[i].boxKind==="director");return I.length?I:all.filter(i=>D[i].film);};
+function DIRCATS(){const I=DIRIDX();if(!I.length)return [];const U=(D[I[0]].boxUnits||[]).filter(u=>I.some(i=>D[i].u===u.u));return U.length?U:[...new Set(I.map(i=>D[i].u))].map(u=>({u,name:"Cards"}));}
+function sceneRange(n){const B=CUR?CUR.blocks:[];let sc=1,start=0;for(let k=0;k<B.length;k++){if(B[k].k==="s"){if(sc===n)return [start,k];sc++;start=k+1;}}return sc===n?[start,B.length]:[B.length,B.length];}
+const dirOfW=w=>{const i=DIRIDX().find(j=>D[j].w===w);return i!=null?D[i]:D[wi(w)];};
+const catOf=b=>{const v=dirOfW(b.w);return v?v.u:null;};
+function shotCards(n){const [a,z]=sceneRange(n);return (CUR?CUR.blocks:[]).slice(a,z).filter(b=>b.k==="c");}
+function shotChip(n){if(!DIRCATS().length)return "";const C=shotCards(n);
+  return `<button type="button" class="shotb${C.length?" on":""}" data-shot="${n}" title="Choose the camera, light, transition and music for this scene">🎬 ${C.length?C.map(b=>{const v=dirOfW(b.w);return esc((v&&v.emoji?v.emoji+" ":"")+b.w);}).join(" · "):"Camera: ✨ Auto"}</button>`;}
+let SHOT=1;
+function drawShot(){const n=SHOT,C=shotCards(n),cats=DIRCATS(),I=DIRIDX();
+  $("shotBody").innerHTML=`<h3>🎬 Scene ${n}: be the director</h3><p class="muted">Pick one card in any row, or leave it on ✨ Auto and the AI chooses for you.</p>`+cats.map(c=>{const cur=C.find(b=>catOf(b)===c.u),items=I.filter(i=>D[i].u===c.u);
+    return `<div class="shotrow"><b>${esc(c.name)}</b><div class="shotopts"><button type="button" class="sho${cur?"":" on"}" data-shc="${c.u}" data-shi="-1">✨ Auto</button>${items.map(i=>`<button type="button" class="sho${cur&&cur.w===D[i].w?" on":""}" data-shc="${c.u}" data-shi="${i}" title="${esc(D[i].d||"")}">${esc((D[i].emoji||"")+" "+D[i].w)}</button>`).join("")}</div>
+      ${cur?`<small class="muted">${esc((dirOfW(cur.w)||{}).d||"")}</small>`:""}</div>`;}).join("");}
+document.addEventListener("click",e=>{const sb=e.target.closest("[data-shot]");if(sb){e.stopPropagation();SHOT=+sb.dataset.shot;drawShot();$("shotDlg").showModal();return;}
+  const o=e.target.closest("[data-shi]");if(!o||!CUR)return;const u=+o.dataset.shc,i=+o.dataset.shi,[a,z]=sceneRange(SHOT);
+  // drop this scene's card of that category, then put the new one at the start of the scene
+  for(let k=z-1;k>=a;k--){const b=CUR.blocks[k];if(b.k==="c"&&catOf(b)===u)CUR.blocks.splice(k,1);}
+  if(i>=0){const v=D[i];CUR.blocks.splice(sceneRange(SHOT)[0],0,{k:"c",w:v.w,f:v.film||"",m:(v.tags||[]).includes("Music")||undefined,tr:(v.tags||[]).includes("🎬 Transitions")||undefined});}
+  changed();drawBoard();drawShot();});
 // ---------- saving ----------
 function changed(){$("saved").textContent="Saving…";clearTimeout(timer);timer=setTimeout(save,1200);}
 async function save(extra={}){if(!CUR)return;clearTimeout(timer);Object.assign(CUR,extra);
