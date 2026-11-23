@@ -3,7 +3,7 @@
 <title>Edit study set · Helper Academy</title><link rel="icon" href="assets/icons/brilliant.png">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=Noto+Naskh+Arabic:wght@600&display=swap">
 <link rel="stylesheet" href="css/app.css">
-<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261122m"></script><script src="js/icons.js?v=20261122m"></script><script src="js/app.js?v=20261122m"></script><script src="js/sets.js?v=20261122m"></script>
+<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261123a"></script><script src="js/icons.js?v=20261123a"></script><script src="js/app.js?v=20261123a"></script><script src="js/sets.js?v=20261123a"></script>
 <style>
 .groupsbox{border:1px solid var(--rule);border-radius:12px;padding:10px 12px;margin:0 0 10px;background:var(--paper);display:grid;gap:8px}
 .tagf .ttype{gap:6px}.tbtn{font:700 .82rem var(--f-body);padding:5px 10px;border-radius:999px;border:1.5px solid var(--rule);background:var(--sheet);color:var(--ink);cursor:pointer}
@@ -12,6 +12,7 @@
 .tchip.opp{background:var(--sun-soft)}.tchip.warn{background:var(--warn-soft,#fde68a)}.tchip b{margin-left:2px}
 .tchip button{border:0;background:none;cursor:pointer;color:var(--muted);font-weight:800;padding:0 4px}.tchip button:hover{color:var(--bad)}
 .tin{flex:1;min-width:12rem;padding:6px 10px;border:1px dashed var(--rule);border-radius:999px;background:var(--sheet);font:inherit}
+.idiomf{grid-column:1/-1;border:1px dashed var(--rule);border-radius:10px;padding:6px 10px}.idiomf summary{cursor:pointer;font-weight:700;font-size:.9rem}.idiomf[open]{display:grid;gap:8px}
 </style>
 </head><body>
 <div class="wrap" style="max-width:1000px;padding-bottom:0">
@@ -64,7 +65,7 @@ paint();
 const LANGS=Sets.LANGS;
 let ME, LK, SET=null, UNITS=[{u:1,name:""}], ROWS=[], ORIG=new Set(), dirty=false;
 const uid=()=>(crypto.randomUUID?crypto.randomUUID():"xxxxxxxx-xxxx-4xxx-8xxx-xxxxxxxxxxxx".replace(/x/g,()=>(Math.random()*16|0).toString(16)));
-const blank=kind=>({id:uid(),kind,unit:(UNITS[UNITS.length-1]||{u:1}).u,term:"",meaning:"",example:"",translation:"",syllables:"",pronunciation:"",sound_hint:"",image_url:"",anim_url:"",audio_url:"",choices:kind==="mcq"?["","","",""]:[],answer:kind==="tf"?1:0,also_units:[],tags:[]});
+const blank=kind=>({id:uid(),kind,unit:(UNITS[UNITS.length-1]||{u:1}).u,term:"",meaning:"",example:"",translation:"",literal:"",literal_tr:"",equivalent:"",syllables:"",pronunciation:"",sound_hint:"",image_url:"",anim_url:"",audio_url:"",choices:kind==="mcq"?["","","",""]:[],answer:kind==="tf"?1:0,also_units:[],tags:[]});
 // ---------- units ----------
 function drawUnits(){$("units").innerHTML=UNITS.map((u,k)=>`<div class="row" style="flex-wrap:nowrap"><span class="tag" style="min-width:4.5rem;justify-content:center">${u.u?"Unit "+u.u:"General"}</span>
   <input data-un="${k}" value="${esc(u.name)}" maxlength="80" placeholder="Unit name (optional)" style="flex:1" aria-label="Name of unit ${u.u}">
@@ -146,6 +147,12 @@ function rowHTML(r,k){
     <label class="f">Meaning / definition${r.set_meaning?` <span class="muted" style="font-weight:400" title="This set uses its own wording; the shared dictionary keeps its own meaning.">· this set's own wording</span>`:""}<input data-f="meaning" data-k="${k}" value="${esc(r.meaning)}" maxlength="1500" dir="auto"></label>
     <label class="f">Example sentence (optional)<input data-f="example" data-k="${k}" value="${esc(r.example)}" maxlength="600" dir="auto" placeholder="Put [brackets] round the term"></label>
     <label class="f">Translation (optional)<input data-f="translation" data-k="${k}" value="${esc(r.translation)}" maxlength="300" dir="auto"></label>
+    <details class="f idiomf"${r.literal||r.literal_tr||r.equivalent?" open":""}><summary>Idiom fields (optional)</summary>
+      <label class="f">Word-for-word meaning<input data-f="literal" data-k="${k}" value="${esc(r.literal||"")}" maxlength="300" dir="auto" placeholder="e.g. Above the moon."></label>
+      <label class="f">Word-for-word, translated<input data-f="literal_tr" data-k="${k}" value="${esc(r.literal_tr||"")}" maxlength="300" dir="auto" placeholder="e.g. فوق القمر"></label>
+      <label class="f">The saying with the same idea in the translation language<input data-f="equivalent" data-k="${k}" value="${esc(r.equivalent||"")}" maxlength="300" dir="auto" placeholder="e.g. طار من الفرح"></label>
+      <span class="muted" style="font-size:.82rem">For an idiom, put the real meaning in Meaning and the real meaning in Arabic in Translation.</span>
+    </details>
     <label class="f">Syllables (optional)<input data-f="syllables" data-k="${k}" value="${esc(r.syllables)}" maxlength="200" placeholder="e.g. pho-to-syn-the-sis"></label>
     <label class="f">Say it (optional)<input data-f="pronunciation" data-k="${k}" value="${esc(r.pronunciation||"")}" maxlength="120" placeholder="e.g. foh-toh-SIN-thuh-sis (stress in CAPITALS)"></label>
     <label class="f">Video clip (optional)<input data-f="video_url" data-k="${k}" value="${esc(r.video_url||"")}" maxlength="500" placeholder="https://… or assets/videos/word.mp4"></label>
@@ -250,7 +257,7 @@ $("save").onclick=async()=>{const m=$("saveMsg"),err=validate();if(err){m.textCo
     if(sid){const r=await C.from("study_sets").update(meta).eq("id",sid);if(r.error)throw r.error;}
     else{const r=await C.from("study_sets").insert({...meta,owner_id:ME.id}).select("id").single();if(r.error)throw r.error;sid=r.data.id;}
     const rows=ROWS.map((r,k)=>{const o={id:r.id,set_id:sid,position:k+1,kind:r.kind,unit:r.unit,also_units:r.also_units||[],term:r.term.trim(),meaning:r.meaning.trim(),example:(r.example||"").trim(),
-      translation:(r.translation||"").trim(),syllables:(r.syllables||"").trim(),pronunciation:(r.pronunciation||"").trim(),sound_hint:(r.sound_hint||"").trim(),video_url:(r.video_url||"").trim(),emoji:(r.emoji||"").trim(),image_url:(r.image_url||"").trim(),anim_url:r.anim_url||"",audio_url:(r.audio_url||"").trim(),choices:[],answer:null,tags:r.kind==="term"?(r.tags||[]):[],sense:r.sense||""};
+      translation:(r.translation||"").trim(),literal:(r.literal||"").trim(),literal_tr:(r.literal_tr||"").trim(),equivalent:(r.equivalent||"").trim(),syllables:(r.syllables||"").trim(),pronunciation:(r.pronunciation||"").trim(),sound_hint:(r.sound_hint||"").trim(),video_url:(r.video_url||"").trim(),emoji:(r.emoji||"").trim(),image_url:(r.image_url||"").trim(),anim_url:r.anim_url||"",audio_url:(r.audio_url||"").trim(),choices:[],answer:null,tags:r.kind==="term"?(r.tags||[]):[],sense:r.sense||""};
       if(r.kind==="mcq"){const keep=r.choices.map((c,j)=>[c.trim(),j]).filter(x=>x[0]);o.choices=keep.map(x=>x[0]);o.answer=keep.findIndex(x=>x[1]===r.answer);}
       if(r.kind==="tf")o.answer=r.answer;return o;});
     const gone=[...ORIG].filter(id=>!rows.some(r=>r.id===id));

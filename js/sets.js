@@ -366,7 +366,7 @@
       id: x.id, w: x.term, d: x.meaning, s: blankify(x.example, x.term), ar: x.translation || "",
       u: x.unit, also: x.also_units || [], img: x.anim_url || (x.emoji ? tile(x.term, x.emoji) : "") || x.image_url || tile(x.term), emoji: x.emoji || "",   // clip first (vid), then animated emoji, emoji, photo
       photo: (x.anim_url || x.emoji) && x.image_url ? x.image_url : "", au: x.audio_url || "tts",
-      vid: x.video_url || "", tags: Array.isArray(x.tags) ? x.tags : [], pron: x.pronunciation || "", hint: x.sound_hint || "", syl: (x.syllables || (/\s/.test(x.term) ? x.term.toLowerCase() : autoSyl(x.term))).toLowerCase(), real: !!(x.anim_url || x.image_url)
+      lit: x.literal || "", litAr: x.literal_tr || "", eq: x.equivalent || "", vid: x.video_url || "", tags: Array.isArray(x.tags) ? x.tags : [], pron: x.pronunciation || "", hint: x.sound_hint || "", syl: (x.syllables || (/\s/.test(x.term) ? x.term.toLowerCase() : autoSyl(x.term))).toLowerCase(), real: !!(x.anim_url || x.image_url)
     }));
     const named = new Map((set.units || []).map(u => [Number(u.u), u.name || ""]));
     const counts = new Map(); words.forEach(w => counts.set(w.u, (counts.get(w.u) || 0) + 1));

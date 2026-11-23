@@ -98,8 +98,13 @@ input.ok,textarea.ok{border-color:var(--good)!important;background:var(--good-so
 @keyframes wglow{0%,100%{box-shadow:0 0 0 0 transparent}30%{box-shadow:0 0 0 4px var(--accent)}}
 [data-i].hl{animation:wglow 1.2s ease 2;outline:3px solid var(--accent);outline-offset:2px;border-radius:12px}
 @media print{.wgroups{display:none}}
+.idiom{margin-top:8px;border:1.5px dashed var(--rule);border-radius:12px;padding:8px 12px;display:grid;gap:5px;background:var(--paper);font-size:.95rem}
+.idiom .ir{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.idiom .il{font:800 .72rem var(--f-body);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);min-width:7.5em}
+.idiom .ar{font-size:1.05rem}
+.idiom .sep{color:var(--muted)}
 </style>
-<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261122m"></script><script src="js/icons.js?v=20261122m"></script><script src="js/app.js?v=20261122m"></script><script src="js/sets.js?v=20261122m"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261122m"></script>
+<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261123a"></script><script src="js/icons.js?v=20261123a"></script><script src="js/app.js?v=20261123a"></script><script src="js/sets.js?v=20261123a"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261123a"></script>
 </head><body>
 <div class="wrap" style="max-width:1180px">
   <div class="head2">
@@ -184,7 +189,13 @@ const coverBtns=i=>{const s=S(i);return `<div class="covers no-print">
 const picHTML=(i,v)=>!SHOW.pic?"":v.vid?`<div class="vwrap">${Sets.media(v,{cls:"pic",alt:S(i).cw?"":v.w,attrs:` data-clip data-i="${i}"`})}<span class="vbadge">${icon("volume-2",12)} Tap to hear</span></div>`:`<img class="pic" src="${esc(v.img)}" alt="${S(i).cw?"":esc(v.w)}" loading="lazy">`;
 const exHTML=(i,v)=>{if(!SHOW.ex||!v.s||/^\[[^\]]*\]$/.test(v.s))return "";
   const t=S(i).cw&&S(i).ok===undefined?esc(v.s).replace(/\[([^\]]*)\]/,(m,x)=>"_".repeat(Math.max(4,x.length))):esc(v.s).replace(/\[([^\]]*)\]/,"<b>$1</b>");return `<div class="ex">${t}</div>`;};
-const trHTML=(i,v)=>SHOW.tr&&v.ar&&!(S(i).cm&&!S(i).mrev)?`<div class="tr" dir="auto">${esc(v.ar)}</div>`:"";
+// idioms: the word-for-word meaning, the Arabic saying with the same idea, and the real meaning in Arabic
+const idiomHTML=(i,v)=>{if(!(v.lit||v.eq)||(S(i).cm&&!S(i).mrev))return "";const rows=[];
+  if(SHOW.mean&&(v.lit||v.litAr))rows.push(`<div class="ir"><span class="il">🔤 Word for word</span><span>${esc(v.lit)}</span>${SHOW.tr&&v.litAr?`<span class="sep">·</span><span class="ar" dir="rtl" lang="ar">${esc(v.litAr)}</span>`:""}</div>`);
+  if(SHOW.tr&&v.eq)rows.push(`<div class="ir"><span class="il">🌍 We say</span><span class="ar" dir="rtl" lang="ar">${esc(v.eq)}</span></div>`);
+  if(SHOW.tr&&v.ar)rows.push(`<div class="ir"><span class="il">💡 It means</span><span class="ar" dir="rtl" lang="ar">${esc(v.ar)}</span></div>`);
+  return rows.length?`<div class="idiom">${rows.join("")}</div>`:"";};
+const trHTML=(i,v)=>SHOW.tr&&v.ar&&!(v.lit||v.eq)&&!(S(i).cm&&!S(i).mrev)?`<div class="tr" dir="auto">${esc(v.ar)}</div>`:"";
 const wordHidden=i=>S(i).cw&&S(i).ok===undefined;
 function wordHTML(i,v){
   if(!wordHidden(i))return sylHTML(v);
@@ -218,14 +229,14 @@ function wordIndex(w){const t=String(w||"").toLowerCase();let k=D.findIndex(v=>!
 // ---- views ----
 function card(i,view){const v=D[i], hid=wordHidden(i);
   if(view==="detail")return `<article class="d" data-i="${i}">${SHOW.pic?picHTML(i,v):"<span></span>"}
-    <div class="body"><div class="w">${wordHTML(i,v)}</div>${hid?"":pillsHTML(v)}${sayHTML(v,i)}${spellHTML(i,v)}${meanHTML(i,v)}${exHTML(i,v)}${trHTML(i,v)}${groupsHTML(i,v)}${coverBtns(i)}</div>
+    <div class="body"><div class="w">${wordHTML(i,v)}</div>${hid?"":pillsHTML(v)}${sayHTML(v,i)}${spellHTML(i,v)}${meanHTML(i,v)}${idiomHTML(i,v)}${exHTML(i,v)}${trHTML(i,v)}${groupsHTML(i,v)}${coverBtns(i)}</div>
     <div class="side">${unitTag(v)}${hearBtn(i,v)}</div></article>`;
-  if(view==="grid")return `<article class="g" data-i="${i}">${picHTML(i,v)}<div class="w">${wordHTML(i,v)}${hearBtn(i,v)}</div>${hid?"":pillsHTML(v)}${sayHTML(v,i)}${spellHTML(i,v)}${meanHTML(i,v)}${trHTML(i,v)}${groupsHTML(i,v)}${coverBtns(i)}</article>`;
+  if(view==="grid")return `<article class="g" data-i="${i}">${picHTML(i,v)}<div class="w">${wordHTML(i,v)}${hearBtn(i,v)}</div>${hid?"":pillsHTML(v)}${sayHTML(v,i)}${spellHTML(i,v)}${meanHTML(i,v)}${idiomHTML(i,v)}${trHTML(i,v)}${groupsHTML(i,v)}${coverBtns(i)}</article>`;
   if(view==="blocks")return `<article class="b" data-i="${i}">${picHTML(i,v)}<div class="w bw" data-hear="${i}" role="button" tabindex="0" aria-label="Hear the word">${wordHTML(i,v)} ${icon("volume-2",15)}</div>${sayHTML(v,i)}${spellHTML(i,v)}${S(i).cm?meanHTML(i,v):""}${groupsHTML(i,v)}${coverBtns(i)}</article>`;
   return `<tr data-i="${i}">${SHOW.pic?`<td>${picHTML(i,v)}</td>`:""}<td><div class="w">${wordHTML(i,v)}</div>${sayHTML(v,i)}${spellHTML(i,v)}</td><td>${hearBtn(i,v)}</td>
-    <td>${meanHTML(i,v)}${groupsHTML(i,v)}${coverBtns(i)}</td>${SHOW.tr&&D.some(x=>x.ar)?`<td class="tr" dir="auto">${S(i).cm&&!S(i).mrev?"":esc(v.ar)}</td>`:""}<td>${unitTag(v)}</td></tr>`;}
+    <td>${meanHTML(i,v)}${idiomHTML(i,v)}${groupsHTML(i,v)}${coverBtns(i)}</td>${SHOW.tr&&D.some(x=>x.ar)?`<td class="tr" dir="auto">${S(i).cm&&!S(i).mrev?"":esc(v.ar)}</td>`:""}<td>${unitTag(v)}</td></tr>`;}
 function visible(){const q=$("q").value.trim().toLowerCase();
-  return ORDER.filter(i=>{const v=D[i];return UP.match(v)&&GP.match(v)&&(!q||(v.w+" "+v.d+" "+v.ar).toLowerCase().includes(q));});}
+  return ORDER.filter(i=>{const v=D[i];return UP.match(v)&&GP.match(v)&&(!q||(v.w+" "+v.d+" "+v.ar+" "+(v.lit||"")+" "+(v.eq||"")).toLowerCase().includes(q));});}
 function render(){const L=visible();
   $("count").textContent=L.length+(L.length===1?" word":" words");
   if(!L.length){$("out").innerHTML='<div class="card empty-l">No words match.</div>';score();return;}
