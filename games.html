@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Word Games · Helper Academy</title><link rel="icon" href="assets/icons/brilliant.png"><style>*,*::before,*::after{box-sizing:border-box}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style><script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261123d"></script><script src="js/icons.js?v=20261123d"></script><script src="js/app.js?v=20261123d"></script><script src="js/sets.js?v=20261123d"></script></head><body><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=Noto+Naskh+Arabic:wght@600&display=swap">
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Word Games · Helper Academy</title><link rel="icon" href="assets/icons/brilliant.png"><style>*,*::before,*::after{box-sizing:border-box}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style><script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261123e"></script><script src="js/icons.js?v=20261123e"></script><script src="js/app.js?v=20261123e"></script><script src="js/sets.js?v=20261123e"></script></head><body><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=Noto+Naskh+Arabic:wght@600&display=swap">
 <style>
 /* Layout: one column; game tabs; a board of target cards above a sticky word tray. Same ink-and-paper tokens as the exam page. */
 :root{
@@ -104,6 +104,20 @@ select{font:inherit;padding:8px 10px;border:1px solid var(--rule);border-radius:
 .unitpick .uc{margin-left:auto;color:var(--muted);font-variant-numeric:tabular-nums;padding-left:8px}
 .unitpick .uwarn{color:var(--bad);font-size:.85rem;font-weight:700;padding:4px}
 
+/* new games: questions with choices, meter order */
+.mq{background:var(--sheet);border:1px solid var(--rule);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:14px}
+.mqp{font-size:1.12rem;line-height:1.5}.mqp .big{font:800 1.35rem var(--f-display);display:inline-block;margin-top:6px}
+.mqo{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.opt{font:700 1rem var(--f-body);text-align:left;padding:12px 14px;border-radius:10px;border:1.5px solid var(--rule);background:var(--paper);color:var(--ink);cursor:pointer}
+.mqo.rtl .opt{text-align:right;font-family:var(--f-ar);font-size:1.1rem}
+.opt:hover:not(:disabled){border-color:var(--accent)}
+.opt.ok{border-color:var(--good);background:var(--good-soft)}.opt.no{border-color:var(--bad);background:var(--bad-soft)}
+.mline{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.mline .end{font:800 .9rem var(--f-display);color:var(--muted)}
+.mslots{flex:1;display:flex;gap:8px;min-width:0;flex-wrap:wrap;padding:8px;border-radius:12px;background:linear-gradient(90deg,var(--accent-soft),var(--chip))}
+.ms{flex:1 1 90px;min-height:46px;border:2px dashed var(--rule);border-radius:10px;display:flex;align-items:center;justify-content:center;background:var(--sheet)}
+.ms.ok{border-style:solid;border-color:var(--good)}.ms.no{border-style:solid;border-color:var(--bad)}
+.chip:disabled{opacity:.3;cursor:default}
+.muted{color:var(--muted)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 
@@ -188,6 +202,7 @@ function timeUp(){
     if(!U.cur.done){U.missed.push(U.cur.i);U.ans.push({word:DATA[U.cur.i].w,unit:DATA[U.cur.i].u,given:"",correct:false});}
     for(let k=U.k+1;k<U.items.length;k++){const i=U.items[k];U.missed.push(i);U.ans.push({word:DATA[i].w,unit:DATA[i].u,given:"",correct:false});}
     addMissed(U.missed);saveGame("unscramble",U.right,U.items.length,U.ans);$("#game").innerHTML='<div id="result"></div>';showScore(U.right,U.items.length,U.missed);
+  } else if(Q&&Q.qs&&Q.qs.length){for(let k=Q.k;k<Q.qs.length;k++){const q=Q.qs[k];if(k===Q.k&&q.done)continue;const v=DATA[q.i];Q.missed.push(q.i);Q.ans.push({word:v.w,unit:v.u,given:"",correct:false});}Q.k=Q.qs.length;finishQ();
   } else if($("#check")&&!document.querySelector("#board .card[data-done]")) checkMatch(CUR);   // unplaced words count as wrong
 }
 function matchRound(kind){
@@ -325,8 +340,126 @@ function unsCheck(){
   $("#unext").focus();
 }
 
+/* ---------- New games: meters, similar words, opposites, idioms, sayings, phrasal verbs, word partners ----------
+   Each generator turns word indices into questions: {i, html, opts:[{t, ok, note}], explain}.
+   The meter game is an ordering game. Tabs show only when the set has data for them. */
+const NG={sim:"≈ Same meaning",opp:"⇄ Opposites",meter:"🎚️ Meter order",idiom:"💬 Idioms",saying:"📜 Sayings",phrasal:"🧩 Phrasal verbs",partner:"🔗 Word partners"};
+const nm=i=>String(DATA[i].w).replace(/\s*\(.*\)/,"");
+const tg=i=>DATA[i].tags||[];
+const simsOf=i=>tg(i).filter(t=>/^≈\s/.test(t)).map(t=>t.replace(/^≈\s*/,""));
+const oppsOf=i=>tg(i).filter(t=>/^⇄\s/.test(t)).map(t=>{const m=t.replace(/^⇄\s*/,"").match(/^(.*):\s*(.*)$/);return m?{g:m[1].trim(),side:m[2].trim()}:null;}).filter(Boolean);
+const scalesOf=i=>tg(i).filter(t=>/^📶\s/.test(t)).map(t=>{const m=t.replace(/^📶\s*/,"").match(/^(.*):\s*([+-]?\d+)$/);return m?{g:m[1].trim(),r:+m[2]}:null;}).filter(Boolean);
+const typeOf=i=>tg(i).find(t=>Sets.TAG_TYPES.some(x=>x[0]===t))||"";
+const pick=(a,n)=>shuffle(a).slice(0,n);
+const uniqT=a=>{const s=new Set();return a.filter(x=>{const k=String(x).toLowerCase();if(s.has(k))return false;s.add(k);return true;});};
+const ALL=()=>DATA.map((_,i)=>i);
+function mcq(i,html,right,wrong,explain,notes){const w=uniqT(wrong.filter(x=>x&&String(x).toLowerCase()!==String(right).toLowerCase())).slice(0,3);if(w.length<2)return null;
+  return {i,html,opts:shuffle([{t:right,ok:true},...w.map(t=>({t,ok:false,note:(notes||{})[t]||""}))]),explain};}
+const GEN={
+  sim(P,n){const out=[];for(const i of shuffle(P)){if(out.length>=n)break;for(const g of shuffle(simsOf(i))){
+      const mates=ALL().filter(j=>j!==i&&nm(j).toLowerCase()!==nm(i).toLowerCase()&&simsOf(j).includes(g));if(!mates.length)continue;
+      const r=mates[Math.floor(Math.random()*mates.length)],ty=typeOf(i),mine=new Set(simsOf(i));
+      const far=ALL().filter(j=>j!==i&&!simsOf(j).some(x=>mine.has(x))&&!/\s/.test(nm(j))&&(DATA[j].tags||[]).length);
+      const same=far.filter(j=>typeOf(j)===ty);
+      const q=mcq(i,`Which one means nearly the same as <b>${esc(nm(i))}</b>?`,nm(r),pick(same.length>=3?same:far,6).map(nm),
+        `<b>${esc(nm(i))}</b> ≈ <b>${esc(nm(r))}</b>. Group ≈ ${esc(g)}: ${uniqT(ALL().filter(j=>simsOf(j).includes(g)).map(nm)).map(esc).join(", ")}.`);
+      if(q){out.push(q);break;}}}return out;},
+  opp(P,n){const out=[];for(const i of shuffle(P)){if(out.length>=n)break;for(const o of shuffle(oppsOf(i))){
+      const other=ALL().filter(j=>oppsOf(j).some(x=>x.g===o.g&&x.side!==o.side));if(!other.length)continue;
+      const r=other[Math.floor(Math.random()*other.length)];
+      const traps=ALL().filter(j=>j!==i&&oppsOf(j).some(x=>x.g===o.g&&x.side===o.side)).map(nm);   // same side = similar, not opposite
+      const rest=ALL().filter(j=>!oppsOf(j).some(x=>x.g===o.g)&&!/\s/.test(nm(j))).map(nm);
+      const wrong=pick(traps,2).concat(pick(rest,4)),notes={};traps.forEach(t=>notes[t]="That one is on the same side: it means something similar.");
+      const q=mcq(i,`What is the <b>opposite</b> of <b>${esc(nm(i))}</b>?`,nm(r),wrong,`<b>${esc(nm(i))}</b> ⇄ <b>${esc(nm(r))}</b> (${esc(o.g)}).`,notes);
+      if(q){out.push(q);break;}}}return out;},
+  idiom(P,n){const I=P.filter(i=>DATA[i].lit),allI=ALL().filter(i=>DATA[i].lit),out=[];let k=0;
+    for(const i of shuffle(I)){if(out.length>=n)break;const v=DATA[i];k++;
+      const others=allI.filter(j=>j!==i);
+      if(k%2===0&&v.eq&&others.filter(j=>DATA[j].eq).length>=3){const q=mcq(i,`Which Arabic saying has the same idea as <b>“${esc(nm(i))}”</b>?`,v.eq,pick(others.filter(j=>DATA[j].eq).map(j=>DATA[j].eq),5),
+          `<b>${esc(nm(i))}</b> means: ${esc(v.d)} · <span dir="rtl" lang="ar">${esc(v.ar)}</span>`);if(q){q.rtl=true;out.push(q);continue;}}
+      const notes={};notes[v.lit]="That's only the word-for-word meaning, not the real one!";
+      const q=mcq(i,`What does <b>“${esc(nm(i))}”</b> really mean?`,v.d,[v.lit,...pick(others.map(j=>DATA[j].d),4)],
+        `Word for word: <i>${esc(v.lit)}</i> · Real meaning: <b>${esc(v.d)}</b>${v.eq?` · We say: <span dir="rtl" lang="ar">${esc(v.eq)}</span>`:""}`,notes);if(q)out.push(q);}
+    return out;},
+  saying(P,n){const S=P.filter(i=>DATA[i].author),allS=ALL().filter(i=>DATA[i].author),out=[];let k=0;
+    const who=i=>DATA[i].author.split(" · ")[0];
+    for(const i of shuffle(S)){if(out.length>=n)break;const v=DATA[i];k++;
+      if(k%2===1){const q=mcq(i,`Who said it?<br><b>“${esc(v.w)}”</b>`,who(i),pick(uniqT(allS.map(who)).filter(a=>a!==who(i)),6),
+          `<b>${esc(v.author)}</b>. It means: ${esc(v.d)}`);if(q){out.push(q);continue;}}
+      const words=v.w.match(/[A-Za-z']{4,}/g)||[];if(!words.length)continue;const key=words.sort((a,b)=>b.length-a.length)[0];
+      const pool=uniqT(allS.filter(j=>j!==i).flatMap(j=>DATA[j].w.match(/[A-Za-z']{4,}/g)||[]));
+      const q=mcq(i,`Finish the saying:<br><b>“${esc(v.w).replace(new RegExp("\\b"+key+"\\b"),"_____")}”</b>`,key,pick(pool,8),`<b>“${esc(v.w)}”</b> — ${esc(v.author)}`);if(q)out.push(q);}
+    return out;},
+  phrasal(P,n){const PS=["up","down","out","off","on","in","away","back","over","after","for","with","into","along with","up with","out of","forward to","up to"];const out=[];
+    for(const i of shuffle(P.filter(i=>tg(i).includes("Phrasal verb")))){if(out.length>=n)break;const v=DATA[i],parts=nm(i).split(/\s+/),part=parts.slice(1).join(" ").toLowerCase();if(!part)continue;
+      const m=String(v.s||"").match(/\[([^\]]+)\]/);if(!m)continue;const said=m[1],re=new RegExp("\\s"+part.replace(/\s+/g,"\\s+")+"$","i");if(!re.test(said))continue;
+      const shown=esc(v.s.replace(/\[([^\]]+)\]/,(x,y)=>"⟦"+y.replace(re," ____")+"⟧")).replace("⟦","<b>").replace("⟧","</b>");
+      const q=mcq(i,`Which little word is missing?<br>${shown}`,part,pick(PS.filter(p=>p!==part),6),`<b>${esc(nm(i))}</b>: ${esc(v.d)}${v.ar?` · <span dir="rtl" lang="ar">${esc(v.ar)}</span>`:""}`);if(q)out.push(q);}
+    return out;},
+  partner(P,n){const out=[],M=window.PARTNERS_MAP;if(!M)return out;const K=["adjective","adverb","verb","noun"];
+    const byKind={};M.forEach(o=>o.own.forEach(x=>{if(K.includes(x.kind)&&!x.partner.includes(" … "))(byKind[x.kind]=byKind[x.kind]||[]).push(x.partner.toLowerCase());}));
+    for(const i of shuffle(P)){if(out.length>=n)break;const o=M.get(DATA[i].wid);if(!o)continue;
+      const cand=o.own.filter(x=>K.includes(x.kind)&&!x.partner.includes(" … ")&&new RegExp("\\b"+x.partner.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"\\b","i").test(x.phrase));if(!cand.length)continue;
+      const x=cand[Math.floor(Math.random()*cand.length)],mine=new Set(o.own.map(y=>y.partner.toLowerCase()));
+      const shown=esc(x.phrase).replace(new RegExp("\\b"+esc(x.partner).replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"\\b","i"),"_____");
+      const q=mcq(i,`Which word goes with <b>${esc(nm(i))}</b>?<br><span class="big">${shown}</span>`,x.partner,pick(uniqT((byKind[x.kind]||[]).filter(p=>!mine.has(p))),6),
+        `<b>${esc(x.phrase)}</b>. Other ${esc(x.kind)}s with ${esc(nm(i))}: ${esc(o.own.filter(y=>y.kind===x.kind).map(y=>y.phrase).join(", "))}`);if(q)out.push(q);}
+    return out;}
+};
+/* meter order: put 3–5 words from one meter in order, weakest → strongest */
+function meterQs(P,n){const seen=new Set(),out=[];
+  for(const i of shuffle(P))for(const s of scalesOf(i)){if(seen.has(s.g)||out.length>=n)continue;
+    const byR=new Map();ALL().forEach(j=>scalesOf(j).forEach(x=>{if(x.g===s.g){if(!byR.has(x.r))byR.set(x.r,[]);byR.get(x.r).push(j);}}));
+    const ranks=[...byR.keys()];if(ranks.length<3)continue;seen.add(s.g);
+    const use=pick(ranks.filter(r=>r!==s.r),Math.min(4,ranks.length-1)).concat([s.r]).sort((a,b)=>a-b);
+    const words=use.map(r=>r===s.r?i:byR.get(r)[Math.floor(Math.random()*byR.get(r).length)]);
+    const ends=s.g.split(/\s*(?:→|⇄)\s*/);out.push({i,g:s.g,left:ends[0],right:ends[1]||"",items:words.map((j,k)=>({j,r:use[k]}))});}
+  return out;}
+let Q=null;
+function newRound(kind){
+  const P=pool();if(kind==="meter"){const qs=meterQs(P,4);Q={kind,qs,k:0,right:0,missed:[],ans:[]};if(!qs.length)return noQ(kind);return meterShow();}
+  const qs=GEN[kind](P,ROUND);Q={kind,qs,k:0,right:0,missed:[],ans:[]};if(!qs.length)return noQ(kind);mcqShow();}
+function noQ(kind){$("#game").innerHTML=`<p class="hint">No ${esc(NG[kind])} questions for these words. Try <b>All units</b>, or another set.</p>`;timerStop();}
+function mcqShow(){const q=Q.qs[Q.k],v=DATA[q.i];
+  $("#game").innerHTML=`<div class="mq"><span class="prog">Question ${Q.k+1} of ${Q.qs.length}</span>
+    <div class="mqp">${q.html} <button type="button" class="say" data-say="${q.i}" aria-label="Hear it">🔊</button></div>
+    <div class="mqo${q.rtl?" rtl":""}">${q.opts.map((o,k)=>`<button type="button" class="opt" data-k="${k}"${q.rtl?' dir="rtl" lang="ar"':""}>${esc(o.t)}</button>`).join("")}</div>
+    <div id="mqmsg"></div></div><div id="result"></div>`;
+  $("#game .mqo").onclick=e=>{const b=e.target.closest(".opt");if(!b||q.done)return;q.done=true;const o=q.opts[+b.dataset.k],ok=o.ok;
+    document.querySelectorAll("#game .opt").forEach((x,k)=>{x.disabled=true;if(q.opts[k].ok)x.classList.add("ok");});if(!ok)b.classList.add("no");
+    if(ok){Q.right++;markRight(q.i);}else Q.missed.push(q.i);Q.ans.push({word:v.w,unit:v.u,given:o.t,correct:ok});
+    $("#mqmsg").innerHTML=`<div class="review"><span class="msg ${ok?"ok":"no"}">${ok?"Correct!":"Not quite."}${!ok&&o.note?` ${esc(o.note)}`:""}</span><span>${q.explain}</span>
+      <div><button class="btn primary" id="mqnext">${Q.k+1<Q.qs.length?"Next question":"See score"}</button></div></div>`;
+    $("#mqnext").onclick=mcqNext;$("#mqnext").focus();};}
+function mcqNext(){Q.k++;if(Q.k<Q.qs.length)(Q.kind==="meter"?meterShow:mcqShow)();else finishQ();}
+function finishQ(){addMissed(Q.missed);saveGame(Q.kind==="meter"?"meter order":NG[Q.kind].replace(/^\S+\s/,"").toLowerCase(),Q.right,Q.qs.length,Q.ans);$("#game").innerHTML='<div id="result"></div>';showScore(Q.right,Q.qs.length,Q.missed);}
+function meterShow(){const q=Q.qs[Q.k];q.built=[];const order=shuffle(q.items.map((x,k)=>k));
+  $("#game").innerHTML=`<div class="mq"><span class="prog">Meter ${Q.k+1} of ${Q.qs.length}</span>
+    <div class="mqp">Put these words in order on the <b>${esc(q.g)}</b> meter, from <b>${esc(q.left)}</b> to <b>${esc(q.right)}</b>.</div>
+    <div class="mline"><span class="end">${esc(q.left)}</span><div class="mslots" id="mslots">${q.items.map(()=>`<span class="ms"></span>`).join("")}</div><span class="end">${esc(q.right)}</span></div>
+    <div class="chips" id="mbank">${order.map(k=>`<button type="button" class="chip" data-m="${k}">${esc(DATA[q.items[k].j].emoji||"")} ${esc(nm(q.items[k].j))}</button>`).join("")}</div>
+    <div class="trayrow"><button class="btn" id="mundo">Undo</button><button class="btn primary" id="mcheck" disabled>Check</button></div><div id="mqmsg"></div></div><div id="result"></div>`;
+  const draw=()=>{const sl=[...document.querySelectorAll("#mslots .ms")];sl.forEach((s,k)=>{const m=q.built[k];s.innerHTML=m===undefined?"":`<span class="chip">${esc(nm(q.items[m].j))}</span>`;});
+    document.querySelectorAll("#mbank .chip").forEach(c=>c.disabled=q.built.includes(+c.dataset.m));$("#mcheck").disabled=q.built.length!==q.items.length;};
+  $("#mbank").onclick=e=>{const c=e.target.closest(".chip");if(!c||q.done||c.disabled)return;q.built.push(+c.dataset.m);draw();};
+  $("#mundo").onclick=()=>{if(q.done)return;q.built.pop();draw();};
+  $("#mcheck").onclick=()=>{q.done=true;const ok=q.built.every((m,k)=>m===k),v=DATA[q.i];
+    [...document.querySelectorAll("#mslots .ms")].forEach((s,k)=>s.classList.add(q.built[k]===k?"ok":"no"));
+    if(ok){Q.right++;markRight(q.i);}else Q.missed.push(q.i);Q.ans.push({word:v.w,unit:v.u,given:q.built.map(m=>nm(q.items[m].j)).join(" < "),correct:ok});
+    $("#mqmsg").innerHTML=`<div class="review"><span class="msg ${ok?"ok":"no"}">${ok?"Correct!":"Not quite. The right order:"}</span>
+      <span>${q.items.map(x=>`<b>${esc(nm(x.j))}</b> <small class="muted">(${x.r>0&&/⇄/.test(q.g)?"+":""}${x.r})</small>`).join(" → ")}</span>
+      <div><button class="btn primary" id="mqnext">${Q.k+1<Q.qs.length?"Next meter":"See score"}</button></div></div>`;$("#mqnext").onclick=mcqNext;$("#mcheck").disabled=true;};}
+/* which new tabs this set can play (after extra words and partners have loaded) */
+async function setupNewGames(){
+  try{await Sets.loadCompanions();}catch(e){}
+  try{window.PARTNERS_MAP=await Sets.loadPartners(DATA);}catch(e){window.PARTNERS_MAP=new Map();}
+  const mine=DATA.map((v,i)=>i).filter(i=>!DATA[i].companion),tabs=document.querySelector(".tabs");
+  Object.keys(NG).forEach(k=>{const n=k==="meter"?meterQs(mine,2).length:GEN[k](mine,2).length;if(n<1)return;
+    tabs.insertAdjacentHTML("beforeend",`<button class="tab" role="tab" data-g="${k}" aria-selected="false">${esc(NG[k])}</button>`);});
+  if(mine.filter(i=>/\s/.test(nm(i))).length>mine.length/2){const u=document.querySelector('[data-g="uns"]');if(u)u.hidden=true;}
+  const want=new URLSearchParams(location.search).get("game");const t=want&&document.querySelector(`.tab[data-g="${want}"]`);if(t)t.click();}
 /* ---------- shell ---------- */
-function start(){ sel=null; if(!pool().length){$("#wordSet").value="all";} game==="uns"?unsRound():matchRound(game); timerStart(); }
+function start(){ sel=null; Q=null; if(!pool().length){$("#wordSet").value="all";} if(GEN[game]||game==="meter")newRound(game); else game==="uns"?unsRound():matchRound(game); timerStart(); }
 try{const tv=localStorage.getItem("gameTimer");if(tv&&$("#timerSel").querySelector(`option[value="${tv}"]`))$("#timerSel").value=tv;}catch(e){}
 $("#timerSel").onchange=()=>{try{localStorage.setItem("gameTimer",$("#timerSel").value);}catch(e){}start();};
 document.querySelector(".tabs").onclick=e=>{const t=e.target.closest(".tab");if(!t)return;game=t.dataset.g;
@@ -363,6 +496,7 @@ function buildUnitBox(onChange){
 buildUnitBox(()=>{$("#wordSet").value="all";start();});
 $("#wordSet").onchange=start;
 start();
+setupNewGames();
 </script>
 <script type="text/x-app">
 async function loadMyLists(){const L=await App.myLists();window.MY_LISTS=L;const sel=document.getElementById("wordSet");
