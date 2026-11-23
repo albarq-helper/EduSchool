@@ -124,10 +124,10 @@ input.ok,textarea.ok{border-color:var(--good)!important;background:var(--good-so
 .exbody{margin-top:8px;padding:10px 12px;border:1.5px solid var(--rule);border-radius:12px;background:var(--sheet)}
 .exbody .partners,.exbody .wgroups{margin-top:0}
 .says{display:grid;gap:8px}.say1{display:grid;gap:2px;text-decoration:none;color:var(--ink);border:1px solid var(--rule);border-radius:10px;padding:8px 10px;background:var(--paper)}
-.say1:hover{border-color:var(--accent)}.say1 b{font-style:italic}.say1 small{color:var(--muted);font-weight:700}.say1 span{font-size:.9rem}
+.say1:hover{border-color:var(--accent)}.say1 b{font-style:italic}.say1 small{color:var(--muted);font-weight:700}.say1 span{font-size:.9rem}.say1 .lesson{color:var(--good)}
 .agepill{background:#fde2e2;color:#9b1c1c;border-color:#f5b5b5}
 </style>
-<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261123t"></script><script src="js/icons.js?v=20261123t"></script><script src="js/app.js?v=20261123t"></script><script src="js/sets.js?v=20261123t"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261123t"></script>
+<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261123u"></script><script src="js/icons.js?v=20261123u"></script><script src="js/app.js?v=20261123u"></script><script src="js/sets.js?v=20261123u"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261123u"></script>
 </head><body>
 <div class="wrap" style="max-width:1180px">
   <div class="head2">
@@ -276,14 +276,14 @@ function partnersHTML(i,v){if(wordHidden(i)||!v.wid)return "";const P=PARTNERS.g
   return `<div class="partners">${rows}${also}</div>`;}
 // ---- the card's "explore" row: Word family · Goes with · Sayings, each opens in place (one at a time) ----
 const SAYSET="00000000-0000-4000-8000-000000009007";let SAYS=[];
-App.client.from("set_items").select("term,author,meaning,tags").eq("set_id",SAYSET).then(r=>{SAYS=((r&&r.data)||[]).filter(x=>x.author||(x.tags||[]).some(t=>/^(≈|⇄)\s/.test(t)));if(SAYS.length)render();},()=>{});
+App.client.from("set_items").select("term,author,meaning,tags,unit").eq("set_id",SAYSET).then(r=>{SAYS=((r&&r.data)||[]).filter(x=>x.author||(x.tags||[]).some(t=>/^(≈|⇄)\s/.test(t)));if(SAYS.length)render();},()=>{});
 // sayings with the same idea: shared similar-words group (≈) or opposite side (⇄), or the saying uses the word; best first
-function sayingsFor(v){if(v.author||!SAYS.length)return [];const idea=t=>/^(≈|⇄)\s/.test(t),own=(v.tags||[]).filter(idea),out=[];
-  SAYS.forEach(s=>{if(s.term===v.w)return;const n=(s.tags||[]).filter(t=>idea(t)&&own.includes(t)).length;if(n)out.push({s,n});});
+function sayingsFor(v){if(Sets.isSaying(v)||!SAYS.length)return [];const out=[];
+  SAYS.forEach(s=>{if(s.term===v.w)return;const m=Sets.ideaScore(v.tags,s.tags);if(m.s)out.push({s:m.lesson&&m.s<2?Object.assign({},s,{lesson:1}):s,n:m.s});});
   const P=v.wid&&PARTNERS.get(v.wid);((P&&P.own)||[]).filter(x=>x.kind==="saying").forEach(x=>{const s=SAYS.find(y=>y.term===x.phrase);if(!s)return;const o=out.find(y=>y.s===s);if(o)o.n=Math.max(o.n,3);else out.push({s,n:3});});
   return out.sort((a,b)=>b.n-a.n).map(o=>o.s);}
 function sayingsHTML(v,i){const all=sayingsFor(v);if(!all.length)return "";const xs=S(i).sayAll?all:all.slice(0,3);
-  return `<div class="says">${xs.map(s=>{const q=new URLSearchParams({set:SAYSET,w:s.term});return `<a class="say1" href="list.html?${q}" target="_blank" rel="noopener"><b>“${esc(s.term)}”</b><small>${esc(s.author)}</small><span>${esc(s.meaning||"")}</span></a>`;}).join("")}${all.length>3?`<button type="button" class="exb" data-sayall="${i}">${S(i).sayAll?"Show fewer":`Show ${all.length-3} more`}</button>`:""}</div>`;}
+  return `<div class="says">${xs.map(s=>{const q=new URLSearchParams({set:SAYSET,w:s.term});return `<a class="say1" href="list.html?${q}" target="_blank" rel="noopener"><b>“${esc(s.term)}”</b>${s.lesson?`<small class="lesson">💡 The lesson</small>`:""}<small>${esc(s.author||"")}</small><span>${esc(s.meaning||"")}</span></a>`;}).join("")}${all.length>3?`<button type="button" class="exb" data-sayall="${i}">${S(i).sayAll?"Show fewer":`Show ${all.length-3} more`}</button>`:""}</div>`;}
 function exploreHTML(i,v){if(wordHidden(i))return "";
   const fam=Sets.wordGroups(v).filter(g=>GP.has(g.kind,g.tag)).length;
   const P=v.wid&&PARTNERS.get(v.wid),par=P?P.own.filter(x=>x.kind!=="saying").length+P.also.length:0;

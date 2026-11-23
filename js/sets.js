@@ -527,5 +527,12 @@
     runPage();
   }
 
-  window.Sets = { boot, speak, sayWord, unitPicker, groupPicker, groupsOf, wordGroups, tagIcon, typeName, loadPartners, PARTNER_KINDS, partnerScales, mountPartnerMeter, sectionsHTML, mountMeters, loadBoxes, loadCompanions, scaleOfWord: (v, g) => { const t = (v.tags || []).find(t => isScale(t) && (!g || scaleSplit(t).g === g)); return t ? scaleSplit(t) : null; }, TAG_TYPES: TYPES, TAG_THEMES: THEME_ICONS, playClip, stopClip, media, watchClips, tile, autoSyl, blankify, load, mapItems, G5, LANGS };
+  // ideas shared by a word and a quote: the same ≈ group or ⇄ side scores 2; the OTHER side of the same ⇄ pair scores 1.5
+  // (a story about a lazy boy finds the hard-work quotes: that is the lesson)
+  const IDEA = t => /^(≈|⇄)\s/.test(t), pairOf = t => t.startsWith("⇄ ") ? t.slice(0, t.lastIndexOf(":")) : "";
+  function ideaScore(a, b) { const A = (a || []).filter(IDEA); let s = 0, lesson = false;
+    (b || []).filter(IDEA).forEach(t => { if (A.includes(t)) s += 2; else { const p = pairOf(t); if (p && A.some(x => pairOf(x) === p)) { s += 1.5; lesson = true; } } });
+    return { s, lesson }; }
+  const isSaying = v => !!(v && (v.author || (v.tags || []).includes("Saying")));
+  window.Sets = { ideaScore, isSaying, boot, speak, sayWord, unitPicker, groupPicker, groupsOf, wordGroups, tagIcon, typeName, loadPartners, PARTNER_KINDS, partnerScales, mountPartnerMeter, sectionsHTML, mountMeters, loadBoxes, loadCompanions, scaleOfWord: (v, g) => { const t = (v.tags || []).find(t => isScale(t) && (!g || scaleSplit(t).g === g)); return t ? scaleSplit(t) : null; }, TAG_TYPES: TYPES, TAG_THEMES: THEME_ICONS, playClip, stopClip, media, watchClips, tile, autoSyl, blankify, load, mapItems, G5, LANGS };
 })();

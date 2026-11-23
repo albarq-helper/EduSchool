@@ -150,8 +150,11 @@
 #spkMenu button:hover,#spkMenu button:focus-visible{background:var(--sheet);outline:none}
 #spkMenu button[aria-checked="true"]{background:var(--accent-soft)}
 #spkMenu hr{border:0;border-top:1px solid var(--rule);margin:4px 0}#spkMenu .muted{margin:2px 8px;font-size:.85rem}
+.fitq{margin:10px 0;padding:10px 12px;border:1.5px solid var(--sun);background:var(--sun-soft);border-radius:14px;display:grid;gap:8px}
+.fitq h3{margin:0;font:800 .95rem var(--f-body)}.fitq .fq{display:flex;gap:10px;align-items:center;justify-content:space-between;background:var(--paper);border-radius:10px;padding:8px 10px}
+.fitq .fq b{font-style:italic}.fitq .fq span{display:block;font-size:.82rem;font-weight:700}.fitq .linkb{all:unset;cursor:pointer;color:var(--accent);font-weight:800;font-size:.88rem}
 </style>
-<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261123t"></script><script src="js/icons.js?v=20261123t"></script><script src="js/app.js?v=20261123t"></script><script src="js/sets.js?v=20261123t"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261123t"></script><script src="js/storycore.js?v=20261123t"></script><script src="js/montage.js?v=20261123t"></script>
+<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261123u"></script><script src="js/icons.js?v=20261123u"></script><script src="js/app.js?v=20261123u"></script><script src="js/sets.js?v=20261123u"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261123u"></script><script src="js/storycore.js?v=20261123u"></script><script src="js/montage.js?v=20261123u"></script>
 </head><body>
 <div class="wrap" style="max-width:1280px">
   <div class="head2">
@@ -176,6 +179,7 @@
       <ol class="board" id="board" aria-label="Story steps"></ol>
       <div class="adds"><button class="chipb" type="button" id="addText">✏️ Add my own words</button><button class="chipb" type="button" id="addScene">🎬 New scene</button>
         <span id="quick"></span></div>
+      <div class="fitq" id="fitq" hidden></div>
       <div class="write" id="write"></div>
       <div class="checks" id="checks"></div>
       <div class="acts"><button class="btn primary" id="sendBtn" type="button"><span data-i="send"></span>Send to parent</button><button class="btn small" id="delBtn" type="button"><span data-i="trash-2"></span>Delete story</button><span class="saved" id="saved"></span></div>
@@ -310,7 +314,7 @@ function drawBoard(){const B=CUR?CUR.blocks:[];let scene=1,n=0;
   let SL=$("speakerList");if(!SL){SL=document.createElement("datalist");SL.id="speakerList";document.body.appendChild(SL);}
   SL.innerHTML=speakers().map(x=>`<option value="${esc(x)}">`).join("");
   $("board").innerHTML=B.length?rows.join(""):`<li class="empty">Your story is empty.<br>Add words from the library, or press <b>✏️ Add my own words</b>.</li>`;
-  Sets.watchClips();drawPreview();drawLib();drawWrite();}
+  Sets.watchClips();drawPreview();drawLib();drawWrite();drawFit();}
 function drawPreview(){const B=CUR?CUR.blocks:[];if(!B.some(b=>b.k!=="s")){$("preview").innerHTML=`<h3>My story so far</h3><p class="muted">Your words will appear here as you build.</p>`;return;}
   const S_=CUR.sentences||{},L=LV();
   if(L.mode!=="none"&&Object.values(S_).some(v=>(v||"").trim())){const its=items();
@@ -415,6 +419,21 @@ document.addEventListener("click",e=>{const d=e.target.closest("[data-spk]");if(
     changed();drawBoard();return;}
   if(!e.target.closest("#spkMenu"))closeSpk();},true);
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeSpk();});
+// ---------- 💡 quotes that fit the story: from the ideas of all its words (a lazy character → the hard-work quotes) ----------
+let FITALL=false;
+function fitQuotes(){const B=CUR?CUR.blocks:[],words=B.filter(b=>b.k==="w").map(b=>wi(b.w)).filter(i=>i>=0&&!Sets.isSaying(D[i]));if(!words.length)return [];
+  const inStory=new Set(B.filter(b=>b.k==="q"||b.k==="w").map(b=>b.w.toLowerCase())),out=[];
+  D.forEach((s,j)=>{if(!Sets.isSaying(s)||inStory.has(s.w.toLowerCase()))return;let sc=0,why=[],lesson=false;
+    words.forEach(i=>{const m=Sets.ideaScore(D[i].tags,s.tags);if(m.s){sc+=m.s;const n=nmw(i);if(!why.includes(n))why.push(n);if(m.lesson&&m.s<2)lesson=true;}});
+    if(sc)out.push({j,sc,why,lesson});});
+  return out.sort((a,b)=>b.sc-a.sc);}
+function drawFit(){const el=$("fitq");if(!el)return;const L=fitQuotes();if(!L.length){el.hidden=true;return;}el.hidden=false;
+  const xs=L.slice(0,FITALL?12:3);
+  el.innerHTML=`<h3>💡 Quotes that fit your story <span class="muted">(${L.length})</span></h3>${xs.map(o=>{const q=D[o.j];return `<div class="fq"><div><b>“${esc(q.w)}”</b>${q.author?`<small> — ${esc(q.author)}</small>`:""}<span class="muted">${o.lesson?"💡 The lesson for ":"About "}${esc(o.why.slice(0,3).join(", "))}</span></div><button type="button" class="btn small" data-fitadd="${o.j}">+ Add</button></div>`;}).join("")}
+    ${L.length>3?`<button type="button" class="linkb" data-fitall="1">${FITALL?"Show fewer":"Show more"}</button>`:""}`;}
+document.addEventListener("click",e=>{const a=e.target.closest("[data-fitadd]");if(a){const q=D[+a.dataset.fitadd];addBlock({k:"q",w:q.w,a:q.author||"",by:defaultSpeaker()});App.status("Quote added. Tap its little circle to choose who says it.",true);return;}
+  if(e.target.closest("[data-fitall]")){FITALL=!FITALL;drawFit();return;}
+  if(e.target.closest("[data-wxsayall]")){WX.sayAll=1;drawWX();}});
 // ---------- saving ----------
 function changed(){$("saved").textContent="Saving…";clearTimeout(timer);timer=setTimeout(save,1200);}
 async function save(extra={}){if(!CUR)return;clearTimeout(timer);Object.assign(CUR,extra);
@@ -496,11 +515,11 @@ function wxKindsHTML(D2){return D2.kinds.map(k=>`<button type="button" class="wx
 function wxSayings(b,i,G){const ctx=[i];
   (b.p||[]).forEach(p=>{const o=G.partners.find(x=>x.phrase.toLowerCase()===p.toLowerCase());const j=o&&o.link?wi(o.link.w):-1;if(j>=0&&!ctx.includes(j))ctx.push(j);});
   const idea=t=>/^(≈|⇄)\s/.test(t),out=[],seen=new Set();
-  const add=(j,why,score)=>{const k=nmw(j).toLowerCase(),o=out.find(x=>x.k===k);if(o){o.score=Math.max(o.score,score);return;}out.push({j,why,score,k});};
+  const add=(j,why,score)=>{const k=nmw(j).toLowerCase(),o=out.find(x=>x.k===k);if(o){if(score>o.score){o.score=score;o.why=why;}return;}out.push({j,why,score,k});};
   ctx.forEach(c=>{const v=D[c];const own=(v.tags||[]).filter(idea);
     const P=window.PARTNERS_MAP&&v.wid&&window.PARTNERS_MAP.get(v.wid);
     ((P&&P.own)||[]).filter(x=>x.kind==="saying").forEach(x=>{const j=wi(x.phrase);if(j>=0)add(j,nmw(c),3);});   // the saying uses the word itself
-    D.forEach((s,j)=>{if(!s.author)return;const n=(s.tags||[]).filter(t=>idea(t)&&own.includes(t)).length;if(n)add(j,nmw(c),n);});});
+    D.forEach((s,j)=>{if(j===c||!Sets.isSaying(s))return;const m=Sets.ideaScore(v.tags,s.tags);if(m.s)add(j,(m.lesson&&m.s<2?"💡 the lesson for ":"")+nmw(c),m.s);});});
   return out.sort((a,c)=>c.score-a.score);}
 function wxTabs(G){const tabs=[];G.scales.forEach((s,n)=>tabs.push({id:"m"+n,label:"🎚️ "+s.g,s}));if(G.sim.length)tabs.push({id:"sim",label:"≈ Similar"});if(G.opp.length)tabs.push({id:"opp",label:"⇄ Opposites"});
   if(G.partners.some(x=>WX_DESC.includes(x.kind)||onMeterNoun(x)))tabs.push({id:"desc",label:"✨ Describe it"});
@@ -523,9 +542,9 @@ function drawWX(){const b=CUR.blocks[WX.k],i=wi(b.w),v=D[i]||{},G=WX.G=wxGroups(
       const rest=WX.kind==="noun"?[]:G.partners.filter(x=>x.kind===WX.kind&&!onM.has(x.phrase)&&(x.kind!=="noun"||!onMeterNoun(x)));
       body=`<div class="wxkinds" id="wxkinds">${wxKindsHTML(D2)}</div>${sc?`<div id="wxpm"></div>`:""}${mine.slice(1).map((s,n)=>`<div class="wxpr"><span class="wxk">🎚️ ${esc(s.g.split(" · ").slice(1).join(" · "))}</span></div><div id="wxpm2-${n}"></div>`).join("")}
         ${rest.length?`<div class="wxpr">${sc?`<span class="wxk">More</span>`:""}${rest.map(x=>`<button type="button" class="wxp${have.has(x.phrase.toLowerCase())?" on":""}" data-sub="${esc(x.phrase)}">${esc(x.phrase)}</button>`).join("")}</div>`:""}`;}}
-  else if(t.id==="say"){const inStory=new Set(CUR.blocks.filter(x=>x.k==="q").map(x=>x.w.toLowerCase()));
-    body=`<p class="muted">Famous sayings with the same idea. A wise character could say one in your story.</p><div class="wxsay">${SY.map(({j,why})=>{const q=D[j];return `<div class="wxq"><b>“${esc(q.w)}”</b><small>${esc(q.author||"")}</small><span>${esc(q.d||"")}</span>
-      <div class="row"><span class="muted">Linked to <b>${esc(why)}</b></span>${inStory.has(q.w.toLowerCase())?`<span class="pill">✓ In your story</span>`:`<button type="button" class="btn small primary" data-addq="${j}">+ Add to my story</button>`}</div></div>`;}).join("")}</div>`;}
+  else if(t.id==="say"){const inStory=new Set(CUR.blocks.filter(x=>x.k==="q"||x.k==="w").map(x=>x.w.toLowerCase()));
+    body=`<p class="muted">Quotes with the same idea, or the lesson for it. One of your characters could say one in your story.</p><div class="wxsay">${SY.slice(0,WX.sayAll?99:12).map(({j,why})=>{const q=D[j];return `<div class="wxq"><b>“${esc(q.w)}”</b><small>${esc(q.author||"")}</small><span>${esc(q.d||"")}</span>
+      <div class="row"><span class="muted">Linked to <b>${esc(why)}</b></span>${inStory.has(q.w.toLowerCase())?`<span class="pill">✓ In your story</span>`:`<button type="button" class="btn small primary" data-addq="${j}">+ Add to my story</button>`}</div></div>`;}).join("")}</div>${SY.length>12&&!WX.sayAll?`<button type="button" class="btn small" data-wxsayall="1">Show ${SY.length-12} more</button>`:""}`;}
   else if(t.id==="around"){const have=new Set((b.p||[]).map(x=>x.toLowerCase()));
     body=`<p class="muted">Words that often come around <b>${esc(nmw(i))}</b> in a sentence.</p>`+WX_AROUND.map(k=>{const xs=G.partners.filter(x=>x.kind===k&&!onMeterNoun(x));return xs.length?`<div class="wxpr"><span class="wxk">${WX_KL[k]}</span>${xs.map(x=>`<button type="button" class="wxp${have.has(x.phrase.toLowerCase())?" on":""}" data-sub="${esc(x.phrase)}">${esc(x.phrase)}</button>`).join("")}</div>`:"";}).join("");}
   $("wxBody").innerHTML=`<div class="wxhead">${Sets.media(v,{cls:"wxpic",alt:""})}<div><h3>${esc(nmw(i))}</h3><p>${esc(v.d||"")}</p>
