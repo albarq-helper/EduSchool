@@ -115,8 +115,18 @@ input.ok,textarea.ok{border-color:var(--good)!important;background:var(--good-so
 .partners a.pc,.partners button.pc{cursor:pointer;text-decoration:none;font:inherit}
 .partners a.pc:hover,.partners button.pc:hover{border-color:var(--accent)}
 @media print{.partners .pc{border:0;padding:0 4px}}
+.explore{margin-top:8px}
+.exbar{display:flex;flex-wrap:wrap;gap:6px}
+.exb{display:inline-flex;align-items:center;gap:5px;font:700 .82rem var(--f-body);padding:5px 11px;border-radius:999px;border:1.5px solid var(--rule);background:var(--paper);color:var(--ink);cursor:pointer}
+.exb .n{font-size:.72rem;background:var(--sheet);border-radius:999px;padding:0 6px;color:var(--muted)}
+.exb .chev{color:var(--muted);font-size:.75rem}
+.exb[aria-expanded="true"]{border-color:var(--accent);color:var(--accent);background:var(--sheet)}
+.exbody{margin-top:8px;padding:10px 12px;border:1.5px solid var(--rule);border-radius:12px;background:var(--sheet)}
+.exbody .partners,.exbody .wgroups{margin-top:0}
+.says{display:grid;gap:8px}.say1{display:grid;gap:2px;text-decoration:none;color:var(--ink);border:1px solid var(--rule);border-radius:10px;padding:8px 10px;background:var(--paper)}
+.say1:hover{border-color:var(--accent)}.say1 b{font-style:italic}.say1 small{color:var(--muted);font-weight:700}.say1 span{font-size:.9rem}
 </style>
-<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261123l"></script><script src="js/icons.js?v=20261123l"></script><script src="js/app.js?v=20261123l"></script><script src="js/sets.js?v=20261123l"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261123l"></script>
+<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261123m"></script><script src="js/icons.js?v=20261123m"></script><script src="js/app.js?v=20261123m"></script><script src="js/sets.js?v=20261123m"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261123m"></script>
 </head><body>
 <div class="wrap" style="max-width:1180px">
   <div class="head2">
@@ -233,7 +243,7 @@ const unitTag=v=>{if(v.companion)return `<span class="utag" title="Not in this s
 function groupURL(k,t,w){const q=new URLSearchParams(location.search);q.set("g",k+"|"+t);q.set("w",w);return location.pathname+"?"+q.toString();}
 function groupsHTML(i,v){if(wordHidden(i))return "";
   const gs=Sets.wordGroups(v).filter(g=>GP.has(g.kind,g.tag));if(!gs.length)return "";
-  return `<div class="wgroups no-print"><span class="wgl">Groups:</span>${gs.map(g=>`<span class="wg"><button type="button" data-gk="${g.kind}" data-gt="${esc(g.tag)}" data-gi="${i}" title="${g.kind==="scale"?"Show it on the meter":g.kind==="opp"?"Show it with its opposites":"Show the similar words"}">${esc(g.label)}</button><a href="${esc(groupURL(g.kind,g.tag,v.w))}" target="_blank" rel="noopener" title="Open in a new tab" aria-label="Open ${esc(g.label)} in a new tab">↗</a></span>`).join("")}</div>`;}
+  return `<div class="wgroups no-print">${gs.map(g=>`<span class="wg"><button type="button" data-gk="${g.kind}" data-gt="${esc(g.tag)}" data-gi="${i}" title="${g.kind==="scale"?"Show it on the meter":g.kind==="opp"?"Show it with its opposites":"Show the similar words"}">${esc(g.label)}</button><a href="${esc(groupURL(g.kind,g.tag,v.w))}" target="_blank" rel="noopener" title="Open in a new tab" aria-label="Open ${esc(g.label)} in a new tab">↗</a></span>`).join("")}</div>`;}
 // jump to a group on this page, with the meter set to the word and its card highlighted
 function jumpTo(kind,tag,i){const v=D[i];
   if(kind==="scale"){const x=Sets.scaleOfWord(v,tag);if(x)METER_AT[tag]=x.r;}
@@ -254,22 +264,40 @@ function partnerChip(x,mode){const inner=mode==="word"?`<b>${esc(x.link?x.link.w
   if(!x.link)return `<span class="pc">${inner}</span>`;
   if(!x.link.set){const k=wordIndex(x.link.w);return k>=0?`<button type="button" class="pc" data-pw="${k}" title="Go to ${esc(x.link.w)}">${inner} ↓</button>`:`<span class="pc">${inner}</span>`;}
   const q=new URLSearchParams({set:x.link.set,w:x.link.w});return `<a class="pc" href="list.html?${q}" target="_blank" rel="noopener" title="Open ${esc(x.link.w)} in a new tab">${inner} ↗</a>`;}
-function partnersHTML(i,v){if(wordHidden(i)||!v.wid)return "";const P=PARTNERS.get(v.wid);if(!P||!(P.own.length||P.also.length))return "";
+function partnersHTML(i,v){if(wordHidden(i)||!v.wid)return "";const P=PARTNERS.get(v.wid);if(!P||!(P.own.some(x=>x.kind!=="saying")||P.also.length))return "";
   const SC=Sets.partnerScales(P.own),onMeter=new Set(SC.filter(s=>s.items.length>1).flatMap(s=>s.items.map(x=>x.phrase)));
   const KL={adjective:"adjectives",adverb:"adverbs",idiom:"idioms",verb:"verbs",noun:"nouns",preposition:"little words"};
   const meters=SC.filter(s=>s.items.length>1).map((s,n)=>`<div class="pr"><span class="pk">🎚️ ${esc(s.g.split(" · ").slice(0,/how long/.test(s.g)?2:1).join(" · "))} · ${KL[s.kind]||s.kind}</span>${s.items.map(x=>`<span class="pc">${x.kind==="idiom"?"💬 "+esc(x.phrase):boldPartner(x.phrase,x.partner)}</span>`).join('<span class="arr">→</span>')}<button type="button" class="pc pmb" data-pm="${i}|${n}">🎚️ Open meter</button></div><div class="pmeter" id="pm-${i}-${n}" hidden></div>`).join("");
-  const rows=meters+Sets.PARTNER_KINDS.map(([k,lab,hint])=>{const xs=P.own.filter(x=>x.kind===k&&!onMeter.has(x.phrase));return xs.length?`<div class="pr"><span class="pk">${lab}${hint?` <small>${hint}</small>`:""}</span>${xs.map(x=>partnerChip(x)).join("")}</div>`:"";}).join("");
+  const rows=meters+Sets.PARTNER_KINDS.filter(([k])=>k!=="saying").map(([k,lab,hint])=>{const xs=P.own.filter(x=>x.kind===k&&!onMeter.has(x.phrase));return xs.length?`<div class="pr"><span class="pk">${lab}${hint?` <small>${hint}</small>`:""}</span>${xs.map(x=>partnerChip(x)).join("")}</div>`:"";}).join("");
   const also=P.also.length?(v.author?`<div class="pr"><span class="pk">📖 Words in this saying</span>${P.also.map(x=>partnerChip(x,"word")).join("")}</div>`:`<div class="pr"><span class="pk">🔁 Also used in</span>${P.also.map(x=>partnerChip(x)).join("")}</div>`):"";
-  return `<div class="partners"><span class="ph">${v.author?"🔗 Linked words":"🔗 Goes with"}</span>${rows}${also}</div>`;}
+  return `<div class="partners">${rows}${also}</div>`;}
+// ---- the card's "explore" row: Word family · Goes with · Sayings, each opens in place (one at a time) ----
+const SAYSET="00000000-0000-4000-8000-000000005a1d";let SAYS=[];
+App.client.from("set_items").select("term,author,meaning,tags").eq("set_id",SAYSET).then(r=>{SAYS=((r&&r.data)||[]).filter(x=>x.author);if(SAYS.length)render();},()=>{});
+// sayings with the same idea: shared similar-words group (≈) or opposite side (⇄), or the saying uses the word; best first
+function sayingsFor(v){if(v.author||!SAYS.length)return [];const idea=t=>/^(≈|⇄)\s/.test(t),own=(v.tags||[]).filter(idea),out=[];
+  SAYS.forEach(s=>{if(s.term===v.w)return;const n=(s.tags||[]).filter(t=>idea(t)&&own.includes(t)).length;if(n)out.push({s,n});});
+  const P=v.wid&&PARTNERS.get(v.wid);((P&&P.own)||[]).filter(x=>x.kind==="saying").forEach(x=>{const s=SAYS.find(y=>y.term===x.phrase);if(!s)return;const o=out.find(y=>y.s===s);if(o)o.n=Math.max(o.n,3);else out.push({s,n:3});});
+  return out.sort((a,b)=>b.n-a.n).map(o=>o.s);}
+function sayingsHTML(v,i){const all=sayingsFor(v);if(!all.length)return "";const xs=S(i).sayAll?all:all.slice(0,3);
+  return `<div class="says">${xs.map(s=>{const q=new URLSearchParams({set:SAYSET,w:s.term});return `<a class="say1" href="list.html?${q}" target="_blank" rel="noopener"><b>“${esc(s.term)}”</b><small>${esc(s.author)}</small><span>${esc(s.meaning||"")}</span></a>`;}).join("")}${all.length>3?`<button type="button" class="exb" data-sayall="${i}">${S(i).sayAll?"Show fewer":`Show ${all.length-3} more`}</button>`:""}</div>`;}
+function exploreHTML(i,v){if(wordHidden(i))return "";
+  const fam=Sets.wordGroups(v).filter(g=>GP.has(g.kind,g.tag)).length;
+  const P=v.wid&&PARTNERS.get(v.wid),par=P?P.own.filter(x=>x.kind!=="saying").length+P.also.length:0;
+  const say=sayingsFor(v).length,open=S(i).ex||"";
+  const btns=[["fam","🧩 Word family",fam],["par",v.author?"🔗 Linked words":"🔗 Goes with",par],["say","📜 Sayings",say]].filter(x=>x[2]);
+  if(!btns.length)return "";
+  const body=open==="fam"?groupsHTML(i,v):open==="par"?partnersHTML(i,v):open==="say"?sayingsHTML(v,i):"";
+  return `<div class="explore no-print"><div class="exbar">${btns.map(([k,lab,n])=>`<button type="button" class="exb" data-ex="${i}|${k}" aria-expanded="${open===k}">${lab} <span class="n">${n}</span> <span class="chev">${open===k?"▴":"▾"}</span></button>`).join("")}</div>${body?`<div class="exbody">${body}</div>`:""}</div>`;}
 // ---- views ----
 function card(i,view){const v=D[i], hid=wordHidden(i);
   if(view==="detail")return `<article class="d" data-i="${i}">${SHOW.pic?picHTML(i,v):"<span></span>"}
-    <div class="body"><div class="w">${wordHTML(i,v)}</div>${hid?"":pillsHTML(v)}${sayHTML(v,i)}${spellHTML(i,v)}${meanHTML(i,v)}${idiomHTML(i,v)}${exHTML(i,v)}${trHTML(i,v)}${partnersHTML(i,v)}${groupsHTML(i,v)}${coverBtns(i)}</div>
+    <div class="body"><div class="w">${wordHTML(i,v)}</div>${hid?"":pillsHTML(v)}${sayHTML(v,i)}${spellHTML(i,v)}${meanHTML(i,v)}${idiomHTML(i,v)}${exHTML(i,v)}${trHTML(i,v)}${exploreHTML(i,v)}${coverBtns(i)}</div>
     <div class="side">${unitTag(v)}${hearBtn(i,v)}</div></article>`;
-  if(view==="grid")return `<article class="g" data-i="${i}">${picHTML(i,v)}<div class="w">${wordHTML(i,v)}${hearBtn(i,v)}</div>${hid?"":pillsHTML(v)}${sayHTML(v,i)}${spellHTML(i,v)}${meanHTML(i,v)}${idiomHTML(i,v)}${trHTML(i,v)}${partnersHTML(i,v)}${groupsHTML(i,v)}${coverBtns(i)}</article>`;
-  if(view==="blocks")return `<article class="b" data-i="${i}">${picHTML(i,v)}<div class="w bw" data-hear="${i}" role="button" tabindex="0" aria-label="Hear the word">${wordHTML(i,v)} ${icon("volume-2",15)}</div>${sayHTML(v,i)}${spellHTML(i,v)}${S(i).cm?meanHTML(i,v):""}${groupsHTML(i,v)}${coverBtns(i)}</article>`;
+  if(view==="grid")return `<article class="g" data-i="${i}">${picHTML(i,v)}<div class="w">${wordHTML(i,v)}${hearBtn(i,v)}</div>${hid?"":pillsHTML(v)}${sayHTML(v,i)}${spellHTML(i,v)}${meanHTML(i,v)}${idiomHTML(i,v)}${trHTML(i,v)}${exploreHTML(i,v)}${coverBtns(i)}</article>`;
+  if(view==="blocks")return `<article class="b" data-i="${i}">${picHTML(i,v)}<div class="w bw" data-hear="${i}" role="button" tabindex="0" aria-label="Hear the word">${wordHTML(i,v)} ${icon("volume-2",15)}</div>${sayHTML(v,i)}${spellHTML(i,v)}${S(i).cm?meanHTML(i,v):""}${exploreHTML(i,v)}${coverBtns(i)}</article>`;
   return `<tr data-i="${i}">${SHOW.pic?`<td>${picHTML(i,v)}</td>`:""}<td><div class="w">${wordHTML(i,v)}</div>${sayHTML(v,i)}${spellHTML(i,v)}</td><td>${hearBtn(i,v)}</td>
-    <td>${meanHTML(i,v)}${idiomHTML(i,v)}${partnersHTML(i,v)}${groupsHTML(i,v)}${coverBtns(i)}</td>${SHOW.tr&&D.some(x=>x.ar)?`<td class="tr" dir="auto">${S(i).cm&&!S(i).mrev?"":esc(v.ar)}</td>`:""}<td>${unitTag(v)}</td></tr>`;}
+    <td>${meanHTML(i,v)}${idiomHTML(i,v)}${exploreHTML(i,v)}${coverBtns(i)}</td>${SHOW.tr&&D.some(x=>x.ar)?`<td class="tr" dir="auto">${S(i).cm&&!S(i).mrev?"":esc(v.ar)}</td>`:""}<td>${unitTag(v)}</td></tr>`;}
 function visible(){const q=$("q").value.trim().toLowerCase();
   return ORDER.filter(i=>{const v=D[i];return UP.match(v)&&GP.match(v)&&(!q||(v.w+" "+v.d+" "+v.ar+" "+(v.lit||"")+" "+(v.eq||"")).toLowerCase().includes(q));});}
 function render(){const L=visible();
@@ -295,6 +323,8 @@ const norm=s=>String(s).trim().toLowerCase().replace(/[’']/g,"'").replace(/\s+
 function check(i){const inp=$("out").querySelector(`[data-spell="${i}"]`);const typed=inp?inp.value:"";if(!typed.trim())return false;
   Object.assign(S(i),{typed,ok:norm(typed)===norm(D[i].w)});rerender(i);return true;}
 $("out").addEventListener("click",e=>{const b=e.target.closest("[data-gk]");if(!b)return;jumpTo(b.dataset.gk,b.dataset.gt,+b.dataset.gi);});
+$("out").addEventListener("click",e=>{const b=e.target.closest("[data-sayall]");if(!b)return;const st=S(+b.dataset.sayall);st.sayAll=!st.sayAll;render();});
+$("out").addEventListener("click",e=>{const b=e.target.closest("[data-ex]");if(!b)return;const [i,k]=b.dataset.ex.split("|");const st=S(+i);st.ex=st.ex===k?"":k;render();const el=$("out").querySelector(`[data-ex="${i}|${k}"]`);if(el)el.focus({preventScroll:true});});
 $("out").addEventListener("click",e=>{const b=e.target.closest("[data-pw]");if(!b)return;showWord(+b.dataset.pw);});
 $("out").addEventListener("click",e=>{const b=e.target.closest("[data-pm]");if(!b)return;const [i,n]=b.dataset.pm.split("|").map(Number),el=$(`pm-${i}-${n}`);if(!el)return;
   el.hidden=!el.hidden;b.textContent=el.hidden?"🎚️ Open meter":"✕ Close meter";if(!el.hidden&&!el.dataset.on){el.dataset.on=1;const v=D[i],sc=Sets.partnerScales(PARTNERS.get(v.wid).own).filter(s=>s.items.length>1)[n];Sets.mountPartnerMeter(el,sc,{emoji:v.emoji});}});
