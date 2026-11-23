@@ -51,7 +51,7 @@ textarea.mid{width:100%;min-height:70px;font:14px/1.5 var(--f-body);padding:8px 
 .mus .wide{grid-column:1/-1}.mus select,.mus input{font:inherit;padding:7px 9px;border:1px solid var(--rule);border-radius:8px;background:var(--sheet);color:var(--ink)}
 .tracks{display:grid;gap:8px;margin-top:12px}.trk{display:flex;flex-wrap:wrap;gap:8px;align-items:center;border:1px solid var(--rule);border-radius:10px;padding:8px 10px}.trk audio{flex:1 1 260px;height:36px}
 </style>
-<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261123u"></script><script src="js/icons.js?v=20261123u"></script><script src="js/app.js?v=20261123u"></script><script src="js/sets.js?v=20261123u"></script><script src="js/storycore.js?v=20261123u"></script><script src="js/montage.js?v=20261123u"></script>
+<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261123v"></script><script src="js/icons.js?v=20261123v"></script><script src="js/app.js?v=20261123v"></script><script src="js/sets.js?v=20261123v"></script><script src="js/storycore.js?v=20261123v"></script><script src="js/montage.js?v=20261123v"></script>
 </head><body>
 <div class="wrap" style="max-width:1320px">
   <div class="head2">
@@ -114,6 +114,7 @@ function planHTML(){const sc=[[]];(CUR.blocks||[]).forEach(b=>b.k==="s"?sc.push(
 function drawScript(){const L=K.lvl(CUR);
   $("pane").innerHTML=`<div class="blk plan"><h3>The student's plan</h3>${planHTML()}</div>
    <div class="blk lvl"><h3>Level</h3><div class="row"><select id="lv">${K.LEVELS.slice(1).map((x,k)=>`<option value="${k+1}" ${CUR.level===k+1?"selected":""}>Level ${k+1} · ${esc(x.n)}</option>`).join("")}</select><span class="muted" id="lvd">${esc(L.d)}${L.tol!=null?` · AI allows ${L.tol} small mistake${L.tol===1?"":"s"}`:""}</span></div>
+     <p class="hint" style="margin:6px 0 0">Toolbox: ${esc(K.useText(L))}</p>${K.toolChecks(CUR,D).length?`<p class="hint" style="margin:2px 0 0">${K.toolChecks(CUR,D).map(t=>`${t.ok?"✓":"✗"} ${esc(t.text)}`).join(" · ")}</p>`:""}
      <p class="hint muted" style="margin:6px 0 0;font-size:.85rem">The student sees this level. From level 4 up, they write their own sentences and the AI checks them first.</p></div>
    <div class="blk"><h3>Write the story</h3><p class="hint">${L.mode==="none"?"The AI writes the story from the student's plan, plus a cast list and one shot per scene for the storyboard.":"The AI checks the student's sentences first: <b>ACCEPT</b> writes the story and storyboard; <b>REJECT</b> gives hints to send back."}</p>
      <div class="row"><button class="btn primary" id="ask" type="button">${icon("sparkles",16)}Ask AI</button><button class="btn small" id="copy" type="button">${icon("copy",16)}Copy the prompt</button><span class="muted" id="askMsg"></span></div>

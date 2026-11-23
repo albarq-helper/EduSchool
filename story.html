@@ -153,8 +153,9 @@
 .fitq{margin:10px 0;padding:10px 12px;border:1.5px solid var(--sun);background:var(--sun-soft);border-radius:14px;display:grid;gap:8px}
 .fitq h3{margin:0;font:800 .95rem var(--f-body)}.fitq .fq{display:flex;gap:10px;align-items:center;justify-content:space-between;background:var(--paper);border-radius:10px;padding:8px 10px}
 .fitq .fq b{font-style:italic}.fitq .fq span{display:block;font-size:.82rem;font-weight:700}.fitq .linkb{all:unset;cursor:pointer;color:var(--accent);font-weight:800;font-size:.88rem}
+#checks .how{display:block;font-weight:600;font-size:.8rem;color:var(--muted);margin:1px 0 2px 1.2em}
 </style>
-<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261123u"></script><script src="js/icons.js?v=20261123u"></script><script src="js/app.js?v=20261123u"></script><script src="js/sets.js?v=20261123u"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261123u"></script><script src="js/storycore.js?v=20261123u"></script><script src="js/montage.js?v=20261123u"></script>
+<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261123v"></script><script src="js/icons.js?v=20261123v"></script><script src="js/app.js?v=20261123v"></script><script src="js/sets.js?v=20261123v"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261123v"></script><script src="js/storycore.js?v=20261123v"></script><script src="js/montage.js?v=20261123v"></script>
 </head><body>
 <div class="wrap" style="max-width:1280px">
   <div class="head2">
@@ -195,7 +196,7 @@
   <p>Build your own story from vocabulary words: pick them, put them in order, add your own words and scenes. Then send it to your parent, who turns it into a finished story and a movie.</p>
   <h3>Levels</h3>
   <p class="muted" style="margin:0 0 6px">Your parent chooses the level for each story. Higher levels ask for more writing.</p>
-  <table><thead><tr><th>Level</th><th>Name</th><th>What you must do</th></tr></thead><tbody id="infoLevels"></tbody></table>
+  <table><thead><tr><th>Level</th><th>Name</th><th>What you must do</th><th>Your toolbox</th></tr></thead><tbody id="infoLevels"></tbody></table>
   <h3>How it works for you</h3>
   <ul>
     <li>Pick words from the <b>Word library</b> (tap a picture to watch and hear it), press <b>+ Add</b> or drag them into the story, and put them in order. Add your own words and new scenes.</li>
@@ -238,7 +239,7 @@ let DEF_LEVEL=3; // new stories start at the level the parent set on the most re
 const stemOf=w=>{const t=clean(w).toLowerCase(),b=t.replace(/(ing|ies|ied|ed|es|ly|s|e|y)$/,"");return b.length<4?t:b;};
 const hasWord=(txt,w)=>new RegExp(`(?<![a-z])${stemOf(w).replace(/[.*+?^${}()|[\]\\]/g,"\\$&")}`,"i").test(txt);
 // scenes: [{n, words:[term], texts:[own words]}]
-function scenesOf(){const sc=[{n:1,words:[],texts:[]}];(CUR?CUR.blocks:[]).forEach(b=>{if(b.k==="s")sc.push({n:sc.length+1,words:[],texts:[]});else if(b.k==="w")sc[sc.length-1].words.push(b.w);else if((b.t||"").trim())sc[sc.length-1].texts.push(b.t.trim());});
+function scenesOf(){const sc=[{n:1,words:[],texts:[]}];(CUR?CUR.blocks:[]).forEach(b=>{if(b.k==="s")sc.push({n:sc.length+1,words:[],texts:[]});else if(b.k==="w"){if(!Sets.isSaying(D[wi(b.w)]))sc[sc.length-1].words.push(b.w);}else if((b.t||"").trim())sc[sc.length-1].texts.push(b.t.trim());});
   return sc.filter(x=>x.words.length||x.texts.length);}
 // what she has to write at this level
 function items(){const L=LV(),sc=scenesOf();if(L.mode==="scene")return sc.map(x=>({key:"s"+x.n,scene:x.n,words:x.words}));
@@ -252,11 +253,12 @@ function checkItem(it){const L=LV(),t=((CUR.sentences||{})[it.key]||"").trim(),P
   if(L.caps&&!/^["'“]?[A-Z]/.test(t))P.push("start with a capital letter");
   if(L.caps&&!/[.!?]["'”]?$/.test(t))P.push("end with . ! or ?");
   return P;}
-function planChecks(){const L=LV(),sc=scenesOf(),nw=(CUR?CUR.blocks:[]).filter(b=>b.k==="w").length,out=[];
+function planChecks(){const L=LV(),sc=scenesOf(),nw=(CUR?CUR.blocks:[]).filter(b=>b.k==="w"&&!Sets.isSaying(D[wi(b.w)])).length,out=[];
   out.push([nw>=L.min,`${nw} of ${L.min}+ words`]);
   out.push([sc.length>=L.scenes,`${sc.length} of ${L.scenes}+ scene${L.scenes>1?"s":""}`]);
   if(L.link&&L.mode==="none")out.push([sc.length&&sc.every(x=>x.texts.length),"your own words in every scene"]);
   if(L.link&&L.mode!=="none"){const lw=/\b(then|after|before|because|but|so|suddenly|when|while|finally|later|next|meanwhile|one day|in the end)\b/i;out.push([sc.length&&sc.every(x=>Object.entries(CUR.sentences||{}).some(([k,v])=>(k==="s"+x.n||k.startsWith(x.n+"|"))&&lw.test(v))),"a linking word (then, because, suddenly…) in every scene"]);}
+  StoryCore.toolChecks(CUR,D).forEach(t=>out.push([t.ok,t.text,t.how]));
   const its=items();if(its.length){const ok=its.filter(it=>!checkItem(it).length).length;out.push([ok===its.length,`${ok} of ${its.length} sentences ready`]);}
   return out;}
 function drawWrite(){const L=LV(),its=items(),box=$("write");
@@ -269,7 +271,7 @@ function drawItemStatus(it){const el=$("write").querySelector(`.wi[data-key="${C
   el.classList.toggle("good",!P.length);el.classList.toggle("bad",!!P.length&&P[0]!=="not written yet");
   el.querySelector(".st").innerHTML=P.length?`<span class="no">✗ ${esc(P.join(" · "))}</span>`:`<span class="ok">✓ Looks good</span>`;}
 function drawChecks(){if(!CUR){$("checks").innerHTML="";return;}const C_=planChecks();
-  $("checks").innerHTML=`<b>Ready to send? (Level ${CUR.level} · ${esc(LV().n)})</b>`+C_.map(([ok,t])=>`<span class="${ok?"ok":"no"}">${ok?"✓":"✗"} ${esc(t)}</span>`).join("");}
+  $("checks").innerHTML=`<b>Ready to send? (Level ${CUR.level} · ${esc(LV().n)})</b>`+C_.map(([ok,t,how])=>`<span class="${ok?"ok":"no"}">${ok?"✓":"✗"} ${esc(t)}${how&&!ok?`<small class="how">${esc(how)}</small>`:""}</span>`).join("");}
 const wi=w=>D.findIndex(v=>v.w===w);
 const clean=w=>String(w).replace(/\s*\(.*\)/,"");
 let STORIES=[], CUR=null, SEL=-1, timer=null, DRAG=null;
@@ -479,7 +481,7 @@ function drawRead(){const box=$("read");if(!CUR||!(CUR.story_text||CUR.video_url
   if(film)Montage.mount($("movie"),{title:CUR.title,by:(ME.full_name||"me").split(" ")[0],shots:SHOTS[CUR.id],captions:StoryCore.paragraphs(CUR.story_text),music:MUSIC[CUR.id],trans:StoryCore.scenes(CUR).map(x=>x.trans||[])});}
 $("read").addEventListener("click",e=>{const m=e.target.closest("mark[data-i]");if(m)Sets.sayWord(D[+m.dataset.i]);});
 
-$("infoLevels").innerHTML=LEVELS.slice(1).map((L,k)=>`<tr><td>${k+1}</td><td>${esc(L.n)}</td><td>${esc(L.d)}</td></tr>`).join("");
+$("infoLevels").innerHTML=LEVELS.slice(1).map((L,k)=>`<tr><td>${k+1}</td><td>${esc(L.n)}</td><td>${esc(L.d)}</td><td>${esc(StoryCore.useText(L))}</td></tr>`).join("");
 document.addEventListener("click",e=>{if(e.target.closest("[data-info]")){e.preventDefault();$("infoDlg").showModal();}});
 // ---------- Word explorer: double-click / long-press / 🔍 on a word in the story ----------
 // Meters (slider: pick a stronger or softer word), similar words, opposites → replace the word (we remember the first choice in b.from).
