@@ -294,12 +294,13 @@
     });
     return out;
   }
-  // partners that sit on a meter (light rain → pouring rain): [{g, two, left, right, items:[partner + r]}]
+  // partners that sit on a meter, one meter per kind (light rain → pouring rain; rain lightly → rain relentlessly):
+  //   [{g, kind, two, left, right, items:[partner + r]}]. The same meter name links kinds: same level = same strength.
   function partnerScales(list) {
     const m = new Map();
-    (list || []).forEach(x => (x.tags || []).forEach(t => { if (!isScale(t)) return; const s = scaleSplit(t); if (!m.has(s.g)) m.set(s.g, []); m.get(s.g).push({ ...x, r: s.r }); }));
-    return [...m].map(([g, items]) => { const e = g.split(/\s*·\s*/).pop().split(/\s*(?:→|⇄)\s*/);
-      return { g, two: /⇄/.test(g) || items.some(i => i.r < 0), left: e[0], right: e[1] || "", items: items.sort((a, b) => a.r - b.r) }; });
+    (list || []).forEach(x => (x.tags || []).forEach(t => { if (!isScale(t)) return; const s = scaleSplit(t), key = s.g + "|" + x.kind; if (!m.has(key)) m.set(key, { g: s.g, kind: x.kind, items: [] }); m.get(key).items.push({ ...x, r: s.r }); }));
+    return [...m.values()].map(o => { const e = o.g.split(/\s*·\s*/).pop().split(/\s*(?:→|⇄)\s*/);
+      return { ...o, two: /⇄/.test(o.g) || o.items.some(i => i.r < 0), left: e[0], right: e[1] || "", items: o.items.sort((a, b) => a.r - b.r) }; });
   }
   // the same meter slider as for words, filled with partner phrases
   function mountPartnerMeter(el, sc, o = {}) {
@@ -307,7 +308,7 @@
     sc.items.forEach((x, k) => { if (!byR.has(x.r)) byR.set(x.r, []); byR.get(x.r).push(k); });
     const start = o.start != null ? o.start : sc.items[0].r;
     Meter.mount(el, { title: sc.g, left: sc.left, right: sc.right, two: sc.two, words, levels: [...byR].map(([rank, items]) => ({ rank, items })), start,
-      onAdd: o.onAdd ? k => o.onAdd(sc.items[k]) : null, addLabel: o.addLabel, onSay: k => speak(sc.items[k].phrase) });
+      onAdd: o.onAdd ? k => o.onAdd(sc.items[k]) : null, addLabel: o.addLabel, onSay: k => speak(sc.items[k].phrase), onLevel: o.onLevel });
   }
   const PARTNER_KINDS = [["adjective", "🎨 Adjectives", "what kind?"], ["adverb", "⏩ Adverbs", "how?"], ["verb", "🏃 Verbs", "what happens?"], ["noun", "📦 Nouns", "what?"],
     ["preposition", "🔗 Little words", "at, for, with…"], ["idiom", "💬 Idioms & phrasal verbs", ""], ["saying", "📜 Famous sayings", ""]];

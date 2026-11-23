@@ -135,4 +135,18 @@ Impact|Impact · small → huge|adjective|small impact:small:1, big impact:big:3
 Nervous|Nervous · a bit → very|adverb|a bit nervous:a bit:1, very nervous:very:4
 Fortunate|Fortunate · very → extremely|adverb|very fortunate:very:3, extremely fortunate:extremely:5
 Obvious|Obvious · very → perfectly|adverb|very obvious:very:3, perfectly obvious:perfectly:5
+Rain|Rain · light → pouring|adverb|rain lightly:lightly:1, rain steadily:steadily:3, rain heavily:heavily:4, rain relentlessly:relentlessly:5
+Rain|Rain · light → pouring|idiom|Raining cats and dogs:Raining cats and dogs:5
+Wind|Wind · gentle → howling|adverb|blow gently:gently:1, blow hard:hard:4
+Snow|Snow · light → heavy|adverb|snow lightly:lightly:1, snow heavily:heavily:5
+Sleep|Sleep · light → deep|adjective|light sleep:light:1, good sleep:good:3, deep sleep:deep:5
+Sleep|Sleep · light → deep|adverb|sleep lightly:lightly:1, sleep peacefully:peacefully:3, sleep soundly:soundly:5
+Trouble|Trouble · a little → serious|idiom|In hot water:In hot water:4
+Test|Test · easy → hard|adjective|easy test:easy:0, hard test:hard:4
+Test|Test · easy → hard|idiom|A piece of cake:A piece of cake:0
+Homework|Homework · easy → difficult|adjective|easy homework:easy:0, difficult homework:difficult:4
+Question|Question · easy → tricky|adjective|easy question:easy:0, good question:good:2, tricky question:tricky:4
+Decision|Decision · small → crucial|adjective|small decision:small:1, big decision:big:3, difficult decision:difficult:4, crucial decision:crucial:5
+Attention|Attention · close → full|adjective|close attention:close:3, full attention:full:5
+Attention|Attention · close → full|idiom|Keep an eye on:Keep an eye on:3, All ears:All ears:5
 """

@@ -109,7 +109,10 @@
 .wxlist{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}
 .wxw{display:grid;gap:2px;text-align:left;padding:10px 12px;border-radius:12px;border:1.5px solid var(--rule);background:var(--paper);color:var(--ink);cursor:pointer;font:inherit}
 .wxw:hover{border-color:var(--accent)}.wxw small{color:var(--muted);font-size:.8rem}.wxw em{font:800 .8rem var(--f-body);color:var(--accent);font-style:normal}
-.wxpr{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:6px}
+.wxpr{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:8px}
+.wxkinds{display:flex;gap:6px;margin-bottom:8px}.wxkind{font:800 .9rem var(--f-body);padding:6px 14px;border-radius:10px;border:1.5px solid var(--rule);background:var(--paper);color:var(--ink);cursor:pointer}
+.wxkind[aria-selected="true"]{border-color:var(--accent);color:var(--accent);background:var(--sheet);box-shadow:inset 0 -3px 0 var(--accent)}
+.wxsame{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:8px;min-height:10px}
 .wxk{font:700 .8rem var(--f-body);color:var(--muted);min-width:9em}
 .wxp{font:600 .92rem var(--f-body);padding:5px 11px;border-radius:999px;border:1.5px solid var(--rule);background:var(--paper);color:var(--ink);cursor:pointer}
 .wxp.on{background:var(--accent);border-color:var(--accent);color:#fff}
@@ -118,7 +121,7 @@
 .bk .was{font:700 .72rem var(--f-body);color:var(--muted)}
 .bk .wxbtn{border:0;background:transparent;cursor:pointer;font-size:1rem;padding:2px}
 </style>
-<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261123h"></script><script src="js/icons.js?v=20261123h"></script><script src="js/app.js?v=20261123h"></script><script src="js/sets.js?v=20261123h"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261123h"></script><script src="js/storycore.js?v=20261123h"></script><script src="js/montage.js?v=20261123h"></script>
+<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261123i"></script><script src="js/icons.js?v=20261123i"></script><script src="js/app.js?v=20261123i"></script><script src="js/sets.js?v=20261123i"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261123i"></script><script src="js/storycore.js?v=20261123i"></script><script src="js/montage.js?v=20261123i"></script>
 </head><body>
 <div class="wrap" style="max-width:1280px">
   <div class="head2">
@@ -374,13 +377,13 @@ function wxGroups(i){const v=D[i],T=v.tags||[],all=D.map((_,j)=>j);
   const opp=uniqIdx(all.filter(j=>(D[j].tags||[]).some(t=>opps.some(o=>t.startsWith("⇄ "+o.g+":")&&!t.endsWith(": "+o.side)))),i);
   const P=(window.PARTNERS_MAP&&v.wid&&window.PARTNERS_MAP.get(v.wid))||{own:[],also:[]};
   return {scales,sim,opp,partners:P.own.filter(x=>x.kind!=="saying")};}
+const WX_DESC=["adjective","adverb","idiom"],WX_AROUND=["verb","noun","preposition"],WX_KL={adjective:"🎨 Adjective",adverb:"⏩ Adverb",idiom:"💬 Idiom",verb:"🏃 Verbs",noun:"📦 Nouns",preposition:"🔗 Little words"};
+function wxTabs(G){const tabs=[];G.scales.forEach((s,n)=>tabs.push({id:"m"+n,label:"🎚️ "+s.g,s}));if(G.sim.length)tabs.push({id:"sim",label:"≈ Similar"});if(G.opp.length)tabs.push({id:"opp",label:"⇄ Opposites"});
+  if(G.partners.some(x=>WX_DESC.includes(x.kind)))tabs.push({id:"desc",label:"✨ Describe it"});
+  if(G.partners.some(x=>WX_AROUND.includes(x.kind)))tabs.push({id:"around",label:"📖 Around the word"});return tabs;}
 function openWX(k){const b=CUR&&CUR.blocks[k];if(!b||b.k!=="w")return;const i=wi(b.w);if(i<0)return;
-  const G=wxGroups(i),tabs=[];
-  G.scales.forEach((s,n)=>tabs.push({id:"m"+n,label:"🎚️ "+s.g,s}));
-  if(G.sim.length)tabs.push({id:"sim",label:"≈ Similar words"});
-  if(G.opp.length)tabs.push({id:"opp",label:"⇄ Opposites"});
-  if(G.partners.length)tabs.push({id:"par",label:"🔗 Goes with"});
-  WX={k,i,G,tabs,tab:(tabs[0]||{}).id};drawWX();$("wxDlg").showModal();}
+  const G=wxGroups(i),tabs=wxTabs(G);
+  WX={k,i,G,tabs,tab:(tabs.find(x=>x.id==="desc")||tabs[0]||{}).id,kind:"adjective"};drawWX();$("wxDlg").showModal();}
 function drawWX(){const b=CUR.blocks[WX.k],i=wi(b.w),v=D[i]||{},G=WX.G=wxGroups(i);
   const tabs=WX.tabs;if(!tabs.some(t=>t.id===WX.tab))WX.tab=(tabs[0]||{}).id;
   const subs=(b.p||[]).map((p,n)=>`<span class="wxsub">${esc(p)} <button type="button" data-unsub="${n}" aria-label="Remove ${esc(p)}">✕</button></span>`).join("");
@@ -388,15 +391,25 @@ function drawWX(){const b=CUR.blocks[WX.k],i=wi(b.w),v=D[i]||{},G=WX.G=wxGroups(
   if(!t)body=`<p class="muted">This word has no meter, similar words, opposites or partners yet.</p>`;
   else if(t.s)body=`<p class="muted">Slide to a softer or stronger word, then press <b>↺ Use this word</b>.</p><div id="wxMeter"></div>`;
   else if(t.id==="sim"||t.id==="opp")body=`<p class="muted">${t.id==="sim"?"Words that mean nearly the same. Which one fits your story best?":"Words that mean the opposite. What happens if you use one?"}</p><div class="wxlist">${(t.id==="sim"?G.sim:G.opp).map(j=>`<button type="button" class="wxw" data-use="${j}"><span>${esc(D[j].emoji||"")} <b>${esc(nmw(j))}</b></span><small>${esc(D[j].d||"")}</small><em>↺ Use</em></button>`).join("")}</div>`;
-  else{const K=Sets.PARTNER_KINDS.filter(([k])=>k!=="saying");const have=new Set((b.p||[]).map(x=>x.toLowerCase()));
-    const SC=Sets.partnerScales(G.partners),onM=new Set(SC.flatMap(s=>s.items.map(x=>x.phrase)));
-    body=`<p class="muted">Tap to add a partner to <b>${esc(nmw(i))}</b>. Tap again to take it off.</p>`+SC.map((s,n)=>`<div class="wxpr"><span class="wxk">🎚️ ${esc(s.g.split(" · ")[0])} meter <small>how strong?</small></span></div><div id="wxpm${n}"></div>`).join("")+K.map(([k,lab,hint])=>{const xs=G.partners.filter(x=>x.kind===k&&!onM.has(x.phrase));return xs.length?`<div class="wxpr"><span class="wxk">${lab}${hint?` <small>${hint}</small>`:""}</span>${xs.map(x=>`<button type="button" class="wxp${have.has(x.phrase.toLowerCase())?" on":""}" data-sub="${esc(x.phrase)}">${x.kind==="idiom"?"💬 ":""}${esc(x.phrase)}</button>`).join("")}</div>`:"";}).join("");}
+  else if(t.id==="desc"){const kinds=WX_DESC.filter(k=>G.partners.some(x=>x.kind===k));if(!kinds.includes(WX.kind))WX.kind=kinds[0];
+    const have=new Set((b.p||[]).map(x=>x.toLowerCase())),sc=Sets.partnerScales(G.partners).find(s=>s.kind===WX.kind&&s.items.length>1);
+    const rest=G.partners.filter(x=>x.kind===WX.kind&&!(sc&&sc.items.some(y=>y.phrase===x.phrase)));
+    body=`<div class="wxkinds" role="tablist">${kinds.map(k=>`<button type="button" class="wxkind" data-wxk="${k}" aria-selected="${k===WX.kind}">${WX_KL[k]}</button>`).join("")}</div>
+      ${sc?`<div id="wxpm"></div><div id="wxsame" class="wxsame"></div>`:""}
+      ${rest.length?`<div class="wxpr">${sc?`<span class="wxk">More</span>`:""}${rest.map(x=>`<button type="button" class="wxp${have.has(x.phrase.toLowerCase())?" on":""}" data-sub="${esc(x.phrase)}">${x.kind==="idiom"?"💬 ":""}${esc(x.phrase)}</button>`).join("")}</div>`:""}`;}
+  else if(t.id==="around"){const have=new Set((b.p||[]).map(x=>x.toLowerCase()));
+    body=`<p class="muted">Words that often come around <b>${esc(nmw(i))}</b> in a sentence.</p>`+WX_AROUND.map(k=>{const xs=G.partners.filter(x=>x.kind===k);return xs.length?`<div class="wxpr"><span class="wxk">${WX_KL[k]}</span>${xs.map(x=>`<button type="button" class="wxp${have.has(x.phrase.toLowerCase())?" on":""}" data-sub="${esc(x.phrase)}">${esc(x.phrase)}</button>`).join("")}</div>`:"";}).join("");}
   $("wxBody").innerHTML=`<div class="wxhead">${Sets.media(v,{cls:"wxpic",alt:""})}<div><h3>${esc(nmw(i))}</h3><p>${esc(v.d||"")}</p>
       ${b.from?`<p class="wxfrom">↺ You first chose <b>${esc(clean(b.from))}</b>. <button type="button" class="btn small" data-back="1">Go back to ${esc(clean(b.from))}</button></p>`:""}
       ${subs?`<div class="wxsubs">With: ${subs}</div>`:""}</div></div>
     <div class="wxtabs" role="tablist">${tabs.map(x=>`<button type="button" role="tab" class="wxt" data-wxt="${x.id}" aria-selected="${x.id===WX.tab}">${esc(x.label)}</button>`).join("")}</div>${body}`;
-  if(t&&t.id==="par"){const have=(b.p||[]).map(x=>x.toLowerCase());Sets.partnerScales(G.partners).forEach((s,n)=>{const el=$("wxpm"+n);if(!el)return;const cur=s.items.find(x=>have.includes(x.phrase.toLowerCase()));
-    Sets.mountPartnerMeter(el,s,{emoji:v.emoji,start:cur?cur.r:undefined,addLabel:`+ Use with ${nmw(i)}`,onAdd:x=>{b.p=(b.p||[]).filter(p=>!s.items.some(y=>y.phrase.toLowerCase()===p.toLowerCase()));if(b.p.length<4)b.p.push(x.phrase);changed();drawBoard();drawWX();}});});}
+  if(t&&t.id==="desc"){const sc=Sets.partnerScales(G.partners).find(s=>s.kind===WX.kind&&s.items.length>1);const el=$("wxpm");
+    if(sc&&el){const have=(b.p||[]).map(x=>x.toLowerCase()),cur=sc.items.find(x=>have.includes(x.phrase.toLowerCase()))||(()=>{const o=G.partners.find(x=>have.includes(x.phrase.toLowerCase())&&(x.tags||[]).some(tt=>tt.startsWith("📶 "+sc.g+":")));if(!o)return null;const r=+o.tags.find(tt=>tt.startsWith("📶 "+sc.g+":")).split(":").pop();return sc.items.slice().sort((p1,p2)=>Math.abs(p1.r-r)-Math.abs(p2.r-r))[0];})();
+      // other kinds at the same level of the same meter: light rain ≈ rain lightly; pouring rain ≈ Raining cats and dogs
+      const same=r=>{const xs=G.partners.filter(x=>x.kind!==WX.kind&&(x.tags||[]).some(tt=>tt.startsWith("📶 "+sc.g+":")&&+tt.split(":").pop()===r));const hv=new Set((b.p||[]).map(x=>x.toLowerCase()));
+        $("wxsame").innerHTML=xs.length?`<span class="wxk">Same strength</span>${xs.map(x=>`<button type="button" class="wxp${hv.has(x.phrase.toLowerCase())?" on":""}" data-sub="${esc(x.phrase)}">${x.kind==="idiom"?"💬 ":x.kind==="adverb"?"⏩ ":"🎨 "}${esc(x.phrase)}</button>`).join("")}`:"";};
+      Sets.mountPartnerMeter(el,sc,{emoji:v.emoji,start:cur?cur.r:undefined,addLabel:`+ Use with ${nmw(i)}`,onLevel:same,
+        onAdd:x=>{b.p=(b.p||[]).filter(p=>!sc.items.some(y=>y.phrase.toLowerCase()===p.toLowerCase()));if(b.p.length<4)b.p.push(x.phrase);changed();drawBoard();drawWX();}});}}
   if(t&&t.s){const all=D.map((_,j)=>j),byR=new Map();
     all.forEach(j=>(D[j].tags||[]).forEach(tt=>{const m=tt.replace(/^📶\s*/,"").match(/^(.*):\s*([+-]?\d+)$/);if(/^📶\s/.test(tt)&&m&&m[1].trim()===t.s.g){const r=+m[2];if(!byR.has(r))byR.set(r,[]);if(!byR.get(r).some(x=>sameName(x,j)))byR.get(r).push(j);}}));
     const levels=[...byR].map(([rank,items])=>({rank,items})),ends=t.s.g.split(/\s*(?:→|⇄)\s*/);
@@ -404,10 +417,11 @@ function drawWX(){const b=CUR.blocks[WX.k],i=wi(b.w),v=D[i]||{},G=WX.G=wxGroups(
     Meter.mount($("wxMeter"),{title:t.s.g,left:ends[0],right:ends[1]||"",two:levels.some(l=>l.rank<0),levels,start:cur?cur.r:t.s.r,addLabel:"↺ Use this word",onAdd:j=>replaceWord(j)});}}
 function replaceWord(j){const b=CUR.blocks[WX.k];if(!b||!D[j])return;const nw=D[j].w;if(nw===b.w)return;
   if(!b.from)b.from=b.w;if(b.from===nw)delete b.from;b.w=nw;delete b.p;
-  changed();drawBoard();WX.i=j;WX.tabs=(()=>{const G=wxGroups(j),t=[];G.scales.forEach((s,n)=>t.push({id:"m"+n,label:"🎚️ "+s.g,s}));if(G.sim.length)t.push({id:"sim",label:"≈ Similar words"});if(G.opp.length)t.push({id:"opp",label:"⇄ Opposites"});if(G.partners.length)t.push({id:"par",label:"🔗 Goes with"});return t;})();
+  changed();drawBoard();WX.i=j;WX.tabs=wxTabs(wxGroups(j));
   drawWX();App.status(`Now: ${clean(nw)}`,true);}
 $("wxBody").addEventListener("click",e=>{const b=CUR.blocks[WX.k];
   const t=e.target.closest("[data-wxt]");if(t){WX.tab=t.dataset.wxt;drawWX();return;}
+  const kk=e.target.closest("[data-wxk]");if(kk){WX.kind=kk.dataset.wxk;drawWX();return;}
   const u=e.target.closest("[data-use]");if(u){replaceWord(+u.dataset.use);return;}
   const s=e.target.closest("[data-sub]");if(s){const p=s.dataset.sub;b.p=b.p||[];const n=b.p.findIndex(x=>x.toLowerCase()===p.toLowerCase());if(n>=0)b.p.splice(n,1);else if(b.p.length<4)b.p.push(p);else App.status("Up to 4 partners for one word",false);if(!b.p.length)delete b.p;changed();drawBoard();drawWX();return;}
   const x=e.target.closest("[data-unsub]");if(x){b.p.splice(+x.dataset.unsub,1);if(!b.p.length)delete b.p;changed();drawBoard();drawWX();return;}
