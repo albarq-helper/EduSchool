@@ -51,7 +51,7 @@ textarea.mid{width:100%;min-height:70px;font:14px/1.5 var(--f-body);padding:8px 
 .mus .wide{grid-column:1/-1}.mus select,.mus input{font:inherit;padding:7px 9px;border:1px solid var(--rule);border-radius:8px;background:var(--sheet);color:var(--ink)}
 .tracks{display:grid;gap:8px;margin-top:12px}.trk{display:flex;flex-wrap:wrap;gap:8px;align-items:center;border:1px solid var(--rule);border-radius:10px;padding:8px 10px}.trk audio{flex:1 1 260px;height:36px}
 </style>
-<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261123q"></script><script src="js/icons.js?v=20261123q"></script><script src="js/app.js?v=20261123q"></script><script src="js/sets.js?v=20261123q"></script><script src="js/storycore.js?v=20261123q"></script><script src="js/montage.js?v=20261123q"></script>
+<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261123r"></script><script src="js/icons.js?v=20261123r"></script><script src="js/app.js?v=20261123r"></script><script src="js/sets.js?v=20261123r"></script><script src="js/storycore.js?v=20261123r"></script><script src="js/montage.js?v=20261123r"></script>
 </head><body>
 <div class="wrap" style="max-width:1320px">
   <div class="head2">
@@ -151,7 +151,7 @@ function fullPrompt(text,n){const p=plan(),cam=n?dirOf(n).cam.map(c=>c.f).filter
 function drawBoard(){const p=plan(),paras=K.paragraphs(CUR.story_text),missing=p.shots.filter(x=>!readyTake(x.n)&&!(latestTake(x.n)||{}).status?.match(/queued|shooting/));
   $("pane").innerHTML=`${!CUR.story_text?`<div class="note">Tip: write the story first (tab 1). The AI also writes the cast and one shot per scene for you.</div>`:""}
    <div class="blk"><h3>Cast</h3><p class="hint">Describe the main characters once. It's added to every shot so they look the same in every scene.</p>
-     <textarea class="mid" id="cast" placeholder="Rover: a small brown dog with a red collar…">${esc(p.cast)}</textarea></div>
+     <textarea class="mid" id="cast" placeholder="Rover: a small brown dog with a red collar…">${esc(p.cast||(K.castLines(CUR)||"").replace(/^- /gm,"").replace(/\n/g,"; "))}</textarea>${K.castLines(CUR)?`<p class="hint">🎭 The student's own characters: ${esc((CUR.characters||[]).map(c=>(c.emoji||"")+" "+c.name).join(" · "))}</p>`:""}</div>
    <div class="blk"><h3>Look of the film</h3><textarea class="mid" id="style">${esc(CUR.film_style||K.FILM_STYLE)}</textarea></div>
    <div class="blk"><h3>Shot list</h3><p class="hint">Each scene becomes one 5-second shot, made with fal (about $${K.SHOT_COST.toFixed(2)} each, at most 12 a day). Every take is kept; the newest finished take goes into the movie.</p>
      <div class="row" style="margin-bottom:10px"><button class="btn primary" id="shootAll" type="button" ${missing.length?"":"disabled"}>🎬 Shoot ${missing.length||"all"} scene${missing.length===1?"":"s"} without a take${missing.length?` (~$${(missing.length*K.SHOT_COST).toFixed(2)})`:""}</button>
@@ -249,7 +249,7 @@ async function makeMusic(){const scope=+$("mScope").value,styleSel=$("mStyle"),v
 // ---------- start ----------
 (async()=>{if(ME.role!=="teacher"){$("denied").hidden=false;return;}
   $("studio").hidden=false;loadTools();
-  const r=await C.from("stories").select("id,owner_id,title,blocks,status,story_text,video_url,video_plan,film_style,level,sentences,feedback,updated_at").eq("set_id",SET.id).order("updated_at",{ascending:false});
+  const r=await C.from("stories").select("id,owner_id,title,blocks,characters,status,story_text,video_url,video_plan,film_style,level,sentences,feedback,updated_at").eq("set_id",SET.id).order("updated_at",{ascending:false});
   if(r.error){$("ws").innerHTML=`<div class="empty">Can't load stories: ${esc(r.error.message)}</div>`;return;}
   try{await Sets.loadBoxes(SET);}catch(e){}   // words from every word box (feelings, linking words…) for pictures and meanings
   STORIES=(r.data||[]).map(s=>Object.assign(s,{blocks:Array.isArray(s.blocks)?s.blocks:[],sentences:s.sentences||{}}));

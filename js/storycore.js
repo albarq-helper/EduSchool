@@ -19,6 +19,11 @@
   // a famous saying block: {k:"q", w: saying, a: author, by: who says it ("Voice-over" or a character)}
   const sayingLine = b => `FAMOUS SAYING (said by ${(b.by || "").trim() || "Voice-over"}): "${b.w}"${b.a ? ` — ${b.a}` : ""}`;
   const lvl = s => LEVELS[(s && s.level) || 3];
+  // her characters: [{name, age, look, role, emoji}] -> prompt lines; the CAST line must keep them
+  const ROLE_NAMES = { hero: "hero", friend: "friend", wise: "wise one", family: "family", animal: "animal", rival: "rival", other: "" };
+  const castLines = s => (s && Array.isArray(s.characters) ? s.characters : []).filter(c => (c.name || "").trim())
+    .map(c => `- ${c.name.trim()}${c.age ? `, age ${String(c.age).trim()}` : ""}${ROLE_NAMES[c.role] ? ` (${ROLE_NAMES[c.role]})` : ""}${(c.look || "").trim() ? `: ${c.look.trim()}` : ""}`).join("\n");
+  const castBlock = s => { const c = castLines(s); return c ? `\nHer characters (use these names, ages and looks; the CAST line must describe them exactly like this):\n${c}\n` : ""; };
   // [{n, words:[term], texts:[own words]}]
   function scenes(s) {
     const sc = [{ n: 1, words: [], texts: [], cam: [], music: [], trans: [] }];
@@ -49,13 +54,13 @@
     return `Please write a short children's story for my daughter, a Grade 5 student learning English vocabulary. She planned it herself in a story builder.
 
 Her title: ${(s.title || "").trim() || "(no title yet — please suggest one)"}
-
+${castBlock(s)}
 Her plan, in her order (words in [brackets] are vocabulary words; words in "quotes" are her own words):
 ${plan}
 
 Rules:
 - Keep her order, her scenes and her ideas. Fill the gaps so it reads as a real story.
-${B.some(b => b.k === "c" && !b.m && !b.tr) ? `- CAMERA notes are her director choices (shot, angle, camera move, light). Put them in that scene's VIDEO line.\n` : ""}${B.some(b => b.k === "c" && b.m) ? `- MUSIC notes are for the soundtrack only; do not describe music in the story or the VIDEO lines.\n` : ""}${hasQ ? `- A FAMOUS SAYING must appear word for word, spoken by the character named (or by a narrator, as a voice-over, if it says Voice-over). You may mention who first said it.\n` : ""}${B.some(b => (b.p || []).length) ? `- "(with: …)" after a word lists word partners or idioms she chose for it (e.g. heavy rain). Use each one with its word.\n` : ""}- Use EVERY vocabulary word at least once (you may change the form, e.g. insist → insisted). Make each meaning clear from the sentence.
+${castLines(s) ? `- Use her characters with their names. A FAMOUS SAYING said by one of them is spoken by that character in the story, in quotes.\n` : ""}${B.some(b => b.k === "c" && !b.m && !b.tr) ? `- CAMERA notes are her director choices (shot, angle, camera move, light). Put them in that scene's VIDEO line.\n` : ""}${B.some(b => b.k === "c" && b.m) ? `- MUSIC notes are for the soundtrack only; do not describe music in the story or the VIDEO lines.\n` : ""}${hasQ ? `- A FAMOUS SAYING must appear word for word, spoken by the character named (or by a narrator, as a voice-over, if it says Voice-over). You may mention who first said it.\n` : ""}${B.some(b => (b.p || []).length) ? `- "(with: …)" after a word lists word partners or idioms she chose for it (e.g. heavy rain). Use each one with its word.\n` : ""}- Use EVERY vocabulary word at least once (you may change the form, e.g. insist → insisted). Make each meaning clear from the sentence.
 - Grade 5 reading level, warm and fun, about ${Math.min(600, Math.max(180, nW * 30))} words. One short paragraph per scene. No violence beyond what the words need.
 - ${videoRule}
 
@@ -68,7 +73,7 @@ ${meanings(s, D)}`;
 
 Her level: ${s.level} of 10 (${L.n}): ${L.d}
 Her title: ${(s.title || "").trim() || "(no title yet — please suggest one)"}
-
+${castBlock(s)}
 Her sentences, scene by scene (vocabulary words in [brackets]):
 ${scenes(s).map(x => `Scene ${x.n} — [${x.words.map(clean).join("], [")}]${x.texts.length ? ` (her own words: ${x.texts.map(t => `"${t}"`).join(", ")})` : ""}\n` + its.filter(it => it.scene === x.n).map(it => `  ${L.mode === "word" ? clean(it.words[0]) + ": " : ""}"${(S[it.key] || "").trim()}"`).join("\n")).join("\n")}
 
@@ -102,5 +107,5 @@ ${meanings(s, D)}`;
   }
   const planText = (cast, shots) => (cast ? `CAST: ${cast}\n` : "") + shots.map((x, k) => `VIDEO SCENE ${k + 1}: ${x.text}`).join("\n");
   const paragraphs = t => String(t || "").split(/\n\s*\n|\n/).map(x => x.trim()).filter(Boolean);
-  window.StoryCore = { sayingLine, LEVELS, STATUS, FILM_STYLE, SHOT_COST, clean, lvl, scenes, items, writePrompt, checkPrompt, prompt, apiPrompt, sections, parsePlan, planText, paragraphs };
+  window.StoryCore = { sayingLine, castLines, LEVELS, STATUS, FILM_STYLE, SHOT_COST, clean, lvl, scenes, items, writePrompt, checkPrompt, prompt, apiPrompt, sections, parsePlan, planText, paragraphs };
 })();
