@@ -9,7 +9,7 @@ insert into public.signs (key, icon, name, category, min_age, about, academic, p
 on conflict (key) do update set icon=excluded.icon, name=excluded.name, category=excluded.category, min_age=excluded.min_age, about=excluded.about, academic=excluded.academic, position=excluded.position;
 
 insert into public.conditions (key, icon, name, kind, parent, cluster, min_age, aliases, about, helps, academic, sources, traits, academic_min_age, position) values
- ('double_standards', '⚖️', 'Double standards (hypocrisy)', 'tactic', null, null, 8, array['hypocrisy','الكيل بمكيالين'],
+ ('double_standards', '⚖️', 'Double standards (hypocrisy)', 'tactic', null, null, 8, array['الكيل بمكيالين'],
   'Using one set of rules for yourself and a stricter one for others: "I can, you can''t". It often goes together with projection.',
   'Ask calmly, "Would it be OK if I did the same?"; use the same rules for everyone, starting with yourself.',
   'Moral hypocrisy: appearing moral while avoiding the cost of acting morally, and judging others'' transgressions more harshly than one''s own. Experiments show people rate the same unfair act as less unfair when they commit it themselves.',
