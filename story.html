@@ -163,7 +163,7 @@
 .sho:hover{border-color:var(--accent)}.sho.on{background:var(--accent);border-color:var(--accent);color:#fff}
 .tchip{display:inline-block;margin-left:6px;font:800 .78rem var(--f-body);color:#4338ca;background:#e0e7ff;border-radius:999px;padding:1px 8px;vertical-align:middle}
 </style>
-<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261124g"></script><script src="js/icons.js?v=20261124g"></script><script src="js/app.js?v=20261124g"></script><script src="js/sets.js?v=20261124g"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261124g"></script><script src="js/tense.js?v=20261124g"></script><script src="js/views.js?v=20261124g"></script><script src="js/storycore.js?v=20261124g"></script><script src="js/montage.js?v=20261124g"></script>
+<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261124h"></script><script src="js/icons.js?v=20261124h"></script><script src="js/app.js?v=20261124h"></script><script src="js/sets.js?v=20261124h"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261124h"></script><script src="js/tense.js?v=20261124h"></script><script src="js/views.js?v=20261124h"></script><script src="js/storycore.js?v=20261124h"></script><script src="js/montage.js?v=20261124h"></script>
 </head><body>
 <div class="wrap" style="max-width:1280px">
   <div class="head2">
@@ -598,8 +598,8 @@ function drawWX(){const b=CUR.blocks[WX.k],i=wi(b.w),v=D[i]||{},G=WX.G=wxGroups(
       ${b.from?`<p class="wxfrom">↺ You first chose <b>${esc(clean(b.from))}</b>. <button type="button" class="btn small" data-back="1">Go back to ${esc(clean(b.from))}</button></p>`:""}
       ${subs?`<div class="wxsubs">With: ${subs}</div>`:""}${b.tw?`<p class="wxfrom">⏳ In your story: <b>${esc(b.ph||b.tw)}</b> <button type="button" class="btn small" data-untense="1">✕ Back to "${esc(Tense.forms(b.w).base)}"</button></p>`:""}</div></div>
     <div class="wxtabs" role="tablist">${tabs.map(x=>`<button type="button" role="tab" class="wxt" data-wxt="${x.id}" aria-selected="${x.id===WX.tab}">${esc(x.label)}</button>`).join("")}</div>${body}`;
-  if(t&&t.id==="time"&&$("wxTime"))Tense.mount($("wxTime"),{word:b.w,tense:b.tense,person:b.per,when:b.when,partners:b.p||[],cast:cast(),
-    onPick:r=>{b.tense=r.tense;b.per=r.person;b.who=r.who;b.when=r.when;b.tw=r.form;b.ph=r.phrase;changed();drawBoard();drawWX();App.status(`Now it says "${r.phrase}"`,true);}});
+  if(t&&t.id==="time"&&$("wxTime"))Tense.mount($("wxTime"),{word:b.w,tense:b.tense,person:b.per,when:b.when,dt:b.dt||null,partners:b.p||[],cast:cast(),
+    onPick:r=>{b.tense=r.tense;b.per=r.person;b.who=r.who;b.when=r.when;b.dt=r.dt||null;b.tw=r.form;b.ph=r.phrase;changed();drawBoard();drawWX();App.status(`Now it says "${r.phrase}"`,true);}});
   if(t&&t.id==="desc"&&WX.kind!=="idiom"){const D2=wxDesc(b,G),mine=D2.scs.filter(s=>s.kind===WX.kind).sort((a,c)=>(a.g===D2.g?0:1)-(c.g===D2.g?0:1)),sc=mine[0],el=$("wxpm");
     mine.slice(1).forEach((s2,n)=>{const el2=$("wxpm2-"+n);if(!el2)return;const have=(b.p||[]).map(x=>x.toLowerCase()),cur=s2.items.find(x=>have.includes(x.phrase.toLowerCase()));
       Sets.mountPartnerMeter(el2,s2,{emoji:v.emoji,start:cur?cur.r:undefined,addLabel:`+ Use with ${nmw(i)}`,onAdd:x=>{b.p=(b.p||[]).filter(p=>!s2.items.some(y=>y.phrase.toLowerCase()===p.toLowerCase()));if(b.p.length<4)b.p.push(x.phrase);changed();drawBoard();drawWX();}});});

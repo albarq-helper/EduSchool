@@ -184,6 +184,9 @@
 .tm-ex ul{margin:0;padding-left:2px;list-style:none;display:grid;gap:3px;font-size:.93rem}.tm-ex li b{color:#4338ca}.tm-ex li.bad{color:#9a3412}.tm-ex li.bad small{color:#9a3412}
 .tm-sig2{justify-content:center;margin-top:4px}
 .tm-more{justify-self:end;border:0;background:transparent;color:#6366f1;font:800 .78rem var(--f-body,system-ui);cursor:pointer;padding:2px 6px}
+.tm-cal{border-style:dashed!important}.tm-datep{margin-top:6px;text-align:left}
+.tm-dt{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.tm-dt input{font:700 1rem var(--f-body,system-ui);padding:7px 10px;border:1.5px solid #c7d2fe;border-radius:10px;background:#fff;color:#1e1b4b}
+.tm-quick{display:flex;flex-wrap:wrap;gap:6px}
 .tm-nav{display:flex;justify-content:center;gap:8px}.tm-nav button{border:1.5px solid #c7d2fe;background:#fff;border-radius:999px;padding:5px 12px;font:800 .85rem var(--f-body,system-ui);cursor:pointer;color:#3730a3}
 .tm-nav .use{background:#4338ca;color:#fff;border-color:#4338ca}
 @media (prefers-reduced-motion:reduce){.tm-stop,.tm-say{transition:none;animation:none}}`;
@@ -195,13 +198,53 @@
     return `<div class="tm-ex"><span class="tm-need" style="color:${N[2]};background:${N[3]}">${N[0]} ${N[1]}: ${esc(t.needTxt)}</span>
       <ul>${t.ex.map(f => `<li>✅ ${hi(f(S, x, F, st.p))}</li>`).join("")}${t.bad ? `<li class="bad">❌ <s>${hi(t.bad(S, x, F, st.p))}</s> <small>(not with an exact past time: use "${esc(TENSES.find(y => y.k === "past").f(F, st.p))}" for that)</small></li>` : ""}</ul></div>`;
   }
+  // ---- 📅 one exact time: a date, a time, both, a day of the week, or a year (only one at a time) ----
+  const MON = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+  const ymd = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  const addDays = n => { const d = new Date(); d.setDate(d.getDate() + n); return ymd(d); };
+  const dateWords = v => { const [y, m, d] = v.split("-").map(Number); return `${d} ${MON[m - 1]} ${y}`; };
+  const timeWords = v => { let [h, m] = v.split(":").map(Number); const ap = h < 12 ? "am" : "pm"; h = h % 12 || 12; return m ? `${h}:${String(m).padStart(2, "0")} ${ap}` : h === 12 && ap === "pm" ? "noon" : `${h} ${ap}`; };
+  // dt = { kind: "date"|"time"|"dt"|"day"|"year", date, time, day, year } → { text, side, block, tip }
+  function dtWhen(dt, t) {
+    if (!dt) return null;
+    const today = ymd(new Date()), rel = dt.date === today ? "today" : dt.date === addDays(-1) ? "yesterday" : dt.date === addDays(1) ? "tomorrow" : "";
+    let prep, core, side = "";
+    if (dt.kind === "date" || dt.kind === "dt") { if (!dt.date) return null; side = dt.date < today ? "past" : dt.date > today ? "future" : "now"; prep = rel ? "" : "on"; core = rel || dateWords(dt.date); }
+    if (dt.kind === "dt") { if (!dt.time) return null; core += ` at ${timeWords(dt.time)}`; }
+    if (dt.kind === "time") { if (!dt.time) return null; prep = "at"; core = timeWords(dt.time); }
+    if (dt.kind === "day") { if (!dt.day) return null; prep = "on"; core = dt.day; }
+    if (dt.kind === "year") { if (!dt.year) return null; const y = +dt.year, ny = new Date().getFullYear(); side = y < ny ? "past" : y > ny ? "future" : "now"; prep = "in"; core = String(y); }
+    // the little word in front changes with the time on the line
+    if (t.k === "presperf") return { text: "", side, block: true, tip: `🚫 This time can't take an exact time like "${[prep, core].filter(Boolean).join(" ")}". Slide to ⬅️ Past simple for that.` };
+    if (t.k === "pastperf" || t.k === "futureperf") prep = "by";
+    else if (t.k === "pastperfcont" || t.k === "presperfcont") prep = "since";
+    else if (t.k === "present" && dt.kind === "day") core = dt.day + "s";
+    const text = [prep, core].filter(Boolean).join(" ");
+    let tip = "";
+    if (side && side !== "now" && t.z !== "now" && side !== t.z) tip = side === "past" ? `⚠️ ${core} is in the past. Slide to the PAST side?` : `⚠️ ${core} is in the future. Slide to the FUTURE side?`;
+    return { text, side, tip };
+  }
   function mount(el, o) {
     addCss();
     // the time words for this time: always there (small), so the sentence can be finished
     const timeChips = t => { const lab = t.need === "yes" ? "⏰ When?" : t.need === "never" ? "➕" : "🕒 When?";
-      return `<div class="tm-sig tm-sig2"><span class="lab">${lab}</span>${t.sig.map(w => `<button type="button" class="tm-w add${st.when === w ? " on" : ""}" data-tw="${esc(w)}" aria-pressed="${st.when === w}">${st.when === w ? "✓ " : ""}${esc(w)}</button>`).join("")}</div>`; };
+      return `<div class="tm-sig tm-sig2"><span class="lab">${lab}</span>${t.sig.map(w => `<button type="button" class="tm-w add${!st.dt && st.when === w ? " on" : ""}" data-tw="${esc(w)}" aria-pressed="${!st.dt && st.when === w}">${!st.dt && st.when === w ? "✓ " : ""}${esc(w)}</button>`).join("")}<button type="button" class="tm-w add tm-cal${st.dt ? " on" : ""}" data-dtog="1" aria-expanded="${st.dOpen}">${st.dt && st.dw && st.dw.text ? "✓ 📅 " + esc(st.dw.text) : "📅 Exact time…"}</button></div>${st.dOpen ? datePanel(t) : ""}`; };
+    function datePanel(t) {
+      const tabs = [["date", "📅 Date"], ["time", "🕒 Time"], ["dt", "📅🕒 Date & time"], ["day", "📆 Day"], ["year", "🎂 Year"]], k = st.dk, d = st.dt && st.dt.kind === k ? st.dt : {};
+      const today = ymd(new Date()), ny = new Date().getFullYear();
+      let body = "";
+      if (k === "date" || k === "dt") body = `<div class="tm-dt"><input type="date" data-dd value="${esc(d.date || "")}" aria-label="Choose a date">${k === "dt" ? `<input type="time" data-dtm value="${esc(d.time || "")}" aria-label="Choose a time">` : ""}
+          <span class="tm-quick">${[[-1, "Yesterday"], [0, "Today"], [1, "Tomorrow"]].map(([n, l]) => `<button type="button" class="tm-o${d.date === addDays(n) ? " on" : ""}" data-dq="${addDays(n)}"><b>${l}</b></button>`).join("")}</span></div>`;
+      else if (k === "time") body = `<div class="tm-dt"><input type="time" data-dtm value="${esc(d.time || "")}" aria-label="Choose a time"><span class="tm-quick">${[["07:00", "🌅"], ["12:00", "☀️"], ["17:00", "🌇"], ["21:00", "🌙"]].map(([v, i]) => `<button type="button" class="tm-o${d.time === v ? " on" : ""}" data-tq="${v}"><b>${i} ${timeWords(v)}</b></button>`).join("")}</span></div>`;
+      else if (k === "day") body = `<div class="tm-opts">${DAYS.map(x => `<button type="button" class="tm-o${d.day === x ? " on" : ""}" data-dday="${x}"><b>${x}</b></button>`).join("")}</div>`;
+      else body = `<div class="tm-dt"><input type="number" data-dy min="1" max="3000" placeholder="${ny}" value="${esc(d.year || "")}" aria-label="Type a year" style="width:7em"><span class="tm-quick">${[[-1, "Last year"], [0, "This year"], [1, "Next year"]].map(([n, l]) => `<button type="button" class="tm-o${+d.year === ny + n ? " on" : ""}" data-yq="${ny + n}"><b>${l}</b><small>${ny + n}</small></button>`).join("")}</span></div>`;
+      const w = st.dw;
+      return `<div class="tm-whop tm-datep"><div class="tm-tabs">${tabs.map(([x, l]) => `<button type="button" data-dk="${x}" aria-selected="${k === x}">${l}</button>`).join("")}${st.dt ? `<button type="button" data-dclr="1" style="margin-left:auto">✕ Clear</button>` : ""}</div>${body}
+        ${w && w.tip ? `<p class="tm-tip" style="color:#b45309;font-weight:700">${esc(w.tip)}${w.block ? ` <button type="button" class="tm-o" data-tk="past" style="display:inline-grid"><b>⬅️ Past simple</b></button>` : w.side === "past" || w.side === "future" ? ` <button type="button" class="tm-o" data-tk="${w.side === "past" ? "past" : "future"}" style="display:inline-grid"><b>${w.side === "past" ? "⬅️ Past" : "➡️ Future"}</b></button>` : ""}</p>` : `<p class="tm-tip">Pick one: it takes the place of the time words.</p>`}</div>`;
+    }
     let full = false; try { full = localStorage.getItem("tenseFull") === "1"; } catch (x) {}
-    const F = forms(o.word), st = { full, k: o.tense || "past", p: o.person || ((o.cast || []).find(c => c && c.name) ? "c:" + (o.cast || []).find(c => c && c.name).name : "she"), d: depth(), when: o.when || "" };
+    const F = forms(o.word), st = { full, k: o.tense || "past", p: o.person || ((o.cast || []).find(c => c && c.name) ? "c:" + (o.cast || []).find(c => c && c.name).name : "she"), d: depth(), when: o.when || "", dt: o.dt || null, dOpen: false, dk: (o.dt && o.dt.kind) || "date" };
     const cast = (o.cast || []).filter(c => c && c.name);
     st.wt = cast.length ? "char" : "pron"; st.wc = cast[0] ? cast[0].name : ""; st.ws = "self"; st.own = "name"; st.whoOpen = false;
     function whoPanel() {
@@ -232,7 +275,9 @@
       const L = shown(); if (!L.some(t => t.k === st.k)) st.k = L.find(t => t.k === "past") ? "past" : L[0].k;
       const t = T(st.k), j = L.indexOf(t), pos = n => L.length === 1 ? 50 : 6 + n * 88 / (L.length - 1);
       const nowAt = (() => { const a = L.findIndex(x => x.z === "now"), b = L.length - 1 - [...L].reverse().findIndex(x => x.z === "now"); return a < 0 ? 50 : (pos(a) + pos(b)) / 2; })();
-      if (st.when && !t.sig.includes(st.when)) st.when = "";
+      st.dw = dtWhen(st.dt, t);
+      if (st.dt) st.when = st.dw && !st.dw.block ? st.dw.text : "";
+      else if (st.when && !t.sig.includes(st.when)) st.when = "";
       const subj = subjOf(st.p), vp = t.f(F, st.p), full = phrase(o.word, { tense: st.k, person: st.p, when: st.when, partners: o.partners });
       const needWhen = t.need === "yes" && !st.when, shown2 = esc(full).replace(esc(vp), `<b>${esc(vp)}</b>`);
       el.innerHTML = `<div class="tm" role="group" aria-label="Verb time line for ${esc(F.word)}">
@@ -258,9 +303,19 @@
       const d = e.target.closest("[data-td]"); if (d) { st.d = +d.dataset.td; try { localStorage.setItem("tenseDepth", st.d); } catch (x) {} draw(false); return; }
       const s = e.target.closest("[data-tm-step]"); if (s) { const L = shown(), j = L.findIndex(t => t.k === st.k) + +s.dataset.tmStep; if (L[j]) { st.k = L[j].k; draw(true); } return; }
       if (e.target.closest("[data-tm-hear]")) { try { const u = new SpeechSynthesisUtterance(phrase(o.word, { tense: st.k, person: st.p, when: st.when, partners: o.partners })); u.lang = "en-US"; speechSynthesis.cancel(); speechSynthesis.speak(u); } catch (x) {} return; }
-      const tw = e.target.closest("[data-tw]"); if (tw) { st.when = st.when === tw.dataset.tw ? "" : tw.dataset.tw; draw(false); return; }
-      if (e.target.closest("[data-tm-use]") && o.onPick) o.onPick({ tense: st.k, person: st.p, who: subjOf(st.p), when: st.when, form: T(st.k).f(F, st.p), phrase: phrase(o.word, { tense: st.k, person: st.p, when: st.when, partners: o.partners }) }); };
-    el.onkeydown = e => { if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return; const L = shown(), j = L.findIndex(t => t.k === st.k) + (e.key === "ArrowLeft" ? -1 : 1); if (L[j]) { e.preventDefault(); st.k = L[j].k; draw(true); el.querySelector(".tm-stop.on")?.focus(); } };
+      const tw = e.target.closest("[data-tw]"); if (tw) { const same = !st.dt && st.when === tw.dataset.tw; st.dt = null; st.dOpen = false; st.when = same ? "" : tw.dataset.tw; draw(false); return; }
+      if (e.target.closest("[data-dtog]")) { st.dOpen = !st.dOpen; draw(false); return; }
+      const dk = e.target.closest("[data-dk]"); if (dk) { st.dk = dk.dataset.dk; draw(false); return; }
+      if (e.target.closest("[data-dclr]")) { st.dt = null; st.when = ""; draw(false); return; }
+      const setDt = v => { const keep = st.dt && st.dt.kind === st.dk ? st.dt : {}; st.dt = { kind: st.dk, ...keep, ...v }; draw(false); };
+      const dq = e.target.closest("[data-dq]"); if (dq) { setDt({ date: dq.dataset.dq }); return; }
+      const tq = e.target.closest("[data-tq]"); if (tq) { setDt({ time: tq.dataset.tq }); return; }
+      const dd = e.target.closest("[data-dday]"); if (dd) { setDt({ day: dd.dataset.dday }); return; }
+      const yq = e.target.closest("[data-yq]"); if (yq) { setDt({ year: +yq.dataset.yq }); return; }
+      if (e.target.closest("[data-tm-use]") && o.onPick) o.onPick({ tense: st.k, person: st.p, who: subjOf(st.p), when: st.when, form: T(st.k).f(F, st.p), phrase: phrase(o.word, { tense: st.k, person: st.p, when: st.when, partners: o.partners }), dt: st.dt }); };
+    el.onchange = e => { const x = e.target, keep = st.dt && st.dt.kind === st.dk ? st.dt : {}, set = v => { st.dt = { kind: st.dk, ...keep, ...v }; draw(false); };
+      if (x.matches("[data-dd]")) set({ date: x.value }); else if (x.matches("[data-dtm]")) set({ time: x.value }); else if (x.matches("[data-dy]") && +x.value > 0) set({ year: Math.round(+x.value) }); };
+    el.onkeydown = e => { if (e.target.matches && e.target.matches("input")) return; if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return; const L = shown(), j = L.findIndex(t => t.k === st.k) + (e.key === "ArrowLeft" ? -1 : 1); if (L[j]) { e.preventDefault(); st.k = L[j].k; draw(true); el.querySelector(".tm-stop.on")?.focus(); } };
     draw(false);
   }
   const isVerb = v => !!v && ((v.tags || []).includes("Action") || (v.tags || []).includes("Phrasal verb"));
@@ -269,5 +324,5 @@
     const run = root => (root.querySelectorAll ? root : document).querySelectorAll("[data-tm]:not([data-tm-on])").forEach(el => { el.setAttribute("data-tm-on", "1"); const v = get(+el.dataset.tm); if (v) mount(el, { word: v, ...(opts ? opts() : {}) }); });
     run(document); new MutationObserver(ms => ms.forEach(m => m.addedNodes.forEach(n => n.nodeType === 1 && run(n.parentNode || n)))).observe(document.body, { childList: true, subtree: true });
   }
-  window.Tense = { NEED, PRON, RELS, prOf, phrase, subjOf, forms, say, allForms, mount, auto, isVerb, TENSES, IRR, LEMMA };
+  window.Tense = { dtWhen, NEED, PRON, RELS, prOf, phrase, subjOf, forms, say, allForms, mount, auto, isVerb, TENSES, IRR, LEMMA };
 })();
