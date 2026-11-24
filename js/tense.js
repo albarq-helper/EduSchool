@@ -182,6 +182,8 @@
 .tm-sig .lab,.tm-who .lab,.tm-whobar .lab{font:800 .72rem var(--f-body,system-ui);color:#64748b;align-self:center;padding:0 4px}
 .tm-nav .use[disabled]{background:#e0e7ff;color:#6366f1;border-color:#c7d2fe;cursor:not-allowed}
 .tm-ex ul{margin:0;padding-left:2px;list-style:none;display:grid;gap:3px;font-size:.93rem}.tm-ex li b{color:#4338ca}.tm-ex li.bad{color:#9a3412}.tm-ex li.bad small{color:#9a3412}
+.tm-sig2{justify-content:center;margin-top:4px}
+.tm-more{justify-self:end;border:0;background:transparent;color:#6366f1;font:800 .78rem var(--f-body,system-ui);cursor:pointer;padding:2px 6px}
 .tm-nav{display:flex;justify-content:center;gap:8px}.tm-nav button{border:1.5px solid #c7d2fe;background:#fff;border-radius:999px;padding:5px 12px;font:800 .85rem var(--f-body,system-ui);cursor:pointer;color:#3730a3}
 .tm-nav .use{background:#4338ca;color:#fff;border-color:#4338ca}
 @media (prefers-reduced-motion:reduce){.tm-stop,.tm-say{transition:none;animation:none}}`;
@@ -191,14 +193,17 @@
     const N = NEED[t.need], x = t.f(F, st.p), cap = w => w.charAt(0).toUpperCase() + w.slice(1), S = (PRON.some(x => x.k === st.p) && st.p !== "i") || /^n[12]:(his|her|its|their|my|your|our) /.test(st.p) ? subj.toLowerCase() : subj;
     const hi = line => esc(cap(line)).replace(/\[\[(.+?)\]\]/g, "<b>$1</b>");
     return `<div class="tm-ex"><span class="tm-need" style="color:${N[2]};background:${N[3]}">${N[0]} ${N[1]}: ${esc(t.needTxt)}</span>
-      <div class="tm-sig"><span class="lab">${t.need === "no" ? "Time words (not needed):" : "Pick a time word:"}</span>${t.sig.map(w => `<button type="button" class="tm-w add${st.when === w ? " on" : ""}" data-tw="${esc(w)}" aria-pressed="${st.when === w}">${st.when === w ? "✓ " : ""}${esc(w)}</button>`).join("")}</div>
       <ul>${t.ex.map(f => `<li>✅ ${hi(f(S, x, F, st.p))}</li>`).join("")}${t.bad ? `<li class="bad">❌ <s>${hi(t.bad(S, x, F, st.p))}</s> <small>(not with an exact past time: use "${esc(TENSES.find(y => y.k === "past").f(F, st.p))}" for that)</small></li>` : ""}</ul></div>`;
   }
   function mount(el, o) {
     addCss();
-    const F = forms(o.word), st = { k: o.tense || "past", p: o.person || ((o.cast || []).find(c => c && c.name) ? "c:" + (o.cast || []).find(c => c && c.name).name : "she"), d: depth(), when: o.when || "" };
+    // the time words for this time: always there (small), so the sentence can be finished
+    const timeChips = t => { const lab = t.need === "yes" ? "⏰ When?" : t.need === "never" ? "➕" : "🕒 When?";
+      return `<div class="tm-sig tm-sig2"><span class="lab">${lab}</span>${t.sig.map(w => `<button type="button" class="tm-w add${st.when === w ? " on" : ""}" data-tw="${esc(w)}" aria-pressed="${st.when === w}">${st.when === w ? "✓ " : ""}${esc(w)}</button>`).join("")}</div>`; };
+    let full = false; try { full = localStorage.getItem("tenseFull") === "1"; } catch (x) {}
+    const F = forms(o.word), st = { full, k: o.tense || "past", p: o.person || ((o.cast || []).find(c => c && c.name) ? "c:" + (o.cast || []).find(c => c && c.name).name : "she"), d: depth(), when: o.when || "" };
     const cast = (o.cast || []).filter(c => c && c.name);
-    st.wt = cast.length ? "char" : "pron"; st.wc = cast[0] ? cast[0].name : ""; st.ws = "self"; st.own = "name"; st.whoOpen = !o.person;
+    st.wt = cast.length ? "char" : "pron"; st.wc = cast[0] ? cast[0].name : ""; st.ws = "self"; st.own = "name"; st.whoOpen = false;
     function whoPanel() {
       const cur = subjOf(st.p), c = cast.find(x => x.name === st.wc), pr = c ? PRON.find(x => x.k === prOf(c)) : null;
       const tabs = [cast.length ? ["char", "🎭 My characters"] : null, ["pron", "🙋 Pronouns"], ["other", "✏️ Someone else"]].filter(Boolean);
@@ -231,18 +236,18 @@
       const subj = subjOf(st.p), vp = t.f(F, st.p), full = phrase(o.word, { tense: st.k, person: st.p, when: st.when, partners: o.partners });
       const needWhen = t.need === "yes" && !st.when, shown2 = esc(full).replace(esc(vp), `<b>${esc(vp)}</b>`);
       el.innerHTML = `<div class="tm" role="group" aria-label="Verb time line for ${esc(F.word)}">
-        <div class="tm-top"><div class="tm-forms">${[["Base", F.base], ["He/she", F.s], ["Past", F.past], ["Past participle", F.pp], ["-ing", F.ing]].map(([l, x], n) => `<span class="${F.irregular && (n === 2 || n === 3) ? "irr" : ""}"><small>${l}</small>${esc(x)}</span>`).join("")}</div>
-</div>${whoPanel()}
-        ${F.irregular ? `<small style="color:#b45309;font-weight:800">⚡ Irregular verb: its past is not "-ed"</small>` : ""}
+        ${st.full ? `<div class="tm-top"><div class="tm-forms">${[["Base", F.base], ["He/she", F.s], ["Past", F.past], ["Past participle", F.pp], ["-ing", F.ing]].map(([l, x], n) => `<span class="${F.irregular && (n === 2 || n === 3) ? "irr" : ""}"><small>${l}</small>${esc(x)}</span>`).join("")}</div></div>` : ""}${whoPanel()}
+        ${st.full && F.irregular ? `<small style="color:#b45309;font-weight:800">⚡ Irregular verb: its past is not "-ed"</small>` : ""}
         <div class="tm-line"><div class="tm-zones" style="grid-template-columns:${nowAt}% ${100 - nowAt}%"><span style="text-align:left">⏮ PAST</span><span style="text-align:right">FUTURE ⏭</span></div>
           <div class="tm-track"><div class="tm-now" style="left:calc(${nowAt}% - 1px)" title="Now"></div><span class="tm-nowl" style="left:${nowAt}%">NOW</span></div>
           <div class="tm-stops">${L.map((x, n) => `<button type="button" class="tm-stop${x.k === st.k ? " on" : ""}" style="left:${pos(n)}%" data-tk="${x.k}" title="${esc(x.name)}: ${esc(x.f(F, st.p))}" aria-label="${esc(x.name)}" aria-pressed="${x.k === st.k}">${x.ico}</button>`).join("")}</div></div>
-        <div class="tm-say"${anim ? "" : ' style="animation:none"'}><span class="n">${esc(t.name)} · ${t.z === "now" ? "now" : t.z}</span><span class="s">${shown2}.</span>${o.partners && o.partners.length ? `<span class="wh">✨ With your partner words: ${esc(o.partners.join(", "))}</span>` : ""}<span class="wh">${esc(t.when)}</span>${examples(t, F, st, subj)}${STATIVE.has(F.base.split(" ")[0]) && /ing\b/.test(vp) && !/going to/.test(vp) ? `<span class="wh" style="color:#b45309;font-weight:700">⚠️ "${esc(F.base)}" is a thinking or feeling word. We usually don't use it with "-ing": say "${esc(TENSES.find(x => x.k === (t.z === "past" ? "past" : t.z === "future" ? "future" : "present")).f(F, st.p))}" instead.</span>` : ""}</div>
+        <div class="tm-say"${anim ? "" : ' style="animation:none"'}>${st.full ? `<span class="n">${esc(t.name)} · ${t.z === "now" ? "now" : t.z}</span>` : ""}<span class="s">${shown2}.</span>${st.full && o.partners && o.partners.length ? `<span class="wh">✨ With your partner words: ${esc(o.partners.join(", "))}</span>` : ""}${st.full ? `<span class="wh">${esc(t.when)}</span>${examples(t, F, st, subj)}` : ""}${timeChips(t)}${st.full && STATIVE.has(F.base.split(" ")[0]) && /ing\b/.test(vp) && !/going to/.test(vp) ? `<span class="wh" style="color:#b45309;font-weight:700">⚠️ "${esc(F.base)}" is a thinking or feeling word. We usually don't use it with "-ing": say "${esc(TENSES.find(x => x.k === (t.z === "past" ? "past" : t.z === "future" ? "future" : "present")).f(F, st.p))}" instead.</span>` : ""}</div>
         <div class="tm-nav"><button type="button" data-tm-step="-1" ${j === 0 ? "disabled" : ""}>◀ Earlier</button>${o.onPick ? (needWhen ? `<button type="button" class="use" disabled title="This time needs a time word">⏰ Choose a time word first</button>` : `<button type="button" class="use" data-tm-use="1">Use "${esc(full)}"</button>`) : `<button type="button" data-tm-hear="1">🔊 Hear</button>`}<button type="button" data-tm-step="1" ${j === L.length - 1 ? "disabled" : ""}>Later ▶</button></div>
-        <div class="tm-seg" role="group" aria-label="How many times" style="justify-self:center">${[[1, "⭐ 3 times"], [2, "⭐⭐ 7 times"], [3, "⭐⭐⭐ all 12"]].map(([d, l]) => `<button type="button" data-td="${d}" aria-pressed="${d === st.d}">${l}</button>`).join("")}</div></div>`;
+        ${st.full ? `<div class="tm-seg" role="group" aria-label="How many times" style="justify-self:center">${[[1, "⭐ 3 times"], [2, "⭐⭐ 7 times"], [3, "⭐⭐⭐ all 12"]].map(([d, l]) => `<button type="button" data-td="${d}" aria-pressed="${d === st.d}">${l}</button>`).join("")}</div>` : ""}<button type="button" class="tm-more" data-full="1" aria-expanded="${st.full}">${st.full ? "✕ Less" : "ℹ️ Full details"}</button></div>`;
     }
     el.onclick = e => { const k = e.target.closest("[data-tk]"); if (k) { st.k = k.dataset.tk; draw(true); return; }
       const p = e.target.closest("[data-tp]"); if (p) { st.p = p.dataset.tp; st.whoOpen = false; draw(false); return; }
+      if (e.target.closest("[data-full]")) { st.full = !st.full; try { localStorage.setItem("tenseFull", st.full ? "1" : "0"); } catch (x) {} draw(false); return; }
       if (e.target.closest("[data-whotog]")) { st.whoOpen = !st.whoOpen; draw(false); return; }
       const wt = e.target.closest("[data-wt]"); if (wt) { st.wt = wt.dataset.wt; draw(false); return; }
       const wc = e.target.closest("[data-wc]"); if (wc) { st.wc = wc.dataset.wc; draw(false); return; }

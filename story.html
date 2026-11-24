@@ -163,7 +163,7 @@
 .sho:hover{border-color:var(--accent)}.sho.on{background:var(--accent);border-color:var(--accent);color:#fff}
 .tchip{display:inline-block;margin-left:6px;font:800 .78rem var(--f-body);color:#4338ca;background:#e0e7ff;border-radius:999px;padding:1px 8px;vertical-align:middle}
 </style>
-<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261124f"></script><script src="js/icons.js?v=20261124f"></script><script src="js/app.js?v=20261124f"></script><script src="js/sets.js?v=20261124f"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261124f"></script><script src="js/tense.js?v=20261124f"></script><script src="js/views.js?v=20261124f"></script><script src="js/storycore.js?v=20261124f"></script><script src="js/montage.js?v=20261124f"></script>
+<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261124g"></script><script src="js/icons.js?v=20261124g"></script><script src="js/app.js?v=20261124g"></script><script src="js/sets.js?v=20261124g"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261124g"></script><script src="js/tense.js?v=20261124g"></script><script src="js/views.js?v=20261124g"></script><script src="js/storycore.js?v=20261124g"></script><script src="js/montage.js?v=20261124g"></script>
 </head><body>
 <div class="wrap" style="max-width:1280px">
   <div class="head2">
@@ -580,7 +580,7 @@ function drawWX(){const b=CUR.blocks[WX.k],i=wi(b.w),v=D[i]||{},G=WX.G=wxGroups(
   let body="";const t=tabs.find(x=>x.id===WX.tab);
   if(!t)body=`<p class="muted">This word has no meter, similar words, opposites or partners yet.</p>`;
   else if(t.s)body=`<p class="muted">Slide to a softer or stronger word, then press <b>↺ Use this word</b>.</p><div id="wxMeter"></div>`;
-  else if(t.id==="time")body=`<p class="muted">Build your sentence: choose <b>who</b> does it, <b>when</b> on the time line, and a <b>time word</b> if it needs one. Your ✨ partner words join in too. Then press <b>Use</b>.</p><div id="wxTime"></div>`;
+  else if(t.id==="time")body=`<div id="wxTime"></div>`;
   else if(t.id==="sim"||t.id==="opp")body=`<p class="muted">${t.id==="sim"?"Words that mean nearly the same. Which one fits your story best?":"Words that mean the opposite. What happens if you use one?"}</p><div class="wxlist">${(t.id==="sim"?G.sim:G.opp).map(j=>`<button type="button" class="wxw" data-use="${j}"><span>${esc(D[j].emoji||"")} <b>${esc(nmw(j))}</b></span><small>${esc(D[j].d||"")}</small><em>↺ Use</em></button>`).join("")}</div>`;
   else if(t.id==="desc"){const D2=wxDesc(b,G);if(!D2.kinds.includes(WX.kind))WX.kind=D2.kinds[0];
     const have=new Set((b.p||[]).map(x=>x.toLowerCase()));
