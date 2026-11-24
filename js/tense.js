@@ -54,20 +54,48 @@
   const PEOPLE = [["i", "I"], ["you", "You"], ["she", "She"], ["we", "We"], ["they", "They"]];
   const be = p => p === "i" ? "am" : p === "she" ? "is" : "are", was = p => p === "i" || p === "she" ? "was" : "were", hv = p => p === "she" ? "has" : "have";
   // the time line, from long ago to the future. lv = 1: three times (young children), 2: seven, 3: all twelve
+  // need: "yes" = say WHEN (or another moment), "often" = a time word helps, "no" = no time word needed, "never" = no exact past time allowed
+  // sig: the time words that go with it; ex: examples (S = who, x = the verb form); bad: a common mistake
   const TENSES = [
-    { k: "pastperf", lv: 3, ico: "⏪", name: "Past perfect", when: "Finished before another moment in the past", f: (F, p) => `had ${F.pp}`, z: "past" },
-    { k: "pastperfcont", lv: 3, ico: "⏪", name: "Past perfect continuous", when: "Had been going on for a while, before a moment in the past", f: (F, p) => `had been ${F.ing}`, z: "past" },
-    { k: "past", lv: 1, ico: "⬅️", name: "Past simple", when: "Happened and finished in the past (yesterday, last week)", f: (F, p) => F.past, z: "past" },
-    { k: "pastcont", lv: 2, ico: "〰️", name: "Past continuous", when: "Was in the middle of happening, in the past", f: (F, p) => `${was(p)} ${F.ing}`, z: "past" },
-    { k: "presperf", lv: 2, ico: "↩️", name: "Present perfect", when: "Happened at some time before now, and it matters now", f: (F, p) => `${hv(p)} ${F.pp}`, z: "now" },
-    { k: "presperfcont", lv: 3, ico: "🔁", name: "Present perfect continuous", when: "Started in the past and is still going on now", f: (F, p) => `${hv(p)} been ${F.ing}`, z: "now" },
-    { k: "present", lv: 1, ico: "🔄", name: "Present simple", when: "Happens always, every day, or is true now", f: (F, p) => p === "she" ? F.s : F.base, z: "now" },
-    { k: "prescont", lv: 2, ico: "▶️", name: "Present continuous", when: "Happening right now", f: (F, p) => `${be(p)} ${F.ing}`, z: "now" },
-    { k: "goingto", lv: 2, ico: "🗓️", name: "Going to", when: "Planned for soon", f: (F, p) => `${be(p)} going to ${F.base}`, z: "future" },
-    { k: "future", lv: 1, ico: "➡️", name: "Future simple", when: "Will happen later (tomorrow, next year)", f: (F, p) => `will ${F.base}`, z: "future" },
-    { k: "futurecont", lv: 3, ico: "〰️", name: "Future continuous", when: "Will be in the middle of happening, in the future", f: (F, p) => `will be ${F.ing}`, z: "future" },
-    { k: "futureperf", lv: 3, ico: "⏩", name: "Future perfect", when: "Will be finished before a moment in the future", f: (F, p) => `will have ${F.pp}`, z: "future" },
+    { k: "pastperf", lv: 3, ico: "⏪", name: "Past perfect", when: "Finished before another moment in the past", f: (F, p) => `had ${F.pp}`, z: "past",
+      need: "yes", needTxt: "Needs another past moment: what happened after it", sig: ["before", "by the time", "when", "already", "after"],
+      ex: [(S, x) => `By the time we arrived, ${S} [[${x}]].`, (S, x) => `${S} [[${x}]] before the bell rang.`] },
+    { k: "pastperfcont", lv: 3, ico: "⏪", name: "Past perfect continuous", when: "Had been going on for a while, before a moment in the past", f: (F, p) => `had been ${F.ing}`, z: "past",
+      need: "yes", needTxt: "Needs how long (for…) and a past moment (when…)", sig: ["for an hour", "since morning", "when", "before"],
+      ex: [(S, x) => `${S} [[${x}]] for an hour when the phone rang.`] },
+    { k: "past", lv: 1, ico: "⬅️", name: "Past simple", when: "Happened and finished in the past (yesterday, last week)", f: (F, p) => F.past, z: "past",
+      need: "often", needTxt: "Say WHEN it happened, unless the story already shows it", sig: ["yesterday", "last night", "last week", "two days ago", "in 2020", "once upon a time"],
+      ex: [(S, x) => `Yesterday, ${S} [[${x}]].`, (S, x) => `${S} [[${x}]] two days ago.`, (S, x) => `Once upon a time, ${S} [[${x}]]. (the story already says "past", so no other time word is needed)`] },
+    { k: "pastcont", lv: 2, ico: "〰️", name: "Past continuous", when: "Was in the middle of happening, in the past", f: (F, p) => `${was(p)} ${F.ing}`, z: "past",
+      need: "yes", needTxt: "Needs a past moment, or another thing that happened in the middle", sig: ["when", "while", "at 8 o'clock yesterday", "all evening"],
+      ex: [(S, x) => `${S} [[${x}]] when the phone rang.`, (S, x) => `At 8 o'clock yesterday, ${S} [[${x}]].`] },
+    { k: "presperf", lv: 2, ico: "↩️", name: "Present perfect", when: "Happened at some time before now, and it matters now", f: (F, p) => `${hv(p)} ${F.pp}`, z: "now",
+      need: "never", needTxt: "don't add a finished time like \"yesterday\" or \"last week\"", sig: ["already", "just", "ever", "never", "yet", "so far", "this week"],
+      ex: [(S, x) => `${S} [[${x}]] already.`, (S, x, F, p) => `${S} [[${hv(p)} never ${F.pp}]].`, (S, x, F, p) => `${S} [[${hv(p)} just ${F.pp}]].`],
+      bad: (S, x) => `${S} [[${x}]] yesterday.` },
+    { k: "presperfcont", lv: 3, ico: "🔁", name: "Present perfect continuous", when: "Started in the past and is still going on now", f: (F, p) => `${hv(p)} been ${F.ing}`, z: "now",
+      need: "yes", needTxt: "Needs how long: for… or since…", sig: ["for two hours", "since morning", "all day", "lately"],
+      ex: [(S, x) => `${S} [[${x}]] for two hours.`, (S, x) => `${S} [[${x}]] since this morning.`] },
+    { k: "present", lv: 1, ico: "🔄", name: "Present simple", when: "Happens always, every day, or is true now", f: (F, p) => p === "she" ? F.s : F.base, z: "now",
+      need: "often", needTxt: "Say HOW OFTEN, or nothing at all for things that are always true", sig: ["every day", "always", "usually", "often", "sometimes", "never", "on Mondays"],
+      ex: [(S, x) => `${S} [[${x}]] every day.`, (S, x, F, p) => `${S} always [[${p === "she" ? F.s : F.base}]].`, (S, x) => `${S} [[${x}]]. (a fact: no time word needed)`] },
+    { k: "prescont", lv: 2, ico: "▶️", name: "Present continuous", when: "Happening right now", f: (F, p) => `${be(p)} ${F.ing}`, z: "now",
+      need: "no", needTxt: "No time word needed: the \"-ing\" already means now", sig: ["now", "right now", "at the moment", "Look!", "Listen!"],
+      ex: [(S, x) => `${S} [[${x}]].`, (S, x) => `Look! ${S.charAt(0).toUpperCase() + S.slice(1)} [[${x}]] right now.`] },
+    { k: "goingto", lv: 2, ico: "🗓️", name: "Going to", when: "Planned for soon", f: (F, p) => `${be(p)} going to ${F.base}`, z: "future",
+      need: "often", needTxt: "A plan: a time word helps, but it is not a must", sig: ["tomorrow", "soon", "this weekend", "next week", "tonight"],
+      ex: [(S, x) => `${S} [[${x}]] tomorrow.`, (S, x) => `${S} [[${x}]]. (we know it is planned)`] },
+    { k: "future", lv: 1, ico: "➡️", name: "Future simple", when: "Will happen later (tomorrow, next year)", f: (F, p) => `will ${F.base}`, z: "future",
+      need: "often", needTxt: "Say WHEN, or use it for promises and guesses", sig: ["tomorrow", "next year", "one day", "soon", "later", "I think", "maybe"],
+      ex: [(S, x) => `Tomorrow, ${S} [[${x}]].`, (S, x) => `I think ${S} [[${x}]] one day.`] },
+    { k: "futurecont", lv: 3, ico: "〰️", name: "Future continuous", when: "Will be in the middle of happening, in the future", f: (F, p) => `will be ${F.ing}`, z: "future",
+      need: "yes", needTxt: "Needs a future moment: at… / this time tomorrow", sig: ["at this time tomorrow", "at 8 o'clock tomorrow", "all day tomorrow"],
+      ex: [(S, x) => `At this time tomorrow, ${S} [[${x}]].`] },
+    { k: "futureperf", lv: 3, ico: "⏩", name: "Future perfect", when: "Will be finished before a moment in the future", f: (F, p) => `will have ${F.pp}`, z: "future",
+      need: "yes", needTxt: "Needs \"by\" + a future time", sig: ["by Friday", "by tomorrow", "by the time", "before"],
+      ex: [(S, x) => `By Friday, ${S} [[${x}]].`] },
   ];
+  const NEED = { yes: ["⏰", "Time word needed", "#b91c1c", "#fee2e2"], often: ["🕒", "Time word helps", "#92400e", "#fef3c7"], no: ["✨", "No time word needed", "#166534", "#dcfce7"], never: ["🚫", "No exact past time", "#7c2d12", "#ffedd5"] };
   const T = k => TENSES.find(t => t.k === k);
   const say = (word, k, p) => { const t = T(k); return t ? t.f(forms(word), p || "she") : String(word && word.w || word); };
   const allForms = word => { const F = forms(word); return [F.base, F.s, F.past, F.pp, F.ing].map(x => x.split(" ")[0]); };
@@ -93,13 +121,26 @@
 @keyframes tmIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 .tm-say .s{font:800 1.5rem/1.2 var(--f-display,system-ui);color:#1e1b4b}.tm-say .s b{color:#4338ca;background:#e0e7ff;border-radius:8px;padding:0 5px;margin-right:1px}
 .tm-say .n{font:800 .8rem var(--f-body,system-ui);color:#4338ca;text-transform:uppercase;letter-spacing:.06em}.tm-say .wh{font-size:.9rem;color:#475569}
+.tm-ex{display:grid;gap:6px;text-align:left;background:#fff;border:1px solid #e0e7ff;border-radius:12px;padding:8px 10px;margin-top:4px}
+.tm-need{justify-self:start;font:800 .8rem var(--f-body,system-ui);border-radius:999px;padding:2px 10px}
+.tm-sig{display:flex;flex-wrap:wrap;gap:5px}.tm-w{border:1.5px dashed #a5b4fc;background:#eef2ff;color:#3730a3;border-radius:999px;padding:2px 9px;font:700 .8rem var(--f-body,system-ui);cursor:default}
+.tm-w.add{cursor:pointer;border-style:solid}.tm-w.add:hover{background:#4338ca;color:#fff}
+.tm-ex ul{margin:0;padding-left:2px;list-style:none;display:grid;gap:3px;font-size:.93rem}.tm-ex li b{color:#4338ca}.tm-ex li.bad{color:#9a3412}.tm-ex li.bad small{color:#9a3412}
 .tm-nav{display:flex;justify-content:center;gap:8px}.tm-nav button{border:1.5px solid #c7d2fe;background:#fff;border-radius:999px;padding:5px 12px;font:800 .85rem var(--f-body,system-ui);cursor:pointer;color:#3730a3}
 .tm-nav .use{background:#4338ca;color:#fff;border-color:#4338ca}
 @media (prefers-reduced-motion:reduce){.tm-stop,.tm-say{transition:none;animation:none}}`;
   const addCss = () => { if (!document.getElementById("tense-css")) { const s = document.createElement("style"); s.id = "tense-css"; s.textContent = css; document.head.appendChild(s); } };
+  // the examples: when a time word is needed, which ones go with it, and a common mistake
+  function examples(t, F, st, subj) {
+    const N = NEED[t.need], x = t.f(F, st.p), cap = w => w.charAt(0).toUpperCase() + w.slice(1), S = st.p === "i" ? "I" : subj.toLowerCase();
+    const hi = line => esc(cap(line)).replace(/\[\[(.+?)\]\]/g, "<b>$1</b>");
+    return `<div class="tm-ex"><span class="tm-need" style="color:${N[2]};background:${N[3]}">${N[0]} ${N[1]}: ${esc(t.needTxt)}</span>
+      <div class="tm-sig">${t.sig.map(w => `<button type="button" class="tm-w${st.canAdd ? " add" : ""}" data-tw="${esc(w)}" title="${st.canAdd ? "Add “" + esc(w) + "” to your story" : esc(w)}">${st.canAdd ? "+ " : ""}${esc(w)}</button>`).join("")}</div>
+      <ul>${t.ex.map(f => `<li>✅ ${hi(f(S, x, F, st.p))}</li>`).join("")}${t.bad ? `<li class="bad">❌ <s>${hi(t.bad(S, x, F, st.p))}</s> <small>(not with an exact past time: use "${esc(TENSES.find(y => y.k === "past").f(F, st.p))}" for that)</small></li>` : ""}</ul></div>`;
+  }
   function mount(el, o) {
     addCss();
-    const F = forms(o.word), st = { k: o.tense || "past", p: o.person || "she", d: depth() };
+    const F = forms(o.word), st = { k: o.tense || "past", p: o.person || "she", d: depth(), canAdd: !!o.onTime };
     const shown = () => TENSES.filter(t => t.lv <= st.d);
     function draw(anim) {
       const L = shown(); if (!L.some(t => t.k === st.k)) st.k = L.find(t => t.k === "past") ? "past" : L[0].k;
@@ -113,7 +154,7 @@
         <div class="tm-line"><div class="tm-zones" style="grid-template-columns:${nowAt}% ${100 - nowAt}%"><span style="text-align:left">⏮ PAST</span><span style="text-align:right">FUTURE ⏭</span></div>
           <div class="tm-track"><div class="tm-now" style="left:calc(${nowAt}% - 1px)" title="Now"></div><span class="tm-nowl" style="left:${nowAt}%">NOW</span></div>
           <div class="tm-stops">${L.map((x, n) => `<button type="button" class="tm-stop${x.k === st.k ? " on" : ""}" style="left:${pos(n)}%" data-tk="${x.k}" title="${esc(x.name)}: ${esc(x.f(F, st.p))}" aria-label="${esc(x.name)}" aria-pressed="${x.k === st.k}">${x.ico}</button>`).join("")}</div></div>
-        <div class="tm-say"${anim ? "" : ' style="animation:none"'}><span class="n">${esc(t.name)} · ${t.z === "now" ? "now" : t.z}</span><span class="s">${esc(subj)} <b>${esc(phrase)}</b>${o.rest ? " " + esc(o.rest) : ""}.</span><span class="wh">${esc(t.when)}</span>${STATIVE.has(F.base.split(" ")[0]) && /ing\b/.test(phrase) && !/going to/.test(phrase) ? `<span class="wh" style="color:#b45309;font-weight:700">⚠️ "${esc(F.base)}" is a thinking or feeling word. We usually don't use it with "-ing": say "${esc(TENSES.find(x => x.k === (t.z === "past" ? "past" : t.z === "future" ? "future" : "present")).f(F, st.p))}" instead.</span>` : ""}</div>
+        <div class="tm-say"${anim ? "" : ' style="animation:none"'}><span class="n">${esc(t.name)} · ${t.z === "now" ? "now" : t.z}</span><span class="s">${esc(subj)} <b>${esc(phrase)}</b>${o.rest ? " " + esc(o.rest) : ""}.</span><span class="wh">${esc(t.when)}</span>${examples(t, F, st, subj)}${STATIVE.has(F.base.split(" ")[0]) && /ing\b/.test(phrase) && !/going to/.test(phrase) ? `<span class="wh" style="color:#b45309;font-weight:700">⚠️ "${esc(F.base)}" is a thinking or feeling word. We usually don't use it with "-ing": say "${esc(TENSES.find(x => x.k === (t.z === "past" ? "past" : t.z === "future" ? "future" : "present")).f(F, st.p))}" instead.</span>` : ""}</div>
         <div class="tm-nav"><button type="button" data-tm-step="-1" ${j === 0 ? "disabled" : ""}>◀ Earlier</button>${o.onPick ? `<button type="button" class="use" data-tm-use="1">Use "${esc(phrase)}"</button>` : `<button type="button" data-tm-hear="1">🔊 Hear</button>`}<button type="button" data-tm-step="1" ${j === L.length - 1 ? "disabled" : ""}>Later ▶</button></div>
         <div class="tm-seg" role="group" aria-label="How many times" style="justify-self:center">${[[1, "⭐ 3 times"], [2, "⭐⭐ 7 times"], [3, "⭐⭐⭐ all 12"]].map(([d, l]) => `<button type="button" data-td="${d}" aria-pressed="${d === st.d}">${l}</button>`).join("")}</div></div>`;
     }
@@ -122,14 +163,16 @@
       const d = e.target.closest("[data-td]"); if (d) { st.d = +d.dataset.td; try { localStorage.setItem("tenseDepth", st.d); } catch (x) {} draw(false); return; }
       const s = e.target.closest("[data-tm-step]"); if (s) { const L = shown(), j = L.findIndex(t => t.k === st.k) + +s.dataset.tmStep; if (L[j]) { st.k = L[j].k; draw(true); } return; }
       if (e.target.closest("[data-tm-hear]")) { try { const u = new SpeechSynthesisUtterance(`${PEOPLE.find(x => x[0] === st.p)[1]} ${T(st.k).f(F, st.p)}`); u.lang = "en-US"; speechSynthesis.cancel(); speechSynthesis.speak(u); } catch (x) {} return; }
+      const tw = e.target.closest("[data-tw]"); if (tw && o.onTime) { o.onTime(tw.dataset.tw); tw.textContent = "✓ " + tw.dataset.tw; return; }
       if (e.target.closest("[data-tm-use]") && o.onPick) o.onPick(st.k, st.p, T(st.k).f(F, st.p)); };
     el.onkeydown = e => { if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return; const L = shown(), j = L.findIndex(t => t.k === st.k) + (e.key === "ArrowLeft" ? -1 : 1); if (L[j]) { e.preventDefault(); st.k = L[j].k; draw(true); el.querySelector(".tm-stop.on")?.focus(); } };
     draw(false);
+    if (o.onTime) el.addEventListener("tm-drawn", () => {});
   }
   const isVerb = v => !!v && ((v.tags || []).includes("Action") || (v.tags || []).includes("Phrasal verb"));
   function auto(get) {
     const run = root => (root.querySelectorAll ? root : document).querySelectorAll("[data-tm]:not([data-tm-on])").forEach(el => { el.setAttribute("data-tm-on", "1"); const v = get(+el.dataset.tm); if (v) mount(el, { word: v }); });
     run(document); new MutationObserver(ms => ms.forEach(m => m.addedNodes.forEach(n => n.nodeType === 1 && run(n.parentNode || n)))).observe(document.body, { childList: true, subtree: true });
   }
-  window.Tense = { forms, say, allForms, mount, auto, isVerb, TENSES, IRR, LEMMA };
+  window.Tense = { NEED, forms, say, allForms, mount, auto, isVerb, TENSES, IRR, LEMMA };
 })();
