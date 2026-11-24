@@ -3,7 +3,7 @@
 <title>Characters · Helper Academy</title><link rel="icon" href="assets/icons/brilliant.png">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
 <link rel="stylesheet" href="css/app.css">
-<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261124n"></script><script src="js/icons.js?v=20261124n"></script><script src="js/app.js?v=20261124n"></script><script src="js/chars.js?v=20261124n"></script>
+<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261124o"></script><script src="js/icons.js?v=20261124o"></script><script src="js/app.js?v=20261124o"></script><script src="js/chars.js?v=20261124o"></script>
 <style>
 .chead{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;justify-content:space-between;margin-bottom:12px}.chead h1{margin:0}.chead p{margin:4px 0 0;color:var(--muted);max-width:70ch}
 .tabs{display:flex;gap:6px;margin:0 0 12px;border-bottom:2px solid var(--rule);flex-wrap:wrap}
@@ -84,7 +84,9 @@ function drawConds(){const top=L.conditions.filter(x=>!x.parent||!L.C[x.parent])
     ${GROUPS.map(([g,,f])=>{const xs=top.filter(f);return xs.length?`<h2 class="grp">${esc(g)} <small>${xs.length}</small></h2><div style="display:grid;gap:10px">${xs.map(x=>condCard(x)).join("")}</div>`:"";}).join("")}`;}
 const RKIND={fear:"Fear",learned:"Learned",situation:"Situation",trauma:"Something that happened",born:"From birth"};
 const chipOf=(x,cls)=>`<span class="chip ${cls||(x.t==="root"?"root":x.t==="condition"?"cond":"")}">${esc(Chars.label(x.t,x.k,x.lv))}</span>`;
-const quotes=qs=>qs.length?`<div class="adv">${qs.map(q=>`<blockquote>“${esc(q.headword)}”${q.author?`<small>${esc(q.author)}</small>`:""}</blockquote>`).join("")}</div>`:"";
+// Arabic sayings keep their original words under the English
+const ARQ=/Arabic|Shafi|Mutanabbi|Ma'arri|Ali ibn|Zuhayr|Antara|Meri/i,orig=q=>q.translation&&ARQ.test(q.author||"")?`<span dir="rtl" lang="ar" style="display:block;font:700 1rem/1.6 var(--f-body);white-space:pre-line;margin-top:3px">${esc(q.translation.replace(/ \.\.\. /g,"  ·  "))}</span>`:"";
+const quotes=qs=>qs.length?`<div class="adv">${qs.map(q=>`<blockquote>“${esc(q.headword)}”${orig(q)}${q.author?`<small>${esc(q.author)}</small>`:""}</blockquote>`).join("")}</div>`:"";
 const into=(t,k,eff)=>L.links.filter(l=>l.dst_type===t&&l.dst_key===k&&l.effect===eff&&Chars.lib&&(l.src_type==="trait"?L.T[l.src_key]:l.src_type==="root"?L.RT[l.src_key]:l.src_type==="sign"?L.S[l.src_key]:L.C[l.src_key])).sort((a,b)=>b.strength-a.strength);
 const outOf=(t,k)=>L.links.filter(l=>l.src_type===t&&l.src_key===k&&l.effect==="raises"&&(l.dst_type==="trait"?L.T[l.dst_key]:l.dst_type==="sign"?L.S[l.dst_key]:L.C[l.dst_key])).sort((a,b)=>b.strength-a.strength);
 const lk=(l,side)=>({t:l[side+"_type"],k:l[side+"_key"],lv:l[side+"_level"]});
@@ -116,7 +118,7 @@ function openChar(id){const c=L.chars.find(x=>x.id===id);if(!c)return;const d=$(
       if(A.risks.length)h+=`<h3 style="margin:14px 0 6px">⚠️ Could grow into, if nothing changes</h3><div class="why">${A.risks.map(r=>`<div class="w"><b>${esc(Chars.label(r.t,r.k))}</b> <span class="arrow">⬅</span> ${r.from.map(f=>chipOf(f)).join("")}${r.against.length?`<div style="font-size:.82rem">🛡️ held back by ${r.against.map(f=>chipOf(f,"prot")).join("")}</div>`:""}</div>`).join("")}</div>`;
       if(A.protects.length||A.helps.length)h+=`<h3 style="margin:14px 0 6px">🛡️ What protects them · what would help</h3><div class="why">${A.protects.length?`<div class="w">✅ Already protecting them: ${[...new Map(A.protects.map(p=>[p.src.k+p.src.lv,p])).values()].map(p=>chipOf(p.src,"prot")+`<small>against ${esc(Chars.label(p.dst.t,p.dst.k))}</small>`).join(" ")}</div>`:""}
         ${A.helps.filter(x=>x.src).map(x=>`<div class="w">${chipOf(x.src,"prot")} would help against <b>${esc(Chars.label(x.dst.t,x.dst.k))}</b></div>`).join("")}${A.helps.filter(x=>x.root).map(x=>`<div class="w">🌱 For <b>${esc(x.root.name)}</b>: ${esc(x.root.protects||"")}</div>`).join("")}</div>`;
-      if(A.advice.length)h+=`<h3 style="margin:14px 0 6px">📜 Advice a wise character could give</h3><div class="adv">${A.advice.map(a=>`<blockquote>“${esc(a.q.headword)}”<small>${a.q.author?esc(a.q.author)+" · ":""}for ${esc(a.for)}</small></blockquote>`).join("")}</div>`;
+      if(A.advice.length)h+=`<h3 style="margin:14px 0 6px">📜 Advice a wise character could give</h3><div class="adv">${A.advice.map(a=>`<blockquote>“${esc(a.q.headword)}”${orig(a.q)}<small>${a.q.author?esc(a.q.author)+" · ":""}for ${esc(a.for)}</small></blockquote>`).join("")}</div>`;
       return h;})()}
     ${Object.keys(c.signs||{}).filter(k=>L.S[k]&&c.signs[k]>0).length?`<h3 style="margin:14px 0 6px">🔎 Signs</h3>${Object.entries(c.signs).filter(([k,n])=>L.S[k]&&n>0).sort((a,b)=>b[1]-a[1]).map(([k,n])=>`<button type="button" class="linkb" data-sign="${k}" style="display:block;width:100%">${Chars.strengthRow(L.S[k].icon,L.S[k].name,n)}</button>`).join("")}`:""}`;
   d.showModal();}

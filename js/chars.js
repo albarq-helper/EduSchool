@@ -14,7 +14,7 @@
     L.S = Object.fromEntries(L.signs.map(x => [x.key, x]));
     L.roots = rt.data || []; L.RT = Object.fromEntries(L.roots.map(x => [x.key, x])); L.links = lk.data || []; L.advice = ad.data || [];
     const ids = [...new Set(L.advice.map(x => x.word_id))]; L.Q = {};
-    for (let k = 0; k < ids.length; k += 100) { const r2 = await C.from("words").select("id,headword,author,min_age").in("id", ids.slice(k, k + 100)); (r2.data || []).forEach(w => L.Q[w.id] = w); }
+    for (let k = 0; k < ids.length; k += 100) { const r2 = await C.from("words").select("id,headword,author,min_age,translation").in("id", ids.slice(k, k + 100)); (r2.data || []).forEach(w => L.Q[w.id] = w); }
     L.CS = {}; (cs.data || []).forEach(x => { if (L.S[x.sign]) (L.CS[x.condition] = L.CS[x.condition] || []).push(x); }); Object.values(L.CS).forEach(a => a.sort((x, y) => y.weight - x.weight));
     L.T = Object.fromEntries(L.traits.map(x => [x.key, x])); L.P = Object.fromEntries(L.places.map(x => [x.key, x]));
     L.C = Object.fromEntries(L.conditions.map(x => [x.key, x])); L.R = Object.fromEntries(L.roles.map(x => [x.key, x]));
