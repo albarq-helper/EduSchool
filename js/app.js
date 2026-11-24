@@ -45,7 +45,7 @@
       @media (max-width:760px){#appbar nav a span{display:none}#appbar .nm{display:none}}`;
     document.head.insertAdjacentHTML("beforeend", `<style>${css}</style>`);
     document.body.insertAdjacentHTML("afterbegin", `<div id="appbar" role="banner"><a class="brand" href="${home}"><i>${I("book-open-check")}</i>Helper Academy</a>
-      <nav aria-label="Main">${link(home, "house", "Home")}${link("library.html", "library", "Library")}${profile.role === "teacher" ? link("mysets.html", "layers", "My sets") + link("quotes.html", "users", "Who said it") : ""}${profile.is_admin ? link("admin.html", "shield-check", "Admin") : ""}</nav>
+      <nav aria-label="Main">${link(home, "house", "Home")}${link("library.html", "library", "Library")}${link("characters.html", "drama", "Characters")}${profile.role === "teacher" ? link("mysets.html", "layers", "My sets") + link("quotes.html", "users", "Who said it") : ""}${profile.is_admin ? link("admin.html", "shield-check", "Admin") : ""}</nav>
       <span class="me"><span class="av" aria-hidden="true">${esc(initials)}</span><span class="nm">${esc(name)}</span>${profile.role === "teacher" ? '<span class="role">Teacher</span>' : ""}
       <button type="button" id="signOut">${I("log-out")}<span>Sign out</span></button></span></div>`);
     document.getElementById("signOut").onclick = async () => { await client.auth.signOut(); location.href = "index.html"; };

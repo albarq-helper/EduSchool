@@ -163,7 +163,7 @@
 .sho:hover{border-color:var(--accent)}.sho.on{background:var(--accent);border-color:var(--accent);color:#fff}
 .tchip{display:inline-block;margin-left:6px;font:800 .78rem var(--f-body);color:#4338ca;background:#e0e7ff;border-radius:999px;padding:1px 8px;vertical-align:middle}
 </style>
-<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261124k"></script><script src="js/icons.js?v=20261124k"></script><script src="js/app.js?v=20261124k"></script><script src="js/sets.js?v=20261124k"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261124k"></script><script src="js/tense.js?v=20261124k"></script><script src="js/views.js?v=20261124k"></script><script src="js/storycore.js?v=20261124k"></script><script src="js/montage.js?v=20261124k"></script>
+<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261124l"></script><script src="js/icons.js?v=20261124l"></script><script src="js/app.js?v=20261124l"></script><script src="js/sets.js?v=20261124l"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261124l"></script><script src="js/tense.js?v=20261124l"></script><script src="js/views.js?v=20261124l"></script><script src="js/chars.js?v=20261124l"></script><script src="js/storycore.js?v=20261124l"></script><script src="js/montage.js?v=20261124l"></script>
 </head><body>
 <div class="wrap" style="max-width:1280px">
   <div class="head2">
@@ -367,7 +367,7 @@ $("quick").onclick=e=>{const b=e.target.closest("[data-q]");if(b)addBlock({k:"t"
 $("title").oninput=()=>{if(!CUR)CUR=blank();CUR.title=$("title").value;changed();};
 
 // ---------- 🎭 Characters: name, age, look/style, role, emoji; sayings can be given to one of them ----------
-const ROLES=[["hero","🦸 Hero"],["friend","🤝 Friend"],["wise","🦉 Wise one"],["family","🏠 Family"],["animal","🐾 Animal"],["rival","😈 Rival"],["other","✨ Other"]];
+const ROLES=[["hero","🦸 Hero"],["friend","🤝 Friend"],["wise","🦉 Wise one"],["family","🏠 Family"],["animal","🐾 Animal"],["rival","😈 Rival"],["other","✨ Other"],["doctor","🩺 Doctor"],["encourager","📣 Encourager"],["trouble","🌪️ Trouble-maker"],["helper","🧰 Helper"],["teacher","🧑‍🏫 Teacher"]];
 const CAST_EMOJI=["👧","👦","👩","👨","👵","👴","🧒","🧕","🦉","🐶","🐱","🦊","🐰","🐻","🦁","🐴","🐪","🐢","🐦","🤖","🧙","🧚","👑","👻"];
 let CASTOPEN=false,CASTEDIT=null;   // the section is open; the character being edited (index, or "new")
 const cast=()=>(CUR&&CUR.characters)||[];
@@ -376,6 +376,10 @@ const castName=c=>(c&&c.name||"").trim();
 const defaultSpeaker=()=>"";
 function drawCast(){const el=$("cast");if(!el)return;const C2=cast();
   const form=i=>{const c=i==="new"?{name:"",age:"",look:"",role:"friend",emoji:"🧒"}:C2[i];
+    if(c.lib)return `<div class="cform" data-cf="${i}"><div class="cgrid"><label>Name in your story<input data-cv="name" maxlength="40" value="${esc(c.name||"")}"></label>
+      <label>Call them<select data-cv="pr">${[["he","he · him · his"],["she","she · her · hers"],["it","it · its (animal / thing)"],["they","they · them · their"]].map(([k,l])=>`<option value="${k}"${(c.pr||Tense.prOf(c))===k?" selected":""}>${l}</option>`).join("")}</select></label></div>
+      <p class="muted" style="margin:4px 0">${esc(c.emoji)} From the character library${c.libName&&c.libName!==c.name?` (“${esc(c.libName)}”)`:""}: their age, look and personality come with them.</p>
+      <div class="cbtns"><button class="btn small primary" type="button" data-csave="${i}">Save</button><button class="btn small" type="button" data-ccancel="1">Cancel</button><button class="btn small" type="button" data-cdel="${i}">🗑️ Remove</button></div></div>`;
     return `<div class="cform" data-cf="${i}"><div class="cgrid">
       <label>Name<input data-cv="name" maxlength="40" value="${esc(c.name||"")}" placeholder="e.g. Rover"></label>
       <label>Age<input data-cv="age" maxlength="20" value="${esc(c.age||"")}" placeholder="e.g. 10, or very old"></label>
@@ -386,32 +390,37 @@ function drawCast(){const el=$("cast");if(!el)return;const C2=cast();
       <div class="cbtns"><button class="btn small primary" type="button" data-csave="${i}">${i==="new"?"Add character":"Save"}</button><button class="btn small" type="button" data-ccancel="1">Cancel</button>${i!=="new"?`<button class="btn small" type="button" data-cdel="${i}">🗑️ Remove</button>`:""}</div></div>`;};
   el.innerHTML=`<button type="button" class="casthead" id="castToggle" aria-expanded="${CASTOPEN}">🎭 Characters <span class="n">${C2.length}</span> <span class="chev">${CASTOPEN?"▴":"▾"}</span>
       ${!CASTOPEN&&C2.length?`<span class="castmini">${C2.map(c=>`${esc(c.emoji||"🙂")} ${esc(castName(c))}`).join(" · ")}</span>`:""}</button>
-    ${CASTOPEN?`<div class="castbody">${C2.map((c,i)=>CASTEDIT===i?form(i):`<div class="ccard"><span class="cemoji">${esc(c.emoji||"🙂")}</span><div><b>${esc(castName(c))}</b>${c.age?` <small>· ${esc(c.age)}</small>`:""}<small class="crole">${esc((ROLES.find(r=>r[0]===c.role)||ROLES[6])[1])} · ${esc(Tense.PRON.find(x=>x.k===(c.pr||Tense.prOf(c))).sub)}</small><span>${esc(c.look||"")}</span></div><button type="button" class="btn small" data-cedit="${i}">✏️ Edit</button></div>`).join("")}
-      ${CASTEDIT==="new"?form("new"):C2.length<12?`<button type="button" class="chipb" data-cnew="1">➕ Add a character</button>`:""}
-      ${!C2.length&&CASTEDIT!=="new"?`<p class="muted">Who is in your story? Give each character a name, an age and a look. Then you can choose who says each saying.</p>`:""}</div>`:""}`;}
+    ${CASTOPEN?`<div class="castbody">${C2.map((c,i)=>CASTEDIT===i?form(i):`<div class="ccard"><span class="cemoji">${esc(c.emoji||"🙂")}</span><div><b>${esc(castName(c))}</b>${c.age?` <small>· ${esc(c.age)}</small>`:""}<small class="crole">${esc((ROLES.find(r=>r[0]===c.role)||ROLES[6])[1])} · ${esc(Tense.PRON.find(x=>x.k===(c.pr||Tense.prOf(c))).sub)}</small><span>${esc(c.look||"")}</span>${c.lib&&window.Chars&&Chars.lib?`<span class="ch-mini" style="margin-top:3px">${Chars.highlights(c,3).map(h=>`<span class="${h.b?"":"g"}">${esc(h.t.icon)} ${esc(h.txt)}</span>`).join("")}</span>`:""}</div><button type="button" class="btn small" data-cedit="${i}">✏️ ${c.lib?"Rename":"Edit"}</button></div>`).join("")}
+      ${C2.length<12?`<button type="button" class="chipb" data-cnew="1">➕ Choose a character</button>`:""}
+      ${!C2.length?`<p class="muted">Who is in your story? Choose characters from the 🎭 character library: each one has a personality. You can give them another name. Then you can choose who says each saying.</p>`:""}</div>`:""}`;}
 function castForm(i){const f=$("cast").querySelector(`[data-cf="${i}"]`),g=k=>f.querySelector(`[data-cv="${k}"]`).value.trim();
   return {name:g("name"),age:g("age"),look:g("look"),role:g("role"),pr:g("pr"),emoji:(f.querySelector("[data-ce][aria-pressed=true]")||{}).dataset?.ce||"🙂"};}
 document.addEventListener("click",e=>{if(!$("cast")||!$("cast").contains(e.target))return;
   if(e.target.closest("#castToggle")){CASTOPEN=!CASTOPEN;CASTEDIT=null;drawCast();return;}
   const ce=e.target.closest("[data-ce]");if(ce){ce.parentElement.querySelectorAll("[data-ce]").forEach(b=>b.setAttribute("aria-pressed",b===ce));return;}
-  if(e.target.closest("[data-cnew]")){CASTEDIT="new";drawCast();$("cast").querySelector('[data-cv="name"]').focus();return;}
+  if(e.target.closest("[data-cnew]")){pickChar().then(c=>{if(!c)return;if(WANT_SPEAKER!=null&&CUR.blocks[WANT_SPEAKER]){CUR.blocks[WANT_SPEAKER].by=c.name;CUR.blocks[WANT_SPEAKER].cid=c.id;WANT_SPEAKER=null;drawBoard();drawPreview();}});return;}
   const ed=e.target.closest("[data-cedit]");if(ed){CASTEDIT=+ed.dataset.cedit;drawCast();return;}
   if(e.target.closest("[data-ccancel]")){CASTEDIT=null;drawCast();return;}
   const sv=e.target.closest("[data-csave]");if(sv){const i=sv.dataset.csave,c=castForm(i);if(!c.name){App.status("Give your character a name",false);return;}
     CUR.characters=cast().slice();
     if(i==="new"){if(CUR.characters.some(x=>castName(x).toLowerCase()===c.name.toLowerCase())){App.status("You already have a character with that name",false);return;}c.id="c"+Date.now().toString(36);CUR.characters.push(c);}
-    else{const old=CUR.characters[+i];c.id=old.id;CUR.characters[+i]=c;if(castName(old)!==c.name)CUR.blocks.forEach(b=>{if((b.k==="q"||b.k==="w")&&(b.cid===old.id||b.by===castName(old))){b.by=c.name;b.cid=c.id;}});}
+    else{const old=CUR.characters[+i];c.id=old.id;if(old.lib){CUR.characters[+i]={...old,name:c.name,pr:c.pr};Object.assign(c,CUR.characters[+i]);}else CUR.characters[+i]=c;if(castName(old)!==c.name)CUR.blocks.forEach(b=>{if((b.k==="q"||b.k==="w")&&(b.cid===old.id||b.by===castName(old))){b.by=c.name;b.cid=c.id;}});}
     if(WANT_SPEAKER!=null&&CUR.blocks[WANT_SPEAKER]){CUR.blocks[WANT_SPEAKER].by=c.name;CUR.blocks[WANT_SPEAKER].cid=c.id;WANT_SPEAKER=null;}
     CASTEDIT=null;changed();drawCast();drawBoard();drawPreview();return;}
   const dl=e.target.closest("[data-cdel]");if(dl){const old=cast()[+dl.dataset.cdel];CUR.characters=cast().filter((_,j)=>j!==+dl.dataset.cdel);
     CUR.blocks.forEach(b=>{if((b.k==="q"||b.k==="w")&&(b.cid===old.id||b.by===castName(old))){delete b.by;delete b.cid;}});CASTEDIT=null;changed();drawCast();drawBoard();drawPreview();}});
+// choose from the 🎭 character library (the only way to add one); a story keeps its own copy, so renaming is fine
+async function pickChar(){if(cast().length>=12){App.status("A story can have up to 12 characters",false);return null;}
+  const r=await Chars.pick({used:cast().map(c=>c.lib).filter(Boolean)});if(!r)return null;
+  if(cast().some(x=>castName(x).toLowerCase()===r.name.toLowerCase())){App.status("You already have a character with that name: give this one another name",false);return null;}
+  const c=Chars.forStory(r.lib,r.name);CUR.characters=[...cast(),c];CASTOPEN=true;changed();drawCast();App.status(`${c.emoji} ${c.name} joined your story`,true);return c;}
 let WANT_SPEAKER=null;   // a saying waiting for a new character to speak it
 // the "Who says it?" menu on a saying: the characters, the narrator, a voice-over, or a new character
 function speakerSelect(b,k){const names=cast().map(castName).filter(Boolean),cur=(b.by||"").trim()||"Voice-over",extra=!names.includes(cur)&&!["Voice-over","Narrator"].includes(cur)?[cur]:[];
   return `<select data-bysel="${k}" aria-label="Who says it?">${cast().map(c=>`<option value="${esc(castName(c))}"${castName(c)===cur?" selected":""}>${esc((c.emoji||"🙂")+" "+castName(c))}</option>`).join("")}
     ${extra.map(x=>`<option value="${esc(x)}" selected>${esc(x)}</option>`).join("")}<option value="Narrator"${cur==="Narrator"?" selected":""}>📖 Narrator</option><option value="Voice-over"${cur==="Voice-over"?" selected":""}>🎙️ Voice-over</option><option value="__new">➕ New character…</option></select>`;}
 document.addEventListener("change",e=>{const s=e.target.closest("select[data-bysel]");if(!s)return;const k=+s.dataset.bysel,b=CUR.blocks[k];
-  if(s.value==="__new"){WANT_SPEAKER=k;CASTOPEN=true;CASTEDIT="new";drawCast();$("cast").scrollIntoView({behavior:"smooth",block:"center"});setTimeout(()=>$("cast").querySelector('[data-cv="name"]')?.focus(),300);s.value=b.by||"Voice-over";return;}
+  if(s.value==="__new"){s.value=b.by||"Voice-over";pickChar().then(c=>{if(c&&CUR.blocks[k]){CUR.blocks[k].by=c.name;CUR.blocks[k].cid=c.id;changed();drawBoard();drawPreview();}});return;}
   b.by=s.value;const c=cast().find(x=>castName(x)===s.value);if(c)b.cid=c.id;else delete b.cid;changed();drawPreview();});
 // ---------- 🗣️ the little circle on a saying: tap it to choose who says it (empty = part of the story) ----------
 const isSay=(b,v)=>b.k==="q"||!!(v&&(v.boxKind==="sayings"||v.author||(v.tags||[]).includes("Saying")||(v.tags||[]).includes("Idiom")))||clean(b.w).trim().split(/\s+/).length>=4;
@@ -430,7 +439,7 @@ function openSpk(k,btn){closeSpk();const b=CUR.blocks[k],cur=(b.by||"").trim(),m
 const closeSpk=()=>{const m=$("spkMenu");if(m)m.remove();};
 document.addEventListener("click",e=>{const d=e.target.closest("[data-spk]");if(d){e.stopPropagation();const open=$("spkMenu");if(open&&open.dataset.k===d.dataset.spk){closeSpk();return;}openSpk(+d.dataset.spk,d);return;}
   const o=e.target.closest("#spkMenu [data-spkv]");if(o){const k=+$("spkMenu").dataset.k,b=CUR.blocks[k],v=o.dataset.spkv;closeSpk();if(!b)return;
-    if(v==="__new"){WANT_SPEAKER=k;CASTOPEN=true;CASTEDIT="new";drawCast();$("cast").scrollIntoView({behavior:"smooth",block:"center"});setTimeout(()=>$("cast").querySelector('[data-cv="name"]')?.focus(),300);return;}
+    if(v==="__new"){pickChar().then(c=>{if(c&&CUR.blocks[k]){CUR.blocks[k].by=c.name;CUR.blocks[k].cid=c.id;changed();drawBoard();drawPreview();}});return;}
     if(v){b.by=v;const c=cast().find(x=>castName(x)===v);if(c)b.cid=c.id;else delete b.cid;}else{delete b.by;delete b.cid;}
     changed();drawBoard();return;}
   if(!e.target.closest("#spkMenu"))closeSpk();},true);
@@ -605,8 +614,7 @@ function drawWX(){const b=CUR.blocks[WX.k],i=wi(b.w),v=D[i]||{},G=WX.G=wxGroups(
       ${subs?`<div class="wxsubs">With: ${subs}</div>`:""}${b.tw?`<p class="wxfrom">🧱 In your story: <b>${esc(b.ph||b.tw)}</b> <button type="button" class="btn small" data-untense="1">✕ Back to "${esc(clean(b.w))}"</button></p>`:""}</div></div>
     <div class="wxtabs" role="tablist">${tabs.map(x=>`<button type="button" role="tab" class="wxt" data-wxt="${x.id}" aria-selected="${x.id===WX.tab}">${esc(x.label)}</button>`).join("")}</div>${body}`;
   if(t&&t.id==="time"&&$("wxTime")){const R=WX.rev;Tense.mount($("wxTime"),{word:R?R.base:b.w,tense:b.tense,person:b.per,when:b.when,dt:b.dt||null,shape:b.shape||(R?{k:R.kind,w:R.form,c:R.c,own:"the",many:false}:null),partners:R?[]:b.p||[],cast:cast(),
-    addChar:c=>{const have=cast().find(x=>castName(x).toLowerCase()===c.name.toLowerCase());if(have)return {...have,name:castName(have)};if(cast().length>=12){App.status("A story can have up to 12 characters",false);return null;}
-      const n={id:"c"+Date.now().toString(36),name:c.name,age:"",look:"",role:"",pr:"",emoji:c.emoji};CUR.characters=[...cast(),n];changed();drawCast();App.status(`${c.emoji} ${c.name} joined your characters`,true);return n;},
+    addChar:()=>pickChar(),
     onPick:r=>{b.tense=r.tense;b.per=r.person;b.who=r.who;b.when=r.when;b.dt=r.dt||null;b.shape=r.shape||null;if(R)b.vb=R.base;else delete b.vb;if(!r.tense)delete b.tense;b.tw=r.form;b.ph=r.phrase;changed();drawBoard();drawWX();App.status(`Now it says "${r.phrase}"`,true);}});}
   if(t&&t.id==="desc"&&WX.kind!=="idiom"){const D2=wxDesc(b,G),mine=D2.scs.filter(s=>s.kind===WX.kind).sort((a,c)=>(a.g===D2.g?0:1)-(c.g===D2.g?0:1)),sc=mine[0],el=$("wxpm");
     mine.slice(1).forEach((s2,n)=>{const el2=$("wxpm2-"+n);if(!el2)return;const have=(b.p||[]).map(x=>x.toLowerCase()),cur=s2.items.find(x=>have.includes(x.phrase.toLowerCase()));
@@ -659,6 +667,7 @@ $("infoDlg").addEventListener("click",e=>{if(e.target===$("infoDlg"))$("infoDlg"
   openStory(STORIES.find(s=>s.id===last)||STORIES[0]||null);
   try{BOXES=await Sets.loadBoxes(SET);}catch(e){}
   try{await Sets.loadCompanions();}catch(e){}
+  if(window.Chars)Chars.load().then(()=>drawCast()).catch(()=>{});
   try{window.PARTNERS_MAP=await Sets.loadPartners(D);}catch(e){window.PARTNERS_MAP=new Map();}
   let sb="";try{sb=localStorage.getItem("storyBox")||"";}catch(e){}
   setBox(BOXES.some(b=>b.id===sb)?sb:SET.id);drawBoard();})();

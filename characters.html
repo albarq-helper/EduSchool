@@ -1,0 +1,105 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Characters · Helper Academy</title><link rel="icon" href="assets/icons/brilliant.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<link rel="stylesheet" href="css/app.css">
+<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261124l"></script><script src="js/icons.js?v=20261124l"></script><script src="js/app.js?v=20261124l"></script><script src="js/chars.js?v=20261124l"></script>
+<style>
+.chead{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;justify-content:space-between;margin-bottom:12px}.chead h1{margin:0}.chead p{margin:4px 0 0;color:var(--muted);max-width:70ch}
+.tabs{display:flex;gap:6px;margin:0 0 12px;border-bottom:2px solid var(--rule);flex-wrap:wrap}
+.tab{all:unset;cursor:pointer;padding:10px 14px;font:800 .95rem var(--f-body);color:var(--muted);border-bottom:3px solid transparent;margin-bottom:-2px}.tab[aria-selected="true"]{color:var(--accent);border-color:var(--accent)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}.grid .ch-card{cursor:pointer}.grid .ch-card:hover{border-color:var(--accent)}
+.tcard{background:var(--sheet);border:1.5px solid var(--rule);border-radius:16px;padding:12px 14px;display:grid;gap:8px}
+.tcard h3{margin:0;font:800 1.1rem var(--f-display)}.tcard .fam{font:800 .72rem var(--f-body);color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.three{display:grid;grid-template-columns:1fr 1.1fr 1fr;gap:8px}.three>div{border-radius:12px;padding:8px 10px;font-size:.88rem;display:grid;gap:3px;align-content:start}
+.three .lo,.three .hi{background:var(--bad-soft)}.three .mid{background:#fef9c3;border:1.5px solid #f59e0b}.three b{font:800 .95rem var(--f-body)}
+@media (max-width:720px){.three{grid-template-columns:1fr}}
+.note{font-size:.85rem;background:var(--accent-soft);border-radius:10px;padding:6px 10px}
+.ccard{background:var(--sheet);border:1.5px solid var(--rule);border-left:6px solid #8b5cf6;border-radius:14px;padding:12px 14px;display:grid;gap:6px}
+.ccard h3{margin:0;font:800 1.1rem var(--f-display)}.ccard ul{margin:0;padding-left:18px}.kind{font:800 .72rem var(--f-body);text-transform:uppercase;letter-spacing:.05em;color:#6d28d9}
+.dlg{border:0;border-radius:18px;padding:16px 18px;max-width:min(820px,96vw);width:100%;background:var(--sheet);color:var(--ink)}.dlg::backdrop{background:rgba(15,23,42,.45)}
+.dlg .meters{display:grid;gap:14px;margin-top:10px}
+.form{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}.form label{display:grid;gap:3px;font:700 .75rem var(--f-body);color:var(--muted)}.form .wide{grid-column:1/-1}
+.form input,.form select,.form textarea{font:600 .93rem var(--f-body);padding:7px 9px;border:1.5px solid var(--rule);border-radius:9px;background:var(--paper);color:var(--ink)}
+.trow{display:grid;grid-template-columns:minmax(170px,1fr) 2fr;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--rule)}.trow .r{display:grid;gap:4px}
+.trow input[type=range]{width:100%;accent-color:#f59e0b}.trow .lv{font:700 .8rem var(--f-body);color:var(--muted)}
+.plc{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:4px}.plc label{font:700 .72rem var(--f-body);color:var(--muted)}
+.conds{display:flex;flex-wrap:wrap;gap:6px}.conds label{display:inline-flex;gap:5px;align-items:center;font:700 .85rem var(--f-body);background:var(--paper);border:1px solid var(--rule);border-radius:999px;padding:3px 10px}
+</style>
+</head><body>
+<div class="wrap" style="max-width:1150px">
+  <div class="chead"><div><span class="eyebrow">Story library</span><h1>🎭 Characters</h1>
+    <p>Every story needs characters, and every character is made of a personality, not just a name. Each trait is a meter: the 🌟 golden middle is healthy, and too little or too much causes trouble, for them or for others. Some traits change with the place.</p></div>
+    <div id="acts"></div></div>
+  <div class="tabs" role="tablist"><button class="tab" role="tab" data-tab="c" aria-selected="true">🎭 Characters</button><button class="tab" role="tab" data-tab="t" aria-selected="false">🧩 Personality traits</button><button class="tab" role="tab" data-tab="k" aria-selected="false">🩺 Conditions &amp; ideas</button></div>
+  <div id="pane"><div class="empty">Loading…</div></div>
+</div>
+<dialog class="dlg" id="dlg"></dialog>
+<script>
+const $=id=>document.getElementById(id),esc=App.esc;let L=null,TAB="c",F={q:"",role:""},EDITOR=false;
+const KIND={issue:"Issue",behaviour:"Behaviour",condition:"Condition",disorder:"Disorder",idea:"Idea"};
+function drawChars(){const list=L.chars.filter(c=>(!F.role||c.role===F.role)&&(!F.q||(c.name+" "+(c.bio||"")+" "+Chars.personality(c)).toLowerCase().includes(F.q.toLowerCase())));
+  return `<div class="ch-filters"><input type="search" id="q" placeholder="Search: name, or what they are like (e.g. complains, explodes)" value="${esc(F.q)}"><button type="button" data-role="" aria-pressed="${!F.role}">All (${L.chars.length})</button>${L.roles.filter(r=>L.chars.some(c=>c.role===r.key)).map(r=>`<button type="button" data-role="${r.key}" aria-pressed="${F.role===r.key}">${r.icon} ${esc(r.name)}</button>`).join("")}</div>
+    <div class="grid">${list.map(c=>Chars.card(c,{tag:"button",attr:`type="button" data-open="${c.id}"`})).join("")||`<p class="muted">No characters found.</p>`}</div>`;}
+function drawTraits(){return `<div style="display:grid;gap:10px">${L.traits.map(t=>`<div class="tcard"><span class="fam">${esc(t.family)}${t.varies_by_place?" · 📍 can change with the place":""}</span><h3>${esc(t.icon)} ${esc(t.name)}</h3>
+    <div class="three"><div class="lo"><b>◀ Too little: ${esc(t.low_name)}</b><span>🙋 ${esc(t.low_self)}</span><span>👥 ${esc(t.low_others)}</span></div>
+      <div class="mid"><b>🌟 Golden middle: ${esc(t.mid_name)}</b><span>${esc(t.mid_text)}</span></div>
+      <div class="hi"><b>Too much: ${esc(t.high_name)} ▶</b><span>🙋 ${esc(t.high_self)}</span><span>👥 ${esc(t.high_others)}</span></div></div>
+    ${t.place_note?`<div class="note">📍 ${esc(t.place_note)}</div>`:""}
+    <div class="ch-mini">${L.chars.filter(c=>c.traits&&c.traits[t.key]!=null).slice(0,8).map(c=>`<span class="${Chars.base(c.traits[t.key])?"":"g"}">${esc(c.emoji)} ${esc(c.name)}: ${esc(Chars.levelName(t,Chars.base(c.traits[t.key])))}</span>`).join("")}</div></div>`).join("")}</div>`;}
+function drawConds(){return `<p class="muted">Characters can show signs of these. In a story, only a 🩺 doctor character gives a diagnosis; a 🦉 wise character can explain what is going on. More open up as you grow older.</p>
+  <div style="display:grid;gap:10px">${L.conditions.map(x=>`<div class="ccard" id="k-${x.key}"><span class="kind">${KIND[x.kind]||x.kind}${x.min_age?` · ${x.min_age}+`:""}</span><h3>${esc(x.icon)} ${esc(x.name)}${x.aliases&&x.aliases.length?` <small class="muted">(${esc(x.aliases.join(", "))})</small>`:""}</h3>
+    <p style="margin:0">${esc(x.about)}</p>${x.signs&&x.signs.length?`<div><b>Signs</b><ul>${x.signs.map(s=>`<li>${esc(s)}</li>`).join("")}</ul></div>`:""}${x.helps?`<div>🤝 <b>What helps:</b> ${esc(x.helps)}</div>`:""}
+    ${(x.traits||[]).length?`<div class="ch-mini">${x.traits.map(k=>L.T[k]?`<span>${esc(L.T[k].icon)} ${esc(L.T[k].name)}</span>`:"").join("")}</div>`:""}</div>`).join("")||`<p class="muted">Nothing here yet.</p>`}</div>`;}
+function draw(){document.querySelectorAll(".tab").forEach(b=>b.setAttribute("aria-selected",b.dataset.tab===TAB));
+  $("pane").innerHTML=TAB==="c"?drawChars():TAB==="t"?drawTraits():drawConds();
+  const q=$("q");if(q)q.oninput=()=>{F.q=q.value;const p=q.selectionStart;draw();$("q").focus();$("q").setSelectionRange(p,p);};}
+function openChar(id){const c=L.chars.find(x=>x.id===id);if(!c)return;const d=$("dlg");
+  d.innerHTML=`<div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start">${Chars.card(c)}<div style="display:flex;gap:6px">${EDITOR?`<button class="btn small" data-edit="${c.id}">✏️ Edit</button>`:""}<button class="btn small" data-close="1">✕</button></div></div>
+    <div class="meters">${L.traits.filter(t=>c.traits&&c.traits[t.key]!=null).map(t=>Chars.meter(t,c.traits[t.key])).join("")||`<p class="muted">No personality set yet.</p>`}</div>
+    ${(c.conditions||[]).length?`<h3 style="margin:14px 0 6px">🩺 Shows signs of</h3>${c.conditions.map(k=>L.C[k]?`<button type="button" class="ch-cond" data-cond="${k}">${esc(L.C[k].icon)} ${esc(L.C[k].name)}</button>`:"").join(" ")}`:""}`;
+  d.showModal();}
+// ---- parents: add and edit characters ----
+function editChar(id){const c=id?L.chars.find(x=>x.id===id):{name:"",emoji:"🙂",age:10,sex:"female",education:"primary",role:"friend",bio:"",traits:{},conditions:[],min_age:0};const d=$("dlg");
+  const tv=k=>c.traits&&c.traits[k]!=null?c.traits[k]:null;
+  d.innerHTML=`<div style="display:flex;justify-content:space-between"><h2 style="margin:0">${id?"✏️ Edit":"＋ New"} character</h2><button class="btn small" data-close="1">✕</button></div>
+  <div class="form" id="cf" style="margin-top:10px"><label>Name<input data-f="name" maxlength="40" value="${esc(c.name)}"></label><label>Emoji<input data-f="emoji" maxlength="8" value="${esc(c.emoji)}"></label>
+    <label>Age<input data-f="age" type="number" min="0" max="150" value="${c.age??""}"></label><label>Sex<select data-f="sex">${["female","male","other"].map(s=>`<option${c.sex===s?" selected":""}>${s}</option>`).join("")}</select></label>
+    <label>Education<select data-f="education">${["none","kindergarten","primary","middle","high","university","doctorate"].map(s=>`<option${c.education===s?" selected":""}>${s}</option>`).join("")}</select></label>
+    <label>Role<select data-f="role">${L.roles.map(r=>`<option value="${r.key}"${c.role===r.key?" selected":""}>${r.icon} ${esc(r.name)}</option>`).join("")}</select></label>
+    <label>Youngest age to see them<input data-f="min_age" type="number" min="0" max="21" value="${c.min_age||0}"></label>
+    <label class="wide">About them<textarea data-f="bio" rows="2" maxlength="300">${esc(c.bio||"")}</textarea></label></div>
+  <h3 style="margin:14px 0 4px">Personality</h3><p class="muted" style="margin:0">Leave a trait off if it doesn't matter for this character. 🌟 0 is the golden middle.</p>
+  <div id="tf">${L.traits.map(t=>{const v=tv(t.key),b=v==null?0:Chars.base(v),pl=Object.fromEntries(Chars.byPlace(v));
+    return `<div class="trow" data-t="${t.key}"><label style="display:flex;gap:6px;align-items:center;font-weight:800"><input type="checkbox" data-on${v!=null?" checked":""}> ${esc(t.icon)} ${esc(t.name)}</label>
+      <div class="r"><input type="range" min="-2" max="2" step="1" value="${b}" data-b aria-label="${esc(t.name)}"><span class="lv" data-lv>${esc(Chars.levelName(t,b))}</span>
+      ${t.varies_by_place?`<details${Object.keys(pl).length?" open":""}><summary class="lv">📍 Different in some places</summary><div class="plc">${L.places.map(p=>`<label>${esc(p.icon)} ${esc(p.name)}<select data-pl="${p.key}"><option value="">same</option>${[-2,-1,0,1,2].map(n=>`<option value="${n}"${pl[p.key]===n?" selected":""}>${esc(Chars.levelName(t,n))}</option>`).join("")}</select></label>`).join("")}</div></details>`:""}</div></div>`;}).join("")}</div>
+  <h3 style="margin:14px 0 4px">Shows signs of</h3><div class="conds">${L.conditions.map(x=>`<label><input type="checkbox" data-c="${x.key}"${(c.conditions||[]).includes(x.key)?" checked":""}> ${esc(x.icon)} ${esc(x.name)} <small class="muted">${x.min_age}+</small></label>`).join("")}</div>
+  <div style="display:flex;gap:8px;margin-top:14px"><button class="btn primary" data-save="${id||""}">Save</button>${id?`<button class="btn" data-del="${id}">🗑️ Remove</button>`:""}</div>`;
+  d.querySelectorAll("[data-t]").forEach(r=>{const t=L.T[r.dataset.t];r.querySelector("[data-b]").oninput=e=>{r.querySelector("[data-on]").checked=true;r.querySelector("[data-lv]").textContent=Chars.levelName(t,+e.target.value);};});
+  if(!d.open)d.showModal();}
+async function saveChar(id){const d=$("dlg"),g=k=>d.querySelector(`[data-f="${k}"]`).value.trim(),traits={};
+  d.querySelectorAll("[data-t]").forEach(r=>{if(!r.querySelector("[data-on]").checked)return;const b=+r.querySelector("[data-b]").value,pl={};
+    r.querySelectorAll("[data-pl]").forEach(s=>{if(s.value!=="")pl[s.dataset.pl]=+s.value;});traits[r.dataset.t]=Object.keys(pl).length?{all:b,...pl}:b;});
+  const conditions=[...d.querySelectorAll("[data-c]:checked")].map(x=>x.dataset.c),need=Math.max(0,...conditions.map(k=>L.C[k].min_age));
+  const row={name:g("name"),emoji:g("emoji")||"🙂",age:g("age")===""?null:+g("age"),sex:g("sex"),education:g("education"),role:g("role"),bio:g("bio"),traits,conditions,min_age:Math.max(+g("min_age")||0,need)};
+  if(!row.name){App.status("Give the character a name",false);return;}
+  const r=id?await App.client.from("characters").update(row).eq("id",id).select().single():await App.client.from("characters").insert({...row,created_by:App.user.id}).select().single();
+  if(r.error){App.status("Not saved: "+r.error.message,false);return;}
+  if(row.min_age>(+g("min_age")||0))App.status(`Saved. Shown from age ${row.min_age}, because of the conditions chosen.`,true);else App.status("Saved",true);
+  await Chars.load(true);L=Chars.lib;d.close();draw();}
+document.addEventListener("click",async e=>{const t=e.target;
+  const tb=t.closest("[data-tab]");if(tb){TAB=tb.dataset.tab;draw();return;}
+  const r=t.closest("[data-role]");if(r&&!t.closest("dialog")){F.role=r.dataset.role;draw();return;}
+  const o=t.closest("[data-open]");if(o){openChar(o.dataset.open);return;}
+  if(t.closest("[data-close]")){$("dlg").close();return;}
+  const cd=t.closest("[data-cond]");if(cd){$("dlg").close();TAB="k";draw();const el=$("k-"+cd.dataset.cond);if(el)el.scrollIntoView({behavior:"smooth"});return;}
+  if(t.closest("[data-new]")){editChar(null);return;}
+  const ed=t.closest("[data-edit]");if(ed){editChar(ed.dataset.edit);return;}
+  const sv=t.closest("[data-save]");if(sv){saveChar(sv.dataset.save||null);return;}
+  const dl=t.closest("[data-del]");if(dl){const c=L.chars.find(x=>x.id===dl.dataset.del);if(!confirm(`Remove ${c.name} from the library? Stories that already use them keep their copy.`))return;
+    const {error}=await App.client.from("characters").delete().eq("id",c.id);if(error){App.status("Not removed: "+error.message,false);return;}await Chars.load(true);L=Chars.lib;$("dlg").close();draw();App.status("Removed",true);}});
+App.requireUser().then(async()=>{try{L=await Chars.load();}catch(e){$("pane").innerHTML=`<div class="empty">Could not load the characters.</div>`;return;}
+  EDITOR=App.profile&&(App.profile.role==="teacher"||App.profile.is_admin);
+  if(EDITOR)$("acts").innerHTML=`<button class="btn primary" data-new="1">＋ New character</button>`;draw();});
+</script></body></html>
