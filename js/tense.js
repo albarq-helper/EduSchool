@@ -160,6 +160,14 @@
       FAMC.set(key, out); return out; })();
     FAMC.set(key, pr); return pr;
   }
+  // the other way: achievement → { base: "achieve", kind: "thing" } (so a thing / person / describing word can become a sentence too)
+  const REVC = new Map();
+  function reverse(word) {
+    const w = String(word && word.w || word || "").trim().toLowerCase(); if (!w || !window.App || !App.client) return Promise.resolve(null);
+    if (!REVC.has(w)) REVC.set(w, (async () => { try { const r = await App.client.from("word_forms").select("base,form,kind,countable").eq("form", w).limit(1);
+      const x = (r.data || [])[0]; return x ? { base: x.base, kind: x.kind, form: x.form, c: x.countable !== false } : null; } catch (e) { return null; } })());
+    return REVC.get(w);
+  }
   // the shapes we already know for a word (after family() has run): for checking a story uses the word
   const famForms = word => { const f = FAMC.get(famKeys(word).join("|")); return f && !f.then ? [...f.thing, ...f.person, ...f.describing].flatMap(x => [x.w, PL(x.w)]) : []; };
   const say = (word, k, p) => { const t = T(k); return t ? t.f(forms(word), p || "she") : String(word && word.w || word); };
@@ -390,5 +398,5 @@
     const run = root => (root.querySelectorAll ? root : document).querySelectorAll("[data-tm]:not([data-tm-on])").forEach(el => { el.setAttribute("data-tm-on", "1"); const v = get(+el.dataset.tm); if (v) mount(el, { word: v, ...(opts ? opts() : {}) }); });
     run(document); new MutationObserver(ms => ms.forEach(m => m.addedNodes.forEach(n => n.nodeType === 1 && run(n.parentNode || n)))).observe(document.body, { childList: true, subtree: true });
   }
-  window.Tense = { family, famForms, dtWhen, NEED, PRON, RELS, prOf, phrase, subjOf, forms, say, allForms, mount, auto, isVerb, TENSES, IRR, LEMMA };
+  window.Tense = { reverse, family, famForms, dtWhen, NEED, PRON, RELS, prOf, phrase, subjOf, forms, say, allForms, mount, auto, isVerb, TENSES, IRR, LEMMA };
 })();
