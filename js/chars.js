@@ -5,13 +5,16 @@
   let L = null;
   async function load(force) {
     if (L && !force) return L;
-    const C = App.client, [t, p, c, r, ch, sg, cs, ag] = await Promise.all([
+    const C = App.client, [t, p, c, r, ch, sg, cs, ag, rt, lk, ad] = await Promise.all([
       C.from("traits").select("*").order("position"), C.from("trait_places").select("*").order("position"),
       C.from("conditions").select("*").order("position"), C.from("character_roles").select("*").order("position"),
       C.from("characters").select("*").order("name"), C.from("signs").select("*").order("position"), C.from("condition_signs").select("*"),
-      C.rpc("viewer_age").then(x => x, () => ({ data: null }))]);
+      C.rpc("viewer_age").then(x => x, () => ({ data: null })), C.from("roots").select("*").order("position"), C.from("trait_links").select("*"), C.from("advice").select("*").order("position")]);
     L = { traits: t.data || [], places: p.data || [], conditions: c.data || [], roles: r.data || [], chars: ch.data || [], signs: sg.data || [], age: ag && ag.data != null ? +ag.data : null };
     L.S = Object.fromEntries(L.signs.map(x => [x.key, x]));
+    L.roots = rt.data || []; L.RT = Object.fromEntries(L.roots.map(x => [x.key, x])); L.links = lk.data || []; L.advice = ad.data || [];
+    const ids = [...new Set(L.advice.map(x => x.word_id))]; L.Q = {};
+    for (let k = 0; k < ids.length; k += 100) { const r2 = await C.from("words").select("id,headword,author,min_age").in("id", ids.slice(k, k + 100)); (r2.data || []).forEach(w => L.Q[w.id] = w); }
     L.CS = {}; (cs.data || []).forEach(x => { if (L.S[x.sign]) (L.CS[x.condition] = L.CS[x.condition] || []).push(x); }); Object.values(L.CS).forEach(a => a.sort((x, y) => y.weight - x.weight));
     L.T = Object.fromEntries(L.traits.map(x => [x.key, x])); L.P = Object.fromEntries(L.places.map(x => [x.key, x]));
     L.C = Object.fromEntries(L.conditions.map(x => [x.key, x])); L.R = Object.fromEntries(L.roles.map(x => [x.key, x]));
@@ -56,6 +59,49 @@
       ${o.text === false ? "" : `<div class="ch-say">${tx.me ? `🙋 <b>For them:</b> ${esc(tx.me)}` : ""}${tx.others ? `<br>👥 <b>For others:</b> ${esc(tx.others)}` : ""}</div>`}
       ${pl.length ? `<div class="ch-places">${pl.map(([k, x]) => `<span>${esc((L && L.P[k] || {}).icon || "")} ${esc((L && L.P[k] || {}).name || k)}: ${esc(levelName(t, x))}</span>`).join("")}</div>` : ""}</div>`;
   }
+  // ---- 🧭 analysis: roots → traits / signs → conditions → tactics ----
+  const known = (t, k) => !!(L && (t === "root" ? L.RT[k] : t === "trait" ? L.T[k] : t === "sign" ? L.S[k] : L.C[k]));
+  const lvOf = v => v < 0 ? "low" : v > 0 ? "high" : "mid";
+  // how strongly a character has something (0 = not at all)
+  function has(c, t, k, lv) {
+    if (t === "root") return +((c.roots || {})[k] || 0);
+    if (t === "sign") return +((c.signs || {})[k] || 0);
+    if (t === "condition") { if ((c.conditions || []).includes(k)) return lvl(c, k); const sub = (c.conditions || []).filter(x => L.C[x] && L.C[x].parent === k); return sub.length ? Math.max(...sub.map(x => lvl(c, x))) : 0; }
+    const v = (c.traits || {})[k]; if (v == null) return 0;
+    const vals = [base(v), ...byPlace(v).map(([, x]) => +x)], m = vals.filter(x => lvOf(x) === lv);
+    return m.length ? (lv === "mid" ? 2 : Math.max(...m.map(x => Math.abs(x) === 2 ? 3 : 2))) : 0;
+  }
+  function label(t, k, lv) {
+    if (t === "trait") { const x = L.T[k]; return x ? `${x.icon} ${lv === "low" ? x.low_name : lv === "high" ? x.high_name : "🌟 " + x.mid_name} (${x.name})` : k; }
+    const x = t === "root" ? L.RT[k] : t === "sign" ? L.S[k] : L.C[k]; return x ? `${x.icon} ${x.name}` : k;
+  }
+  const advOf = (t, k) => L.advice.filter(a => a.target_type === t && a.target_key === k && L.Q[a.word_id] && (L.age == null || (L.Q[a.word_id].min_age || 0) <= L.age)).map(a => L.Q[a.word_id]);
+  function analyse(c) {
+    const out = { why: [], risks: [], protects: [], helps: [], advice: [] }, mine = [];
+    ["condition", "sign"].forEach(t => (t === "condition" ? (c.conditions || []) : Object.keys(c.signs || {})).forEach(k => { if (has(c, t, k) && known(t, k)) mine.push({ t, k, n: has(c, t, k) }); }));
+    Object.keys(c.traits || {}).forEach(k => ["low", "high"].forEach(lv => { const n = has(c, "trait", k, lv); if (n && known("trait", k)) mine.push({ t: "trait", k, lv, n }); }));
+    const src = l => has(c, l.src_type, l.src_key, l.src_level);
+    mine.forEach(m => { const from = L.links.filter(l => l.effect === "raises" && l.dst_type === m.t && l.dst_key === m.k && (l.dst_level || null) === (m.lv || null) && src(l) && known(l.src_type, l.src_key))
+      .map(l => ({ t: l.src_type, k: l.src_key, lv: l.src_level, n: src(l), s: l.strength, note: l.note })).sort((a, b) => b.s * b.n - a.s * a.n);
+      if (from.length && m.t !== "trait") out.why.push({ ...m, from }); });
+    out.why.sort((a, b) => (a.t === "condition" ? 0 : 1) - (b.t === "condition" ? 0 : 1) || b.n - a.n);
+    // what could grow next: things they don't have yet, pushed up by what they have, pushed down by what protects them
+    const score = {};
+    L.links.forEach(l => { if (l.dst_type === "trait" || l.dst_type === "root" || has(c, l.dst_type, l.dst_key) || !known(l.dst_type, l.dst_key)) return; const n = src(l); if (!n) return;
+      const key = l.dst_type + ":" + l.dst_key, e = score[key] || (score[key] = { t: l.dst_type, k: l.dst_key, up: 0, down: 0, from: [], against: [] });
+      if (l.effect === "raises") { e.up += l.strength * n / 2; e.from.push({ t: l.src_type, k: l.src_key, lv: l.src_level }); } else { e.down += l.strength * n / 2; e.against.push({ t: l.src_type, k: l.src_key, lv: l.src_level }); } });
+    out.risks = Object.values(score).filter(e => e.up - e.down >= 3 && e.from.length >= 2).sort((a, b) => (b.up - b.down) - (a.up - a.down)).slice(0, 5);
+    // what already protects them, and what would help with what they have
+    L.links.filter(l => l.effect === "lowers" && src(l) && known(l.dst_type, l.dst_key)).forEach(l => out.protects.push({ src: { t: l.src_type, k: l.src_key, lv: l.src_level }, dst: { t: l.dst_type, k: l.dst_key, lv: l.dst_level } }));
+    const roots = Object.keys(c.roots || {}).filter(k => c.roots[k] > 0 && known("root", k));
+    mine.filter(m => m.t !== "trait").forEach(m => L.links.filter(l => l.effect === "lowers" && l.dst_type === m.t && l.dst_key === m.k && !src(l) && known(l.src_type, l.src_key))
+      .forEach(l => { if (!out.helps.some(h => h.src.k === l.src_key && h.src.lv === l.src_level)) out.helps.push({ src: { t: l.src_type, k: l.src_key, lv: l.src_level }, dst: m }); }));
+    roots.forEach(k => out.helps.push({ root: L.RT[k] }));
+    const seen = new Set();
+    [...roots.map(k => ["root", k]), ...mine.map(m => [m.t, m.k])].forEach(([t, k]) => advOf(t, k).forEach(q => { if (!seen.has(q.id)) { seen.add(q.id); out.advice.push({ q, for: label(t, k) }); } }));
+    out.advice = out.advice.slice(0, 6);
+    return out;
+  }
   // a sign or condition with its strength: ●●○
   function strengthRow(icon, name, n, sub) { addCss(); return `<div class="ch-str"><span>${esc(icon || "")} <b>${esc(name)}</b>${sub ? ` <small>${esc(sub)}</small>` : ""}</span><span class="d d${n}" title="${STR[n]}">${dots(n)} <small>${STR[n]}</small></span></div>`; }
   // the traits that stand out (away from the middle), for a card
@@ -84,6 +130,9 @@
     (c.conditions || []).forEach(k => { const x = L && L.C[k]; if (x) parts.push(`${x.kind === "tactic" ? "uses" : x.kind === "emotion" ? "feels" : "shows signs of"} ${x.name} (${STR[lvl(c, k)]})`); });
     const sg = Object.entries(c.signs || {}).filter(([k, n]) => n > 0 && L && L.S[k]).sort((a, b) => b[1] - a[1]);
     if (sg.length) parts.push("signs: " + sg.map(([k, n]) => `${L.S[k].name} (${STR[n]})`).join(", "));
+    const rt = Object.entries(c.roots || {}).filter(([k, n]) => n > 0 && L && L.RT[k]);
+    if (rt.length) parts.push("underneath (roots): " + rt.map(([k, n]) => `${L.RT[k].name} (${STR[n]})`).join(", "));
+    if (L && L.links) { const a = analyse(c).advice.slice(0, 2); if (a.length) parts.push("advice that fits them (a wise character may say it): " + a.map(x => `"${x.q.headword}"${x.q.author ? ` (${x.q.author.split(" · ")[0]})` : ""}`).join(" / ")); }
     return parts.join("; ");
   }
   const pronounOf = c => c.sex === "female" ? "she" : c.sex === "male" ? "he" : "it";
@@ -123,7 +172,7 @@
   // a story character made from a library character (a copy, so old stories keep working)
   function forStory(lib, name) {
     return { id: "c" + Date.now().toString(36), lib: lib.id, name, libName: lib.name, emoji: lib.emoji, age: lib.age != null ? String(lib.age) : "", sex: lib.sex || "", role: lib.role || "",
-      look: lib.bio || "", pr: pronounOf(lib), traits: lib.traits || {}, conditions: lib.conditions || [], signs: lib.signs || {}, cond_levels: lib.cond_levels || {}, persona: personality(lib) };
+      look: lib.bio || "", pr: pronounOf(lib), traits: lib.traits || {}, conditions: lib.conditions || [], signs: lib.signs || {}, cond_levels: lib.cond_levels || {}, roots: lib.roots || {}, persona: personality(lib) };
   }
-  window.Chars = { STR, WEIGHT, dots, lvl, strengthRow, load, get lib() { return L; }, meter, card, highlights, personality, levelName, levelText, pick, forStory, pronounOf, base, byPlace, esc };
+  window.Chars = { analyse, has, label, advOf, STR, WEIGHT, dots, lvl, strengthRow, load, get lib() { return L; }, meter, card, highlights, personality, levelName, levelText, pick, forStory, pronounOf, base, byPlace, esc };
 })();

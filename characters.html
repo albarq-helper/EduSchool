@@ -3,7 +3,7 @@
 <title>Characters · Helper Academy</title><link rel="icon" href="assets/icons/brilliant.png">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
 <link rel="stylesheet" href="css/app.css">
-<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261124m"></script><script src="js/icons.js?v=20261124m"></script><script src="js/app.js?v=20261124m"></script><script src="js/chars.js?v=20261124m"></script>
+<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261124n"></script><script src="js/icons.js?v=20261124n"></script><script src="js/app.js?v=20261124n"></script><script src="js/chars.js?v=20261124n"></script>
 <style>
 .chead{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;justify-content:space-between;margin-bottom:12px}.chead h1{margin:0}.chead p{margin:4px 0 0;color:var(--muted);max-width:70ch}
 .tabs{display:flex;gap:6px;margin:0 0 12px;border-bottom:2px solid var(--rule);flex-wrap:wrap}
@@ -34,6 +34,11 @@
 .sgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:8px}
 .srow{display:grid;grid-template-columns:1fr auto;gap:6px;align-items:center;padding:3px 0;border-bottom:1px dashed var(--rule)}.srow select{font:700 .82rem var(--f-body);padding:3px 6px;border-radius:8px;border:1px solid var(--rule)}
 .linkb{background:none;border:0;padding:0;cursor:pointer;color:var(--accent);font:inherit;font-weight:800;text-align:left}
+.why{display:grid;gap:6px}.why .w{background:var(--paper);border:1px solid var(--rule);border-radius:12px;padding:7px 10px;font-size:.9rem}
+.why .w b{font-size:.98rem}.why .arrow{color:var(--muted);font-weight:800}.chip{display:inline-block;border-radius:999px;padding:1px 8px;margin:2px 3px 2px 0;font:700 .8rem var(--f-body);background:#fef3c7;color:#78350f}
+.chip.root{background:#dcfce7;color:#14532d}.chip.prot{background:#e0f2fe;color:#075985}.chip.cond{background:#ede9fe;color:#5b21b6}
+.adv{display:grid;gap:6px}.adv blockquote{margin:0;padding:7px 12px;border-left:4px solid #f59e0b;background:#fffbeb;border-radius:0 10px 10px 0;font:700 .95rem/1.35 var(--f-display)}.adv blockquote small{display:block;font:700 .75rem var(--f-body);color:var(--muted);margin-top:2px}
+.rcard{background:var(--sheet);border:1.5px solid var(--rule);border-left:6px solid #22c55e;border-radius:14px;padding:12px 14px;display:grid;gap:6px}.rcard h3{margin:0;font:800 1.1rem var(--f-display)}
 .conds{display:flex;flex-wrap:wrap;gap:6px}.conds label{display:inline-flex;gap:5px;align-items:center;font:700 .85rem var(--f-body);background:var(--paper);border:1px solid var(--rule);border-radius:999px;padding:3px 10px}
 </style>
 </head><body>
@@ -41,7 +46,7 @@
   <div class="chead"><div><span class="eyebrow">Story library</span><h1>🎭 Characters</h1>
     <p>Every story needs characters, and every character is made of a personality, not just a name. Each trait is a meter: the 🌟 golden middle is healthy, and too little or too much causes trouble, for them or for others. Some traits change with the place.</p></div>
     <div id="acts"></div></div>
-  <div class="tabs" role="tablist"><button class="tab" role="tab" data-tab="c" aria-selected="true">🎭 Characters</button><button class="tab" role="tab" data-tab="t" aria-selected="false">🧩 Personality traits</button><button class="tab" role="tab" data-tab="s" aria-selected="false">🔎 Signs</button><button class="tab" role="tab" data-tab="k" aria-selected="false">🩺 Conditions, tactics &amp; ideas</button><span id="acad" style="margin-left:auto;align-self:center"></span></div>
+  <div class="tabs" role="tablist"><button class="tab" role="tab" data-tab="c" aria-selected="true">🎭 Characters</button><button class="tab" role="tab" data-tab="t" aria-selected="false">🧩 Personality traits</button><button class="tab" role="tab" data-tab="r" aria-selected="false">🌱 Roots</button><button class="tab" role="tab" data-tab="s" aria-selected="false">🔎 Signs</button><button class="tab" role="tab" data-tab="k" aria-selected="false">🩺 Conditions, tactics &amp; ideas</button><span id="acad" style="margin-left:auto;align-self:center"></span></div>
   <div id="pane"><div class="empty">Loading…</div></div>
 </div>
 <dialog class="dlg" id="dlg"></dialog>
@@ -68,19 +73,36 @@ function condCard(x,sub){const sg=(L.CS[x.key]||[]),who=L.chars.filter(c=>(c.con
     ${ACAD()&&x.academic&&(L.age==null||L.age>=(x.academic_min_age||16))?`<div class="acad"><b>🎓 Academic</b><span>${esc(x.academic)}</span>${(x.sources||[]).length?`<ol>${x.sources.map(z=>`<li>${esc(z)}</li>`).join("")}</ol>`:""}</div>`:""}
     ${sg.length?`<div><b>🔎 Signs</b> <small class="muted">how typical: 🔴 core · 🟠 often · ⚪ sometimes</small><div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:4px">${sg.map(z=>{const g=L.S[z.sign];return `<button type="button" class="sg w${z.weight}" data-sign="${g.key}" title="${Chars.WEIGHT[z.weight]}">${esc(g.icon)} ${esc(g.name)}</button>`;}).join("")}</div></div>`:""}
     ${x.helps?`<div>🤝 <b>What helps:</b> ${esc(x.helps)}</div>`:""}
+    ${(()=>{const fr=into("condition",x.key,"raises"),pr=into("condition",x.key,"lowers"),to=outOf("condition",x.key);
+      return (fr.length?`<div><b>🌱 Grows from:</b> ${fr.map(l=>chipOf(lk(l,"src"))).join(" ")}</div>`:"")+(pr.length?`<div><b>🛡️ Protected by:</b> ${pr.map(l=>chipOf(lk(l,"src"),"prot")).join(" ")}</div>`:"")+(to.length?`<div><b>➡️ Can lead to:</b> ${to.map(l=>chipOf(lk(l,"dst"))).join(" ")}</div>`:"");})()}
+    ${(()=>{const a=Chars.advOf("condition",x.key);return a.length?`<div><b>📜 Advice from sayings</b>${quotes(a)}</div>`:"";})()}
     ${(x.traits||[]).length?`<div class="ch-mini">${x.traits.map(k=>L.T[k]?`<span>${esc(L.T[k].icon)} ${esc(L.T[k].name)}</span>`:"").join("")}</div>`:""}
     ${who.length?`<div class="muted" style="font-size:.85rem">🎭 In stories: ${who.map(c=>`<button type="button" class="linkb" data-open="${c.id}">${esc(c.emoji)} ${esc(c.name)} ${Chars.dots(Chars.lvl(c,x.key))}</button>`).join(" · ")}</div>`:""}</div>
     ${kids.map(y=>condCard(y,true)).join("")}`;}
 function drawConds(){const top=L.conditions.filter(x=>!x.parent||!L.C[x.parent]);
   return `<p class="muted">Characters can show these with a strength (● mild · ●● clear · ●●● strong). In a story, only a 🩺 doctor character gives a diagnosis; a 🦉 wise character can explain. More open up with age${L.age!=null&&L.age<16?"":"; 🎓 academic notes are for 16+"}.</p>
     ${GROUPS.map(([g,,f])=>{const xs=top.filter(f);return xs.length?`<h2 class="grp">${esc(g)} <small>${xs.length}</small></h2><div style="display:grid;gap:10px">${xs.map(x=>condCard(x)).join("")}</div>`:"";}).join("")}`;}
+const RKIND={fear:"Fear",learned:"Learned",situation:"Situation",trauma:"Something that happened",born:"From birth"};
+const chipOf=(x,cls)=>`<span class="chip ${cls||(x.t==="root"?"root":x.t==="condition"?"cond":"")}">${esc(Chars.label(x.t,x.k,x.lv))}</span>`;
+const quotes=qs=>qs.length?`<div class="adv">${qs.map(q=>`<blockquote>“${esc(q.headword)}”${q.author?`<small>${esc(q.author)}</small>`:""}</blockquote>`).join("")}</div>`:"";
+const into=(t,k,eff)=>L.links.filter(l=>l.dst_type===t&&l.dst_key===k&&l.effect===eff&&Chars.lib&&(l.src_type==="trait"?L.T[l.src_key]:l.src_type==="root"?L.RT[l.src_key]:l.src_type==="sign"?L.S[l.src_key]:L.C[l.src_key])).sort((a,b)=>b.strength-a.strength);
+const outOf=(t,k)=>L.links.filter(l=>l.src_type===t&&l.src_key===k&&l.effect==="raises"&&(l.dst_type==="trait"?L.T[l.dst_key]:l.dst_type==="sign"?L.S[l.dst_key]:L.C[l.dst_key])).sort((a,b)=>b.strength-a.strength);
+const lk=(l,side)=>({t:l[side+"_type"],k:l[side+"_key"],lv:l[side+"_level"]});
+function drawRoots(){return `<p class="muted">Many problems grow from <b>fear and insecurity</b>; some from habits that were <b>learned</b>, hard <b>situations</b>, something terrible that <b>happened</b>, a brain that is <b>different from birth</b>, or even from <b>too little fear</b>. Being <b>secure</b> (the 🌟 golden middle, not hard) protects.</p>
+  <div style="display:grid;gap:10px">${L.roots.map(r=>{const g=outOf("root",r.key),who=L.chars.filter(c=>(c.roots||{})[r.key]>0);return `<div class="rcard" id="r-${r.key}"><span class="kind" style="color:#15803d">${RKIND[r.kind]||r.kind}${r.min_age?` · ${r.min_age}+`:""}</span><h3>${esc(r.icon)} ${esc(r.name)}</h3><p style="margin:0">${esc(r.about||"")}</p>
+    ${g.length?`<div><b>➡️ Can grow into:</b> ${g.map(l=>chipOf(lk(l,"dst"))+`<small>${Chars.dots(l.strength)}</small>`).join(" ")}</div>`:""}
+    ${r.protects?`<div><b>🛡️ What protects:</b> ${esc(r.protects)}</div>`:""}
+    ${ACAD()&&r.academic?`<div class="acad"><b>🎓 Academic</b><span>${esc(r.academic)}</span>${(r.sources||[]).length?`<ol>${r.sources.map(z=>`<li>${esc(z)}</li>`).join("")}</ol>`:""}</div>`:""}
+    ${quotes(Chars.advOf("root",r.key))}
+    ${who.length?`<div class="muted" style="font-size:.85rem">🎭 In stories: ${who.map(c=>`<button type="button" class="linkb" data-open="${c.id}">${esc(c.emoji)} ${esc(c.name)} ${Chars.dots(c.roots[r.key])}</button>`).join(" · ")}</div>`:""}</div>`;}).join("")}</div>`;}
 const SCAT=[["self","🪞 How they see themselves"],["feelings","💓 Feelings"],["thinking","🧠 Thinking"],["relationships","👥 With others"],["behaviour","🏃 What they do"],["tactics","🎭 Tactics"]];
 function drawSigns(){const q=(F.sq||"").toLowerCase(),inC=k=>L.conditions.filter(x=>(L.CS[x.key]||[]).some(z=>z.sign===k));
   return `<div class="ch-filters"><input type="search" id="sq" placeholder="Search signs" value="${esc(F.sq||"")}"></div>
     ${SCAT.map(([c,l])=>{const xs=L.signs.filter(g=>g.category===c&&(!q||(g.name+" "+(g.about||"")+" "+(g.academic||"")).toLowerCase().includes(q)));return xs.length?`<h2 class="grp">${l} <small>${xs.length}</small></h2><div class="sgrid">${xs.map(g=>`<div class="scard" id="s-${g.key}"><b>${esc(g.icon)} ${esc(g.name)}</b>${g.about?`<span>${esc(g.about)}</span>`:""}${ACAD()&&g.academic?`<span class="muted" style="font-size:.85rem">🎓 ${esc(g.academic)}</span>`:""}
+      ${(()=>{const fr=into("sign",g.key,"raises"),a=Chars.advOf("sign",g.key);return (fr.length?`<span style="font-size:.82rem">🌱 ${fr.map(l=>chipOf(lk(l,"src"))).join(" ")}</span>`:"")+quotes(a);})()}
       <span style="font-size:.8rem">${inC(g.key).map(x=>`<button type="button" class="linkb" data-cond="${x.key}">${esc(x.icon)} ${esc(x.name)}</button>`).join(" · ")}</span></div>`).join("")}</div>`:"";}).join("")}`;}
 function draw(){document.querySelectorAll(".tab").forEach(b=>b.setAttribute("aria-selected",b.dataset.tab===TAB));
-  $("pane").innerHTML=TAB==="c"?drawChars():TAB==="t"?drawTraits():TAB==="s"?drawSigns():drawConds();
+  $("pane").innerHTML=TAB==="c"?drawChars():TAB==="t"?drawTraits():TAB==="r"?drawRoots():TAB==="s"?drawSigns():drawConds();
   $("acad").innerHTML=L.age==null||L.age>=16?`<label style="font:800 .85rem var(--f-body);display:flex;gap:6px;align-items:center"><input type="checkbox" id="acadT"${F.acad?" checked":""}> 🎓 Academic view</label>`:"";
   const sq=$("sq");if(sq)sq.oninput=()=>{F.sq=sq.value;const p=sq.selectionStart;draw();$("sq").focus();$("sq").setSelectionRange(p,p);};
   const q=$("q");if(q)q.oninput=()=>{F.q=q.value;const p=q.selectionStart;draw();$("q").focus();$("q").setSelectionRange(p,p);};}
@@ -88,6 +110,14 @@ function openChar(id){const c=L.chars.find(x=>x.id===id);if(!c)return;const d=$(
   d.innerHTML=`<div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start">${Chars.card(c)}<div style="display:flex;gap:6px">${EDITOR?`<button class="btn small" data-edit="${c.id}">✏️ Edit</button>`:""}<button class="btn small" data-close="1">✕</button></div></div>
     <div class="meters">${L.traits.filter(t=>c.traits&&c.traits[t.key]!=null).map(t=>Chars.meter(t,c.traits[t.key])).join("")||`<p class="muted">No personality set yet.</p>`}</div>
     ${(c.conditions||[]).filter(k=>L.C[k]).length?`<h3 style="margin:14px 0 6px">🩺 Conditions, tactics &amp; feelings</h3>${c.conditions.filter(k=>L.C[k]).map(k=>`<button type="button" class="linkb" data-cond="${k}" style="display:block;width:100%">${Chars.strengthRow(L.C[k].icon,L.C[k].name,Chars.lvl(c,k),KIND[L.C[k].kind])}</button>`).join("")}`:""}
+    ${Object.keys(c.roots||{}).filter(k=>L.RT[k]&&c.roots[k]>0).length?`<h3 style="margin:14px 0 6px">🌱 Underneath (roots)</h3>${Object.entries(c.roots).filter(([k,n])=>L.RT[k]&&n>0).sort((a,b)=>b[1]-a[1]).map(([k,n])=>`<button type="button" class="linkb" data-root="${k}" style="display:block;width:100%">${Chars.strengthRow(L.RT[k].icon,L.RT[k].name,n,RKIND[L.RT[k].kind])}</button>`).join("")}`:""}
+    ${(()=>{const A=Chars.analyse(c);let h="";
+      if(A.why.length)h+=`<h3 style="margin:14px 0 6px">🧭 Why are they like this?</h3><div class="why">${A.why.map(w=>`<div class="w"><b>${esc(Chars.label(w.t,w.k))}</b> <small>${Chars.dots(w.n)}</small> <span class="arrow">⬅ grows from</span> ${w.from.map(f=>chipOf(f)).join("")}${w.from.find(f=>f.note)?`<div class="muted" style="font-size:.82rem">💡 ${esc(w.from.find(f=>f.note).note)}</div>`:""}</div>`).join("")}</div>`;
+      if(A.risks.length)h+=`<h3 style="margin:14px 0 6px">⚠️ Could grow into, if nothing changes</h3><div class="why">${A.risks.map(r=>`<div class="w"><b>${esc(Chars.label(r.t,r.k))}</b> <span class="arrow">⬅</span> ${r.from.map(f=>chipOf(f)).join("")}${r.against.length?`<div style="font-size:.82rem">🛡️ held back by ${r.against.map(f=>chipOf(f,"prot")).join("")}</div>`:""}</div>`).join("")}</div>`;
+      if(A.protects.length||A.helps.length)h+=`<h3 style="margin:14px 0 6px">🛡️ What protects them · what would help</h3><div class="why">${A.protects.length?`<div class="w">✅ Already protecting them: ${[...new Map(A.protects.map(p=>[p.src.k+p.src.lv,p])).values()].map(p=>chipOf(p.src,"prot")+`<small>against ${esc(Chars.label(p.dst.t,p.dst.k))}</small>`).join(" ")}</div>`:""}
+        ${A.helps.filter(x=>x.src).map(x=>`<div class="w">${chipOf(x.src,"prot")} would help against <b>${esc(Chars.label(x.dst.t,x.dst.k))}</b></div>`).join("")}${A.helps.filter(x=>x.root).map(x=>`<div class="w">🌱 For <b>${esc(x.root.name)}</b>: ${esc(x.root.protects||"")}</div>`).join("")}</div>`;
+      if(A.advice.length)h+=`<h3 style="margin:14px 0 6px">📜 Advice a wise character could give</h3><div class="adv">${A.advice.map(a=>`<blockquote>“${esc(a.q.headword)}”<small>${a.q.author?esc(a.q.author)+" · ":""}for ${esc(a.for)}</small></blockquote>`).join("")}</div>`;
+      return h;})()}
     ${Object.keys(c.signs||{}).filter(k=>L.S[k]&&c.signs[k]>0).length?`<h3 style="margin:14px 0 6px">🔎 Signs</h3>${Object.entries(c.signs).filter(([k,n])=>L.S[k]&&n>0).sort((a,b)=>b[1]-a[1]).map(([k,n])=>`<button type="button" class="linkb" data-sign="${k}" style="display:block;width:100%">${Chars.strengthRow(L.S[k].icon,L.S[k].name,n)}</button>`).join("")}`:""}`;
   d.showModal();}
 // ---- parents: add and edit characters ----
@@ -105,6 +135,7 @@ function editChar(id){const c=id?L.chars.find(x=>x.id===id):{name:"",emoji:"🙂
     return `<div class="trow" data-t="${t.key}"><label style="display:flex;gap:6px;align-items:center;font-weight:800"><input type="checkbox" data-on${v!=null?" checked":""}> ${esc(t.icon)} ${esc(t.name)}</label>
       <div class="r"><input type="range" min="-2" max="2" step="1" value="${b}" data-b aria-label="${esc(t.name)}"><span class="lv" data-lv>${esc(Chars.levelName(t,b))}</span>
       ${t.varies_by_place?`<details${Object.keys(pl).length?" open":""}><summary class="lv">📍 Different in some places</summary><div class="plc">${L.places.map(p=>`<label>${esc(p.icon)} ${esc(p.name)}<select data-pl="${p.key}"><option value="">same</option>${[-2,-1,0,1,2].map(n=>`<option value="${n}"${pl[p.key]===n?" selected":""}>${esc(Chars.levelName(t,n))}</option>`).join("")}</select></label>`).join("")}</div></details>`:""}</div></div>`;}).join("")}</div>
+  <h3 style="margin:14px 0 4px">🌱 Roots underneath</h3><div class="sgrid">${L.roots.map(r=>{const n=+((c.roots||{})[r.key]||0);return `<div class="srow"><span>${esc(r.icon)} ${esc(r.name)} <small class="muted">${RKIND[r.kind]}</small></span><select data-r="${r.key}">${[0,1,2,3].map(v=>`<option value="${v}"${v===n?" selected":""}>${v?Chars.dots(v):"—"}</option>`).join("")}</select></div>`;}).join("")}</div>
   <h3 style="margin:14px 0 4px">🩺 Conditions, tactics &amp; feelings</h3><p class="muted" style="margin:0">How strong for this character: ● mild · ●● clear · ●●● strong.</p>
   <div class="sgrid" id="cfc">${L.conditions.map(x=>{const n=(c.conditions||[]).includes(x.key)?Chars.lvl(c,x.key):0;return `<div class="srow"><span>${esc(x.icon)} ${esc(x.name)} <small class="muted">${KIND[x.kind]} · ${x.min_age}+</small></span><select data-c="${x.key}">${[0,1,2,3].map(v=>`<option value="${v}"${v===n?" selected":""}>${v?Chars.dots(v):"—"}</option>`).join("")}</select></div>`;}).join("")}</div>
   <button type="button" class="btn small" data-fillsigns="1" style="margin-top:8px">＋ Add the usual signs of the chosen ones</button>
@@ -116,9 +147,9 @@ function editChar(id){const c=id?L.chars.find(x=>x.id===id):{name:"",emoji:"🙂
 async function saveChar(id){const d=$("dlg"),g=k=>d.querySelector(`[data-f="${k}"]`).value.trim(),traits={};
   d.querySelectorAll("[data-t]").forEach(r=>{if(!r.querySelector("[data-on]").checked)return;const b=+r.querySelector("[data-b]").value,pl={};
     r.querySelectorAll("[data-pl]").forEach(s=>{if(s.value!=="")pl[s.dataset.pl]=+s.value;});traits[r.dataset.t]=Object.keys(pl).length?{all:b,...pl}:b;});
-  const cond_levels={},signs={};d.querySelectorAll("[data-c]").forEach(x=>{if(+x.value)cond_levels[x.dataset.c]=+x.value;});d.querySelectorAll("[data-s]").forEach(x=>{if(+x.value)signs[x.dataset.s]=+x.value;});
+  const cond_levels={},signs={},roots={};d.querySelectorAll("[data-r]").forEach(x=>{if(+x.value)roots[x.dataset.r]=+x.value;});d.querySelectorAll("[data-c]").forEach(x=>{if(+x.value)cond_levels[x.dataset.c]=+x.value;});d.querySelectorAll("[data-s]").forEach(x=>{if(+x.value)signs[x.dataset.s]=+x.value;});
   const conditions=Object.keys(cond_levels),need=Math.max(0,...conditions.map(k=>L.C[k].min_age),...Object.keys(signs).map(k=>L.S[k].min_age));
-  const row={name:g("name"),emoji:g("emoji")||"🙂",age:g("age")===""?null:+g("age"),sex:g("sex"),education:g("education"),role:g("role"),bio:g("bio"),traits,conditions,cond_levels,signs,min_age:Math.max(+g("min_age")||0,need)};
+  const row={name:g("name"),emoji:g("emoji")||"🙂",age:g("age")===""?null:+g("age"),sex:g("sex"),education:g("education"),role:g("role"),bio:g("bio"),traits,conditions,cond_levels,signs,roots,min_age:Math.max(+g("min_age")||0,need)};
   if(!row.name){App.status("Give the character a name",false);return;}
   const r=id?await App.client.from("characters").update(row).eq("id",id).select().single():await App.client.from("characters").insert({...row,created_by:App.user.id}).select().single();
   if(r.error){App.status("Not saved: "+r.error.message,false);return;}
@@ -128,6 +159,7 @@ document.addEventListener("click",async e=>{const t=e.target;
   const tb=t.closest("[data-tab]");if(tb){TAB=tb.dataset.tab;draw();return;}
   if(t.id==="acadT"){F.acad=t.checked;try{localStorage.setItem("chAcad",F.acad?"1":"0");}catch(x){}draw();return;}
   if(t.closest("[data-fillsigns]")){const d=$("dlg");d.querySelectorAll("[data-c]").forEach(x=>{const n=+x.value;if(!n)return;(L.CS[x.dataset.c]||[]).filter(z=>z.weight>=2).forEach(z=>{const s2=d.querySelector(`[data-s="${z.sign}"]`);if(s2&&!+s2.value){s2.value=String(Math.min(3,n));s2.closest("details").open=true;}});});App.status("Signs added: adjust their strength",true);return;}
+  const rr=t.closest("[data-root]");if(rr){if($("dlg").open)$("dlg").close();TAB="r";draw();const el=$("r-"+rr.dataset.root);if(el)el.scrollIntoView({behavior:"smooth",block:"center"});return;}
   const sgn=t.closest("[data-sign]");if(sgn){if($("dlg").open)$("dlg").close();TAB="s";F.sq="";draw();const el=$("s-"+sgn.dataset.sign);if(el){el.scrollIntoView({behavior:"smooth",block:"center"});el.style.outline="3px solid var(--accent)";}return;}
   const r=t.closest("[data-role]");if(r&&!t.closest("dialog")){F.role=r.dataset.role;draw();return;}
   const o=t.closest("[data-open]");if(o){openChar(o.dataset.open);return;}
