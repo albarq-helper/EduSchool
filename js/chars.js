@@ -5,11 +5,14 @@
   let L = null;
   async function load(force) {
     if (L && !force) return L;
-    const C = App.client, [t, p, c, r, ch] = await Promise.all([
+    const C = App.client, [t, p, c, r, ch, sg, cs, ag] = await Promise.all([
       C.from("traits").select("*").order("position"), C.from("trait_places").select("*").order("position"),
       C.from("conditions").select("*").order("position"), C.from("character_roles").select("*").order("position"),
-      C.from("characters").select("*").order("name")]);
-    L = { traits: t.data || [], places: p.data || [], conditions: c.data || [], roles: r.data || [], chars: ch.data || [] };
+      C.from("characters").select("*").order("name"), C.from("signs").select("*").order("position"), C.from("condition_signs").select("*"),
+      C.rpc("viewer_age").then(x => x, () => ({ data: null }))]);
+    L = { traits: t.data || [], places: p.data || [], conditions: c.data || [], roles: r.data || [], chars: ch.data || [], signs: sg.data || [], age: ag && ag.data != null ? +ag.data : null };
+    L.S = Object.fromEntries(L.signs.map(x => [x.key, x]));
+    L.CS = {}; (cs.data || []).forEach(x => { if (L.S[x.sign]) (L.CS[x.condition] = L.CS[x.condition] || []).push(x); }); Object.values(L.CS).forEach(a => a.sort((x, y) => y.weight - x.weight));
     L.T = Object.fromEntries(L.traits.map(x => [x.key, x])); L.P = Object.fromEntries(L.places.map(x => [x.key, x]));
     L.C = Object.fromEntries(L.conditions.map(x => [x.key, x])); L.R = Object.fromEntries(L.roles.map(x => [x.key, x]));
     return L;
@@ -28,6 +31,8 @@
 .ch-ends{display:flex;justify-content:space-between;font:700 .7rem var(--f-body,system-ui);color:var(--muted,#64748b)}.ch-ends .g{color:#b45309}
 .ch-say{font-size:.86rem;line-height:1.35}.ch-say b{font-weight:800}
 .ch-places{display:flex;flex-wrap:wrap;gap:4px}.ch-places span{font:700 .74rem var(--f-body,system-ui);background:var(--paper,#f8fafc);border:1px solid var(--rule,#e2e8f0);border-radius:999px;padding:1px 8px}
+.ch-str{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:4px 0;border-bottom:1px dashed var(--rule,#e2e8f0);font-size:.9rem}.ch-str small{color:var(--muted,#64748b);font-weight:700}
+.ch-str .d{font:800 .95rem var(--f-body,system-ui);letter-spacing:1px;white-space:nowrap}.ch-str .d1{color:#ca8a04}.ch-str .d2{color:#ea580c}.ch-str .d3{color:#dc2626}
 .ch-cond{display:inline-flex;gap:4px;align-items:center;font:800 .78rem var(--f-body,system-ui);background:#ede9fe;color:#5b21b6;border-radius:999px;padding:2px 9px;border:0;cursor:pointer}
 .ch-card{display:grid;gap:8px;background:var(--sheet,#fff);border:1.5px solid var(--rule,#e2e8f0);border-radius:16px;padding:12px;text-align:left;font-family:var(--f-body,system-ui);color:var(--ink,#0f172a)}
 .ch-card .top{display:flex;gap:10px;align-items:center}.ch-card .em{font-size:2.2rem;line-height:1}.ch-card h3{margin:0;font:800 1.1rem var(--f-display,system-ui)}
@@ -51,19 +56,24 @@
       ${o.text === false ? "" : `<div class="ch-say">${tx.me ? `🙋 <b>For them:</b> ${esc(tx.me)}` : ""}${tx.others ? `<br>👥 <b>For others:</b> ${esc(tx.others)}` : ""}</div>`}
       ${pl.length ? `<div class="ch-places">${pl.map(([k, x]) => `<span>${esc((L && L.P[k] || {}).icon || "")} ${esc((L && L.P[k] || {}).name || k)}: ${esc(levelName(t, x))}</span>`).join("")}</div>` : ""}</div>`;
   }
+  // a sign or condition with its strength: ●●○
+  function strengthRow(icon, name, n, sub) { addCss(); return `<div class="ch-str"><span>${esc(icon || "")} <b>${esc(name)}</b>${sub ? ` <small>${esc(sub)}</small>` : ""}</span><span class="d d${n}" title="${STR[n]}">${dots(n)} <small>${STR[n]}</small></span></div>`; }
   // the traits that stand out (away from the middle), for a card
   function highlights(c, n = 4) {
     const out = []; Object.entries(c.traits || {}).forEach(([k, v]) => { const t = L && L.T[k]; if (!t) return; const b = base(v);
       out.push({ t, b, s: Math.abs(b) + (byPlace(v).length ? .5 : 0), txt: levelName(t, b) + (byPlace(v).some(([, x]) => x !== b) ? " (depends where)" : "") }); });
     return out.sort((a, b) => b.s - a.s).slice(0, n);
   }
+  const STR = ["", "mild", "clear", "strong"], WEIGHT = ["", "sometimes", "often", "core sign"];
+  const dots = n => "●".repeat(n) + "○".repeat(3 - n);
+  const lvl = (c, k) => +((c.cond_levels || {})[k] || 2);
   const SEX = { female: "♀", male: "♂", other: "" }, EDU = { none: "", kindergarten: "kindergarten", primary: "primary school", middle: "middle school", high: "high school", university: "university", doctorate: "doctorate" };
   function card(c, o = {}) {
     addCss(); const r = L && L.R[c.role];
     return `<${o.tag || "div"} class="ch-card${o.cls ? " " + o.cls : ""}" ${o.attr || ""}><div class="top"><span class="em">${esc(c.emoji)}</span><div><h3>${esc(c.name)}</h3>
       <div class="meta">${[c.age != null ? `${c.age} yrs` : "", SEX[c.sex] || "", EDU[c.education] || "", r ? `${r.icon} ${r.name}` : ""].filter(Boolean).map(esc).join(" · ")}</div></div></div>
       ${c.bio ? `<p class="bio">${esc(c.bio)}</p>` : ""}
-      <div class="ch-mini">${highlights(c).map(h => `<span class="${h.b ? "" : "g"}">${esc(h.t.icon)} ${esc(h.txt)}</span>`).join("")}${(c.conditions || []).map(k => L && L.C[k] ? `<span style="background:#ede9fe;color:#5b21b6">${esc(L.C[k].icon)} ${esc(L.C[k].name)}</span>` : "").join("")}</div></${o.tag || "div"}>`;
+      <div class="ch-mini">${highlights(c).map(h => `<span class="${h.b ? "" : "g"}">${esc(h.t.icon)} ${esc(h.txt)}</span>`).join("")}${(c.conditions || []).map(k => L && L.C[k] ? `<span style="background:#ede9fe;color:#5b21b6" title="${STR[lvl(c, k)]}">${esc(L.C[k].icon)} ${esc(L.C[k].name)} <small>${dots(lvl(c, k))}</small></span>` : "").join("")}</div></${o.tag || "div"}>`;
   }
   // for the story writer: "complains a lot; at home explodes …"
   function personality(c) {
@@ -71,7 +81,9 @@
     Object.entries(c.traits || {}).forEach(([k, v]) => { const t = L && L.T[k]; if (!t) return; const b = base(v);
       let s = `${t.name}: ${levelName(t, b)}`; const pl = byPlace(v).filter(([, x]) => x !== b);
       if (pl.length) s += ` (${pl.map(([p, x]) => `${(L.P[p] || {}).name || p}: ${levelName(t, x)}`).join("; ")})`; parts.push(s); });
-    (c.conditions || []).forEach(k => { const x = L && L.C[k]; if (x) parts.push(`shows signs of ${x.name}`); });
+    (c.conditions || []).forEach(k => { const x = L && L.C[k]; if (x) parts.push(`${x.kind === "tactic" ? "uses" : x.kind === "emotion" ? "feels" : "shows signs of"} ${x.name} (${STR[lvl(c, k)]})`); });
+    const sg = Object.entries(c.signs || {}).filter(([k, n]) => n > 0 && L && L.S[k]).sort((a, b) => b[1] - a[1]);
+    if (sg.length) parts.push("signs: " + sg.map(([k, n]) => `${L.S[k].name} (${STR[n]})`).join(", "));
     return parts.join("; ");
   }
   const pronounOf = c => c.sex === "female" ? "she" : c.sex === "male" ? "he" : "it";
@@ -111,7 +123,7 @@
   // a story character made from a library character (a copy, so old stories keep working)
   function forStory(lib, name) {
     return { id: "c" + Date.now().toString(36), lib: lib.id, name, libName: lib.name, emoji: lib.emoji, age: lib.age != null ? String(lib.age) : "", sex: lib.sex || "", role: lib.role || "",
-      look: lib.bio || "", pr: pronounOf(lib), traits: lib.traits || {}, conditions: lib.conditions || [], persona: personality(lib) };
+      look: lib.bio || "", pr: pronounOf(lib), traits: lib.traits || {}, conditions: lib.conditions || [], signs: lib.signs || {}, cond_levels: lib.cond_levels || {}, persona: personality(lib) };
   }
-  window.Chars = { load, get lib() { return L; }, meter, card, highlights, personality, levelName, levelText, pick, forStory, pronounOf, base, byPlace, esc };
+  window.Chars = { STR, WEIGHT, dots, lvl, strengthRow, load, get lib() { return L; }, meter, card, highlights, personality, levelName, levelText, pick, forStory, pronounOf, base, byPlace, esc };
 })();

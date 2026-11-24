@@ -3,7 +3,7 @@
 <title>Characters · Helper Academy</title><link rel="icon" href="assets/icons/brilliant.png">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
 <link rel="stylesheet" href="css/app.css">
-<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261124l"></script><script src="js/icons.js?v=20261124l"></script><script src="js/app.js?v=20261124l"></script><script src="js/chars.js?v=20261124l"></script>
+<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261124m"></script><script src="js/icons.js?v=20261124m"></script><script src="js/app.js?v=20261124m"></script><script src="js/chars.js?v=20261124m"></script>
 <style>
 .chead{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;justify-content:space-between;margin-bottom:12px}.chead h1{margin:0}.chead p{margin:4px 0 0;color:var(--muted);max-width:70ch}
 .tabs{display:flex;gap:6px;margin:0 0 12px;border-bottom:2px solid var(--rule);flex-wrap:wrap}
@@ -24,6 +24,16 @@
 .trow{display:grid;grid-template-columns:minmax(170px,1fr) 2fr;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--rule)}.trow .r{display:grid;gap:4px}
 .trow input[type=range]{width:100%;accent-color:#f59e0b}.trow .lv{font:700 .8rem var(--f-body);color:var(--muted)}
 .plc{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:4px}.plc label{font:700 .72rem var(--f-body);color:var(--muted)}
+.grp{margin:18px 0 8px;font:800 1.15rem var(--f-display)}.grp small{font:700 .8rem var(--f-body);color:var(--muted)}
+.sub{margin-left:22px;border-left-color:#c4b5fd}
+.acad{background:#f1f5f9;border-radius:10px;padding:8px 10px;font-size:.9rem;display:grid;gap:4px}.acad b{font:800 .75rem var(--f-body);text-transform:uppercase;letter-spacing:.05em;color:#334155}
+.acad ol{margin:0;padding-left:18px;font-size:.8rem;color:#475569}
+.sg{display:inline-flex;gap:4px;align-items:center;border:1px solid var(--rule);background:var(--paper);border-radius:999px;padding:2px 9px;font:700 .8rem var(--f-body);cursor:pointer;color:var(--ink)}
+.sg.w3{border-color:#dc2626;background:#fef2f2}.sg.w2{border-color:#f97316;background:#fff7ed}.sg small{color:var(--muted)}
+.scard{background:var(--sheet);border:1px solid var(--rule);border-radius:12px;padding:8px 12px;display:grid;gap:3px}.scard b{font-size:1rem}
+.sgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:8px}
+.srow{display:grid;grid-template-columns:1fr auto;gap:6px;align-items:center;padding:3px 0;border-bottom:1px dashed var(--rule)}.srow select{font:700 .82rem var(--f-body);padding:3px 6px;border-radius:8px;border:1px solid var(--rule)}
+.linkb{background:none;border:0;padding:0;cursor:pointer;color:var(--accent);font:inherit;font-weight:800;text-align:left}
 .conds{display:flex;flex-wrap:wrap;gap:6px}.conds label{display:inline-flex;gap:5px;align-items:center;font:700 .85rem var(--f-body);background:var(--paper);border:1px solid var(--rule);border-radius:999px;padding:3px 10px}
 </style>
 </head><body>
@@ -31,13 +41,13 @@
   <div class="chead"><div><span class="eyebrow">Story library</span><h1>🎭 Characters</h1>
     <p>Every story needs characters, and every character is made of a personality, not just a name. Each trait is a meter: the 🌟 golden middle is healthy, and too little or too much causes trouble, for them or for others. Some traits change with the place.</p></div>
     <div id="acts"></div></div>
-  <div class="tabs" role="tablist"><button class="tab" role="tab" data-tab="c" aria-selected="true">🎭 Characters</button><button class="tab" role="tab" data-tab="t" aria-selected="false">🧩 Personality traits</button><button class="tab" role="tab" data-tab="k" aria-selected="false">🩺 Conditions &amp; ideas</button></div>
+  <div class="tabs" role="tablist"><button class="tab" role="tab" data-tab="c" aria-selected="true">🎭 Characters</button><button class="tab" role="tab" data-tab="t" aria-selected="false">🧩 Personality traits</button><button class="tab" role="tab" data-tab="s" aria-selected="false">🔎 Signs</button><button class="tab" role="tab" data-tab="k" aria-selected="false">🩺 Conditions, tactics &amp; ideas</button><span id="acad" style="margin-left:auto;align-self:center"></span></div>
   <div id="pane"><div class="empty">Loading…</div></div>
 </div>
 <dialog class="dlg" id="dlg"></dialog>
 <script>
-const $=id=>document.getElementById(id),esc=App.esc;let L=null,TAB="c",F={q:"",role:""},EDITOR=false;
-const KIND={issue:"Issue",behaviour:"Behaviour",condition:"Condition",disorder:"Disorder",idea:"Idea"};
+const $=id=>document.getElementById(id),esc=App.esc;let L=null,TAB="c",F={q:"",role:"",acad:(()=>{try{return localStorage.getItem("chAcad")!=="0";}catch(x){return true;}})()},EDITOR=false;
+const KIND={issue:"Issue",behaviour:"Behaviour",condition:"Condition",disorder:"Disorder",idea:"Idea",tactic:"Tactic",emotion:"Feeling"};
 function drawChars(){const list=L.chars.filter(c=>(!F.role||c.role===F.role)&&(!F.q||(c.name+" "+(c.bio||"")+" "+Chars.personality(c)).toLowerCase().includes(F.q.toLowerCase())));
   return `<div class="ch-filters"><input type="search" id="q" placeholder="Search: name, or what they are like (e.g. complains, explodes)" value="${esc(F.q)}"><button type="button" data-role="" aria-pressed="${!F.role}">All (${L.chars.length})</button>${L.roles.filter(r=>L.chars.some(c=>c.role===r.key)).map(r=>`<button type="button" data-role="${r.key}" aria-pressed="${F.role===r.key}">${r.icon} ${esc(r.name)}</button>`).join("")}</div>
     <div class="grid">${list.map(c=>Chars.card(c,{tag:"button",attr:`type="button" data-open="${c.id}"`})).join("")||`<p class="muted">No characters found.</p>`}</div>`;}
@@ -47,17 +57,38 @@ function drawTraits(){return `<div style="display:grid;gap:10px">${L.traits.map(
       <div class="hi"><b>Too much: ${esc(t.high_name)} ▶</b><span>🙋 ${esc(t.high_self)}</span><span>👥 ${esc(t.high_others)}</span></div></div>
     ${t.place_note?`<div class="note">📍 ${esc(t.place_note)}</div>`:""}
     <div class="ch-mini">${L.chars.filter(c=>c.traits&&c.traits[t.key]!=null).slice(0,8).map(c=>`<span class="${Chars.base(c.traits[t.key])?"":"g"}">${esc(c.emoji)} ${esc(c.name)}: ${esc(Chars.levelName(t,Chars.base(c.traits[t.key])))}</span>`).join("")}</div></div>`).join("")}</div>`;}
-function drawConds(){return `<p class="muted">Characters can show signs of these. In a story, only a 🩺 doctor character gives a diagnosis; a 🦉 wise character can explain what is going on. More open up as you grow older.</p>
-  <div style="display:grid;gap:10px">${L.conditions.map(x=>`<div class="ccard" id="k-${x.key}"><span class="kind">${KIND[x.kind]||x.kind}${x.min_age?` · ${x.min_age}+`:""}</span><h3>${esc(x.icon)} ${esc(x.name)}${x.aliases&&x.aliases.length?` <small class="muted">(${esc(x.aliases.join(", "))})</small>`:""}</h3>
-    <p style="margin:0">${esc(x.about)}</p>${x.signs&&x.signs.length?`<div><b>Signs</b><ul>${x.signs.map(s=>`<li>${esc(s)}</li>`).join("")}</ul></div>`:""}${x.helps?`<div>🤝 <b>What helps:</b> ${esc(x.helps)}</div>`:""}
-    ${(x.traits||[]).length?`<div class="ch-mini">${x.traits.map(k=>L.T[k]?`<span>${esc(L.T[k].icon)} ${esc(L.T[k].name)}</span>`:"").join("")}</div>`:""}</div>`).join("")||`<p class="muted">Nothing here yet.</p>`}</div>`;}
+const ACAD=()=>F.acad&&(L.age==null||L.age>=16);
+const GROUPS=[["Emotions","emotion",x=>x.kind==="emotion"],["Manipulation tactics","tactic",x=>x.kind==="tactic"],["Issues & behaviours","",x=>x.kind==="issue"||x.kind==="behaviour"],
+  ["Conditions","",x=>x.kind==="condition"],["Personality disorders · Cluster A (odd, eccentric)","",x=>x.kind==="disorder"&&x.cluster==="A"],["Personality disorders · Cluster B (dramatic, emotional)","",x=>x.kind==="disorder"&&x.cluster==="B"],
+  ["Personality disorders · Cluster C (anxious, fearful)","",x=>x.kind==="disorder"&&x.cluster==="C"],["Ideas & dark traits","",x=>x.kind==="idea"||(x.kind==="disorder"&&!x.cluster)]];
+function condCard(x,sub){const sg=(L.CS[x.key]||[]),who=L.chars.filter(c=>(c.conditions||[]).includes(x.key)),kids=L.conditions.filter(y=>y.parent===x.key);
+  return `<div class="ccard${sub?" sub":""}" id="k-${x.key}"><span class="kind">${KIND[x.kind]||x.kind}${x.cluster?` · Cluster ${x.cluster}`:""}${x.min_age?` · ${x.min_age}+`:""}${x.parent&&L.C[x.parent]?` · a kind of ${esc(L.C[x.parent].name)}`:""}</span>
+    <h3>${esc(x.icon)} ${esc(x.name)}${x.aliases&&x.aliases.length?` <small class="muted">(${esc(x.aliases.join(", "))})</small>`:""}</h3>
+    ${x.about?`<p style="margin:0">${esc(x.about)}</p>`:""}
+    ${ACAD()&&x.academic&&(L.age==null||L.age>=(x.academic_min_age||16))?`<div class="acad"><b>🎓 Academic</b><span>${esc(x.academic)}</span>${(x.sources||[]).length?`<ol>${x.sources.map(z=>`<li>${esc(z)}</li>`).join("")}</ol>`:""}</div>`:""}
+    ${sg.length?`<div><b>🔎 Signs</b> <small class="muted">(red = core sign, orange = often, grey = sometimes)</small><div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:4px">${sg.map(z=>{const g=L.S[z.sign];return `<button type="button" class="sg w${z.weight}" data-sign="${g.key}" title="${Chars.WEIGHT[z.weight]}">${esc(g.icon)} ${esc(g.name)}</button>`;}).join("")}</div></div>`:""}
+    ${x.helps?`<div>🤝 <b>What helps:</b> ${esc(x.helps)}</div>`:""}
+    ${(x.traits||[]).length?`<div class="ch-mini">${x.traits.map(k=>L.T[k]?`<span>${esc(L.T[k].icon)} ${esc(L.T[k].name)}</span>`:"").join("")}</div>`:""}
+    ${who.length?`<div class="muted" style="font-size:.85rem">🎭 In stories: ${who.map(c=>`<button type="button" class="linkb" data-open="${c.id}">${esc(c.emoji)} ${esc(c.name)} ${Chars.dots(Chars.lvl(c,x.key))}</button>`).join(" · ")}</div>`:""}</div>
+    ${kids.map(y=>condCard(y,true)).join("")}`;}
+function drawConds(){const top=L.conditions.filter(x=>!x.parent||!L.C[x.parent]);
+  return `<p class="muted">Characters can show these with a strength (● mild · ●● clear · ●●● strong). In a story, only a 🩺 doctor character gives a diagnosis; a 🦉 wise character can explain. More open up with age${L.age!=null&&L.age<16?"":"; 🎓 academic notes are for 16+"}.</p>
+    ${GROUPS.map(([g,,f])=>{const xs=top.filter(f);return xs.length?`<h2 class="grp">${esc(g)} <small>${xs.length}</small></h2><div style="display:grid;gap:10px">${xs.map(x=>condCard(x)).join("")}</div>`:"";}).join("")}`;}
+const SCAT=[["self","🪞 How they see themselves"],["feelings","💓 Feelings"],["thinking","🧠 Thinking"],["relationships","👥 With others"],["behaviour","🏃 What they do"],["tactics","🎭 Tactics"]];
+function drawSigns(){const q=(F.sq||"").toLowerCase(),inC=k=>L.conditions.filter(x=>(L.CS[x.key]||[]).some(z=>z.sign===k));
+  return `<div class="ch-filters"><input type="search" id="sq" placeholder="Search signs" value="${esc(F.sq||"")}"></div>
+    ${SCAT.map(([c,l])=>{const xs=L.signs.filter(g=>g.category===c&&(!q||(g.name+" "+(g.about||"")+" "+(g.academic||"")).toLowerCase().includes(q)));return xs.length?`<h2 class="grp">${l} <small>${xs.length}</small></h2><div class="sgrid">${xs.map(g=>`<div class="scard" id="s-${g.key}"><b>${esc(g.icon)} ${esc(g.name)}</b>${g.about?`<span>${esc(g.about)}</span>`:""}${ACAD()&&g.academic?`<span class="muted" style="font-size:.85rem">🎓 ${esc(g.academic)}</span>`:""}
+      <span style="font-size:.8rem">${inC(g.key).map(x=>`<button type="button" class="linkb" data-cond="${x.key}">${esc(x.icon)} ${esc(x.name)}</button>`).join(" · ")}</span></div>`).join("")}</div>`:"";}).join("")}`;}
 function draw(){document.querySelectorAll(".tab").forEach(b=>b.setAttribute("aria-selected",b.dataset.tab===TAB));
-  $("pane").innerHTML=TAB==="c"?drawChars():TAB==="t"?drawTraits():drawConds();
+  $("pane").innerHTML=TAB==="c"?drawChars():TAB==="t"?drawTraits():TAB==="s"?drawSigns():drawConds();
+  $("acad").innerHTML=L.age==null||L.age>=16?`<label style="font:800 .85rem var(--f-body);display:flex;gap:6px;align-items:center"><input type="checkbox" id="acadT"${F.acad?" checked":""}> 🎓 Academic view</label>`:"";
+  const sq=$("sq");if(sq)sq.oninput=()=>{F.sq=sq.value;const p=sq.selectionStart;draw();$("sq").focus();$("sq").setSelectionRange(p,p);};
   const q=$("q");if(q)q.oninput=()=>{F.q=q.value;const p=q.selectionStart;draw();$("q").focus();$("q").setSelectionRange(p,p);};}
 function openChar(id){const c=L.chars.find(x=>x.id===id);if(!c)return;const d=$("dlg");
   d.innerHTML=`<div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start">${Chars.card(c)}<div style="display:flex;gap:6px">${EDITOR?`<button class="btn small" data-edit="${c.id}">✏️ Edit</button>`:""}<button class="btn small" data-close="1">✕</button></div></div>
     <div class="meters">${L.traits.filter(t=>c.traits&&c.traits[t.key]!=null).map(t=>Chars.meter(t,c.traits[t.key])).join("")||`<p class="muted">No personality set yet.</p>`}</div>
-    ${(c.conditions||[]).length?`<h3 style="margin:14px 0 6px">🩺 Shows signs of</h3>${c.conditions.map(k=>L.C[k]?`<button type="button" class="ch-cond" data-cond="${k}">${esc(L.C[k].icon)} ${esc(L.C[k].name)}</button>`:"").join(" ")}`:""}`;
+    ${(c.conditions||[]).filter(k=>L.C[k]).length?`<h3 style="margin:14px 0 6px">🩺 Conditions, tactics &amp; feelings</h3>${c.conditions.filter(k=>L.C[k]).map(k=>`<button type="button" class="linkb" data-cond="${k}" style="display:block;width:100%">${Chars.strengthRow(L.C[k].icon,L.C[k].name,Chars.lvl(c,k),KIND[L.C[k].kind])}</button>`).join("")}`:""}
+    ${Object.keys(c.signs||{}).filter(k=>L.S[k]&&c.signs[k]>0).length?`<h3 style="margin:14px 0 6px">🔎 Signs</h3>${Object.entries(c.signs).filter(([k,n])=>L.S[k]&&n>0).sort((a,b)=>b[1]-a[1]).map(([k,n])=>`<button type="button" class="linkb" data-sign="${k}" style="display:block;width:100%">${Chars.strengthRow(L.S[k].icon,L.S[k].name,n)}</button>`).join("")}`:""}`;
   d.showModal();}
 // ---- parents: add and edit characters ----
 function editChar(id){const c=id?L.chars.find(x=>x.id===id):{name:"",emoji:"🙂",age:10,sex:"female",education:"primary",role:"friend",bio:"",traits:{},conditions:[],min_age:0};const d=$("dlg");
@@ -74,15 +105,20 @@ function editChar(id){const c=id?L.chars.find(x=>x.id===id):{name:"",emoji:"🙂
     return `<div class="trow" data-t="${t.key}"><label style="display:flex;gap:6px;align-items:center;font-weight:800"><input type="checkbox" data-on${v!=null?" checked":""}> ${esc(t.icon)} ${esc(t.name)}</label>
       <div class="r"><input type="range" min="-2" max="2" step="1" value="${b}" data-b aria-label="${esc(t.name)}"><span class="lv" data-lv>${esc(Chars.levelName(t,b))}</span>
       ${t.varies_by_place?`<details${Object.keys(pl).length?" open":""}><summary class="lv">📍 Different in some places</summary><div class="plc">${L.places.map(p=>`<label>${esc(p.icon)} ${esc(p.name)}<select data-pl="${p.key}"><option value="">same</option>${[-2,-1,0,1,2].map(n=>`<option value="${n}"${pl[p.key]===n?" selected":""}>${esc(Chars.levelName(t,n))}</option>`).join("")}</select></label>`).join("")}</div></details>`:""}</div></div>`;}).join("")}</div>
-  <h3 style="margin:14px 0 4px">Shows signs of</h3><div class="conds">${L.conditions.map(x=>`<label><input type="checkbox" data-c="${x.key}"${(c.conditions||[]).includes(x.key)?" checked":""}> ${esc(x.icon)} ${esc(x.name)} <small class="muted">${x.min_age}+</small></label>`).join("")}</div>
+  <h3 style="margin:14px 0 4px">🩺 Conditions, tactics &amp; feelings</h3><p class="muted" style="margin:0">How strong for this character: ● mild · ●● clear · ●●● strong.</p>
+  <div class="sgrid" id="cfc">${L.conditions.map(x=>{const n=(c.conditions||[]).includes(x.key)?Chars.lvl(c,x.key):0;return `<div class="srow"><span>${esc(x.icon)} ${esc(x.name)} <small class="muted">${KIND[x.kind]} · ${x.min_age}+</small></span><select data-c="${x.key}">${[0,1,2,3].map(v=>`<option value="${v}"${v===n?" selected":""}>${v?Chars.dots(v):"—"}</option>`).join("")}</select></div>`;}).join("")}</div>
+  <button type="button" class="btn small" data-fillsigns="1" style="margin-top:8px">＋ Add the usual signs of the chosen ones</button>
+  <h3 style="margin:14px 0 4px">🔎 Signs</h3>
+  ${SCAT.map(([cat,l])=>`<details${L.signs.some(g=>g.category===cat&&(c.signs||{})[g.key]>0)?" open":""}><summary class="lv" style="font-weight:800;cursor:pointer">${l}</summary><div class="sgrid">${L.signs.filter(g=>g.category===cat).map(g=>{const n=+((c.signs||{})[g.key]||0);return `<div class="srow"><span>${esc(g.icon)} ${esc(g.name)} <small class="muted">${g.min_age}+</small></span><select data-s="${g.key}">${[0,1,2,3].map(v=>`<option value="${v}"${v===n?" selected":""}>${v?Chars.dots(v):"—"}</option>`).join("")}</select></div>`;}).join("")}</div></details>`).join("")}
   <div style="display:flex;gap:8px;margin-top:14px"><button class="btn primary" data-save="${id||""}">Save</button>${id?`<button class="btn" data-del="${id}">🗑️ Remove</button>`:""}</div>`;
   d.querySelectorAll("[data-t]").forEach(r=>{const t=L.T[r.dataset.t];r.querySelector("[data-b]").oninput=e=>{r.querySelector("[data-on]").checked=true;r.querySelector("[data-lv]").textContent=Chars.levelName(t,+e.target.value);};});
   if(!d.open)d.showModal();}
 async function saveChar(id){const d=$("dlg"),g=k=>d.querySelector(`[data-f="${k}"]`).value.trim(),traits={};
   d.querySelectorAll("[data-t]").forEach(r=>{if(!r.querySelector("[data-on]").checked)return;const b=+r.querySelector("[data-b]").value,pl={};
     r.querySelectorAll("[data-pl]").forEach(s=>{if(s.value!=="")pl[s.dataset.pl]=+s.value;});traits[r.dataset.t]=Object.keys(pl).length?{all:b,...pl}:b;});
-  const conditions=[...d.querySelectorAll("[data-c]:checked")].map(x=>x.dataset.c),need=Math.max(0,...conditions.map(k=>L.C[k].min_age));
-  const row={name:g("name"),emoji:g("emoji")||"🙂",age:g("age")===""?null:+g("age"),sex:g("sex"),education:g("education"),role:g("role"),bio:g("bio"),traits,conditions,min_age:Math.max(+g("min_age")||0,need)};
+  const cond_levels={},signs={};d.querySelectorAll("[data-c]").forEach(x=>{if(+x.value)cond_levels[x.dataset.c]=+x.value;});d.querySelectorAll("[data-s]").forEach(x=>{if(+x.value)signs[x.dataset.s]=+x.value;});
+  const conditions=Object.keys(cond_levels),need=Math.max(0,...conditions.map(k=>L.C[k].min_age),...Object.keys(signs).map(k=>L.S[k].min_age));
+  const row={name:g("name"),emoji:g("emoji")||"🙂",age:g("age")===""?null:+g("age"),sex:g("sex"),education:g("education"),role:g("role"),bio:g("bio"),traits,conditions,cond_levels,signs,min_age:Math.max(+g("min_age")||0,need)};
   if(!row.name){App.status("Give the character a name",false);return;}
   const r=id?await App.client.from("characters").update(row).eq("id",id).select().single():await App.client.from("characters").insert({...row,created_by:App.user.id}).select().single();
   if(r.error){App.status("Not saved: "+r.error.message,false);return;}
@@ -90,6 +126,9 @@ async function saveChar(id){const d=$("dlg"),g=k=>d.querySelector(`[data-f="${k}
   await Chars.load(true);L=Chars.lib;d.close();draw();}
 document.addEventListener("click",async e=>{const t=e.target;
   const tb=t.closest("[data-tab]");if(tb){TAB=tb.dataset.tab;draw();return;}
+  if(t.id==="acadT"){F.acad=t.checked;try{localStorage.setItem("chAcad",F.acad?"1":"0");}catch(x){}draw();return;}
+  if(t.closest("[data-fillsigns]")){const d=$("dlg");d.querySelectorAll("[data-c]").forEach(x=>{const n=+x.value;if(!n)return;(L.CS[x.dataset.c]||[]).filter(z=>z.weight>=2).forEach(z=>{const s2=d.querySelector(`[data-s="${z.sign}"]`);if(s2&&!+s2.value){s2.value=String(Math.min(3,n));s2.closest("details").open=true;}});});App.status("Signs added: adjust their strength",true);return;}
+  const sgn=t.closest("[data-sign]");if(sgn){if($("dlg").open)$("dlg").close();TAB="s";F.sq="";draw();const el=$("s-"+sgn.dataset.sign);if(el){el.scrollIntoView({behavior:"smooth",block:"center"});el.style.outline="3px solid var(--accent)";}return;}
   const r=t.closest("[data-role]");if(r&&!t.closest("dialog")){F.role=r.dataset.role;draw();return;}
   const o=t.closest("[data-open]");if(o){openChar(o.dataset.open);return;}
   if(t.closest("[data-close]")){$("dlg").close();return;}
