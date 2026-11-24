@@ -120,6 +120,7 @@
   const MID = new Set(["always", "usually", "often", "sometimes", "never", "already", "just"]);
   // partner words that contain the verb ("run quickly") take the chosen form ("was running quickly"); others follow the verb
   function phrase(word, o) {
+    if (o && o.shape && o.shape.k && o.shape.k !== "verb") return shapePhrase(o);
     const F = forms(word), t = T(o.tense) || T("past"), p = o.person || "she", vp = t.f(F, p), base = F.base.split(" ")[0];
     const tail = F.base.split(" ").slice(1).join("\\s+");
     const re = new RegExp(`\\b(${[base, F.s, F.past, F.pp, F.ing].map(x => x.split(" ")[0]).join("|")})\\b${tail ? `(\\s+${tail})?` : ""}`, "i");
@@ -131,6 +132,36 @@
     const out = [subjOf(p), verb, ...extra, mid ? "" : w].filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
     return out.charAt(0).toUpperCase() + out.slice(1);
   }
+  // ---- 🔀 word shapes: the same idea as a 📦 thing (achievement), a 🧑 person (achiever) or 🎨 describing word (achievable) ----
+  const PL = w => /[^aeiou]y$/.test(w) ? w.slice(0, -1) + "ies" : /(s|sh|ch|x|z)$/.test(w) ? w + "es" : w + "s";
+  const AN = w => /^(hour|honou?r|honest)/i.test(w) ? "an" : /^(uni|use|eu|one)/i.test(w) ? "a" : /^[aeiou]/i.test(w) ? "an" : "a";
+  const many = p => p === "we" || p === "they" || /^n2:/.test(String(p));
+  // whose: the word in front of a thing ("your", "Rover's", "the", "a")
+  function ownOf(p) { const x = PRON.find(r => r.k === p); if (x) return x.adj; const n = subjOf(p); return n ? (/s$/i.test(n) && /^n2:/.test(String(p)) ? n + "'" : n + "'s") : "the"; }
+  const beOf = (t, p) => t.k === "past" ? was(p) : t.k === "presperf" ? hv(p) + " been" : t.k === "future" ? "will be" : be(p);
+  const BE_TENSES = ["past", "presperf", "present", "future"];
+  function shapeVp(sh, t, p) { const w = sh.w; return sh.k === "person" ? `${beOf(t, p)} ${many(p) ? PL(w) : AN(w) + " " + w}` : `${beOf(t, p)} ${w}`; }
+  function thingPhrase(sh) { const n = sh.many ? PL(sh.w) : sh.w, o = sh.own || "the"; const out = o === "a" ? (sh.many ? n : `${AN(n)} ${n}`) : `${o} ${n}`; return out.charAt(0).toUpperCase() + out.slice(1); }
+  function shapePhrase(o) {
+    const sh = o.shape, t = T(o.tense) || T("present"), p = o.person || "she";
+    if (sh.k === "thing") return thingPhrase(sh);
+    const vp = shapeVp(sh, t, p), w = o.when || "", mid = MID.has(w.toLowerCase()), parts = vp.split(" ");
+    const v2 = mid ? [parts[0], w, ...parts.slice(1)].join(" ") : vp, out = [subjOf(p), v2, mid ? "" : w].filter(Boolean).join(" ");
+    return out.charAt(0).toUpperCase() + out.slice(1);
+  }
+  const FAMC = new Map();
+  const famKeys = word => { const h = String(word && word.w || word || "").trim().toLowerCase(); return [...new Set([h, forms(word).base.toLowerCase()])]; };
+  async function family(word) {
+    const keys = famKeys(word), key = keys.join("|"); if (FAMC.has(key)) return FAMC.get(key);
+    const pr = (async () => { const out = { thing: [], person: [], describing: [] };
+      try { const r = await App.client.from("word_forms").select("base,form,kind,countable,position").in("base", keys).order("position");
+        const rows = r.data || [], b = keys.find(k => rows.some(x => x.base === k));
+        rows.filter(x => x.base === b).forEach(x => out[x.kind] && out[x.kind].push({ w: x.form, c: x.countable !== false })); } catch (e) {}
+      FAMC.set(key, out); return out; })();
+    FAMC.set(key, pr); return pr;
+  }
+  // the shapes we already know for a word (after family() has run): for checking a story uses the word
+  const famForms = word => { const f = FAMC.get(famKeys(word).join("|")); return f && !f.then ? [...f.thing, ...f.person, ...f.describing].flatMap(x => [x.w, PL(x.w)]) : []; };
   const say = (word, k, p) => { const t = T(k); return t ? t.f(forms(word), p || "she") : String(word && word.w || word); };
   const allForms = word => { const F = forms(word); return [F.base, F.s, F.past, F.pp, F.ing].map(x => x.split(" ")[0]); };
   const age = () => (window.Meter && Meter.age ? Meter.age() : null);
@@ -184,6 +215,8 @@
 .tm-ex ul{margin:0;padding-left:2px;list-style:none;display:grid;gap:3px;font-size:.93rem}.tm-ex li b{color:#4338ca}.tm-ex li.bad{color:#9a3412}.tm-ex li.bad small{color:#9a3412}
 .tm-sig2{justify-content:center;margin-top:4px}
 .tm-more{justify-self:end;border:0;background:transparent;color:#6366f1;font:800 .78rem var(--f-body,system-ui);cursor:pointer;padding:2px 6px}
+.tm-shape{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.tm-sh{display:grid;border:1.5px solid #e0e7ff;background:#fff;border-radius:12px;padding:3px 10px;font:800 .9rem var(--f-body,system-ui);cursor:pointer;color:#1e1b4b;text-align:left;line-height:1.15}
+.tm-sh small{font-size:.66rem;color:#64748b;font-weight:700}.tm-sh.on{background:#4338ca;border-color:#4338ca;color:#fff}.tm-sh.on small{color:#e0e7ff}
 .tm-cal{border-style:dashed!important}.tm-datep{margin-top:6px;text-align:left}
 .tm-dt{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.tm-dt input{font:700 1rem var(--f-body,system-ui);padding:7px 10px;border:1.5px solid #c7d2fe;border-radius:10px;background:#fff;color:#1e1b4b}
 .tm-quick{display:flex;flex-wrap:wrap;gap:6px}
@@ -244,18 +277,18 @@
         ${w && w.tip ? `<p class="tm-tip" style="color:#b45309;font-weight:700">${esc(w.tip)}${w.block ? ` <button type="button" class="tm-o" data-tk="past" style="display:inline-grid"><b>⬅️ Past simple</b></button>` : w.side === "past" || w.side === "future" ? ` <button type="button" class="tm-o" data-tk="${w.side === "past" ? "past" : "future"}" style="display:inline-grid"><b>${w.side === "past" ? "⬅️ Past" : "➡️ Future"}</b></button>` : ""}</p>` : `<p class="tm-tip">Pick one: it takes the place of the time words.</p>`}</div>`;
     }
     let full = false; try { full = localStorage.getItem("tenseFull") === "1"; } catch (x) {}
-    const F = forms(o.word), st = { full, k: o.tense || "past", p: o.person || ((o.cast || []).find(c => c && c.name) ? "c:" + (o.cast || []).find(c => c && c.name).name : "she"), d: depth(), when: o.when || "", dt: o.dt || null, dOpen: false, dk: (o.dt && o.dt.kind) || "date" };
+    const F = forms(o.word), st = { full, k: o.tense || "past", p: o.person || ((o.cast || []).find(c => c && c.name) ? "c:" + (o.cast || []).find(c => c && c.name).name : "she"), d: depth(), when: o.when || "", dt: o.dt || null, dOpen: false, sh: o.shape && o.shape.k ? { ...o.shape } : { k: "verb" }, fam: null, dk: (o.dt && o.dt.kind) || "date" };
     const cast = (o.cast || []).filter(c => c && c.name);
     st.wt = cast.length ? "char" : "pron"; st.wc = cast[0] ? cast[0].name : ""; st.ws = "self"; st.own = "name"; st.whoOpen = false;
     function whoPanel() {
+      if (st.sh.k === "thing") return whoseBar();
       const cur = subjOf(st.p), c = cast.find(x => x.name === st.wc), pr = c ? PRON.find(x => x.k === prOf(c)) : null;
       const tabs = [cast.length ? ["char", "🎭 My characters"] : null, ["pron", "🙋 Pronouns"], ["other", "✏️ Someone else"]].filter(Boolean);
       let body = "";
-      if (st.wt === "pron") body = `<div class="tm-pron">${PRON.map(x => `<button type="button" class="tm-pc${st.p === x.k ? " on" : ""}" data-tp="${x.k}"><b>${x.k === "i" ? "I" : x.sub}</b>${o.tr ? `<span class="ar" dir="rtl">${x.ar}</span>` : ""}
-          <span class="fm"><i title="object">${x.obj}</i><i title="possessive adjective">${x.adj}</i><i title="possessive pronoun">${x.pos}</i><i title="reflexive">${x.ref}</i></span></button>`).join("")}</div>
-        <details class="tm-ptab"><summary>📋 The pronoun table</summary><table><thead><tr><th>Subject<br><small>who does it</small></th><th>Object<br><small>who gets it</small></th><th>Possessive adj.<br><small>before a thing</small></th><th>Possessive pronoun<br><small>on its own</small></th><th>Reflexive<br><small>-self</small></th></tr></thead>
+      if (st.wt === "pron") body = `<div class="tm-pron">${PRON.map(x => `<button type="button" class="tm-pc${st.p === x.k ? " on" : ""}" data-tp="${x.k}"><b>${x.k === "i" ? "I" : x.sub}</b>${o.tr ? `<span class="ar" dir="rtl">${x.ar}</span>` : ""}</button>`).join("")}</div>
+        ${st.full ? `<details class="tm-ptab"><summary>📋 The pronoun table</summary><table><thead><tr><th>Subject<br><small>who does it</small></th><th>Object<br><small>who gets it</small></th><th>Possessive adj.<br><small>before a thing</small></th><th>Possessive pronoun<br><small>on its own</small></th><th>Reflexive<br><small>-self</small></th></tr></thead>
           <tbody>${PRON.map(x => `<tr><td><b>${x.k === "i" ? "I" : x.sub}</b>${o.tr ? ` <small dir="rtl" style="display:block">${x.ar}</small>` : ""}</td><td>${x.obj}</td><td>${x.adj}</td><td>${x.pos}</td><td>${x.ref}</td></tr>`).join("")}</tbody></table>
-          <p class="tm-tip"><b>He</b> made lunch. Mum gave <b>him</b> a hug. He ate <b>his</b> lunch. The lunch was <b>his</b>. He made it <b>himself</b>.</p></details>`;
+          <p class="tm-tip"><b>He</b> made lunch. Mum gave <b>him</b> a hug. He ate <b>his</b> lunch. The lunch was <b>his</b>. He made it <b>himself</b>.</p></details>` : ""}`;
       else if (st.wt === "char") body = `<div class="tm-chars">${cast.map(x => `<button type="button" class="tm-ch${x.name === st.wc ? " on" : ""}" data-wc="${esc(x.name)}">${esc(x.emoji || "🙂")} ${esc(x.name)}</button>`).join("")}</div>
         ${c ? `<div class="tm-sub"><button type="button" data-ws="self" aria-pressed="${st.ws === "self"}">🧍 ${esc(c.name)} ${pr.k === "i" ? "" : "/ " + pr.sub}</button><button type="button" data-ws="rel" aria-pressed="${st.ws === "rel"}">👪 ${esc(owner(c.name))} family &amp; friends</button></div>
         ${st.ws === "self" ? `<div class="tm-opts"><button type="button" class="tm-o${st.p === "c:" + c.name ? " on" : ""}" data-tp="c:${esc(c.name)}">${esc(c.emoji || "🙂")} <b>${esc(c.name)}</b><small>use the name</small></button>
@@ -270,27 +303,56 @@
       return `<div class="tm-whobar"><span class="lab">Who?</span><button type="button" class="tm-cur" data-whotog="1" aria-expanded="${st.whoOpen}">${esc(cur.charAt(0).toUpperCase() + cur.slice(1))} <span>${st.whoOpen ? "▴" : "✎ change"}</span></button></div>
         ${st.whoOpen ? `<div class="tm-whop"><div class="tm-tabs">${tabs.map(([k, l]) => `<button type="button" data-wt="${k}" aria-selected="${st.wt === k}">${l}</button>`).join("")}</div>${body}</div>` : ""}`;
     }
-    const shown = () => TENSES.filter(t => t.lv <= st.d);
+    const isBe = () => st.sh.k === "describing" || st.sh.k === "person";
+    const shown = () => TENSES.filter(t => t.lv <= st.d && (!isBe() || BE_TENSES.includes(t.k)));
+    const SHI = { verb: ["🏃", "doing"], thing: ["📦", "a thing"], person: ["🧑", "a person"], describing: ["🎨", "describing"] };
+    // 🔀 the same idea in other shapes (only when the dictionary knows them)
+    function shapeBar() {
+      const f = st.fam; if (!f || !(f.thing.length + f.person.length + f.describing.length)) return "";
+      const opts = [["verb", F.base], ...["thing", "person", "describing"].flatMap(k => f[k].map(x => [k, x.w]))];
+      return `<div class="tm-shape"><span class="lab">🔀 Shape</span>${opts.map(([k, w]) => { const on = st.sh.k === k && (k === "verb" || st.sh.w === w);
+        return `<button type="button" class="tm-sh${on ? " on" : ""}" data-sh="${k}" data-shw="${esc(w)}" aria-pressed="${on}" title="${SHI[k][1]}">${SHI[k][0]} ${esc(w)}<small>${SHI[k][1]}</small></button>`; }).join("")}</div>`;
+    }
+    // whose thing? "your achievement", "Rover's achievement", "the achievement"
+    function whoseBar() {
+      const sh = st.sh, cur = thingPhrase(sh), opts = [...cast.map(c => [c.name + "'s", `${c.emoji || "🙂"} ${c.name}'s`]), ...PRON.map(x => [x.adj, x.adj]), ["the", "the"], ["a", sh.many ? "(none)" : "a / an"]];
+      return `<div class="tm-whobar"><span class="lab">Whose?</span><button type="button" class="tm-cur" data-whotog="1" aria-expanded="${st.whoOpen}">${esc(cur)} <span>${st.whoOpen ? "▴" : "✎ change"}</span></button></div>
+        ${st.whoOpen ? `<div class="tm-whop"><div class="tm-chars">${opts.map(([v, l]) => `<button type="button" class="tm-ch${sh.own === v ? " on" : ""}" data-own2="${esc(v)}">${esc(l)}</button>`).join("")}</div>
+          ${sh.c ? `<div class="tm-sub2"><button type="button" data-many="0" aria-pressed="${!sh.many}">👤 one ${esc(sh.w)}</button><button type="button" data-many="1" aria-pressed="${!!sh.many}">👥 many ${esc(PL(sh.w))}</button></div>` : ""}</div>` : ""}`;
+    }
     function draw(anim) {
+      const top = shapeBar();
+      if (st.sh.k === "thing") {
+        const full = thingPhrase(st.sh);
+        el.innerHTML = `<div class="tm" role="group" aria-label="Word shape for ${esc(F.word)}">${top}${whoseBar()}
+          <div class="tm-say"${anim ? "" : ' style="animation:none"'}><span class="s"><b>${esc(full)}</b> …</span><span class="wh">📦 A thing word doesn't change with time. The rest of your sentence says when.</span></div>
+          <div class="tm-nav">${o.onPick ? `<button type="button" class="use" data-tm-use="1">Use "${esc(full)}"</button>` : `<button type="button" data-tm-hear="1">🔊 Hear</button>`}</div></div>`;
+        return;
+      }
       const L = shown(); if (!L.some(t => t.k === st.k)) st.k = L.find(t => t.k === "past") ? "past" : L[0].k;
       const t = T(st.k), j = L.indexOf(t), pos = n => L.length === 1 ? 50 : 6 + n * 88 / (L.length - 1);
       const nowAt = (() => { const a = L.findIndex(x => x.z === "now"), b = L.length - 1 - [...L].reverse().findIndex(x => x.z === "now"); return a < 0 ? 50 : (pos(a) + pos(b)) / 2; })();
       st.dw = dtWhen(st.dt, t);
       if (st.dt) st.when = st.dw && !st.dw.block ? st.dw.text : "";
       else if (st.when && !t.sig.includes(st.when)) st.when = "";
-      const subj = subjOf(st.p), vp = t.f(F, st.p), full = phrase(o.word, { tense: st.k, person: st.p, when: st.when, partners: o.partners });
+      const shp = isBe() ? st.sh : null, vpOf = x => shp ? shapeVp(shp, x, st.p) : x.f(F, st.p);
+      const subj = subjOf(st.p), vp = vpOf(t), full = phrase(o.word, { tense: st.k, person: st.p, when: st.when, partners: o.partners, shape: shp });
       const needWhen = t.need === "yes" && !st.when, shown2 = esc(full).replace(esc(vp), `<b>${esc(vp)}</b>`);
-      el.innerHTML = `<div class="tm" role="group" aria-label="Verb time line for ${esc(F.word)}">
-        ${st.full ? `<div class="tm-top"><div class="tm-forms">${[["Base", F.base], ["He/she", F.s], ["Past", F.past], ["Past participle", F.pp], ["-ing", F.ing]].map(([l, x], n) => `<span class="${F.irregular && (n === 2 || n === 3) ? "irr" : ""}"><small>${l}</small>${esc(x)}</span>`).join("")}</div></div>` : ""}${whoPanel()}
-        ${st.full && F.irregular ? `<small style="color:#b45309;font-weight:800">⚡ Irregular verb: its past is not "-ed"</small>` : ""}
+      el.innerHTML = `<div class="tm" role="group" aria-label="Verb time line for ${esc(F.word)}">${top}
+        ${st.full && !shp ? `<div class="tm-top"><div class="tm-forms">${[["Base", F.base], ["He/she", F.s], ["Past", F.past], ["Past participle", F.pp], ["-ing", F.ing]].map(([l, x], n) => `<span class="${F.irregular && (n === 2 || n === 3) ? "irr" : ""}"><small>${l}</small>${esc(x)}</span>`).join("")}</div></div>` : ""}${whoPanel()}
+        ${st.full && F.irregular && !shp ? `<small style="color:#b45309;font-weight:800">⚡ Irregular verb: its past is not "-ed"</small>` : ""}
         <div class="tm-line"><div class="tm-zones" style="grid-template-columns:${nowAt}% ${100 - nowAt}%"><span style="text-align:left">⏮ PAST</span><span style="text-align:right">FUTURE ⏭</span></div>
           <div class="tm-track"><div class="tm-now" style="left:calc(${nowAt}% - 1px)" title="Now"></div><span class="tm-nowl" style="left:${nowAt}%">NOW</span></div>
-          <div class="tm-stops">${L.map((x, n) => `<button type="button" class="tm-stop${x.k === st.k ? " on" : ""}" style="left:${pos(n)}%" data-tk="${x.k}" title="${esc(x.name)}: ${esc(x.f(F, st.p))}" aria-label="${esc(x.name)}" aria-pressed="${x.k === st.k}">${x.ico}</button>`).join("")}</div></div>
-        <div class="tm-say"${anim ? "" : ' style="animation:none"'}>${st.full ? `<span class="n">${esc(t.name)} · ${t.z === "now" ? "now" : t.z}</span>` : ""}<span class="s">${shown2}.</span>${st.full && o.partners && o.partners.length ? `<span class="wh">✨ With your partner words: ${esc(o.partners.join(", "))}</span>` : ""}${st.full ? `<span class="wh">${esc(t.when)}</span>${examples(t, F, st, subj)}` : ""}${timeChips(t)}${st.full && STATIVE.has(F.base.split(" ")[0]) && /ing\b/.test(vp) && !/going to/.test(vp) ? `<span class="wh" style="color:#b45309;font-weight:700">⚠️ "${esc(F.base)}" is a thinking or feeling word. We usually don't use it with "-ing": say "${esc(TENSES.find(x => x.k === (t.z === "past" ? "past" : t.z === "future" ? "future" : "present")).f(F, st.p))}" instead.</span>` : ""}</div>
+          <div class="tm-stops">${L.map((x, n) => `<button type="button" class="tm-stop${x.k === st.k ? " on" : ""}" style="left:${pos(n)}%" data-tk="${x.k}" title="${esc(x.name)}: ${esc(vpOf(x))}" aria-label="${esc(x.name)}" aria-pressed="${x.k === st.k}">${x.ico}</button>`).join("")}</div></div>
+        <div class="tm-say"${anim ? "" : ' style="animation:none"'}>${st.full ? `<span class="n">${esc(t.name)} · ${t.z === "now" ? "now" : t.z}</span>` : ""}<span class="s">${shown2}.</span>${shp ? `<span class="wh">${SHI[shp.k][0]} "${esc(shp.w)}" is not a doing word, so "${esc(beOf(t, st.p))}" carries the time.</span>` : ""}${st.full && !shp && o.partners && o.partners.length ? `<span class="wh">✨ With your partner words: ${esc(o.partners.join(", "))}</span>` : ""}${st.full && !shp ? `<span class="wh">${esc(t.when)}</span>${examples(t, F, st, subj)}` : ""}${timeChips(t)}${st.full && !shp && STATIVE.has(F.base.split(" ")[0]) && /ing\b/.test(vp) && !/going to/.test(vp) ? `<span class="wh" style="color:#b45309;font-weight:700">⚠️ "${esc(F.base)}" is a thinking or feeling word. We usually don't use it with "-ing": say "${esc(TENSES.find(x => x.k === (t.z === "past" ? "past" : t.z === "future" ? "future" : "present")).f(F, st.p))}" instead.</span>` : ""}</div>
         <div class="tm-nav"><button type="button" data-tm-step="-1" ${j === 0 ? "disabled" : ""}>◀ Earlier</button>${o.onPick ? (needWhen ? `<button type="button" class="use" disabled title="This time needs a time word">⏰ Choose a time word first</button>` : `<button type="button" class="use" data-tm-use="1">Use "${esc(full)}"</button>`) : `<button type="button" data-tm-hear="1">🔊 Hear</button>`}<button type="button" data-tm-step="1" ${j === L.length - 1 ? "disabled" : ""}>Later ▶</button></div>
         ${st.full ? `<div class="tm-seg" role="group" aria-label="How many times" style="justify-self:center">${[[1, "⭐ 3 times"], [2, "⭐⭐ 7 times"], [3, "⭐⭐⭐ all 12"]].map(([d, l]) => `<button type="button" data-td="${d}" aria-pressed="${d === st.d}">${l}</button>`).join("")}</div>` : ""}<button type="button" class="tm-more" data-full="1" aria-expanded="${st.full}">${st.full ? "✕ Less" : "ℹ️ Full details"}</button></div>`;
     }
     el.onclick = e => { const k = e.target.closest("[data-tk]"); if (k) { st.k = k.dataset.tk; draw(true); return; }
+      const sh = e.target.closest("[data-sh]"); if (sh) { const k = sh.dataset.sh, w = sh.dataset.shw, x = k === "verb" ? null : st.fam[k].find(y => y.w === w);
+        st.sh = k === "verb" ? { k: "verb" } : { k, w, c: x ? x.c : true, own: st.sh.own || ownOf(st.p), many: false }; st.whoOpen = false; draw(true); return; }
+      const o2 = e.target.closest("[data-own2]"); if (o2) { st.sh.own = o2.dataset.own2; st.whoOpen = false; draw(false); return; }
+      const mn = e.target.closest("[data-many]"); if (mn) { st.sh.many = mn.dataset.many === "1"; draw(false); return; }
       const p = e.target.closest("[data-tp]"); if (p) { st.p = p.dataset.tp; st.whoOpen = false; draw(false); return; }
       if (e.target.closest("[data-full]")) { st.full = !st.full; try { localStorage.setItem("tenseFull", st.full ? "1" : "0"); } catch (x) {} draw(false); return; }
       if (e.target.closest("[data-whotog]")) { st.whoOpen = !st.whoOpen; draw(false); return; }
@@ -302,7 +364,7 @@
       if (e.target.closest("[data-othok]")) { const v = el.querySelector("[data-oth]").value.trim().replace(/\s+/g, " "); if (v) { st.p = (st.on === 2 ? "n2:" : "n1:") + v; st.whoOpen = false; draw(false); } return; }
       const d = e.target.closest("[data-td]"); if (d) { st.d = +d.dataset.td; try { localStorage.setItem("tenseDepth", st.d); } catch (x) {} draw(false); return; }
       const s = e.target.closest("[data-tm-step]"); if (s) { const L = shown(), j = L.findIndex(t => t.k === st.k) + +s.dataset.tmStep; if (L[j]) { st.k = L[j].k; draw(true); } return; }
-      if (e.target.closest("[data-tm-hear]")) { try { const u = new SpeechSynthesisUtterance(phrase(o.word, { tense: st.k, person: st.p, when: st.when, partners: o.partners })); u.lang = "en-US"; speechSynthesis.cancel(); speechSynthesis.speak(u); } catch (x) {} return; }
+      if (e.target.closest("[data-tm-hear]")) { try { const u = new SpeechSynthesisUtterance(st.sh.k === "thing" ? thingPhrase(st.sh) : phrase(o.word, { tense: st.k, person: st.p, when: st.when, partners: o.partners, shape: st.sh.k === "verb" ? null : st.sh })); u.lang = "en-US"; speechSynthesis.cancel(); speechSynthesis.speak(u); } catch (x) {} return; }
       const tw = e.target.closest("[data-tw]"); if (tw) { const same = !st.dt && st.when === tw.dataset.tw; st.dt = null; st.dOpen = false; st.when = same ? "" : tw.dataset.tw; draw(false); return; }
       if (e.target.closest("[data-dtog]")) { st.dOpen = !st.dOpen; draw(false); return; }
       const dk = e.target.closest("[data-dk]"); if (dk) { st.dk = dk.dataset.dk; draw(false); return; }
@@ -312,11 +374,15 @@
       const tq = e.target.closest("[data-tq]"); if (tq) { setDt({ time: tq.dataset.tq }); return; }
       const dd = e.target.closest("[data-dday]"); if (dd) { setDt({ day: dd.dataset.dday }); return; }
       const yq = e.target.closest("[data-yq]"); if (yq) { setDt({ year: +yq.dataset.yq }); return; }
-      if (e.target.closest("[data-tm-use]") && o.onPick) o.onPick({ tense: st.k, person: st.p, who: subjOf(st.p), when: st.when, form: T(st.k).f(F, st.p), phrase: phrase(o.word, { tense: st.k, person: st.p, when: st.when, partners: o.partners }), dt: st.dt }); };
+      if (e.target.closest("[data-tm-use]") && o.onPick) { const thing = st.sh.k === "thing", shp = st.sh.k === "verb" ? null : { ...st.sh };
+        o.onPick({ tense: thing ? null : st.k, person: st.p, who: subjOf(st.p), when: thing ? "" : st.when, dt: thing ? null : st.dt,
+          form: thing ? (st.sh.many ? PL(st.sh.w) : st.sh.w) : shp ? shapeVp(shp, T(st.k), st.p) : T(st.k).f(F, st.p),
+          phrase: thing ? thingPhrase(st.sh) : phrase(o.word, { tense: st.k, person: st.p, when: st.when, partners: o.partners, shape: shp }), shape: shp }); } };
     el.onchange = e => { const x = e.target, keep = st.dt && st.dt.kind === st.dk ? st.dt : {}, set = v => { st.dt = { kind: st.dk, ...keep, ...v }; draw(false); };
       if (x.matches("[data-dd]")) set({ date: x.value }); else if (x.matches("[data-dtm]")) set({ time: x.value }); else if (x.matches("[data-dy]") && +x.value > 0) set({ year: Math.round(+x.value) }); };
     el.onkeydown = e => { if (e.target.matches && e.target.matches("input")) return; if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return; const L = shown(), j = L.findIndex(t => t.k === st.k) + (e.key === "ArrowLeft" ? -1 : 1); if (L[j]) { e.preventDefault(); st.k = L[j].k; draw(true); el.querySelector(".tm-stop.on")?.focus(); } };
     draw(false);
+    if (window.App && App.client) family(o.word).then(f => { st.fam = f; if (st.sh.k !== "verb" && !f[st.sh.k].some(x => x.w === st.sh.w)) st.sh = { k: "verb" }; if (el.isConnected) draw(false); });
   }
   const isVerb = v => !!v && ((v.tags || []).includes("Action") || (v.tags || []).includes("Phrasal verb"));
   // opts(): extra options, e.g. { tr: true } to show the translation (only when the page shows translations)
@@ -324,5 +390,5 @@
     const run = root => (root.querySelectorAll ? root : document).querySelectorAll("[data-tm]:not([data-tm-on])").forEach(el => { el.setAttribute("data-tm-on", "1"); const v = get(+el.dataset.tm); if (v) mount(el, { word: v, ...(opts ? opts() : {}) }); });
     run(document); new MutationObserver(ms => ms.forEach(m => m.addedNodes.forEach(n => n.nodeType === 1 && run(n.parentNode || n)))).observe(document.body, { childList: true, subtree: true });
   }
-  window.Tense = { dtWhen, NEED, PRON, RELS, prOf, phrase, subjOf, forms, say, allForms, mount, auto, isVerb, TENSES, IRR, LEMMA };
+  window.Tense = { family, famForms, dtWhen, NEED, PRON, RELS, prOf, phrase, subjOf, forms, say, allForms, mount, auto, isVerb, TENSES, IRR, LEMMA };
 })();
