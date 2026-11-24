@@ -291,13 +291,16 @@
     function whoPanel() {
       if (st.sh.k === "thing") return whoseBar();
       const cur = subjOf(st.p), c = cast.find(x => x.name === st.wc), pr = c ? PRON.find(x => x.k === prOf(c)) : null;
-      const tabs = [cast.length ? ["char", "🎭 My characters"] : null, ["pron", "🙋 Pronouns"], ["other", "✏️ Someone else"]].filter(Boolean);
+      const tabs = [["char", "🎭 My characters"], ["pron", "🙋 Pronouns"], ["other", "✏️ Someone else"]];
       let body = "";
       if (st.wt === "pron") body = `<div class="tm-pron">${PRON.map(x => `<button type="button" class="tm-pc${st.p === x.k ? " on" : ""}" data-tp="${x.k}"><b>${x.k === "i" ? "I" : x.sub}</b>${o.tr ? `<span class="ar" dir="rtl">${x.ar}</span>` : ""}</button>`).join("")}</div>
         ${st.full ? `<details class="tm-ptab"><summary>📋 The pronoun table</summary><table><thead><tr><th>Subject<br><small>who does it</small></th><th>Object<br><small>who gets it</small></th><th>Possessive adj.<br><small>before a thing</small></th><th>Possessive pronoun<br><small>on its own</small></th><th>Reflexive<br><small>-self</small></th></tr></thead>
           <tbody>${PRON.map(x => `<tr><td><b>${x.k === "i" ? "I" : x.sub}</b>${o.tr ? ` <small dir="rtl" style="display:block">${x.ar}</small>` : ""}</td><td>${x.obj}</td><td>${x.adj}</td><td>${x.pos}</td><td>${x.ref}</td></tr>`).join("")}</tbody></table>
           <p class="tm-tip"><b>He</b> made lunch. Mum gave <b>him</b> a hug. He ate <b>his</b> lunch. The lunch was <b>his</b>. He made it <b>himself</b>.</p></details>` : ""}`;
-      else if (st.wt === "char") body = `<div class="tm-chars">${cast.map(x => `<button type="button" class="tm-ch${x.name === st.wc ? " on" : ""}" data-wc="${esc(x.name)}">${esc(x.emoji || "🙂")} ${esc(x.name)}</button>`).join("")}</div>
+      else if (st.wt === "char" && (!cast.length || st.addC)) body = `${cast.length ? "" : `<p class="tm-tip">Your story has no characters yet. Add one here (or in 🎭 Characters above the story).</p>`}
+        <div class="tm-otherf"><input type="text" maxlength="30" data-cname placeholder="Name, e.g. Rover" aria-label="Character name"><span class="tm-quick">${["🙂", "👧", "👦", "👵", "👴", "🐶", "🐱", "🐰", "🦊", "🐻", "🦁", "🐦", "🐢", "🤖", "👽", "🧚"].map(x => `<button type="button" class="tm-o${(st.ce || "🙂") === x ? " on" : ""}" data-ce2="${x}" style="padding:4px 7px">${x}</button>`).join("")}</span>
+          <button type="button" class="tm-o" data-caddok="1"><b>✓ Add</b></button>${cast.length ? `<button type="button" class="tm-o" data-cadd="0"><b>✕</b></button>` : ""}</div>`;
+      else if (st.wt === "char") body = `<div class="tm-chars">${cast.map(x => `<button type="button" class="tm-ch${x.name === st.wc ? " on" : ""}" data-wc="${esc(x.name)}">${esc(x.emoji || "🙂")} ${esc(x.name)}</button>`).join("")}${o.addChar ? `<button type="button" class="tm-ch" data-cadd="1" style="border-style:dashed">＋ New character</button>` : ""}</div>
         ${c ? `<div class="tm-sub"><button type="button" data-ws="self" aria-pressed="${st.ws === "self"}">🧍 ${esc(c.name)} ${pr.k === "i" ? "" : "/ " + pr.sub}</button><button type="button" data-ws="rel" aria-pressed="${st.ws === "rel"}">👪 ${esc(owner(c.name))} family &amp; friends</button></div>
         ${st.ws === "self" ? `<div class="tm-opts"><button type="button" class="tm-o${st.p === "c:" + c.name ? " on" : ""}" data-tp="c:${esc(c.name)}">${esc(c.emoji || "🙂")} <b>${esc(c.name)}</b><small>use the name</small></button>
             <button type="button" class="tm-o${st.p === pr.k ? " on" : ""}" data-tp="${pr.k}"><b>${pr.sub.charAt(0).toUpperCase() + pr.sub.slice(1)}</b><small>when we already know who (${esc(c.name)} → ${pr.sub})</small></button></div>
@@ -365,6 +368,12 @@
       if (e.target.closest("[data-full]")) { st.full = !st.full; try { localStorage.setItem("tenseFull", st.full ? "1" : "0"); } catch (x) {} draw(false); return; }
       if (e.target.closest("[data-whotog]")) { st.whoOpen = !st.whoOpen; draw(false); return; }
       const wt = e.target.closest("[data-wt]"); if (wt) { st.wt = wt.dataset.wt; draw(false); return; }
+      const ca = e.target.closest("[data-cadd]"); if (ca) { st.addC = ca.dataset.cadd === "1"; draw(false); return; }
+      const ce2 = e.target.closest("[data-ce2]"); if (ce2) { const v = el.querySelector("[data-cname]").value; st.ce = ce2.dataset.ce2; draw(false); el.querySelector("[data-cname]").value = v; return; }
+      if (e.target.closest("[data-caddok]")) { const n = el.querySelector("[data-cname]").value.trim().replace(/\s+/g, " "); if (!n) { el.querySelector("[data-cname]").focus(); return; }
+        const c = o.addChar ? o.addChar({ name: n, emoji: st.ce || "🙂" }) : { name: n, emoji: st.ce || "🙂" }; if (!c) return;
+        if (!cast.some(x => x.name.toLowerCase() === c.name.toLowerCase())) cast.push(c);
+        st.addC = false; st.wc = c.name; st.ws = "self"; st.p = "c:" + c.name; st.whoOpen = false; draw(false); return; }
       const wc = e.target.closest("[data-wc]"); if (wc) { st.wc = wc.dataset.wc; draw(false); return; }
       const ws = e.target.closest("[data-ws]"); if (ws) { st.ws = ws.dataset.ws; draw(false); return; }
       const ow = e.target.closest("[data-own]"); if (ow) { st.own = ow.dataset.own; draw(false); return; }
