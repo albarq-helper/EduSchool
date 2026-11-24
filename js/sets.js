@@ -298,9 +298,10 @@
       }));
       if (!want.size) return 0;
       const list = [...want], parts = []; for (let k = 0; k < list.length; k += 50) parts.push(list.slice(k, k + 50));
-      const res = await Promise.all(parts.map(p => App.client.from("words").select("id,headword,meaning,example,translation,syllables,pronunciation,sound_hint,image_url,anim_url,audio_url,video_url,emoji,tags").overlaps("tags", p)));
+      const res = await Promise.all(parts.map(p => App.client.from("words").select("id,headword,meaning,example,translation,syllables,pronunciation,sound_hint,image_url,anim_url,audio_url,video_url,emoji,tags").overlaps("tags", p).not("tags", "cs", "{Saying}")));
       const have = new Set(D.map(v => String(v.w).toLowerCase())), rows = [];
-      res.forEach(r => (r.data || []).forEach(x => { const k = String(x.headword).toLowerCase(); if (have.has(k)) return; have.add(k); rows.push(x); }));
+      // quotes share the idea tags (≈ / ⇄) on purpose, but they are not similar words: they have their own 📜 Sayings place
+      res.forEach(r => (r.data || []).forEach(x => { const k = String(x.headword).toLowerCase(); if (have.has(k) || (x.tags || []).includes("Saying")) return; have.add(k); rows.push(x); }));
       const m = mapItems({ units: [] }, rows.map(x => ({ ...x, kind: "term", term: x.headword, unit: 0, also_units: [] })));
       m.words.forEach(w => { w.companion = true; D.push(w); });
       rows.forEach((x, k) => { if (m.words[k]) m.words[k].wid = x.id; });

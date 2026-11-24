@@ -163,7 +163,7 @@
 .sho:hover{border-color:var(--accent)}.sho.on{background:var(--accent);border-color:var(--accent);color:#fff}
 .tchip{display:inline-block;margin-left:6px;font:800 .78rem var(--f-body);color:#4338ca;background:#e0e7ff;border-radius:999px;padding:1px 8px;vertical-align:middle}
 </style>
-<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261124a"></script><script src="js/icons.js?v=20261124a"></script><script src="js/app.js?v=20261124a"></script><script src="js/sets.js?v=20261124a"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261124a"></script><script src="js/tense.js?v=20261124a"></script><script src="js/views.js?v=20261124a"></script><script src="js/storycore.js?v=20261124a"></script><script src="js/montage.js?v=20261124a"></script>
+<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261124b"></script><script src="js/icons.js?v=20261124b"></script><script src="js/app.js?v=20261124b"></script><script src="js/sets.js?v=20261124b"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261124b"></script><script src="js/tense.js?v=20261124b"></script><script src="js/views.js?v=20261124b"></script><script src="js/storycore.js?v=20261124b"></script><script src="js/montage.js?v=20261124b"></script>
 </head><body>
 <div class="wrap" style="max-width:1280px">
   <div class="head2">
@@ -536,8 +536,8 @@ function wxGroups(i){const v=D[i],T=v.tags||[],all=D.map((_,j)=>j);
   const scales=T.filter(t=>/^📶\s/.test(t)).map(t=>{const m=t.replace(/^📶\s*/,"").match(/^(.*):\s*([+-]?\d+)$/);return m?{g:m[1].trim(),r:+m[2]}:null;}).filter(Boolean);
   const sims=T.filter(t=>/^≈\s/.test(t));
   const opps=T.filter(t=>/^⇄\s/.test(t)).map(t=>{const m=t.replace(/^⇄\s*/,"").match(/^(.*):\s*(.*)$/);return m?{g:m[1].trim(),side:m[2].trim()}:null;}).filter(Boolean);
-  const sim=uniqIdx(all.filter(j=>j!==i&&(D[j].tags||[]).some(t=>sims.includes(t))),i);
-  const opp=uniqIdx(all.filter(j=>(D[j].tags||[]).some(t=>opps.some(o=>t.startsWith("⇄ "+o.g+":")&&!t.endsWith(": "+o.side)))),i);
+  const sim=uniqIdx(all.filter(j=>j!==i&&!Sets.isSaying(D[j])&&(D[j].tags||[]).some(t=>sims.includes(t))),i);
+  const opp=uniqIdx(all.filter(j=>!Sets.isSaying(D[j])&&(D[j].tags||[]).some(t=>opps.some(o=>t.startsWith("⇄ "+o.g+":")&&!t.endsWith(": "+o.side)))),i);
   const P=(window.PARTNERS_MAP&&v.wid&&window.PARTNERS_MAP.get(v.wid))||{own:[],also:[]};
   return {scales,sim,opp,partners:P.own.filter(x=>x.kind!=="saying")};}
 const WX_DESC=["adjective","adverb","idiom"],WX_AROUND=["verb","noun","preposition"],WX_KL={adjective:"🎨 Adjective",adverb:"⏩ Adverb",idiom:"💬 Idiom",nounM:"📦 Noun",verb:"🏃 Verbs",noun:"📦 Nouns",preposition:"🔗 Little words"};
