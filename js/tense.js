@@ -53,9 +53,26 @@
   }
   // who does it: I, you, he, she, it, we, they, or one of the story's characters ("c:Rover" — one person, like "he")
   const PEOPLE = [["i", "I"], ["you", "You"], ["he", "He"], ["she", "She"], ["it", "It"], ["we", "We"], ["they", "They"]];
-  const one = p => p === "he" || p === "she" || p === "it" || String(p).startsWith("c:");
+  // "c:Rover" a character, "n1:Rover's son" one person or thing, "n2:Rover's friends" many
+  const one = p => p === "he" || p === "she" || p === "it" || /^(c|n1):/.test(String(p));
   const be = p => p === "i" ? "am" : one(p) ? "is" : "are", was = p => p === "i" || one(p) ? "was" : "were", hv = p => one(p) ? "has" : "have";
-  const subjOf = p => String(p).startsWith("c:") ? String(p).slice(2) : (PEOPLE.find(x => x[0] === p) || PEOPLE[3])[1];
+  const subjOf = p => /^(c|n1|n2):/.test(String(p)) ? String(p).replace(/^(c|n1|n2):/, "") : (PEOPLE.find(x => x[0] === p) || PEOPLE[3])[1];
+  // the pronoun table: subject, object, possessive adjective, possessive pronoun, reflexive (+ Arabic)
+  const PRON = [
+    { k: "i", sub: "I", obj: "me", adj: "my", pos: "mine", ref: "myself", ar: "أنا" },
+    { k: "you", sub: "you", obj: "you", adj: "your", pos: "yours", ref: "yourself / yourselves", ar: "أنتَ / أنتِ / أنتم" },
+    { k: "he", sub: "he", obj: "him", adj: "his", pos: "his", ref: "himself", ar: "هو" },
+    { k: "she", sub: "she", obj: "her", adj: "her", pos: "hers", ref: "herself", ar: "هي" },
+    { k: "it", sub: "it", obj: "it", adj: "its", pos: "its", ref: "itself", ar: "هو / هي (لغير العاقل)" },
+    { k: "we", sub: "we", obj: "us", adj: "our", pos: "ours", ref: "ourselves", ar: "نحن" },
+    { k: "they", sub: "they", obj: "them", adj: "their", pos: "theirs", ref: "themselves", ar: "هم / هنّ" }];
+  // people around a character: "Rover's son" (one) or "Rover's friends" (many)
+  const RELS = [["son", "ابن"], ["daughter", "ابنة"], ["mother", "أم"], ["father", "أب"], ["brother", "أخ"], ["sister", "أخت"], ["grandmother", "جدّة"], ["grandfather", "جدّ"],
+    ["uncle", "عم / خال"], ["aunt", "عمّة / خالة"], ["cousin", "ابن العم"], ["baby", "طفل رضيع"], ["friend", "صديق"], ["best friend", "أعزّ صديق"], ["teacher", "معلّم"], ["neighbour", "جار"], ["pet", "حيوان أليف"],
+    ["friends", "أصدقاء", 2], ["parents", "والدان", 2], ["children", "أطفال", 2], ["family", "عائلة"], ["team", "فريق"]];
+  const owner = n => /s$/i.test(n) ? n + "'" : n + "'s";
+  // a character's pronoun: chosen in 🎭 Characters, or guessed from the picture
+  const prOf = c => c.pr || (/[👧👩👵🧕🧚👸💃]/u.test(c.emoji || "") ? "she" : /[👦👨👴🧔🤴👮]/u.test(c.emoji || "") ? "he" : /[🐶🐱🐭🦊🐰🐻🦁🐴🐪🐢🐦🦜🐝🦉🐘🐟]/u.test(c.emoji || "") ? "it" : "they");
   // the time line, from long ago to the future. lv = 1: three times (young children), 2: seven, 3: all twelve
   // need: "yes" = say WHEN (or another moment), "often" = a time word helps, "no" = no time word needed, "never" = no exact past time allowed
   // sig: the time words that go with it; ex: examples (S = who, x = the verb form); bad: a common mistake
@@ -111,7 +128,8 @@
     let v2 = !mid ? vp : parts.length > 1 && /^(am|is|are|was|were|has|have|had|will)$/.test(parts[0]) ? [parts[0], w, ...parts.slice(1)].join(" ") : `${w} ${vp}`;
     let verb = v2; const extra = [];
     (o.partners || []).forEach(x => { if (re.test(x) && verb === v2) verb = x.replace(re, v2); else extra.push(x); });
-    return [subjOf(p), verb, ...extra, mid ? "" : w].filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
+    const out = [subjOf(p), verb, ...extra, mid ? "" : w].filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
+    return out.charAt(0).toUpperCase() + out.slice(1);
   }
   const say = (word, k, p) => { const t = T(k); return t ? t.f(forms(word), p || "she") : String(word && word.w || word); };
   const allForms = word => { const F = forms(word); return [F.base, F.s, F.past, F.pp, F.ing].map(x => x.split(" ")[0]); };
@@ -125,7 +143,7 @@
 .tm-forms .irr{border-color:#f59e0b;background:#fffbeb}
 .tm-seg{display:inline-flex;background:#fff;border:1px solid #dbe3f3;border-radius:999px;padding:2px}.tm-seg button{border:0;background:transparent;border-radius:999px;padding:4px 9px;font:800 .78rem var(--f-body,system-ui);cursor:pointer;color:#334155}
 .tm-seg button[aria-pressed="true"]{background:#4338ca;color:#fff}
-.tm-line{position:relative;padding:26px 8px 8px}
+.tm-line{position:relative;padding:36px 8px 8px}
 .tm-zones{position:absolute;left:8px;right:8px;top:0;display:grid;font:800 .7rem var(--f-body,system-ui);letter-spacing:.08em;color:#64748b;text-align:center}
 .tm-track{position:relative;height:10px;border-radius:999px;background:linear-gradient(90deg,#c7d2fe,#a5b4fc 45%,#fde68a 50%,#86efac 55%,#bbf7d0)}
 .tm-now{position:absolute;top:-8px;width:3px;height:26px;background:#f59e0b;border-radius:2px}
@@ -141,7 +159,27 @@
 .tm-need{justify-self:start;font:800 .8rem var(--f-body,system-ui);border-radius:999px;padding:2px 10px}
 .tm-sig{display:flex;flex-wrap:wrap;gap:5px}.tm-w{border:1.5px dashed #a5b4fc;background:#eef2ff;color:#3730a3;border-radius:999px;padding:2px 9px;font:700 .8rem var(--f-body,system-ui);cursor:default}
 .tm-w.add{cursor:pointer;border-style:solid}.tm-w.add:hover{border-color:#4338ca}.tm-w.on{background:#4338ca;color:#fff;border-color:#4338ca}
-.tm-sig .lab,.tm-who .lab{font:800 .72rem var(--f-body,system-ui);color:#64748b;align-self:center;padding:0 4px}
+.tm-whobar{display:flex;align-items:center;gap:6px}.tm-cur{border:2px solid #4338ca;background:#fff;color:#1e1b4b;border-radius:999px;padding:4px 12px;font:800 .95rem var(--f-body,system-ui);cursor:pointer}
+.tm-cur span{font-size:.75rem;color:#4338ca;margin-left:4px}
+.tm-whop{background:#fff;border:1.5px solid #c7d2fe;border-radius:14px;padding:10px;display:grid;gap:8px;animation:tmIn .25s ease both}
+.tm-tabs{display:flex;gap:4px;flex-wrap:wrap;border-bottom:1.5px solid #e0e7ff;padding-bottom:6px}.tm-tabs button{border:0;background:transparent;border-radius:999px;padding:5px 11px;font:800 .82rem var(--f-body,system-ui);cursor:pointer;color:#475569}
+.tm-tabs button[aria-selected="true"]{background:#4338ca;color:#fff}
+.tm-pron{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px}
+.tm-pc{display:grid;gap:2px;text-align:left;border:1.5px solid #e0e7ff;background:#f8faff;border-radius:12px;padding:7px 9px;cursor:pointer;font-family:var(--f-body,system-ui)}
+.tm-pc b{font:800 1.1rem var(--f-display,system-ui);color:#1e1b4b}.tm-pc .ar{font-size:.8rem;color:#64748b}
+.tm-pc .fm{display:flex;flex-wrap:wrap;gap:3px}.tm-pc .fm i{font-style:normal;font-size:.72rem;background:#eef2ff;border-radius:6px;padding:0 5px;color:#3730a3}
+.tm-pc.on,.tm-o.on,.tm-ch.on{border-color:#4338ca;background:#4338ca;color:#fff}.tm-pc.on b,.tm-pc.on .ar{color:#fff}.tm-pc.on .fm i{background:rgba(255,255,255,.2);color:#fff}
+.tm-chars,.tm-opts,.tm-rels{display:flex;flex-wrap:wrap;gap:6px}
+.tm-ch{border:1.5px solid #e0e7ff;background:#f8faff;border-radius:999px;padding:5px 12px;font:800 .9rem var(--f-body,system-ui);cursor:pointer}
+.tm-sub,.tm-sub2{display:inline-flex;gap:4px;background:#eef2ff;border-radius:999px;padding:3px;justify-self:start}.tm-sub button,.tm-sub2 button{border:0;background:transparent;border-radius:999px;padding:5px 11px;font:800 .82rem var(--f-body,system-ui);cursor:pointer;color:#3730a3}
+.tm-sub button[aria-pressed="true"],.tm-sub2 button[aria-pressed="true"]{background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.tm-o{display:grid;gap:1px;text-align:left;border:1.5px solid #e0e7ff;background:#f8faff;border-radius:12px;padding:6px 10px;cursor:pointer;font-family:var(--f-body,system-ui)}
+.tm-o b{font-size:.92rem}.tm-o small{font-size:.72rem;color:#64748b}.tm-o.on small{color:#e0e7ff}
+.tm-otherf{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.tm-otherf input{flex:1 1 200px;font:600 .95rem var(--f-body,system-ui);padding:7px 10px;border:1.5px solid #c7d2fe;border-radius:10px}
+.tm-tip{margin:0;font-size:.82rem;color:#475569}.tm-tip b{color:#4338ca}
+.tm-ptab summary{cursor:pointer;font:800 .85rem var(--f-body,system-ui);color:#4338ca}.tm-ptab table{width:100%;border-collapse:collapse;margin:6px 0;font-size:.85rem}
+.tm-ptab th,.tm-ptab td{border-bottom:1px solid #e0e7ff;padding:4px 6px;text-align:left}.tm-ptab th{font-size:.72rem;color:#475569}.tm-ptab th small{font-weight:600}
+.tm-sig .lab,.tm-who .lab,.tm-whobar .lab{font:800 .72rem var(--f-body,system-ui);color:#64748b;align-self:center;padding:0 4px}
 .tm-nav .use[disabled]{background:#e0e7ff;color:#6366f1;border-color:#c7d2fe;cursor:not-allowed}
 .tm-ex ul{margin:0;padding-left:2px;list-style:none;display:grid;gap:3px;font-size:.93rem}.tm-ex li b{color:#4338ca}.tm-ex li.bad{color:#9a3412}.tm-ex li.bad small{color:#9a3412}
 .tm-nav{display:flex;justify-content:center;gap:8px}.tm-nav button{border:1.5px solid #c7d2fe;background:#fff;border-radius:999px;padding:5px 12px;font:800 .85rem var(--f-body,system-ui);cursor:pointer;color:#3730a3}
@@ -150,7 +188,7 @@
   const addCss = () => { if (!document.getElementById("tense-css")) { const s = document.createElement("style"); s.id = "tense-css"; s.textContent = css; document.head.appendChild(s); } };
   // the examples: when a time word is needed, which ones go with it, and a common mistake
   function examples(t, F, st, subj) {
-    const N = NEED[t.need], x = t.f(F, st.p), cap = w => w.charAt(0).toUpperCase() + w.slice(1), S = st.p === "i" || String(st.p).startsWith("c:") ? subj : subj.toLowerCase();
+    const N = NEED[t.need], x = t.f(F, st.p), cap = w => w.charAt(0).toUpperCase() + w.slice(1), S = (PRON.some(x => x.k === st.p) && st.p !== "i") || /^n[12]:(his|her|its|their|my|your|our) /.test(st.p) ? subj.toLowerCase() : subj;
     const hi = line => esc(cap(line)).replace(/\[\[(.+?)\]\]/g, "<b>$1</b>");
     return `<div class="tm-ex"><span class="tm-need" style="color:${N[2]};background:${N[3]}">${N[0]} ${N[1]}: ${esc(t.needTxt)}</span>
       <div class="tm-sig"><span class="lab">${t.need === "no" ? "Time words (not needed):" : "Pick a time word:"}</span>${t.sig.map(w => `<button type="button" class="tm-w add${st.when === w ? " on" : ""}" data-tw="${esc(w)}" aria-pressed="${st.when === w}">${st.when === w ? "✓ " : ""}${esc(w)}</button>`).join("")}</div>
@@ -158,8 +196,32 @@
   }
   function mount(el, o) {
     addCss();
-    const F = forms(o.word), st = { k: o.tense || "past", p: o.person || "she", d: depth(), when: o.when || "" };
-    const people = [...(o.cast || []).filter(c => c && c.name).map(c => ["c:" + c.name, (c.emoji ? c.emoji + " " : "") + c.name]), ...PEOPLE];
+    const F = forms(o.word), st = { k: o.tense || "past", p: o.person || ((o.cast || []).find(c => c && c.name) ? "c:" + (o.cast || []).find(c => c && c.name).name : "she"), d: depth(), when: o.when || "" };
+    const cast = (o.cast || []).filter(c => c && c.name);
+    st.wt = cast.length ? "char" : "pron"; st.wc = cast[0] ? cast[0].name : ""; st.ws = "self"; st.own = "name"; st.whoOpen = !o.person;
+    function whoPanel() {
+      const cur = subjOf(st.p), c = cast.find(x => x.name === st.wc), pr = c ? PRON.find(x => x.k === prOf(c)) : null;
+      const tabs = [cast.length ? ["char", "🎭 My characters"] : null, ["pron", "🙋 Pronouns"], ["other", "✏️ Someone else"]].filter(Boolean);
+      let body = "";
+      if (st.wt === "pron") body = `<div class="tm-pron">${PRON.map(x => `<button type="button" class="tm-pc${st.p === x.k ? " on" : ""}" data-tp="${x.k}"><b>${x.k === "i" ? "I" : x.sub}</b><span class="ar" dir="rtl">${x.ar}</span>
+          <span class="fm"><i title="object">${x.obj}</i><i title="possessive adjective">${x.adj}</i><i title="possessive pronoun">${x.pos}</i><i title="reflexive">${x.ref}</i></span></button>`).join("")}</div>
+        <details class="tm-ptab"><summary>📋 The pronoun table</summary><table><thead><tr><th>Subject<br><small>ضمير الفاعل</small></th><th>Object<br><small>ضمير المفعول</small></th><th>Possessive adj.<br><small>صفة الملكية</small></th><th>Possessive pronoun<br><small>ضمير الملكية</small></th><th>Reflexive<br><small>الضمير الانعكاسي</small></th></tr></thead>
+          <tbody>${PRON.map(x => `<tr><td><b>${x.k === "i" ? "I" : x.sub}</b> <small dir="rtl" style="display:block">${x.ar}</small></td><td>${x.obj}</td><td>${x.adj}</td><td>${x.pos}</td><td>${x.ref}</td></tr>`).join("")}</tbody></table>
+          <p class="tm-tip">Sam ate <b>his</b> lunch. The lunch was <b>his</b>. He made it <b>himself</b>. Mum gave <b>him</b> a hug.</p></details>`;
+      else if (st.wt === "char") body = `<div class="tm-chars">${cast.map(x => `<button type="button" class="tm-ch${x.name === st.wc ? " on" : ""}" data-wc="${esc(x.name)}">${esc(x.emoji || "🙂")} ${esc(x.name)}</button>`).join("")}</div>
+        ${c ? `<div class="tm-sub"><button type="button" data-ws="self" aria-pressed="${st.ws === "self"}">🧍 ${esc(c.name)} ${pr.k === "i" ? "" : "/ " + pr.sub}</button><button type="button" data-ws="rel" aria-pressed="${st.ws === "rel"}">👪 ${esc(owner(c.name))} family &amp; friends</button></div>
+        ${st.ws === "self" ? `<div class="tm-opts"><button type="button" class="tm-o${st.p === "c:" + c.name ? " on" : ""}" data-tp="c:${esc(c.name)}">${esc(c.emoji || "🙂")} <b>${esc(c.name)}</b><small>use the name</small></button>
+            <button type="button" class="tm-o${st.p === pr.k ? " on" : ""}" data-tp="${pr.k}"><b>${pr.sub.charAt(0).toUpperCase() + pr.sub.slice(1)}</b><small>when we already know who (${esc(c.name)} → ${pr.sub})</small></button></div>
+            <p class="tm-tip">${esc(c.name)} → <b>${pr.sub}</b> · ${pr.obj} · ${pr.adj} · ${pr.pos} · ${pr.ref}. You can change it in 🎭 Characters.</p>`
+          : `<div class="tm-sub2"><button type="button" data-own="name" aria-pressed="${st.own === "name"}">${esc(owner(c.name))} …</button><button type="button" data-own="pr" aria-pressed="${st.own === "pr"}">${pr.adj} …</button></div>
+            <div class="tm-rels">${RELS.map(([r, ar, n]) => { const who = (st.own === "name" ? owner(c.name) : pr.adj) + " " + r, key = (n === 2 ? "n2:" : "n1:") + who;
+              return `<button type="button" class="tm-o${st.p === key ? " on" : ""}" data-tp="${esc(key)}"><b>${esc(who)}</b><small dir="rtl">${ar}</small></button>`; }).join("")}</div>`}` : ""}`;
+      else body = `<div class="tm-otherf"><input type="text" maxlength="40" data-oth placeholder="e.g. the old man, a little bird, the children" value="${esc(/^n[12]:/.test(st.p) && !cast.some(x => st.p.includes(x.name)) ? subjOf(st.p) : "")}">
+          <span class="tm-sub2"><button type="button" data-on="1" aria-pressed="${st.on !== 2}">👤 one</button><button type="button" data-on="2" aria-pressed="${st.on === 2}">👥 many</button></span><button type="button" class="tm-o" data-othok="1"><b>✓ Use</b></button></div>
+        <p class="tm-tip">One → "${esc("the old man")} <b>was</b> …" · Many → "the children <b>were</b> …"</p>`;
+      return `<div class="tm-whobar"><span class="lab">Who?</span><button type="button" class="tm-cur" data-whotog="1" aria-expanded="${st.whoOpen}">${esc(cur.charAt(0).toUpperCase() + cur.slice(1))} <span>${st.whoOpen ? "▴" : "✎ change"}</span></button></div>
+        ${st.whoOpen ? `<div class="tm-whop"><div class="tm-tabs">${tabs.map(([k, l]) => `<button type="button" data-wt="${k}" aria-selected="${st.wt === k}">${l}</button>`).join("")}</div>${body}</div>` : ""}`;
+    }
     const shown = () => TENSES.filter(t => t.lv <= st.d);
     function draw(anim) {
       const L = shown(); if (!L.some(t => t.k === st.k)) st.k = L.find(t => t.k === "past") ? "past" : L[0].k;
@@ -170,7 +232,7 @@
       const needWhen = t.need === "yes" && !st.when, shown2 = esc(full).replace(esc(vp), `<b>${esc(vp)}</b>`);
       el.innerHTML = `<div class="tm" role="group" aria-label="Verb time line for ${esc(F.word)}">
         <div class="tm-top"><div class="tm-forms">${[["Base", F.base], ["He/she", F.s], ["Past", F.past], ["Past participle", F.pp], ["-ing", F.ing]].map(([l, x], n) => `<span class="${F.irregular && (n === 2 || n === 3) ? "irr" : ""}"><small>${l}</small>${esc(x)}</span>`).join("")}</div>
-          <div class="tm-seg tm-who" role="group" aria-label="Who does it?"><span class="lab">Who?</span>${people.map(([k, l]) => `<button type="button" data-tp="${esc(k)}" aria-pressed="${k === st.p}">${esc(l)}</button>`).join("")}</div></div>
+</div>${whoPanel()}
         ${F.irregular ? `<small style="color:#b45309;font-weight:800">⚡ Irregular verb: its past is not "-ed"</small>` : ""}
         <div class="tm-line"><div class="tm-zones" style="grid-template-columns:${nowAt}% ${100 - nowAt}%"><span style="text-align:left">⏮ PAST</span><span style="text-align:right">FUTURE ⏭</span></div>
           <div class="tm-track"><div class="tm-now" style="left:calc(${nowAt}% - 1px)" title="Now"></div><span class="tm-nowl" style="left:${nowAt}%">NOW</span></div>
@@ -180,7 +242,14 @@
         <div class="tm-seg" role="group" aria-label="How many times" style="justify-self:center">${[[1, "⭐ 3 times"], [2, "⭐⭐ 7 times"], [3, "⭐⭐⭐ all 12"]].map(([d, l]) => `<button type="button" data-td="${d}" aria-pressed="${d === st.d}">${l}</button>`).join("")}</div></div>`;
     }
     el.onclick = e => { const k = e.target.closest("[data-tk]"); if (k) { st.k = k.dataset.tk; draw(true); return; }
-      const p = e.target.closest("[data-tp]"); if (p) { st.p = p.dataset.tp; draw(false); return; }
+      const p = e.target.closest("[data-tp]"); if (p) { st.p = p.dataset.tp; st.whoOpen = false; draw(false); return; }
+      if (e.target.closest("[data-whotog]")) { st.whoOpen = !st.whoOpen; draw(false); return; }
+      const wt = e.target.closest("[data-wt]"); if (wt) { st.wt = wt.dataset.wt; draw(false); return; }
+      const wc = e.target.closest("[data-wc]"); if (wc) { st.wc = wc.dataset.wc; draw(false); return; }
+      const ws = e.target.closest("[data-ws]"); if (ws) { st.ws = ws.dataset.ws; draw(false); return; }
+      const ow = e.target.closest("[data-own]"); if (ow) { st.own = ow.dataset.own; draw(false); return; }
+      const on = e.target.closest("[data-on]"); if (on) { st.on = +on.dataset.on; const v = el.querySelector("[data-oth]").value; draw(false); el.querySelector("[data-oth]").value = v; return; }
+      if (e.target.closest("[data-othok]")) { const v = el.querySelector("[data-oth]").value.trim().replace(/\s+/g, " "); if (v) { st.p = (st.on === 2 ? "n2:" : "n1:") + v; st.whoOpen = false; draw(false); } return; }
       const d = e.target.closest("[data-td]"); if (d) { st.d = +d.dataset.td; try { localStorage.setItem("tenseDepth", st.d); } catch (x) {} draw(false); return; }
       const s = e.target.closest("[data-tm-step]"); if (s) { const L = shown(), j = L.findIndex(t => t.k === st.k) + +s.dataset.tmStep; if (L[j]) { st.k = L[j].k; draw(true); } return; }
       if (e.target.closest("[data-tm-hear]")) { try { const u = new SpeechSynthesisUtterance(phrase(o.word, { tense: st.k, person: st.p, when: st.when, partners: o.partners })); u.lang = "en-US"; speechSynthesis.cancel(); speechSynthesis.speak(u); } catch (x) {} return; }
@@ -194,5 +263,5 @@
     const run = root => (root.querySelectorAll ? root : document).querySelectorAll("[data-tm]:not([data-tm-on])").forEach(el => { el.setAttribute("data-tm-on", "1"); const v = get(+el.dataset.tm); if (v) mount(el, { word: v }); });
     run(document); new MutationObserver(ms => ms.forEach(m => m.addedNodes.forEach(n => n.nodeType === 1 && run(n.parentNode || n)))).observe(document.body, { childList: true, subtree: true });
   }
-  window.Tense = { NEED, phrase, subjOf, forms, say, allForms, mount, auto, isVerb, TENSES, IRR, LEMMA };
+  window.Tense = { NEED, PRON, RELS, prOf, phrase, subjOf, forms, say, allForms, mount, auto, isVerb, TENSES, IRR, LEMMA };
 })();
