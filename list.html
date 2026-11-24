@@ -126,8 +126,11 @@ input.ok,textarea.ok{border-color:var(--good)!important;background:var(--good-so
 .says{display:grid;gap:8px}.say1{display:grid;gap:2px;text-decoration:none;color:var(--ink);border:1px solid var(--rule);border-radius:10px;padding:8px 10px;background:var(--paper)}
 .say1:hover{border-color:var(--accent)}.say1 b{font-style:italic}.say1 small{color:var(--muted);font-weight:700}.say1 span{font-size:.9rem}.say1 .lesson{color:var(--good)}
 .agepill{background:#fde2e2;color:#9b1c1c;border-color:#f5b5b5}
+.sense{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:4px 0;font-size:.85rem}.sense a{color:var(--accent);font-weight:800}
+.sk{font:800 .75rem var(--f-body);border-radius:999px;padding:2px 9px}.sk-main{background:#dcfce7;color:#166534}.sk-exaggeration{background:#fef3c7;color:#92400e}.sk-figurative{background:#ede9fe;color:#5b21b6}
+.mchk{margin:6px 0;font-size:.85rem;background:var(--paper);border:1px dashed var(--rule);border-radius:10px;padding:5px 10px}.mchk summary{cursor:pointer;font-weight:800}.mchk p{margin:4px 0}
 </style>
-<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261124o"></script><script src="js/icons.js?v=20261124o"></script><script src="js/app.js?v=20261124o"></script><script src="js/sets.js?v=20261124o"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261124o"></script><script src="js/tense.js?v=20261124o"></script><script src="js/views.js?v=20261124o"></script>
+<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261124p"></script><script src="js/icons.js?v=20261124p"></script><script src="js/app.js?v=20261124p"></script><script src="js/sets.js?v=20261124p"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261124p"></script><script src="js/tense.js?v=20261124p"></script><script src="js/views.js?v=20261124p"></script>
 </head><body>
 <div class="wrap" style="max-width:1180px">
   <div class="head2">
@@ -232,10 +235,17 @@ function spellHTML(i,v){const s=S(i);if(!s.cw)return "";
   return `<div class="ans"><input type="text" data-spell="${i}" value="${esc(s.typed||"")}" placeholder="Type the word" autocomplete="off" autocapitalize="off" spellcheck="false" class="${s.ok===true?"ok":s.ok===false?"no":""}" aria-label="Spell the word">
     ${s.ok===undefined?`<button class="btn small" type="button" data-check="${i}">Check</button><button class="btn small" type="button" data-giveup="${i}">Show</button>`:`<button class="btn small" type="button" data-again="${i}">${icon("rotate-ccw",14)}Try again</button>`}
     ${s.ok===true?`<span class="res ok">${icon("check",15)} Correct</span>`:s.ok===false?`<span class="res no">${icon("x",15)} It's “${esc(v.w)}”</span>`:""}</div>`;}
+// 🎯 which meaning this is: the main one, or an everyday / figurative use that comes from it; parents also see the video check
+const SK={main:["📌","Main meaning"],exaggeration:["🎈","Everyday exaggeration"],figurative:["🪄","Figurative use"]};
+function senseHTML(v){const k=SK[v.sk];if(!k&&!(v.others||[]).length)return "";
+  return `<div class="sense">${k?`<span class="sk sk-${v.sk}">${k[0]} ${k[1]}</span>`:""}${v.main?`<span class="muted">from <a href="#" data-goword="${esc(v.main)}">${esc(v.main)}</a></span>`:""}${(v.others||[]).length?`<span class="muted">also used as: ${v.others.map(o=>`<a href="#" data-goword="${esc(o)}">${esc(o)}</a>`).join(", ")}</span>`:""}</div>`;}
+const PARENT=()=>!!(App.profile&&(App.profile.role==="teacher"||App.profile.is_admin));
+function mediaCheckHTML(v){if(!PARENT()||v.mc==="ok"||(!v.mc&&!v.mp))return "";const L={ok:"✅ Video fits",partial:"🟠 Video only partly shows the meaning",wrong:"🔴 Video doesn't show the meaning"};
+  return `<details class="mchk mc-${v.mc||"none"}"><summary>${v.mc?L[v.mc]:"🎬 No video yet"}</summary>${v.mn?`<p>${esc(v.mn)}</p>`:""}${v.mp?`<p class="muted"><b>Prompt for a new clip:</b> ${esc(v.mp)}</p><button type="button" class="btn small" data-copyprompt="${esc(v.mp)}">📋 Copy prompt</button>`:""}</details>`;}
 function meanHTML(i,v){const s=S(i);
-  if(!s.cm)return SHOW.mean?`<div class="mean">${esc(v.d)}</div>`:"";
+  if(!s.cm)return SHOW.mean?`<div class="mean">${esc(v.d)}</div>${senseHTML(v)}${mediaCheckHTML(v)}`:"";
   if(!s.mrev)return `<div class="ans"><textarea data-mean="${i}" placeholder="Write what it means, in your own words" aria-label="Write the meaning">${esc(s.mtyped||"")}</textarea><button class="btn small" type="button" data-mshow="${i}">${icon("eye",14)}Check meaning</button></div>`;
-  return `${s.mtyped?`<div class="mine"><span class="muted">You wrote:</span> ${esc(s.mtyped)}</div>`:""}<div class="mean"><b>Meaning:</b> ${esc(v.d)}</div>
+  return `${s.mtyped?`<div class="mine"><span class="muted">You wrote:</span> ${esc(s.mtyped)}</div>`:""}<div class="mean"><b>Meaning:</b> ${esc(v.d)}</div>${senseHTML(v)}
     <div class="ans">${s.self===undefined?`<span class="muted" style="font-size:.88rem">Did you get it?</span><button class="btn small" type="button" data-self="${i}" data-val="1">${icon("check",14)}I got it</button><button class="btn small" type="button" data-self="${i}" data-val="0">${icon("x",14)}Not yet</button>`
       :s.self?`<span class="res ok">${icon("check",15)} Got it</span>`:`<span class="res no">${icon("rotate-ccw",15)} Practise again</span>`}</div>`;}
 const agePill=v=>v.minAge?`<span class="utag agepill" title="Only shown to students aged ${v.minAge} or older">${v.minAge}+</span>`:"";
@@ -326,6 +336,8 @@ function score(){const L=visible(),cw=L.filter(i=>S(i).cw),cm=L.filter(i=>S(i).c
 const norm=s=>String(s).trim().toLowerCase().replace(/[’']/g,"'").replace(/\s+/g," ");
 function check(i){const inp=$("out").querySelector(`[data-spell="${i}"]`);const typed=inp?inp.value:"";if(!typed.trim())return false;
   Object.assign(S(i),{typed,ok:norm(typed)===norm(D[i].w)});rerender(i);return true;}
+$("out").addEventListener("click",e=>{const g=e.target.closest("[data-goword]");if(g){e.preventDefault();const j=D.findIndex(x=>x.w===g.dataset.goword);if(j>=0)showWord(j);else App.status("That meaning is in another set",false);return;}
+  const cp=e.target.closest("[data-copyprompt]");if(cp){try{navigator.clipboard.writeText(cp.dataset.copyprompt);App.status("Prompt copied",true);}catch(x){}return;}});
 $("out").addEventListener("click",e=>{const b=e.target.closest("[data-gk]");if(!b)return;jumpTo(b.dataset.gk,b.dataset.gt,+b.dataset.gi);});
 $("out").addEventListener("click",e=>{const b=e.target.closest("[data-sayall]");if(!b)return;const st=S(+b.dataset.sayall);st.sayAll=!st.sayAll;render();});
 $("out").addEventListener("click",e=>{const b=e.target.closest("[data-ex]");if(!b)return;const [i,k]=b.dataset.ex.split("|");const st=S(+i);st.ex=st.ex===k?"":k;render();const el=$("out").querySelector(`[data-ex="${i}|${k}"]`);if(el)el.focus({preventScroll:true});});
