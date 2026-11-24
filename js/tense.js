@@ -203,11 +203,11 @@
       const cur = subjOf(st.p), c = cast.find(x => x.name === st.wc), pr = c ? PRON.find(x => x.k === prOf(c)) : null;
       const tabs = [cast.length ? ["char", "🎭 My characters"] : null, ["pron", "🙋 Pronouns"], ["other", "✏️ Someone else"]].filter(Boolean);
       let body = "";
-      if (st.wt === "pron") body = `<div class="tm-pron">${PRON.map(x => `<button type="button" class="tm-pc${st.p === x.k ? " on" : ""}" data-tp="${x.k}"><b>${x.k === "i" ? "I" : x.sub}</b><span class="ar" dir="rtl">${x.ar}</span>
+      if (st.wt === "pron") body = `<div class="tm-pron">${PRON.map(x => `<button type="button" class="tm-pc${st.p === x.k ? " on" : ""}" data-tp="${x.k}"><b>${x.k === "i" ? "I" : x.sub}</b>${o.tr ? `<span class="ar" dir="rtl">${x.ar}</span>` : ""}
           <span class="fm"><i title="object">${x.obj}</i><i title="possessive adjective">${x.adj}</i><i title="possessive pronoun">${x.pos}</i><i title="reflexive">${x.ref}</i></span></button>`).join("")}</div>
-        <details class="tm-ptab"><summary>📋 The pronoun table</summary><table><thead><tr><th>Subject<br><small>ضمير الفاعل</small></th><th>Object<br><small>ضمير المفعول</small></th><th>Possessive adj.<br><small>صفة الملكية</small></th><th>Possessive pronoun<br><small>ضمير الملكية</small></th><th>Reflexive<br><small>الضمير الانعكاسي</small></th></tr></thead>
-          <tbody>${PRON.map(x => `<tr><td><b>${x.k === "i" ? "I" : x.sub}</b> <small dir="rtl" style="display:block">${x.ar}</small></td><td>${x.obj}</td><td>${x.adj}</td><td>${x.pos}</td><td>${x.ref}</td></tr>`).join("")}</tbody></table>
-          <p class="tm-tip">Sam ate <b>his</b> lunch. The lunch was <b>his</b>. He made it <b>himself</b>. Mum gave <b>him</b> a hug.</p></details>`;
+        <details class="tm-ptab"><summary>📋 The pronoun table</summary><table><thead><tr><th>Subject<br><small>who does it</small></th><th>Object<br><small>who gets it</small></th><th>Possessive adj.<br><small>before a thing</small></th><th>Possessive pronoun<br><small>on its own</small></th><th>Reflexive<br><small>-self</small></th></tr></thead>
+          <tbody>${PRON.map(x => `<tr><td><b>${x.k === "i" ? "I" : x.sub}</b>${o.tr ? ` <small dir="rtl" style="display:block">${x.ar}</small>` : ""}</td><td>${x.obj}</td><td>${x.adj}</td><td>${x.pos}</td><td>${x.ref}</td></tr>`).join("")}</tbody></table>
+          <p class="tm-tip"><b>He</b> made lunch. Mum gave <b>him</b> a hug. He ate <b>his</b> lunch. The lunch was <b>his</b>. He made it <b>himself</b>.</p></details>`;
       else if (st.wt === "char") body = `<div class="tm-chars">${cast.map(x => `<button type="button" class="tm-ch${x.name === st.wc ? " on" : ""}" data-wc="${esc(x.name)}">${esc(x.emoji || "🙂")} ${esc(x.name)}</button>`).join("")}</div>
         ${c ? `<div class="tm-sub"><button type="button" data-ws="self" aria-pressed="${st.ws === "self"}">🧍 ${esc(c.name)} ${pr.k === "i" ? "" : "/ " + pr.sub}</button><button type="button" data-ws="rel" aria-pressed="${st.ws === "rel"}">👪 ${esc(owner(c.name))} family &amp; friends</button></div>
         ${st.ws === "self" ? `<div class="tm-opts"><button type="button" class="tm-o${st.p === "c:" + c.name ? " on" : ""}" data-tp="c:${esc(c.name)}">${esc(c.emoji || "🙂")} <b>${esc(c.name)}</b><small>use the name</small></button>
@@ -215,7 +215,7 @@
             <p class="tm-tip">${esc(c.name)} → <b>${pr.sub}</b> · ${pr.obj} · ${pr.adj} · ${pr.pos} · ${pr.ref}. You can change it in 🎭 Characters.</p>`
           : `<div class="tm-sub2"><button type="button" data-own="name" aria-pressed="${st.own === "name"}">${esc(owner(c.name))} …</button><button type="button" data-own="pr" aria-pressed="${st.own === "pr"}">${pr.adj} …</button></div>
             <div class="tm-rels">${RELS.map(([r, ar, n]) => { const who = (st.own === "name" ? owner(c.name) : pr.adj) + " " + r, key = (n === 2 ? "n2:" : "n1:") + who;
-              return `<button type="button" class="tm-o${st.p === key ? " on" : ""}" data-tp="${esc(key)}"><b>${esc(who)}</b><small dir="rtl">${ar}</small></button>`; }).join("")}</div>`}` : ""}`;
+              return `<button type="button" class="tm-o${st.p === key ? " on" : ""}" data-tp="${esc(key)}"><b>${esc(who)}</b>${o.tr ? `<small dir="rtl">${ar}</small>` : n === 2 ? `<small>many</small>` : ""}</button>`; }).join("")}</div>`}` : ""}`;
       else body = `<div class="tm-otherf"><input type="text" maxlength="40" data-oth placeholder="e.g. the old man, a little bird, the children" value="${esc(/^n[12]:/.test(st.p) && !cast.some(x => st.p.includes(x.name)) ? subjOf(st.p) : "")}">
           <span class="tm-sub2"><button type="button" data-on="1" aria-pressed="${st.on !== 2}">👤 one</button><button type="button" data-on="2" aria-pressed="${st.on === 2}">👥 many</button></span><button type="button" class="tm-o" data-othok="1"><b>✓ Use</b></button></div>
         <p class="tm-tip">One → "${esc("the old man")} <b>was</b> …" · Many → "the children <b>were</b> …"</p>`;
@@ -259,8 +259,9 @@
     draw(false);
   }
   const isVerb = v => !!v && ((v.tags || []).includes("Action") || (v.tags || []).includes("Phrasal verb"));
-  function auto(get) {
-    const run = root => (root.querySelectorAll ? root : document).querySelectorAll("[data-tm]:not([data-tm-on])").forEach(el => { el.setAttribute("data-tm-on", "1"); const v = get(+el.dataset.tm); if (v) mount(el, { word: v }); });
+  // opts(): extra options, e.g. { tr: true } to show the translation (only when the page shows translations)
+  function auto(get, opts) {
+    const run = root => (root.querySelectorAll ? root : document).querySelectorAll("[data-tm]:not([data-tm-on])").forEach(el => { el.setAttribute("data-tm-on", "1"); const v = get(+el.dataset.tm); if (v) mount(el, { word: v, ...(opts ? opts() : {}) }); });
     run(document); new MutationObserver(ms => ms.forEach(m => m.addedNodes.forEach(n => n.nodeType === 1 && run(n.parentNode || n)))).observe(document.body, { childList: true, subtree: true });
   }
   window.Tense = { NEED, PRON, RELS, prOf, phrase, subjOf, forms, say, allForms, mount, auto, isVerb, TENSES, IRR, LEMMA };
