@@ -12,12 +12,15 @@
   add("wind,windy,blustery", { e: "💨", name: "Wind", wind: 3 });
   add("gust,gusty", { e: "💨", name: "Gust", wind: 2, gust: 1 });
   add("breeze,breezy", { e: "🍃", name: "Breeze", wind: 1 });
-  add("moist", { e: "💧", name: "Moist", rain: 1, fog: 0.4 });
-  add("damp", { e: "🌫️", name: "Damp", rain: 2, fog: 0.3 });
+  // the wet family is NOT rain: water on the glass, then water in the page itself
+  add("moist,humid,humidity,muggy,dewy,clammy,steamy", { e: "💧", name: "Moist", glass: 0.6, beads: 70 });
+  add("damp,dank", { e: "💧", name: "Damp", glass: 0.45, beads: 45, trickles: 5 });
+  add("wet,watery,splashed", { e: "💦", name: "Wet", glass: 0.2, beads: 60, trickles: 22 });
+  add("soaked,drenched,sopping,soggy,waterlogged,saturated", { e: "👕", name: "Soaked", beads: 20, trickles: 8, drip: 1, wring: 1, puddle: 1 });
   add("drizzle,drizzling", { e: "🌦️", name: "Drizzle", rain: 1 });
   add("shower,showers", { e: "🌦️", name: "Shower", rain: 2 });
-  add("wet,rain,rainy,raining", { e: "🌧️", name: "Rain", rain: 3 });
-  add("soaked,drenched,downpour,deluge,torrential,pouring", { e: "🌊", name: "Downpour", rain: 5, puddle: 1 });
+  add("rain,rainy,raining", { e: "🌧️", name: "Rain", rain: 3 });
+  add("downpour,deluge,torrential,pouring", { e: "🌊", name: "Downpour", rain: 5, puddle: 1 });
   add("flood,flooded,flooding", { e: "🌊", name: "Flood", rain: 4, puddle: 2 });
   add("storm,stormy,thunderstorm,tempest", { e: "⛈️", name: "Storm", rain: 4, wind: 2, flash: 3, night: 0.35 });
   add("thunder,lightning,thunderbolt", { e: "🌩️", name: "Thunder", flash: 3, night: 0.4 });
@@ -61,8 +64,12 @@
     if (r.wind) s.push(noise(dur, 0.05 + r.wind * 0.04, "band", 300 + r.wind * 80, 900 + r.wind * 250, 2.5));
     if (r.snow && !r.wind) s.push(noise(dur, 0.02, "band", 6000, 7000, 1));
     if (r.sun && !r.heat) [0.4, 1.6, 3].forEach(t => chirp(t));
+    if (r.glass && !r.trickles) s.push(noise(dur, 0.02, "lowpass", 400, 300, 1));
+    if (r.trickles || r.drip) for (let i = 0; i < (r.drip ? 14 : 6); i++) plink(0.5 + Math.random() * (dur - 1));
+    if (r.wring) [1.2, 2.4, 3.6].forEach(t => noise(0.5, 0.12, "band", 700, 300, 2, t));
     return { stop: () => s.forEach(x => x && x.stop()) };
   }
+  function plink(t0) { const a = ac(); if (!a || a.state !== "running") return; const o = a.createOscillator(), g = a.createGain(), n = a.currentTime + t0, f = 900 + Math.random() * 700; o.type = "sine"; o.frequency.setValueAtTime(f, n); o.frequency.exponentialRampToValueAtTime(f * 2.2, n + .06); g.gain.setValueAtTime(.0001, n); g.gain.exponentialRampToValueAtTime(.06, n + .01); g.gain.exponentialRampToValueAtTime(.0001, n + .18); o.connect(g); g.connect(a.destination); o.start(n); o.stop(n + .2); }
   function thunder(t0) { noise(2.4, 0.5, "lowpass", 120, 60, 1, t0); }
 
   // 🎨 the stage: a full-screen canvas above the page that ignores clicks
@@ -96,6 +103,7 @@
     if (r.sun) layer(`radial-gradient(circle at 88% 8%, rgba(255,230,120,${.55 * r.sun}) 0, rgba(255,200,80,${.25 * r.sun}) 18%, transparent 45%)`, 1);
     if (r.heat) layer("rgba(255,120,40,.12)", 1);
     if (r.bright) layer(`radial-gradient(circle at 50% 40%, rgba(255,255,255,${.5 * r.bright}), rgba(255,250,220,${.25 * r.bright}))`, 1);
+    if (r.glass) { const g = layer(`rgba(236,242,248,${.35 * r.glass})`, 1); g.style.transition = "opacity 2.5s"; g.style.backdropFilter = g.style.webkitBackdropFilter = `blur(${(r.glass * 5).toFixed(1)}px)`; }
     let puddle = null;
     if (r.puddle) { puddle = document.createElement("div"); puddle.className = "wx-layer"; Object.assign(puddle.style, { top: "auto", height: "0", background: "linear-gradient(to bottom, rgba(90,160,230,.35), rgba(40,110,200,.55))", transition: "height 4s ease-in, opacity .8s" }); document.body.appendChild(puddle); layers.push(puddle); requestAnimationFrame(() => puddle.style.height = (r.puddle > 1 ? 22 : 9) + "vh"); }
     // particles
@@ -112,6 +120,11 @@
       return p;
     }
     const drops = (r.drops || []).length ? Array.from({ length: (r.dropN || 2) * 6 }, () => ({ e: r.drops[Math.floor(rnd(0, r.drops.length))], x: rnd(0, W()), y: rnd(-H(), -30), vy: rnd(2.5, 5), rot: rnd(-.5, .5), vr: rnd(-.05, .05), s: rnd(22, 40) })) : [];
+    // 💧 beads on the glass: they appear, grow, and some get heavy and run down, leaving a trail
+    const beads = Array.from({ length: r.beads || 0 }, (_, i) => ({ x: rnd(0, W()), y: rnd(0, H()), r: 0, max: rnd(3, i < (r.trickles || 0) ? 12 : 7), born: rnd(0, dur * .5), run: i < (r.trickles || 0), vy: 0, trail: [] }));
+    // 👕 soaked: water drips off the bottom edge of the cards on screen
+    const edges = r.drip ? [...document.querySelectorAll(".card, .item, .panel, .say1, img.pic, .btn, h1, h2")].map(el => el.getBoundingClientRect()).filter(b => b.bottom > 0 && b.bottom < innerHeight && b.width > 30).slice(0, 30) : [];
+    const dripping = [];
     const stars = r.stars ? Array.from({ length: 90 }, () => ({ x: rnd(0, W()), y: rnd(0, H() * .7), r: rnd(.5, 1.8), ph: rnd(0, 6) })) : [];
     const flashes = r.flash ? Array.from({ length: r.flash }, (_, i) => 700 + i * rnd(1200, 1900)) : [];
     const sfx = soundFor(r, dur / 1000);
@@ -139,6 +152,18 @@
       if (r.wind && (r.rain || r.snow)) { ctx.strokeStyle = "rgba(255,255,255,.35)"; ctx.lineWidth = 2; for (let k = 0; k < r.wind * 2; k++) { const y = (k * 97 + t / 3) % H(), x = ((t * (1 + k % 3)) / 2 + k * 211) % (W() + 300) - 150; ctx.beginPath(); ctx.moveTo(x, y); ctx.quadraticCurveTo(x + 60, y - 12, x + 140, y); ctx.stroke(); } }
       drops.forEach(d => { d.y += d.vy; d.rot += d.vr; if (d.y > H() + 40) { d.y = -40; d.x = rnd(0, W()); } ctx.save(); ctx.translate(d.x, d.y); ctx.rotate(d.rot); ctx.font = d.s + "px system-ui"; ctx.fillText(d.e, -d.s / 2, d.s / 2); ctx.restore(); });
       splashes.forEach((s, k) => { s.a -= .06; if (s.a <= 0) return splashes.splice(k, 1); ctx.strokeStyle = `rgba(110,150,210,${s.a})`; ctx.lineWidth = 1; ctx.beginPath(); ctx.ellipse(s.x, s.y, (1 - s.a) * 10 + 2, (1 - s.a) * 3 + 1, 0, 0, 7); ctx.stroke(); });
+      if (beads.length) beads.forEach(b => { if (t < b.born) return; if (b.r < b.max) b.r += .08; 
+          if (b.run && b.r >= b.max) { b.vy = Math.min(b.vy + .04, 2.4); b.x += Math.sin(t / 180 + b.max) * .3; b.y += b.vy; b.trail.push([b.x, b.y]); if (b.trail.length > 90) b.trail.shift(); if (b.y > H() + 10) { b.y = rnd(-20, H() * .3); b.x = rnd(0, W()); b.r = 0; b.vy = 0; b.trail = []; b.born = t; } }
+          if (b.trail.length > 1) { ctx.strokeStyle = "rgba(255,255,255,.35)"; ctx.lineWidth = b.r * .7; ctx.beginPath(); b.trail.forEach(([x, y], k) => k ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.stroke(); }
+          const g = ctx.createRadialGradient(b.x - b.r * .35, b.y - b.r * .35, b.r * .1, b.x, b.y, b.r); g.addColorStop(0, "rgba(255,255,255,.95)"); g.addColorStop(.45, "rgba(200,225,245,.35)"); g.addColorStop(1, "rgba(70,110,160,.55)");
+          ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(b.x, b.y, b.r * .9, b.r * (b.run && b.vy > 0 ? 1.25 : 1), 0, 0, 7); ctx.fill(); });
+      if (edges.length || dripping.length) { if (edges.length && dripping.length < 70 && Math.random() < .5) { const e = edges[Math.floor(rnd(0, edges.length))]; dripping.push({ x: rnd(e.left + 6, e.right - 6), y: e.bottom, r: 0, vy: 0 }); }
+        for (let k = dripping.length - 1; k >= 0; k--) { const d = dripping[k]; if (d.r < 4) d.r += .12; else { d.vy += .35; d.y += d.vy; }
+          if (d.y > floor) { splash(d); dripping.splice(k, 1); continue; }
+          ctx.fillStyle = "rgba(80,140,210,.75)"; ctx.beginPath(); ctx.moveTo(d.x, d.y - d.r * 1.8 - Math.min(d.vy, 6)); ctx.quadraticCurveTo(d.x + d.r, d.y, d.x, d.y + d.r); ctx.quadraticCurveTo(d.x - d.r, d.y, d.x, d.y - d.r * 1.8 - Math.min(d.vy, 6)); ctx.fill(); } }
+      if (r.wring) { const cx = W() / 2, cy = H() * .38, s = Math.min(W(), H()) * .22, tw = Math.sin(t / 380); ctx.save(); ctx.translate(cx, cy); ctx.scale(1 - Math.abs(tw) * .35, 1 + Math.abs(tw) * .12); ctx.rotate(tw * .25); ctx.font = s + "px system-ui"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("👕", 0, 0); ctx.restore();
+        ctx.font = s * .35 + "px system-ui"; ctx.textAlign = "center"; ctx.fillText("🫳", cx - s * .55, cy - s * .1); ctx.fillText("🫴", cx + s * .55, cy + s * .1); ctx.textAlign = "start";
+        if (Math.abs(tw) > .6 && Math.random() < .7) dripping.push({ x: cx + rnd(-s * .25, s * .25), y: cy + s * .4, r: 4, vy: rnd(1, 3) }); }
       if (r.vortex) { const cx = W() / 2, cy = H() * .45; ctx.save(); ctx.translate(cx, cy); ctx.rotate(-t / 140); ctx.globalAlpha = fade * .9; ctx.font = Math.min(W(), H()) * .35 * Math.min(1, life * 4) + "px system-ui"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("🌀", 0, 0); ctx.restore();
         ctx.globalAlpha = fade; for (let k = 0; k < 14; k++) { const ang = t / 260 + k * .45, rad = 60 + (k * 37 + t / 12) % (Math.min(W(), H()) * .55); ctx.font = "26px system-ui"; ctx.fillText(["🍃", "🍂", "📄", "🧢", "🌿", "🪵", "☂️"][k % 7], cx + Math.cos(ang) * rad - 13, cy + Math.sin(ang) * rad * .6 + 9); } }
       flashes.forEach(ft => { const d = t - ft; if (d > 0 && d < 260) { ctx.globalAlpha = (d < 60 ? 1 : d < 120 ? .3 : d < 180 ? .8 : .2) * .85; ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, W(), H()); if (d < 180) bolt(ft); ctx.globalAlpha = fade; } });
