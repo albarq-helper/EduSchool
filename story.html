@@ -162,8 +162,9 @@
 .sho{border:1.5px solid var(--rule);background:var(--paper);border-radius:999px;padding:5px 11px;font:700 .88rem var(--f-body);cursor:pointer;color:var(--ink)}
 .sho:hover{border-color:var(--accent)}.sho.on{background:var(--accent);border-color:var(--accent);color:#fff}
 .tchip{display:inline-block;margin-left:6px;font:800 .78rem var(--f-body);color:#4338ca;background:#e0e7ff;border-radius:999px;padding:1px 8px;vertical-align:middle}
+.wxdif{border-left:4px solid #f97316;padding:4px 0 4px 10px;margin:8px 0}.wxdif p{margin:2px 0 6px}.wxw.on{border-color:#fdba74;background:#fff7ed}
 </style>
-<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261125d"></script><script src="js/icons.js?v=20261125d"></script><script src="js/app.js?v=20261125d"></script><script src="js/sets.js?v=20261125d"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261125d"></script><script src="js/tense.js?v=20261125d"></script><script src="js/views.js?v=20261125d"></script><script src="js/joiners.js?v=20261125d"></script><script src="js/talk.js?v=20261125d"></script><script src="js/chars.js?v=20261125d"></script><script src="js/storycore.js?v=20261125d"></script><script src="js/montage.js?v=20261125d"></script>
+<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261125e"></script><script src="js/icons.js?v=20261125e"></script><script src="js/app.js?v=20261125e"></script><script src="js/sets.js?v=20261125e"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261125e"></script><script src="js/tense.js?v=20261125e"></script><script src="js/views.js?v=20261125e"></script><script src="js/joiners.js?v=20261125e"></script><script src="js/talk.js?v=20261125e"></script><script src="js/chars.js?v=20261125e"></script><script src="js/storycore.js?v=20261125e"></script><script src="js/montage.js?v=20261125e"></script>
 </head><body>
 <div class="wrap" style="max-width:1280px">
   <div class="head2">
@@ -632,7 +633,9 @@ function wxTabs(G){const tabs=[];G.scales.forEach((s,n)=>tabs.push({id:"m"+n,lab
   if(G.partners.some(x=>WX_AROUND.includes(x.kind)&&!onMeterNoun(x)))tabs.push({id:"around",label:"📖 Around the word"});return tabs;}
 // 🧱 Sentence: who + the word (any shape) + when. Verbs have it at once; a thing / person / describing word gets it when the dictionary knows its verb (achievement → achieve)
 const SENT_TAB={id:"time",label:"🧱 Sentence"};
-function wxTabsFor(j){const tabs=wxTabs(wxGroups(j));WX.rev=null;if(Tense.isVerb(D[j]))tabs.unshift(SENT_TAB);
+let DIFFS=new Map();
+function wxTabsFor(j){const tabs=wxTabs(wxGroups(j));WX.rev=null;
+  if((DIFFS.get(D[j]&&D[j].wid)||[]).length){const at=tabs.findIndex(t=>t.id==="opp"||t.id==="sim");tabs.splice(at>=0?at+1:0,0,{id:"dif",label:"≠ Not the same"});}if(Tense.isVerb(D[j]))tabs.unshift(SENT_TAB);
   else if(Tense.reverse)Tense.reverse(D[j].w).then(r=>{if(!r||WX.i!==j||WX.tabs.some(t=>t.id==="time"))return;WX.rev=r;WX.tabs.unshift(SENT_TAB);if($("wxDlg").open)drawWX();});
   return tabs;}
 function openWX(k){const b=CUR&&CUR.blocks[k];if(!b||b.k!=="w")return;const i=wi(b.w);if(i<0)return;
@@ -646,6 +649,8 @@ function drawWX(){const b=CUR.blocks[WX.k],i=wi(b.w),v=D[i]||{},G=WX.G=wxGroups(
   if(!t)body=`<p class="muted">This word has no meter, similar words, opposites or partners yet.</p>`;
   else if(t.s)body=`<p class="muted">Slide to a softer or stronger word, then press <b>↺ Use this word</b>.</p><div id="wxMeter"></div>`;
   else if(t.id==="time")body=`<div id="wxTime"></div>`;
+  else if(t.id==="dif"){const L=DIFFS.get(v.wid)||[];body=`<p class="muted">Words people mix up. Read what makes each one different, then pick the one that says exactly what you mean.</p>`+L.map(x=>`<div class="wxdif"><b>≠ ${esc(x.title)}</b><p>${esc(x.summary||"")}</p><div class="wxlist">${x.parts.map(p=>{const j=D.findIndex(z=>z.wid===p.wid),me=p.wid===v.wid;
+      return me?`<div class="wxw on"><span>${esc(p.emoji||"")} <b>${esc(p.w)}</b> <small>(your word)</small></span><small>${esc(p.explain||"")}</small></div>`:j>=0?`<button type="button" class="wxw" data-use="${j}"><span>${esc(p.emoji||"")} <b>${esc(p.w)}</b></span><small>${esc(p.explain||"")}</small><em>↺ Use</em></button>`:`<div class="wxw"><span>${esc(p.emoji||"")} <b>${esc(p.w)}</b></span><small>${esc(p.explain||"")}</small></div>`;}).join("")}</div>${x.example?`<p class="muted">💡 ${esc(x.example)}</p>`:""}</div>`).join("");}
   else if(t.id==="sim"||t.id==="opp")body=`<p class="muted">${t.id==="sim"?"Words that mean nearly the same. Which one fits your story best?":"Words that mean the opposite. What happens if you use one?"}</p><div class="wxlist">${(t.id==="sim"?G.sim:G.opp).map(j=>`<button type="button" class="wxw" data-use="${j}"><span>${esc(D[j].emoji||"")} <b>${esc(nmw(j))}</b></span><small>${esc(D[j].d||"")}</small><em>↺ Use</em></button>`).join("")}</div>`;
   else if(t.id==="desc"){const D2=wxDesc(b,G);if(!D2.kinds.includes(WX.kind))WX.kind=D2.kinds[0];
     const have=new Set((b.p||[]).map(x=>x.toLowerCase()));
@@ -717,6 +722,7 @@ $("infoDlg").addEventListener("click",e=>{if(e.target===$("infoDlg"))$("infoDlg"
   openStory(STORIES.find(s=>s.id===last)||STORIES[0]||null);
   try{BOXES=await Sets.loadBoxes(SET);}catch(e){}
   try{await Sets.loadCompanions();}catch(e){}
+  Sets.loadDiffs(D).then(m=>{DIFFS=m;}).catch(()=>{});
   if(window.Chars)Chars.load().then(()=>drawCast()).catch(()=>{});
   try{window.PARTNERS_MAP=await Sets.loadPartners(D);}catch(e){window.PARTNERS_MAP=new Map();}
   let sb="";try{sb=localStorage.getItem("storyBox")||"";}catch(e){}

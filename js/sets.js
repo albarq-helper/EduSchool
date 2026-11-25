@@ -97,7 +97,7 @@
     "Size, amount & distance": "📏", "Danger & safety": "⚠️", "Getting along": "🤝", "Government & law": "🏛️", "Good & great": "⭐",
     "Important & famous": "🏆", "Science": "🔬", "Time & change": "⏳", "Saying & thinking": "💬", "Places & travel": "🧭", "Character": "🧠", "How things are done": "⚙️", "Ways to show love": "💞", "Caring qualities": "🤲",
     "Time & order": "⏰", "Adding ideas": "➕", "Contrast": "⚖️", "Cause & effect": "💡", "Examples": "🔍", "Endings": "🎬" };
-  const isType = t => TYPES.some(x => x[0] === t), isOpp = t => /^⇄\s/.test(t), isScale = t => /^📶\s/.test(t), isSim = t => /^≈\s/.test(t), simName = t => t.replace(/^≈\s*/, "").trim();
+  const isDiff = t => /^≠\s/.test(t), isType = t => TYPES.some(x => x[0] === t), isOpp = t => /^⇄\s/.test(t), isScale = t => /^📶\s/.test(t), isSim = t => /^≈\s/.test(t), simName = t => t.replace(/^≈\s*/, "").trim();
   // "📶 Hate ⇄ Love: -4" -> {g:"Hate ⇄ Love", r:-4}
   const scaleSplit = t => { const m = t.replace(/^📶\s*/, "").match(/^(.*?):\s*([+-]?\d+)\s*$/); return m ? { g: m[1].trim(), r: +m[2] } : { g: t.replace(/^📶\s*/, ""), r: 0 }; };
   const oppSplit = t => { const m = t.replace(/^⇄\s*/, "").match(/^(.*?):\s*(.+)$/); return m ? { g: m[1].trim(), side: m[2].trim() } : { g: t.replace(/^⇄\s*/, ""), side: "" }; };
@@ -105,7 +105,7 @@
   // all groups present in a word list: {types:[{tag,n}], themes:[{tag,n}], opps:[{g, sides:[a,b], n}]}
   function groupsOf(D) {
     const cnt = new Map(), opp = new Map(), scl = new Map(), sim = new Map();
-    D.forEach(v => (v.tags || []).forEach(t => { if (isScale(t)) { const x = scaleSplit(t); scl.set(x.g, (scl.get(x.g) || 0) + 1); } else if (isSim(t)) { const g = simName(t); sim.set(g, (sim.get(g) || 0) + 1); } else if (isOpp(t)) { const o = oppSplit(t); if (!opp.has(o.g)) opp.set(o.g, new Map()); const m = opp.get(o.g); m.set(o.side, (m.get(o.side) || 0) + 1); } else cnt.set(t, (cnt.get(t) || 0) + 1); }));
+    D.forEach(v => (v.tags || []).forEach(t => { if (isDiff(t)) return; if (isScale(t)) { const x = scaleSplit(t); scl.set(x.g, (scl.get(x.g) || 0) + 1); } else if (isSim(t)) { const g = simName(t); sim.set(g, (sim.get(g) || 0) + 1); } else if (isOpp(t)) { const o = oppSplit(t); if (!opp.has(o.g)) opp.set(o.g, new Map()); const m = opp.get(o.g); m.set(o.side, (m.get(o.side) || 0) + 1); } else cnt.set(t, (cnt.get(t) || 0) + 1); }));
     const themes = [...cnt].filter(([t]) => !isType(t)).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([tag, n]) => ({ tag, n }));
     const types = TYPES.filter(([t]) => cnt.has(t)).map(([tag]) => ({ tag, n: cnt.get(tag) }));
     const opps = [...opp].map(([g, m]) => { const sides = [...m.keys()]; const want = g.split(/\s+vs\.?\s+/i).map(x => x.trim().toLowerCase());
@@ -119,6 +119,7 @@
   function wordGroups(v) {
     const out = [];
     (v.tags || []).forEach(t => {
+      if (isDiff(t)) return;
       if (isScale(t)) { const x = scaleSplit(t); out.push({ kind: "scale", tag: x.g, r: x.r, label: "🎚️ " + x.g + " · level " + (x.r > 0 && /⇄/.test(x.g) ? "+" : "") + x.r }); }
       else if (isSim(t)) out.push({ kind: "sim", tag: simName(t), label: "≈ " + simName(t) });
       else if (isOpp(t)) { const o = oppSplit(t); out.push({ kind: "opp", tag: o.g, side: o.side, label: "⇄ " + o.g + (o.side ? " · " + o.side : "") }); }
@@ -535,5 +536,18 @@
     (b || []).filter(IDEA).forEach(t => { if (A.includes(t)) s += 2; else { const p = pairOf(t); if (p && A.some(x => pairOf(x) === p)) { s += 1.5; lesson = true; } } });
     return { s, lesson }; }
   const isSaying = v => !!(v && (v.author || (v.tags || []).includes("Saying")));
-  window.Sets = { ideaScore, isSaying, boot, speak, sayWord, unitPicker, groupPicker, groupsOf, wordGroups, tagIcon, typeName, loadPartners, PARTNER_KINDS, partnerScales, mountPartnerMeter, sectionsHTML, mountMeters, loadBoxes, loadCompanions, scaleOfWord: (v, g) => { const t = (v.tags || []).find(t => isScale(t) && (!g || scaleSplit(t).g === g)); return t ? scaleSplit(t) : null; }, TAG_TYPES: TYPES, TAG_THEMES: THEME_ICONS, playClip, stopClip, media, watchClips, tile, autoSyl, blankify, load, mapItems, G5, LANGS };
+  // ≠ differences for the words on the page: Map(word id -> [{key, title, summary, summary_ar, example, note, parts:[{wid, w, emoji, explain, explain_ar}]}])
+  async function loadDiffs(words) {
+    const out = new Map(), ids = [...new Set((words || window.WORDS || []).map(v => v.wid).filter(Boolean))]; if (!ids.length) return out;
+    const keys = new Set();
+    for (let k = 0; k < ids.length; k += 100) { const r = await App.client.from("word_difference_parts").select("diff_key").in("word_id", ids.slice(k, k + 100)); (r.data || []).forEach(x => keys.add(x.diff_key)); }
+    if (!keys.size) return out;
+    const [d, p] = await Promise.all([App.client.from("word_differences").select("*").in("key", [...keys]).order("position"), App.client.from("word_difference_parts").select("*").in("diff_key", [...keys]).order("position")]);
+    const wids = [...new Set((p.data || []).map(x => x.word_id))], W = new Map();
+    for (let k = 0; k < wids.length; k += 100) { const r = await App.client.from("words").select("id,headword,emoji").in("id", wids.slice(k, k + 100)); (r.data || []).forEach(x => W.set(x.id, x)); }
+    (d.data || []).forEach(x => { const parts = (p.data || []).filter(y => y.diff_key === x.key).map(y => ({ wid: y.word_id, w: (W.get(y.word_id) || {}).headword || "", emoji: (W.get(y.word_id) || {}).emoji || "", explain: y.explain, explain_ar: y.explain_ar }));
+      const item = { ...x, parts }; parts.forEach(y => { if (!out.has(y.wid)) out.set(y.wid, []); out.get(y.wid).push(item); }); });
+    return out;
+  }
+  window.Sets = { loadDiffs, isDiff, ideaScore, isSaying, boot, speak, sayWord, unitPicker, groupPicker, groupsOf, wordGroups, tagIcon, typeName, loadPartners, PARTNER_KINDS, partnerScales, mountPartnerMeter, sectionsHTML, mountMeters, loadBoxes, loadCompanions, scaleOfWord: (v, g) => { const t = (v.tags || []).find(t => isScale(t) && (!g || scaleSplit(t).g === g)); return t ? scaleSplit(t) : null; }, TAG_TYPES: TYPES, TAG_THEMES: THEME_ICONS, playClip, stopClip, media, watchClips, tile, autoSyl, blankify, load, mapItems, G5, LANGS };
 })();

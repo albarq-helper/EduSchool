@@ -132,8 +132,12 @@ input.ok,textarea.ok{border-color:var(--good)!important;background:var(--good-so
 .sense{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:4px 0;font-size:.85rem}.sense a{color:var(--accent);font-weight:800}
 .sk{font:800 .75rem var(--f-body);border-radius:999px;padding:2px 9px}.sk-main{background:#dcfce7;color:#166534}.sk-exaggeration{background:#fef3c7;color:#92400e}.sk-figurative{background:#ede9fe;color:#5b21b6}
 .mchk{margin:6px 0;font-size:.85rem;background:var(--paper);border:1px dashed var(--rule);border-radius:10px;padding:5px 10px}.mchk summary{cursor:pointer;font-weight:800}.mchk p{margin:4px 0}
+.diffs{display:grid;gap:8px}.dcard{background:var(--sheet);border:1.5px solid var(--rule);border-left:5px solid #f97316;border-radius:12px;padding:8px 12px;display:grid;gap:5px}
+.dcard .dt{font:800 1rem var(--f-display)}.dcard p{margin:0;font-size:.92rem}.dparts{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:6px}
+.dp{display:grid;gap:2px;background:var(--paper);border-radius:10px;padding:6px 8px;font-size:.88rem}.dp.me{background:#fff7ed;border:1px solid #fdba74}.dp b{font-size:.95rem}.dp .ar,.dar{font-size:.88rem;color:var(--muted)}
+.dx{color:#9a3412}.dn{color:var(--muted);font-size:.82rem!important}.linkb{background:none;border:0;padding:0;font:inherit;font-weight:800;color:var(--accent);cursor:pointer}
 </style>
-<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261125d"></script><script src="js/icons.js?v=20261125d"></script><script src="js/app.js?v=20261125d"></script><script src="js/sets.js?v=20261125d"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261125d"></script><script src="js/tense.js?v=20261125d"></script><script src="js/views.js?v=20261125d"></script>
+<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261125e"></script><script src="js/icons.js?v=20261125e"></script><script src="js/app.js?v=20261125e"></script><script src="js/sets.js?v=20261125e"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261125e"></script><script src="js/tense.js?v=20261125e"></script><script src="js/views.js?v=20261125e"></script>
 </head><body>
 <div class="wrap" style="max-width:1180px">
   <div class="head2">
@@ -321,11 +325,18 @@ function sayingsHTML(v,i){const all=sayingsFor(v);if(!all.length)return "";const
 function exploreHTML(i,v){if(wordHidden(i))return "";
   const fam=Sets.wordGroups(v).filter(g=>GP.has(g.kind,g.tag)).length;
   const P=v.wid&&PARTNERS.get(v.wid),par=P?P.own.filter(x=>x.kind!=="saying").length+P.also.length:0;
-  const say=sayingsFor(v).length,open=S(i).ex||"";
-  const btns=[["tm","⏳ Time line",Tense.isVerb(v)?12:0],["fam","🧩 Word family",fam],["par",v.author?"🔗 Linked words":"🔗 Goes with",par],["say","📜 Sayings",say]].filter(x=>x[2]);
+  const say=sayingsFor(v).length,open=S(i).ex||"",dif=(v.wid&&DIFFS.get(v.wid)||[]).length;
+  const btns=[["tm","⏳ Time line",Tense.isVerb(v)?12:0],["dif","≠ Not the same",dif],["fam","🧩 Word family",fam],["par",v.author?"🔗 Linked words":"🔗 Goes with",par],["say","📜 Sayings",say]].filter(x=>x[2]);
   if(!btns.length)return "";
-  const body=open==="tm"?`<div data-tm="${i}"></div>`:open==="fam"?groupsHTML(i,v):open==="par"?partnersHTML(i,v):open==="say"?sayingsHTML(v,i):"";
+  const body=open==="tm"?`<div data-tm="${i}"></div>`:open==="dif"?diffsHTML(v):open==="fam"?groupsHTML(i,v):open==="par"?partnersHTML(i,v):open==="say"?sayingsHTML(v,i):"";
   return `<div class="explore no-print"><div class="exbar">${btns.map(([k,lab,n])=>`<button type="button" class="exb" data-ex="${i}|${k}" aria-expanded="${open===k}">${lab} <span class="n">${n}</span> <span class="chev">${open===k?"▴":"▾"}</span></button>`).join("")}</div>${body?`<div class="exbody">${body}</div>`:""}</div>`;}
+// ---- ≠ Not the same: words people mix up, each with what makes it different ----
+var DIFFS=DIFFS||new Map();
+Sets.loadDiffs(D).then(m=>{DIFFS=m;if(m.size)render();}).catch(e=>console.warn("diffs",e));
+function diffsHTML(v){const L=DIFFS.get(v.wid)||[];const tr=!!SHOW.tr;
+  return `<div class="diffs">${L.map(x=>`<div class="dcard"><div class="dt">≠ ${esc(x.title)}</div><p class="ds">${esc(x.summary||"")}</p>
+    <div class="dparts">${x.parts.map(p=>{const k=wordIndex(p.w),me=p.wid===v.wid;return `<div class="dp${me?" me":""}"><b>${esc(p.emoji||"")} ${k>=0&&!me?`<button type="button" class="linkb" data-pw="${k}">${esc(p.w)}</button>`:esc(p.w)}</b><span>${esc(p.explain||"")}</span>${tr&&p.explain_ar?`<span class="ar" dir="rtl">${esc(p.explain_ar)}</span>`:""}</div>`;}).join("")}</div>
+    ${x.example?`<p class="dx">💡 ${esc(x.example)}</p>`:""}${tr&&x.summary_ar?`<p class="dar" dir="rtl">${esc(x.summary_ar)}</p>`:""}${x.note?`<p class="dn">🎓 ${esc(x.note)}</p>`:""}</div>`).join("")}</div>`;}
 // ---- views ----
 function card(i,view){const v=D[i], hid=wordHidden(i);
   if(view==="detail")return `<article class="d" data-i="${i}">${SHOW.pic?picHTML(i,v):"<span></span>"}
