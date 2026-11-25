@@ -86,6 +86,9 @@
     { k: "past", lv: 1, ico: "⬅️", name: "Past simple", when: "Happened and finished in the past (yesterday, last week)", f: (F, p) => F.past, z: "past",
       need: "often", needTxt: "Say WHEN it happened, unless the story already shows it", sig: ["yesterday", "last night", "last week", "two days ago", "in 2020", "once upon a time"],
       ex: [(S, x) => `Yesterday, ${S} [[${x}]].`, (S, x) => `${S} [[${x}]] two days ago.`, (S, x) => `Once upon a time, ${S} [[${x}]]. (the story already says "past", so no other time word is needed)`] },
+    { k: "usedto", lv: 2, ico: "🕰️", name: "Used to", when: "Happened again and again in the past, but not any more", f: (F, p) => `used to ${F.base}`, z: "past",
+      need: "often", needTxt: "A time word helps: when I was little, years ago", sig: ["when I was little", "years ago", "before", "as a child"],
+      ex: [(S, x) => `${S} [[${x}]] when ${S === "I" ? "I was" : "they were"} little.`, (S, x) => `${S} [[${x}]] years ago, but not now.`] },
     { k: "pastcont", lv: 2, ico: "〰️", name: "Past continuous", when: "Was in the middle of happening, in the past", f: (F, p) => `${was(p)} ${F.ing}`, z: "past",
       need: "yes", needTxt: "Needs a past moment, or another thing that happened in the middle", sig: ["when the phone rang", "while it was raining", "at 8 o'clock yesterday", "all evening"],
       ex: [(S, x) => `${S} [[${x}]] when the phone rang.`, (S, x) => `At 8 o'clock yesterday, ${S} [[${x}]].`] },
@@ -129,6 +132,8 @@
       rule: "must = a strong rule or a need: you must stop. Past: had to. mustn't = it is not allowed.", ar: "‏must = قاعدة قوية أو ضرورة. في الماضي had to. و mustn't = ممنوع." },
     { k: "haveto", ico: "📋", name: "have to", what: "a rule from outside", now: (F, p) => `${hv(p)} to ${F.base}`, past: (F) => `had to ${F.base}`, future: (F) => `will have to ${F.base}`, ds: true,
       rule: "have to = a rule from outside (school, parents). It works like a normal verb: she has to go, does she have to go? don't have to = it is not needed.", ar: "‏have to = إلزام من الخارج، ويعامل كفعل عادي: does she have to go? و don't have to = غير ضروري." },
+    { k: "sure", ico: "🔎", name: "must (I'm sure)", what: "I'm sure it's true", now: (F) => `must be ${F.ing}`, past: (F) => `must have ${F.pp}`, future: (F) => `must be going to ${F.base}`,
+      rule: "must = I'm sure it's true: she must be swimming. can't = I'm sure it's not true: she can't be swimming. About the past: must have / can't have + past participle.", ar: "‏must هنا = أنا متأكد أنه صحيح، و can't = متأكد أنه غير صحيح. وعن الماضي must have / can't have + التصريف الثالث." },
     { k: "should", ico: "💡", name: "should", what: "good advice", now: (F) => `should ${F.base}`, past: (F) => `should have ${F.pp}`, future: (F) => `should ${F.base}`,
       rule: "should = good advice: you should rest. About the past: should have + past participle (you should have rested) = it was a good idea, but it didn't happen.", ar: "‏should = نصيحة. وعن الماضي should have + التصريف الثالث: كان الأفضل لكنه لم يحدث." },
     { k: "might", ico: "🤔", name: "might", what: "maybe", now: (F) => `might ${F.base}`, past: (F) => `might have ${F.pp}`, future: (F) => `might ${F.base}`,
@@ -139,9 +144,10 @@
     const shp = o.shape && o.shape.k && o.shape.k !== "verb" && o.shape.k !== "thing" ? o.shape : null, md = !shp && o.modal ? MD(o.modal) : null;
     let vp = shp ? shapeVp(shp, t, p) : md ? md[t.z === "past" ? "past" : t.z === "future" ? "future" : "now"](F, p) : t.f(F, p), dsup = false;
     // no helper verb (she plays, she played, she has to, she had to) + not / question → do / does / did
-    const plain = !shp && ((!md && (t.k === "present" || t.k === "past")) || (md && ((md.ds && t.z !== "future") || (md.dsPast && t.z === "past"))));
+    const plain = !shp && ((!md && (t.k === "present" || t.k === "past" || t.k === "usedto")) || (md && ((md.ds && t.z !== "future") || (md.dsPast && t.z === "past"))));
     if (plain && (o.neg || o.q)) { const past = t.z === "past", d = past ? "did" : one(p) ? "does" : "do";
-      vp = md ? `${d} have to ${F.base}` : `${d} ${F.base}`; dsup = true; }
+      vp = md ? `${d} have to ${F.base}` : t.k === "usedto" ? `${d} use to ${F.base}` : `${d} ${F.base}`; dsup = true; }
+    if (md && md.k === "sure" && (o.neg || o.q)) vp = vp.replace(/^must/, o.q ? "could" : "can't");
     const ws = vp.split(" ");
     return { vp, aux: ws[0], rest: ws.slice(1).join(" "), dsup, md };
   }
@@ -155,14 +161,21 @@
     if (o.neg) out.push(x.dsup ? { k: "neg-do", name: "🚫 not with do / does / did", rule: "No helper verb? Use don't / doesn't / didn't, and the verb goes back to its base: She plays → She doesn't play (no -s).", ar: "‏بدون فعل مساعد نستخدم don't / doesn't / didn't ويرجع الفعل لأصله: She doesn't play." }
       : { k: "neg-aux", name: "🚫 not goes after the helper verb", rule: "Put not after the helper verb (is, was, has, will, can…): She is playing → She isn't playing.", ar: "‏نضع not بعد الفعل المساعد: She isn't playing." });
     if (!o.q && !o.neg && !x.md && t.k === "present" && one(p) && !(o.shape && o.shape.k && o.shape.k !== "verb")) out.push({ k: "s3", name: "➕ he / she / it + s", rule: "In the present simple, he, she, it and one person or thing take -s: I play, she plays.", ar: "‏في المضارع البسيط نضيف s مع he / she / it والمفرد: she plays." });
-    if (/^(am|is|are|was|were)$/.test(x.aux) && !x.md) out.push({ k: "be", name: "🧱 am / is / are", rule: "I am · he / she / it is · we / you / they are. Past: I / he / she / it was · we / you / they were.", ar: "‏I am · he / she / it is · we / you / they are، وفي الماضي was للمفرد و were للجمع." });
+    if (t.k === "usedto" && !o.imp && !o.pas) out.push({ k: "usedto", name: "🕰️ used to: it happened then, not now", rule: "used to + base verb = something that happened again and again in the past, but not now: I used to cry. Not and asking: didn't use to, did you use to?", ar: "‏used to + الفعل في أصله = عادة في الماضي انتهت الآن. وفي النفي والسؤال: didn't use to / did you use to?" });
+    if (o.imp) return [{ k: "imp", name: "👉 Telling someone to: just the base verb", rule: "To tell someone to do something, start with the base verb and leave out who: Swim! Sit down. Not: Don't swim!", ar: "‏للأمر نبدأ بالفعل في أصله بدون فاعل: Swim! وللنهي: Don't swim!" }];
+    if (o.pas) out.push({ k: "passive", name: "🔄 Passive: the thing comes first", rule: "Put the thing that something happens to first, then be + past participle, then by + who did it: Rover ate the cake → The cake was eaten by Rover.", ar: "‏المبني للمجهول: نبدأ بالشيء الذي وقع عليه الفعل، ثم be + التصريف الثالث، ثم by + الفاعل: The cake was eaten by Rover." });
+    if (o.tag && !o.q) out.push({ k: "tag", name: "🏷️ Question tags: yes-sentence, no-tag", rule: "A short question at the end, to check: a telling sentence takes a not-tag (She swims, doesn't she?), a not-sentence takes a yes-tag (She doesn't swim, does she?).", ar: "‏سؤال قصير في آخر الجملة للتأكد: الجملة المثبتة يأتي بعدها سؤال منفي، والمنفية يأتي بعدها سؤال مثبت." });
+    if (/^(am|is|are|was|were)$/.test(x.aux) && !x.md && !o.pas) out.push({ k: "be", name: "🧱 am / is / are", rule: "I am · he / she / it is · we / you / they are. Past: I / he / she / it was · we / you / they were.", ar: "‏I am · he / she / it is · we / you / they are، وفي الماضي was للمفرد و were للجمع." });
     return out;
   }
   function phrase(word, o) {
     if (o && o.shape && o.shape.k && o.shape.k !== "verb" && !o.neg && !o.q) return shapePhrase(o);
     if (o && o.shape && o.shape.k === "thing") return shapePhrase(o);
-    const F = forms(word), t = T(o.tense) || T("past"), p = o.person || "she", X = vpOf(F, t, p, o), base = F.base.split(" ")[0];
-    const vp = o.neg ? [NEG[X.aux] || X.aux + " not", X.rest].filter(Boolean).join(" ") : X.vp;
+    const F = forms(word), t = T(o.tense) || T("past"), p = o.person || "she", base = F.base.split(" ")[0];
+    if (o.imp) return impPhrase(F, o);
+    if (o.pas && o.pas.obj) return pasPhrase(F, t, p, o);
+    const X = vpOf(F, t, p, o);
+    const vp = o.neg ? (X.md && X.md.k === "sure" ? X.vp : [NEG[X.aux] || X.aux + " not", X.rest].filter(Boolean).join(" ")) : X.vp;
     const tail = F.base.split(" ").slice(1).join("\\s+");
     const re = new RegExp(`\\b(${[base, F.s, F.past, F.pp, F.ing].map(x => x.split(" ")[0]).join("|")})\\b${tail ? `(\\s+${tail})?` : ""}`, "i");
     // "always", "never", "already", "just"… sit inside the verb: "has never given up", "always lies"
@@ -176,7 +189,47 @@
     (o.partners || []).forEach(x => { if (re.test(x) && verb === core) verb = x.replace(re, core); else extra.push(x); });
     const who = subjOf(p), who2 = o.q && who !== "I" && PRON.some(r => r.sub === who.toLowerCase()) ? who.toLowerCase() : who;
     const out = (o.q ? [front, who2, verb, ...extra, mid ? "" : w] : [who, verb, ...extra, mid ? "" : w]).filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
-    return out.charAt(0).toUpperCase() + out.slice(1) + (o.q ? "?" : "");
+    return out.charAt(0).toUpperCase() + out.slice(1) + (o.q ? "?" : o.tag ? tagOf(F, t, p, o) : "");
+  }
+  // 🏷️ the tag: "…, doesn't she?" / "…, does she?" / "…, aren't I?"
+  function tagOf(F, t, p, o) {
+    const pr = o.tagPr || (PRON.some(r => r.k === p) ? p : ""), sub = pr === "i" ? "I" : (PRON.find(r => r.k === pr) || {}).sub;
+    if (!sub) return "";
+    const pa = pr === "i" ? "i" : pr === "he" || pr === "she" || pr === "it" ? "she" : "they";   // the tag agrees with its own pronoun
+    let aux = vpOf(F, t, pa === "i" ? "i" : pa, { ...o, neg: true, q: false, tag: false }).aux;
+    if (o.modal === "sure") aux = "must";
+    const tagv = o.neg ? aux : aux === "am" ? "aren't" : (NEG[aux] || aux + " not");
+    return `, ${tagv} ${sub}?`;
+  }
+  // 👉 "Swim!", "Don't swim!", "Be careful!"
+  function impPhrase(F, o) {
+    const shp = o.shape && o.shape.k && o.shape.k !== "verb" && o.shape.k !== "thing" ? o.shape : null;
+    const v = shp ? `be ${shp.k === "person" ? AN(shp.w) + " " + shp.w : shp.w}` : F.base, extra = (o.partners || []).filter(Boolean);
+    const out = [o.neg ? "don't" : "", v, ...extra, o.when && !MID.has(o.when.toLowerCase()) ? o.when : ""].filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
+    return out.charAt(0).toUpperCase() + out.slice(1) + "!";
+  }
+  // 🔄 passive: "The cake was eaten by Rover." — o.pas = { obj: "the cake", many: false, by: true }
+  const PAS_NO = new Set(["go", "come", "arrive", "sleep", "cry", "laugh", "die", "fall", "sit", "stand", "happen", "appear", "disappear", "exist", "smile", "be", "become", "seem", "lie", "rise", "wait", "travel", "giggle", "chuckle", "sigh", "nap", "doze", "dwell", "reside", "succeed", "fail"]);
+  const canPas = word => !PAS_NO.has(forms(word).base.split(" ")[0]);
+  function pasPhrase(F, t, p, o) {
+    const op = o.pas.many ? "they" : "it", pp = F.pp, md = o.modal ? MD(o.modal) : null, z = t.z;
+    let vp = md ? ({ can: { now: "can be", past: "could be", future: "will be able to be" }, must: { now: "must be", past: "had to be", future: "will have to be" }, haveto: { now: `${hv(op)} to be`, past: "had to be", future: "will have to be" },
+        should: { now: "should be", past: "should have been", future: "should be" }, might: { now: "might be", past: "might have been", future: "might be" }, sure: { now: "must be", past: "must have been", future: "must be" } }[md.k][z === "past" ? "past" : z === "future" ? "future" : "now"])
+      : ({ present: be(op), past: was(op), prescont: `${be(op)} being`, pastcont: `${was(op)} being`, presperf: `${hv(op)} been`, presperfcont: `${hv(op)} been`, pastperf: "had been", pastperfcont: "had been",
+        future: "will be", goingto: `${be(op)} going to be`, futurecont: "will be", futureperf: "will have been", usedto: "used to be" })[t.k] || was(op);
+    vp += " " + pp;
+    const tAux = md && md.k === "sure" ? "must" : /^(has to|have to|had to|used to)/.test(vp) ? (z === "past" ? "did" : one(op) ? "does" : "do") : vp.split(" ")[0];
+    if ((o.neg || o.q) && /^(has to|have to|had to|used to)/.test(vp)) { const d = z === "past" ? "did" : one(op) ? "does" : "do"; vp = `${d} ${vp.replace(/^(has|have|had) to/, "have to").replace(/^used to/, "use to")}`; }
+    if (md && md.k === "sure" && (o.neg || o.q)) vp = vp.replace(/^must/, o.q ? "could" : "can't");
+    const ws = vp.split(" "), aux = ws[0], rest = ws.slice(1).join(" ");
+    const v = o.neg && !(md && md.k === "sure") ? [NEG[aux] || aux + " not", rest].join(" ") : vp;
+    const who = subjOf(p), x = PRON.find(r => r.sub === who.toLowerCase() || (r.k === "i" && who === "I")), by = o.pas.by ? " by " + (x ? x.obj : who) : "";
+    const obj = String(o.pas.obj).trim(), w = o.when && !MID.has(o.when.toLowerCase()) ? " " + o.when : "";
+    let out;
+    if (o.q) { const qa = v.split(" "); out = `${qa[0]} ${obj} ${qa.slice(1).join(" ")}${by}${w}?`; }
+    else out = `${obj} ${v}${by}${w}` + (o.tag ? `, ${o.neg ? tAux : (NEG[tAux] || tAux + " not")} ${op}?` : "");
+    out = out.replace(/\s+/g, " ").trim();
+    return out.charAt(0).toUpperCase() + out.slice(1);
   }
   // ---- 🔀 word shapes: the same idea as a 📦 thing (achievement), a 🧑 person (achiever) or 🎨 describing word (achievable) ----
   const PL = w => /[^aeiou]y$/.test(w) ? w.slice(0, -1) + "ies" : /(s|sh|ch|x|z)$/.test(w) ? w + "es" : w + "s";
@@ -338,7 +391,12 @@
     let full = false; try { full = localStorage.getItem("tenseFull") === "1"; } catch (x) {}
     const F = forms(o.word), st = { full, k: o.tense || "past", p: o.person || ((o.cast || []).find(c => c && c.name) ? "c:" + (o.cast || []).find(c => c && c.name).name : "she"), d: depth(), when: o.when || "", dt: o.dt || null, dOpen: false, sh: o.shape && o.shape.k ? { ...o.shape } : { k: "verb" }, fam: null, dk: (o.dt && o.dt.kind) || "date" };
     const cast = (o.cast || []).filter(c => c && c.name);
-    st.neg = !!o.neg; st.q = !!o.q; st.md = o.modal || ""; st.gc = "";
+    st.neg = !!o.neg; st.q = !!o.q; st.md = o.modal || ""; st.gc = ""; st.imp = !!o.imp; st.tag = !!o.tag; st.pas = o.pas ? { on: true, ...o.pas } : { on: false, obj: "", many: false, by: true };
+    // who the tag is about: "she" for Rover the girl, "they" for many, nothing when we can't know
+    const tagPrOf = p => { if (PRON.some(r => r.k === p)) return p; const n = String(p); if (/^c:/.test(n)) { const c = cast.find(x => "c:" + x.name === n); return c ? prOf(c) : ""; }
+      if (/^n2:/.test(n)) return "they"; if (/(son|father|brother|grandfather|uncle)$/i.test(n)) return "he"; if (/(daughter|mother|sister|grandmother|aunt)$/i.test(n)) return "she"; return ""; };
+    const POf = shp => ({ tense: st.k, person: st.p, when: st.when, partners: o.partners, shape: shp, neg: st.neg, q: st.q && !st.imp, modal: shp || st.imp ? "" : st.md, imp: st.imp,
+      tag: st.tag && !st.q && !st.imp && st.md !== "sure", tagPr: tagPrOf(st.p), pas: st.pas.on && st.pas.obj.trim() && !shp && !st.imp ? { obj: st.pas.obj.trim(), many: st.pas.many, by: st.pas.by } : null });
     st.wt = cast.length ? "char" : "pron"; st.wc = cast[0] ? cast[0].name : ""; st.ws = "self"; st.own = "name"; st.whoOpen = false;
     function whoPanel() {
       if (st.sh.k === "thing") return whoseBar();
@@ -397,13 +455,19 @@
       if (st.dt) st.when = st.dw && !st.dw.block ? st.dw.text : "";
       else if (st.when && !t.sig.includes(st.when)) st.when = "";
       const shp = isBe() ? st.sh : null, vpOf = x => shp ? shapeVp(shp, x, st.p) : x.f(F, st.p);
-      const PO = { tense: st.k, person: st.p, when: st.when, partners: o.partners, shape: shp, neg: st.neg, q: st.q, modal: shp ? "" : st.md };
+      const PO = POf(shp);
       const X = Tense_vp(F, t, st.p, PO), vpS = st.neg ? [NEG[X.aux] || X.aux + " not", X.rest].filter(Boolean).join(" ") : X.vp;
-      const subj = subjOf(st.p), vp = st.q ? X.aux : (st.neg || st.md ? vpS : vpOf(t)), full = phrase(o.word, PO);
-      const needWhen = t.need === "yes" && !st.when && !st.q, shown2 = esc(full).replace(esc(vp), `<b>${esc(vp)}</b>`);
+      const subj = subjOf(st.p), vp = PO.imp || PO.pas ? "" : PO.q ? X.aux : (st.neg || st.md ? vpS : vpOf(t)), full = phrase(o.word, PO);
+      const needWhen = t.need === "yes" && !st.when && !PO.q && !PO.imp, shown2 = vp ? esc(full).replace(esc(vp), `<b>${esc(vp)}</b>`) : esc(full);
       const GC = chipsOf(F, t, st.p, PO), gOpen = GC.find(c => c.k === st.gc);
-      const sayit = `<div class="tm-sayit" role="group" aria-label="Say it as"><span class="lab">Say it</span>${[["s", "✔️ telling"], ["n", "🚫 not"], ["q", "❓ asking"], ["nq", "🚫❓ not + asking"]].filter(([k]) => k !== "nq" || st.full).map(([k, l]) => { const on = k === "s" ? !st.neg && !st.q : k === "n" ? st.neg && !st.q : k === "q" ? st.q && !st.neg : st.q && st.neg;
-          return `<button type="button" data-sm="${k}" aria-pressed="${on}">${l}</button>`; }).join("")}${shp ? "" : `<span class="sep"></span>${MODALS.map(m => `<button type="button" class="md" data-md="${m.k}" aria-pressed="${st.md === m.k}" title="${esc(m.what)}">${m.ico} ${esc(m.name)}</button>`).join("")}`}</div>
+      const canTag = !PO.q && !PO.imp && !!PO.tagPr && st.md !== "sure", canP = !shp && !st.imp && canPas(o.word);
+      const sayit = `<div class="tm-sayit" role="group" aria-label="Say it as"><span class="lab">Say it</span>${[["s", "✔️ telling"], ["n", "🚫 not"], ["q", "❓ asking"], ["nq", "🚫❓ not + asking"], ["i", "👉 telling to"]].filter(([k]) => k !== "nq" || st.full).map(([k, l]) => {
+          const on = k === "i" ? st.imp && !st.neg : st.imp ? (k === "n" && st.neg) : k === "s" ? !st.neg && !st.q : k === "n" ? st.neg && !st.q : k === "q" ? st.q && !st.neg : st.q && st.neg;
+          return `<button type="button" data-sm="${k}" aria-pressed="${on}">${l}</button>`; }).join("")}
+          ${canTag || canP ? `<span class="sep"></span>` : ""}${canTag ? `<button type="button" data-tag="1" aria-pressed="${st.tag}" title="Add a short question at the end">🏷️ …, isn't it?</button>` : ""}${canP ? `<button type="button" data-pas="1" aria-pressed="${st.pas.on}" title="Start with the thing it happens to">🔄 the thing first</button>` : ""}
+          ${shp || st.imp ? "" : `<span class="sep"></span>${MODALS.map(m => `<button type="button" class="md" data-md="${m.k}" aria-pressed="${st.md === m.k}" title="${esc(m.what)}">${m.ico} ${esc(m.name)}</button>`).join("")}`}</div>
+        ${canP && st.pas.on ? `<div class="tm-sayit tm-pas"><span class="lab">What?</span><input type="text" maxlength="40" data-pobj value="${esc(st.pas.obj)}" placeholder="e.g. the cake, my homework" aria-label="What did it happen to?" style="border:1.5px solid #c7d2fe;border-radius:999px;padding:3px 10px;font:inherit;min-width:12em">
+          <button type="button" data-pmany="0" aria-pressed="${!st.pas.many}">👤 one</button><button type="button" data-pmany="1" aria-pressed="${st.pas.many}">👥 many</button><button type="button" data-pby="1" aria-pressed="${st.pas.by}">by ${esc(subjOf(st.p).toLowerCase() === "i" ? "me" : (PRON.find(r => r.sub === subjOf(st.p).toLowerCase()) || {}).obj || subjOf(st.p))}</button></div>` : ""}
         ${GC.length ? `<div class="tm-gcs">${GC.map(c => `<button type="button" class="tm-gc" data-gc="${c.k}" aria-expanded="${st.gc === c.k}">🧩 ${esc(c.name)}</button>`).join("")}</div>${gOpen ? `<div class="tm-gr">${esc(gOpen.rule)}<span class="ar" dir="rtl" lang="ar">${esc(gOpen.ar)}</span></div>` : ""}` : ""}`;
       el.innerHTML = `<div class="tm" role="group" aria-label="Verb time line for ${esc(F.word)}">${top}
         ${st.full && !shp ? `<div class="tm-top"><div class="tm-forms">${[["Base", F.base], ["He/she", F.s], ["Past", F.past], ["Past participle", F.pp], ["-ing", F.ing]].map(([l, x], n) => `<span class="${F.irregular && (n === 2 || n === 3) ? "irr" : ""}"><small>${l}</small>${esc(x)}</span>`).join("")}</div></div>` : ""}${whoPanel()}
@@ -411,13 +475,19 @@
         <div class="tm-line"><div class="tm-zones" style="grid-template-columns:${nowAt}% ${100 - nowAt}%"><span style="text-align:left">⏮ PAST</span><span style="text-align:right">FUTURE ⏭</span></div>
           <div class="tm-track"><div class="tm-now" style="left:calc(${nowAt}% - 1px)" title="Now"></div><span class="tm-nowl" style="left:${nowAt}%">NOW</span></div>
           <div class="tm-stops">${L.map((x, n) => `<button type="button" class="tm-stop${x.k === st.k ? " on" : ""}" style="left:${pos(n)}%" data-tk="${x.k}" title="${esc(x.name)}: ${esc(vpOf(x))}" aria-label="${esc(x.name)}" aria-pressed="${x.k === st.k}">${x.ico}</button>`).join("")}</div></div>
-        <div class="tm-say"${anim ? "" : ' style="animation:none"'}>${st.full ? `<span class="n">${esc(t.name)} · ${t.z === "now" ? "now" : t.z}</span>` : ""}<span class="s">${shown2}${/[?]$/.test(full) ? "" : "."}</span>${shp ? `<span class="wh">${SHI[shp.k][0]} "${esc(shp.w)}" is not a doing word, so "${esc(beOf(t, st.p))}" carries the time.</span>` : ""}${st.full && !shp && o.partners && o.partners.length ? `<span class="wh">✨ With your partner words: ${esc(o.partners.join(", "))}</span>` : ""}${st.full && !shp ? `<span class="wh">${esc(t.when)}</span>${examples(t, F, st, subj)}` : ""}${timeChips(t)}${st.full && !shp && STATIVE.has(F.base.split(" ")[0]) && /ing\b/.test(vp) && !/going to/.test(vp) ? `<span class="wh" style="color:#b45309;font-weight:700">⚠️ "${esc(F.base)}" is a thinking or feeling word. We usually don't use it with "-ing": say "${esc(TENSES.find(x => x.k === (t.z === "past" ? "past" : t.z === "future" ? "future" : "present")).f(F, st.p))}" instead.</span>` : ""}</div>
+        <div class="tm-say"${anim ? "" : ' style="animation:none"'}>${st.full ? `<span class="n">${esc(t.name)} · ${t.z === "now" ? "now" : t.z}</span>` : ""}<span class="s">${shown2}${/[?!]$/.test(full) ? "" : "."}</span>${shp ? `<span class="wh">${SHI[shp.k][0]} "${esc(shp.w)}" is not a doing word, so "${esc(beOf(t, st.p))}" carries the time.</span>` : ""}${st.full && !shp && o.partners && o.partners.length ? `<span class="wh">✨ With your partner words: ${esc(o.partners.join(", "))}</span>` : ""}${st.full && !shp ? `<span class="wh">${esc(t.when)}</span>${examples(t, F, st, subj)}` : ""}${timeChips(t)}${st.full && !shp && STATIVE.has(F.base.split(" ")[0]) && /ing\b/.test(vp) && !/going to/.test(vp) ? `<span class="wh" style="color:#b45309;font-weight:700">⚠️ "${esc(F.base)}" is a thinking or feeling word. We usually don't use it with "-ing": say "${esc(TENSES.find(x => x.k === (t.z === "past" ? "past" : t.z === "future" ? "future" : "present")).f(F, st.p))}" instead.</span>` : ""}</div>
         ${sayit}
         <div class="tm-nav"><button type="button" data-tm-step="-1" ${j === 0 ? "disabled" : ""}>◀ Earlier</button>${o.onPick ? (needWhen ? `<button type="button" class="use" disabled title="This time needs a time word">⏰ Choose a time word first</button>` : `<button type="button" class="use" data-tm-use="1">Use "${esc(full)}"</button>`) : `<button type="button" data-tm-hear="1">🔊 Hear</button>`}<button type="button" data-tm-step="1" ${j === L.length - 1 ? "disabled" : ""}>Later ▶</button></div>
         ${st.full ? `<div class="tm-seg" role="group" aria-label="How many times" style="justify-self:center">${[[1, "⭐ 3 times"], [2, "⭐⭐ 7 times"], [3, "⭐⭐⭐ all 12"]].map(([d, l]) => `<button type="button" data-td="${d}" aria-pressed="${d === st.d}">${l}</button>`).join("")}</div>` : ""}<button type="button" class="tm-more" data-full="1" aria-expanded="${st.full}">${st.full ? "✕ Less" : "ℹ️ Full details"}</button></div>`;
     }
     el.onclick = e => { const k = e.target.closest("[data-tk]"); if (k) { st.k = k.dataset.tk; draw(true); return; }
-      const sm = e.target.closest("[data-sm]"); if (sm) { const v = sm.dataset.sm; st.neg = v === "n" || v === "nq"; st.q = v === "q" || v === "nq"; st.gc = ""; draw(true); return; }
+      const sm = e.target.closest("[data-sm]"); if (sm) { const v = sm.dataset.sm;
+        if (v === "i") { st.imp = true; st.neg = false; st.q = false; } else if (st.imp && v === "n") { st.neg = !st.neg; } else { st.imp = false; st.neg = v === "n" || v === "nq"; st.q = v === "q" || v === "nq"; }
+        st.gc = ""; draw(true); return; }
+      if (e.target.closest("[data-tag]")) { st.tag = !st.tag; st.gc = st.tag ? "tag" : ""; draw(true); return; }
+      if (e.target.closest("[data-pas]")) { st.pas.on = !st.pas.on; if (st.pas.on && !st.pas.obj) st.pas.obj = "it"; st.gc = st.pas.on ? "passive" : ""; draw(true); return; }
+      const pm = e.target.closest("[data-pmany]"); if (pm) { st.pas.many = pm.dataset.pmany === "1"; draw(false); return; }
+      if (e.target.closest("[data-pby]")) { st.pas.by = !st.pas.by; draw(false); return; }
       const md = e.target.closest("[data-md]"); if (md) { st.md = st.md === md.dataset.md ? "" : md.dataset.md; st.gc = st.md ? "modal-" + st.md : ""; draw(true); return; }
       const gc = e.target.closest("[data-gc]"); if (gc) { st.gc = st.gc === gc.dataset.gc ? "" : gc.dataset.gc; draw(false); return; }
       const sh = e.target.closest("[data-sh]"); if (sh) { const k = sh.dataset.sh, w = sh.dataset.shw, x = k === "verb" ? null : st.fam[k].find(y => y.w === w);
@@ -437,7 +507,7 @@
       if (e.target.closest("[data-othok]")) { const v = el.querySelector("[data-oth]").value.trim().replace(/\s+/g, " "); if (v) { st.p = (st.on === 2 ? "n2:" : "n1:") + v; st.whoOpen = false; draw(false); } return; }
       const d = e.target.closest("[data-td]"); if (d) { st.d = +d.dataset.td; try { localStorage.setItem("tenseDepth", st.d); } catch (x) {} draw(false); return; }
       const s = e.target.closest("[data-tm-step]"); if (s) { const L = shown(), j = L.findIndex(t => t.k === st.k) + +s.dataset.tmStep; if (L[j]) { st.k = L[j].k; draw(true); } return; }
-      if (e.target.closest("[data-tm-hear]")) { try { const u = new SpeechSynthesisUtterance(st.sh.k === "thing" ? thingPhrase(st.sh) : phrase(o.word, { tense: st.k, person: st.p, when: st.when, partners: o.partners, shape: st.sh.k === "verb" ? null : st.sh, neg: st.neg, q: st.q, modal: st.sh.k === "verb" ? st.md : "" })); u.lang = "en-US"; speechSynthesis.cancel(); speechSynthesis.speak(u); } catch (x) {} return; }
+      if (e.target.closest("[data-tm-hear]")) { try { const u = new SpeechSynthesisUtterance(st.sh.k === "thing" ? thingPhrase(st.sh) : phrase(o.word, POf(st.sh.k === "verb" ? null : st.sh))); u.lang = "en-US"; speechSynthesis.cancel(); speechSynthesis.speak(u); } catch (x) {} return; }
       const tw = e.target.closest("[data-tw]"); if (tw) { const same = !st.dt && st.when === tw.dataset.tw; st.dt = null; st.dOpen = false; st.when = same ? "" : tw.dataset.tw; draw(false); return; }
       if (e.target.closest("[data-dtog]")) { st.dOpen = !st.dOpen; draw(false); return; }
       const dk = e.target.closest("[data-dk]"); if (dk) { st.dk = dk.dataset.dk; draw(false); return; }
@@ -448,10 +518,12 @@
       const dd = e.target.closest("[data-dday]"); if (dd) { setDt({ day: dd.dataset.dday }); return; }
       const yq = e.target.closest("[data-yq]"); if (yq) { setDt({ year: +yq.dataset.yq }); return; }
       if (e.target.closest("[data-tm-use]") && o.onPick) { const thing = st.sh.k === "thing", shp = st.sh.k === "verb" ? null : { ...st.sh };
-        o.onPick({ tense: thing ? null : st.k, person: st.p, who: subjOf(st.p), when: thing ? "" : st.when, dt: thing ? null : st.dt,
-          form: thing ? (st.sh.many ? PL(st.sh.w) : st.sh.w) : (() => { const X = Tense_vp(F, T(st.k), st.p, { shape: shp, neg: st.neg, q: st.q, modal: shp ? "" : st.md }); return st.neg ? [NEG[X.aux] || X.aux + " not", X.rest].filter(Boolean).join(" ") : X.vp; })(),
-          phrase: thing ? thingPhrase(st.sh) : phrase(o.word, { tense: st.k, person: st.p, when: st.when, partners: o.partners, shape: shp, neg: st.neg, q: st.q, modal: shp ? "" : st.md }), shape: shp,
-          neg: thing ? false : st.neg, q: thing ? false : st.q, modal: thing || shp ? "" : st.md, grammar: thing ? [] : chipsOf(F, T(st.k), st.p, { shape: shp, neg: st.neg, q: st.q, modal: shp ? "" : st.md }).map(c => c.k) }); } };
+          const PO = POf(shp), ph = thing ? thingPhrase(st.sh) : phrase(o.word, PO);
+          o.onPick({ tense: thing ? null : st.k, person: st.p, who: subjOf(st.p), when: thing ? "" : st.when, dt: thing ? null : st.dt,
+          form: thing ? (st.sh.many ? PL(st.sh.w) : st.sh.w) : PO.imp || PO.pas ? ph : (() => { const X = Tense_vp(F, T(st.k), st.p, PO); return st.neg ? [NEG[X.aux] || X.aux + " not", X.rest].filter(Boolean).join(" ") : X.vp; })(),
+          phrase: ph, shape: shp, neg: thing ? false : st.neg, q: thing ? false : PO.q, modal: thing ? "" : PO.modal, imp: thing ? false : PO.imp, tag: thing ? false : PO.tag, tagPr: PO.tagPr, pas: thing ? null : PO.pas,
+          grammar: thing ? [] : chipsOf(F, T(st.k), st.p, PO).map(c => c.k) }); } };
+    el.oninput = e => { if (e.target.matches && e.target.matches("[data-pobj]")) { st.pas.obj = e.target.value; clearTimeout(st.pt); st.pt = setTimeout(() => { const pos = e.target.selectionStart; draw(false); const i2 = el.querySelector("[data-pobj]"); if (i2) { i2.focus(); try { i2.setSelectionRange(pos, pos); } catch (x) {} } }, 500); } };
     el.onchange = e => { const x = e.target, keep = st.dt && st.dt.kind === st.dk ? st.dt : {}, set = v => { st.dt = { kind: st.dk, ...keep, ...v }; draw(false); };
       if (x.matches("[data-dd]")) set({ date: x.value }); else if (x.matches("[data-dtm]")) set({ time: x.value }); else if (x.matches("[data-dy]") && +x.value > 0) set({ year: Math.round(+x.value) }); };
     el.onkeydown = e => { if (e.target.matches && e.target.matches("input")) return; if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return; const L = shown(), j = L.findIndex(t => t.k === st.k) + (e.key === "ArrowLeft" ? -1 : 1); if (L[j]) { e.preventDefault(); st.k = L[j].k; draw(true); el.querySelector(".tm-stop.on")?.focus(); } };
@@ -483,5 +555,5 @@
     const subj = subjOf(p), sj = PEOPLE.some(x => x[1] === subj) && subj !== "I" ? subj.toLowerCase() : subj;
     return [sj, v, (o.rest || "").trim()].filter(Boolean).join(" ");
   }
-  window.Tense = { MODALS, chipsOf, clause, PEOPLE, reverse, family, famForms, dtWhen, NEED, PRON, RELS, prOf, phrase, subjOf, forms, say, allForms, mount, auto, isVerb, TENSES, IRR, LEMMA };
+  window.Tense = { AN, PL, one, be, was, hv, NEG, css: () => addCss(), canPas, MODALS, chipsOf, clause, PEOPLE, reverse, family, famForms, dtWhen, NEED, PRON, RELS, prOf, phrase, subjOf, forms, say, allForms, mount, auto, isVerb, TENSES, IRR, LEMMA };
 })();
