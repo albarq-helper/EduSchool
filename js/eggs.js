@@ -3,37 +3,47 @@
    It plays by itself the first time a word appears on this device; the small emoji button after the word replays it. */
 (function () {
   "use strict";
-  // thing → [emoji, how it moves, sound]. Movers: drive, scurry, fly, hop, swim. Emoji mostly face left, so they leave to the left.
-  const THINGS = {
-    car: ["🚗", "drive", "engine"], bus: ["🚌", "drive", "engine"], van: ["🚐", "drive", "engine"], cab: ["🚕", "drive", "engine"],
-    jet: ["✈️", "fly", "whoosh"], ship: ["🚢", "swim", "horn"], boat: ["⛵", "swim", "whoosh"],
-    rat: ["🐀", "scurry", "squeak"], mouse: ["🐁", "scurry", "squeak"], cat: ["🐈", "hop", "meow"], dog: ["🐕", "hop", "woof"],
-    bat: ["🦇", "fly", "flap"], bee: ["🐝", "fly", "buzz"], owl: ["🦉", "fly", "hoot"], hen: ["🐔", "hop", "cluck"],
-    ant: ["🐜", "scurry", "tick"], pig: ["🐖", "hop", "oink"], cow: ["🐄", "hop", "moo"], fox: ["🦊", "hop", "boing"],
-    ape: ["🦍", "hop", "boing"], yak: ["🐂", "hop", "moo"], lion: ["🦁", "hop", "roar"],
-    bear: ["🐻", "hop", "roar"], deer: ["🦌", "hop", "boing"], goat: ["🐐", "hop", "boing"], seal: ["🦭", "swim", "boing"],
-    crab: ["🦀", "scurry", "tick"], frog: ["🐸", "hop", "boing"], duck: ["🦆", "swim", "quack"], wolf: ["🐺", "hop", "roar"]
-  };
-  // Pairs that are part of a common ending, not a real hiding place (importANT, wHEN, friendSHIP, adoRATion …).
-  const SKIP = { ant: /ant$|ants$/, hen: /^w?hen|^t?hen/, cow: /^cow/, ship: /ships?$/, rat: /ration/ };
+  // thing → [emoji, how it moves, sound]. Movers: drive, scurry, fly, hop, swim, roll. Emoji mostly face left, so they leave to the left.
+  // Groups go in priority order (animals and vehicles beat objects); inside a group the longest hidden word wins.
+  const GROUPS = [
+    { car: ["🚗", "drive", "engine"], bus: ["🚌", "drive", "engine"], van: ["🚐", "drive", "engine"], cab: ["🚕", "drive", "engine"], train: ["🚆", "drive", "horn"],
+      jet: ["✈️", "fly", "whoosh"], ship: ["🚢", "swim", "horn"], boat: ["⛵", "swim", "whoosh"], bike: ["🚲", "drive", "beep"] },
+    { rat: ["🐀", "scurry", "squeak"], mouse: ["🐁", "scurry", "squeak"], cat: ["🐈", "hop", "meow"], dog: ["🐕", "hop", "woof"],
+      bat: ["🦇", "fly", "flap"], bee: ["🐝", "fly", "buzz"], owl: ["🦉", "fly", "hoot"], hen: ["🐔", "hop", "cluck"],
+      ant: ["🐜", "scurry", "tick"], pig: ["🐖", "hop", "oink"], cow: ["🐄", "hop", "moo"], fox: ["🦊", "hop", "boing"],
+      ape: ["🦍", "hop", "boing"], yak: ["🐂", "hop", "moo"], lion: ["🦁", "hop", "roar"], bear: ["🐻", "hop", "roar"],
+      deer: ["🦌", "hop", "boing"], goat: ["🐐", "hop", "boing"], seal: ["🦭", "swim", "boing"], crab: ["🦀", "scurry", "tick"],
+      frog: ["🐸", "hop", "boing"], duck: ["🦆", "swim", "quack"], wolf: ["🐺", "hop", "roar"], horse: ["🐎", "hop", "neigh"],
+      tuna: ["🐟", "swim", "splash"], fish: ["🐟", "swim", "splash"], hare: ["🐇", "hop", "boing"], lamb: ["🐑", "hop", "boing"], moth: ["🦋", "fly", "flap"] },
+    { heart: ["❤️", "hop", "pop"], tent: ["⛺", "hop", "pop"], nest: ["🪺", "hop", "pop"], star: ["⭐", "fly", "ding"], pear: ["🍐", "roll", "pop"],
+      pea: ["🫛", "roll", "pop"], tea: ["🍵", "hop", "pop"], ink: ["🖋️", "hop", "pop"], art: ["🎨", "hop", "ding"], hat: ["🎩", "fly", "whoosh"],
+      arm: ["💪", "hop", "boing"], leg: ["🦵", "hop", "boing"], ear: ["👂", "hop", "ding"], one: ["☝️", "hop", "ding"], ten: ["🔟", "hop", "ding"],
+      pen: ["🖊️", "hop", "pop"], pin: ["📌", "hop", "pop"], can: ["🥫", "roll", "thud"], tie: ["👔", "fly", "whoosh"], fan: ["🪭", "fly", "whoosh"],
+      ice: ["🧊", "scurry", "ding"], pot: ["🍲", "hop", "pop"], band: ["🥁", "hop", "drum"], book: ["📖", "fly", "flap"], rock: ["🪨", "roll", "thud"],
+      wing: ["🪽", "fly", "flap"], log: ["🪵", "roll", "thud"], oak: ["🌳", "hop", "whoosh"], elm: ["🌳", "hop", "whoosh"], fir: ["🌲", "hop", "whoosh"] }
+  ];
+  const THINGS = Object.assign({}, ...GROUPS);
+  // Pairs that are part of a common ending or start, not a real hiding place (importANT, wHEN, friendSHIP, adoRATion …).
+  const SKIP = { pin: /ping$/, ant: /ant$|ants$/, hen: /^w?hen|^t?hen/, ship: /ships?$/, rat: /ration/, one: /^one/, ten: /tens?$/, can: /^can/ };
+  const NEVER = /^(behead)$/;                       // words where a joke would be wrong
   // Words we want for sure, even if the rules above would pick something else.
-  const FEATURED = { precarious: "car", deliberately: "rat", separate: "rat", scarce: "car", vicarious: "car", pirate: "rat" };
+  const FEATURED = { precarious: "car", deliberately: "rat", separate: "rat", scarce: "car", vicarious: "car", pirate: "rat", heartbroken: "heart", insignificant: "can", significant: "can" };
 
   const letters = w => String(w || "").toLowerCase().replace(/[^a-z]/g, "");
   function find(word) {
-    const w = String(word || "").trim(), lw = w.toLowerCase();
-    if (!/^[A-Za-z][A-Za-z'-]*$/.test(w) || w.length < 5) return null;
-    const pick = (key, at) => ({ key, at, emoji: THINGS[key][0], move: THINGS[key][1], sound: THINGS[key][2] });
+    const w = String(word || "").replace(/\s*\(.*\)\s*$/, "").trim(), lw = w.toLowerCase();
+    if (!/^[A-Za-z][A-Za-z'-]*$/.test(w) || w.length < 5 || NEVER.test(lw)) return null;
+    const pick = (key, at) => ({ key, at, emoji: THINGS[key][0], move: THINGS[key][1], sound: THINGS[key][2], word: w });
     const f = FEATURED[letters(w)];
     if (f && lw.indexOf(f) >= 0) return pick(f, lw.indexOf(f));
-    let best = null;
-    Object.keys(THINGS).sort((a, b) => b.length - a.length).forEach(k => {
-      if (best || lw.length < k.length + 3) return;
-      const at = lw.indexOf(k);
-      if (at < 0 || (SKIP[k] && SKIP[k].test(lw))) return;
-      best = pick(k, at);
-    });
-    return best;
+    for (const g of GROUPS) {
+      for (const k of Object.keys(g).sort((a, b) => b.length - a.length)) {
+        const at = lw.indexOf(k);
+        if (at < 0 || lw.length < k.length + 2 || (SKIP[k] && SKIP[k].test(lw))) continue;
+        return pick(k, at);
+      }
+    }
+    return null;
   }
 
   // 🔊 tiny synthesized sounds (no files, no downloads)
@@ -75,7 +85,13 @@
     roar: s => { tone("sawtooth", 140, 70, s, 0.8, 0.2, 500); noise(s, 0.8, 0.15, 600, 200); },
     quack: s => { tone("sawtooth", 600, 400, s, 0.15, 0.12, 1500); tone("sawtooth", 600, 400, s + 0.22, 0.15, 0.12, 1500); },
     boing: s => { tone("sine", 200, 700, s, 0.3, 0.18); },
-    whoosh: s => { noise(s, 0.7, 0.3, 300, 3000); }
+    whoosh: s => { noise(s, 0.7, 0.3, 300, 3000); },
+    neigh: s => { tone("sawtooth", 900, 1400, s, 0.25, 0.1, 2500); tone("sawtooth", 1300, 600, s + 0.25, 0.5, 0.1, 2500); },
+    splash: s => { noise(s, 0.4, 0.35, 1500, 400); tone("sine", 900, 300, s + 0.05, 0.2, 0.08); },
+    ding: s => { tone("sine", 1320, 1320, s, 0.6, 0.12); tone("sine", 1980, 1980, s + 0.02, 0.5, 0.05); },
+    pop: s => { tone("sine", 300, 1200, s, 0.08, 0.2); },
+    drum: s => { [0, .15, .3, .38].forEach(d => { tone("sine", 160, 60, s + d, 0.15, 0.3); noise(s + d, 0.06, 0.15, 3000, 2000); }); },
+    thud: s => { tone("sine", 120, 45, s, 0.3, 0.35); }
   };
   const play = (name, at) => { try { (SOUNDS[name] || SOUNDS.boing)(at || 0); } catch (e) {} };
 
@@ -124,6 +140,8 @@
         await anim(actor, [{ transform: "translate(0,0) rotate(0)" }, { transform: `translate(${away * .4}px,-90px) rotate(-12deg)` }, { transform: `translate(${away}px,-200px) rotate(-20deg)` }], { duration: 1300, easing: "ease-in" });
       } else if (egg.move === "swim") {
         await anim(actor, [{ transform: "translate(0,0)" }, { transform: `translate(${away * .33}px,8px)` }, { transform: `translate(${away * .66}px,-8px)` }, { transform: `translate(${away}px,0)` }], { duration: 1400, easing: "ease-in-out" });
+      } else if (egg.move === "roll") {
+        await anim(actor, [{ transform: "translateX(0) rotate(0)" }, { transform: `translateX(${away}px) rotate(${Math.round(away / 2)}deg)` }], { duration: 1300, easing: "ease-in" });
       } else {
         await anim(actor, [0, .2, .4, .6, .8, 1].map((p, i) => ({ transform: `translate(${away * p}px,${i % 2 ? -40 : 0}px)` })), { duration: 1200, easing: "linear" });
       }
