@@ -3,7 +3,7 @@
 <title>Reading · Helper Academy</title><link rel="icon" href="assets/icons/brilliant.png">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
 <link rel="stylesheet" href="css/app.css">
-<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261125w"></script><script src="js/icons.js?v=20261125w"></script><script src="js/app.js?v=20261125w"></script><script src="js/speak.js?v=20261125w"></script>
+<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261125x"></script><script src="js/icons.js?v=20261125x"></script><script src="js/app.js?v=20261125x"></script><script src="js/speak.js?v=20261125x"></script>
 <style>
 .rhead h1{margin:0}.rhead p{color:var(--muted);max-width:70ch}
 .pick{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px;margin:10px 0}.pick button{all:unset;cursor:pointer;background:var(--sheet);border:1.5px solid var(--rule);border-radius:14px;padding:10px 12px;display:grid;gap:3px}
@@ -33,7 +33,7 @@ async function open(id){CUR=TXT.find(t=>t.id===id);if(!CUR)return;
   const names=[...new Set(toks.flatMap(w=>[w,w.charAt(0).toUpperCase()+w.slice(1)]))];
   const {data}=await C.from("words").select("headword,meaning,translation,emoji").eq("lang","en").in("headword",names).limit(800);
   VOC=new Map((data||[]).map(w=>[clean(w.headword).toLowerCase(),w]));
-  const body=esc(CUR.body).replace(/[A-Za-z][A-Za-z'-]*/g,w=>`<span class="w${VOC.has(w.toLowerCase())?" v":""}" data-w="${esc(w)}">${w}</span>`);
+  const body=String(CUR.body).split(/([A-Za-z][A-Za-z'-]*)/).map((w,i)=>i%2?`<span class="w${VOC.has(w.toLowerCase())?" v":""}" data-w="${esc(w)}">${esc(w)}</span>`:esc(w)).join("");
   $("out").innerHTML=`<div class="tools"><button class="btn small ghost" type="button" data-back="1">◀ All texts</button><button class="btn small" type="button" data-hearall="1">🔊 Read it to me</button><button class="btn small" type="button" data-quiz="1">🎯 5 questions</button></div>
     <h2 style="margin:6px 0">${esc(CUR.title)}</h2><div class="text">${body}</div><div class="help" id="help"></div><div id="qz"></div>`;}
 function quiz(){const vs=[...VOC.values()].filter(v=>v.meaning);if(vs.length<2){$("qz").innerHTML=`<div class="qz">This text has too few dictionary words for questions.</div>`;return;}
