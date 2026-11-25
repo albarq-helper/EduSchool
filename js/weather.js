@@ -47,7 +47,13 @@
   add("rainbow", { e: "🌈", name: "Rainbow", rain: 1, rainbow: 1 });
   add("raining cats and dogs", { e: "🐈", name: "Raining cats and dogs", rain: 3, drops: ["🐈", "🐕"], dropN: 2 });
   add("every cloud has a silver lining", { e: "🌥️", name: "Silver lining", fog: 0.5, sun: 1 });
-  const recipe = w => R[String(w || "").trim().toLowerCase().replace(/[.!?]$/, "")] || null;
+  // sayings about light get the light that fits them (set directly: they contain commas)
+  const SAY = { "it is better to light one small candle than to curse the darkness": "candle",
+    "when you're driving through the darkness, you can only see as far as the headlights shine, but you can make the whole trip that way": "headlights",
+    "don't be afraid of a shadow. it just means there's a light nearby": "sunbeam",
+    "if you look for the light, you will often find it. but if you look for the dark, it is all you will ever see": "sunbeam" };
+  Object.keys(SAY).forEach(k => R[k] = R[SAY[k]]);
+  const recipe = w => R[String(w || "").trim().toLowerCase().replace(/[’]/g, "'").replace(/[.!?]$/, "")] || null;
 
   // 🔊 sounds (synthesized, no files)
   let AC = null;
