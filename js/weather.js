@@ -90,7 +90,7 @@
   css.textContent = `.wx-stage{position:fixed;left:0;top:0;width:100vw;height:100vh;z-index:9990;pointer-events:none}
 .wx-layer{position:fixed;inset:0;z-index:9989;pointer-events:none;transition:opacity .8s}
 .wx-chip{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:9995;display:flex;gap:6px;align-items:center;background:#fff;border-radius:999px;padding:6px 8px 6px 12px;box-shadow:0 4px 18px #0003;font:700 14px var(--f-display,system-ui);color:#333}
-.wx-chip button{border:0;border-radius:999px;padding:4px 10px;font:inherit;cursor:pointer;background:#F1F1F4}
+.wx-chip,.wx-chip *{cursor:auto;white-space:nowrap}.wx-chip{flex-wrap:wrap;justify-content:center;max-width:96vw}.wx-chip.top{bottom:auto;top:12px}.wx-chip button{cursor:pointer;border:0;border-radius:999px;padding:4px 10px;font:inherit;cursor:pointer;background:#F1F1F4}
 .wx-btn{border:0;background:none;cursor:pointer;font-size:.8em;padding:0 3px;vertical-align:middle;opacity:.85}
 .wx-btn:hover{opacity:1;transform:scale(1.15)}`;
   document.head.appendChild(css);
@@ -103,7 +103,7 @@
     const r = typeof word === "object" ? word : recipe(word);
     if (!r || (isOff() && !(opts && opts.force))) return false;
     stop();
-    const dur = (opts && opts.dur) || (r.long ? 14000 : r.vortex ? 6500 : 6000), t0 = performance.now();
+    const dur = (opts && opts.dur) || (r.long ? (r.torch && !r.torch.flicker ? 25000 : 14000) : r.vortex ? 6500 : 6000), t0 = performance.now();
     const cv = document.createElement("canvas"); cv.className = "wx-stage"; cv.setAttribute("aria-hidden", "true");
     const ctx = cv.getContext("2d"); document.body.appendChild(cv);
     const W = () => innerWidth, H = () => innerHeight, dpr = Math.min(2, devicePixelRatio || 1);
@@ -119,9 +119,16 @@
     if (r.glass) { const g = layer(`rgba(236,242,248,${.35 * r.glass})`, 1); g.style.transition = "opacity 2.5s"; g.style.backdropFilter = g.style.webkitBackdropFilter = `blur(${(r.glass * 5).toFixed(1)}px)`; }
     // 👆 where the finger or mouse is (the torch and laser follow it; until it moves, they sweep by themselves)
     const ptr = { x: W() / 2, y: H() / 2, moved: 0 };
-    const onMove = e => { const q = e.touches ? e.touches[0] : e; if (!q) return; ptr.x = q.clientX; ptr.y = q.clientY; ptr.moved = performance.now(); };
+    const onMove = e => { if (e.target && e.target.closest && e.target.closest(".wx-chip")) return; const q = e.touches ? e.touches[0] : e; if (!q) return; ptr.x = q.clientX; ptr.y = q.clientY; ptr.moved = performance.now(); };
     if (r.torch || r.laser) { addEventListener("pointermove", onMove, { passive: true }); addEventListener("touchmove", onMove, { passive: true }); addEventListener("pointerdown", onMove, { passive: true }); }
     const dark = r.torch ? layer("rgba(3,5,18,.94)", 1) : null;
+    // 🔦 the torch only moves when you move it: it points straight up; tilt it with ⬅️ ➡️, make the beam longer or shorter with ⬆️ ⬇️ or the mouse wheel
+    const beam = { len: 190, tilt: 0 };
+    const lenBy = d => { beam.len = Math.max(70, Math.min(Math.max(W(), H()) * .8, beam.len + d)); ptr.moved = ptr.moved || performance.now(); };
+    const tiltBy = d => { beam.tilt = Math.max(-1.4, Math.min(1.4, beam.tilt + d)); ptr.moved = ptr.moved || performance.now(); };
+    const onKey = e => { if (!r.torch || r.torch.flicker) return; const k = { ArrowUp: () => lenBy(30), ArrowDown: () => lenBy(-30), ArrowLeft: () => tiltBy(-.15), ArrowRight: () => tiltBy(.15) }[e.key]; if (k) { e.preventDefault(); k(); } };
+    const onWheel = e => { if (!r.torch || r.torch.flicker) return; e.preventDefault(); lenBy(-e.deltaY * .4); };
+    if (r.torch && !r.torch.flicker) { addEventListener("keydown", onKey); addEventListener("wheel", onWheel, { passive: false }); }
     const oldCur = document.documentElement.style.cursor; if (r.torch || r.laser) document.documentElement.style.cursor = "none";
     const cat = { x: -60, y: H() * .8, f: 1 };
     let puddle = null;
@@ -173,11 +180,11 @@
       if (r.wind && (r.rain || r.snow)) { ctx.strokeStyle = "rgba(255,255,255,.35)"; ctx.lineWidth = 2; for (let k = 0; k < r.wind * 2; k++) { const y = (k * 97 + t / 3) % H(), x = ((t * (1 + k % 3)) / 2 + k * 211) % (W() + 300) - 150; ctx.beginPath(); ctx.moveTo(x, y); ctx.quadraticCurveTo(x + 60, y - 12, x + 140, y); ctx.stroke(); } }
       drops.forEach(d => { d.y += d.vy; d.rot += d.vr; if (d.y > H() + 40) { d.y = -40; d.x = rnd(0, W()); } ctx.save(); ctx.translate(d.x, d.y); ctx.rotate(d.rot); ctx.font = d.s + "px system-ui"; ctx.fillText(d.e, -d.s / 2, d.s / 2); ctx.restore(); });
       splashes.forEach((s, k) => { s.a -= .06; if (s.a <= 0) return splashes.splice(k, 1); ctx.strokeStyle = `rgba(110,150,210,${s.a})`; ctx.lineWidth = 1; ctx.beginPath(); ctx.ellipse(s.x, s.y, (1 - s.a) * 10 + 2, (1 - s.a) * 3 + 1, 0, 0, 7); ctx.stroke(); });
-      if (r.torch || r.laser) { if (t - (ptr.moved ? ptr.moved - t0 : -1e9) > 2500 || !ptr.moved) { ptr.x = W() / 2 + Math.sin(t / 900) * W() * .32; ptr.y = H() * .45 + Math.sin(t / 650) * H() * .22; } }
+      if (r.torch || r.laser) { if (!ptr.moved) { ptr.x = W() / 2 + Math.sin(t / 900) * W() * .32; ptr.y = H() * .45 + Math.sin(t / 650) * H() * .22; } }
       if (dark) { const T = r.torch, fl = T.flicker ? 1 + Math.sin(t / 60) * .04 + Math.sin(t / 23) * .03 : 1, R0 = T.r * fl, a = Math.max(.15, fade);
         // the mouse IS the torch: the light lands ahead of it, aimed toward the middle of the page (straight up when it is already in the middle)
-        let ang = -Math.PI / 2; if (!T.flicker) { const cx = W() / 2, cy = H() * .45; if (Math.hypot(cx - ptr.x, cy - ptr.y) > 140) ang = Math.atan2(cy - ptr.y, cx - ptr.x); }
-        const reach = T.flicker ? 0 : 190, sx = ptr.x + Math.cos(ang) * reach, sy = ptr.y + Math.sin(ang) * reach, x = sx.toFixed(0), y = sy.toFixed(0);
+        const ang = -Math.PI / 2 + beam.tilt;
+        const reach = T.flicker ? 0 : beam.len, sx = ptr.x + Math.cos(ang) * reach, sy = ptr.y + Math.sin(ang) * reach, x = sx.toFixed(0), y = sy.toFixed(0);
         dark.style.background = `radial-gradient(circle at ${x}px ${y}px, rgba(${T.c},${.07 * a}) 0, rgba(${T.c},${.03 * a}) ${R0 * .6}px, rgba(3,5,18,${.55 * a}) ${R0}px, rgba(3,5,18,${.94 * a}) ${R0 * 1.6}px)`;
         if (!T.flicker) { // a torch held at the bottom of the screen, always pointing at the light, with its cone of light
           const d = reach; ctx.save(); ctx.translate(ptr.x, ptr.y); ctx.rotate(ang); ctx.translate(-16, 0);
@@ -227,12 +234,16 @@
     }
     const chip = document.createElement("div");
     chip.className = "wx-chip"; chip.setAttribute("role", "status");
-    chip.innerHTML = `<span>${r.e} ${r.name}${r.torch || r.laser ? " · move your finger!" : ""}</span><button type="button" data-x>✕ Stop</button><button type="button" data-off>Turn effects off</button>`;
+    chip.innerHTML = `<span>${r.e} ${r.name}</span><button type="button" data-x>✕ Stop</button><button type="button" data-off>Turn effects off</button>`;
+    if (r.torch && !r.torch.flicker) { const c = document.createElement("span"); c.style.display = "flex"; c.style.gap = "4px";
+      [["↺", "Tilt left", () => tiltBy(-.2)], ["➖", "Shorter beam", () => lenBy(-40)], ["➕", "Longer beam", () => lenBy(40)], ["↻", "Tilt right", () => tiltBy(.2)]].forEach(([t, l, f]) => { const b = document.createElement("button"); b.type = "button"; b.textContent = t; b.title = l; b.setAttribute("aria-label", l); b.onpointerdown = e => { e.stopPropagation(); f(); }; c.appendChild(b); });
+      chip.insertBefore(c, chip.querySelector("[data-x]")); }
+    if (r.torch || r.laser) chip.classList.add("top");
     chip.querySelector("[data-x]").onclick = () => stop();
     chip.querySelector("[data-off]").onclick = () => { try { localStorage.setItem(OFF_KEY, "1"); } catch (e) {} stop(); };
     document.body.appendChild(chip);
     addEventListener("resize", size);
-    current = { stop() { if (ended) return; ended = true; cancelAnimationFrame(raf); sfx.stop(); moved.stop(); removeEventListener("resize", size); if (r.torch || r.laser) document.documentElement.style.cursor = oldCur; removeEventListener("pointermove", onMove); removeEventListener("touchmove", onMove); removeEventListener("pointerdown", onMove); cv.remove(); chip.remove(); layers.forEach(l => { l.style.opacity = 0; if (l === puddle) l.style.height = "0"; setTimeout(() => l.remove(), 900); }); } };
+    current = { stop() { if (ended) return; ended = true; cancelAnimationFrame(raf); sfx.stop(); moved.stop(); removeEventListener("resize", size); if (r.torch || r.laser) document.documentElement.style.cursor = oldCur; removeEventListener("pointermove", onMove); removeEventListener("keydown", onKey); removeEventListener("wheel", onWheel); removeEventListener("touchmove", onMove); removeEventListener("pointerdown", onMove); cv.remove(); chip.remove(); layers.forEach(l => { l.style.opacity = 0; if (l === puddle) l.style.height = "0"; setTimeout(() => l.remove(), 900); }); } };
     raf = requestAnimationFrame(frame);
     return true;
   }
