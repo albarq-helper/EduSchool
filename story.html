@@ -163,7 +163,7 @@
 .sho:hover{border-color:var(--accent)}.sho.on{background:var(--accent);border-color:var(--accent);color:#fff}
 .tchip{display:inline-block;margin-left:6px;font:800 .78rem var(--f-body);color:#4338ca;background:#e0e7ff;border-radius:999px;padding:1px 8px;vertical-align:middle}
 </style>
-<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261125c"></script><script src="js/icons.js?v=20261125c"></script><script src="js/app.js?v=20261125c"></script><script src="js/sets.js?v=20261125c"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261125c"></script><script src="js/tense.js?v=20261125c"></script><script src="js/views.js?v=20261125c"></script><script src="js/joiners.js?v=20261125c"></script><script src="js/chars.js?v=20261125c"></script><script src="js/storycore.js?v=20261125c"></script><script src="js/montage.js?v=20261125c"></script>
+<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261125d"></script><script src="js/icons.js?v=20261125d"></script><script src="js/app.js?v=20261125d"></script><script src="js/sets.js?v=20261125d"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261125d"></script><script src="js/tense.js?v=20261125d"></script><script src="js/views.js?v=20261125d"></script><script src="js/joiners.js?v=20261125d"></script><script src="js/talk.js?v=20261125d"></script><script src="js/chars.js?v=20261125d"></script><script src="js/storycore.js?v=20261125d"></script><script src="js/montage.js?v=20261125d"></script>
 </head><body>
 <div class="wrap" style="max-width:1280px">
   <div class="head2">
@@ -186,7 +186,7 @@
       <div class="cast" id="cast"></div>
       <div class="fb" id="fb" hidden></div>
       <ol class="board" id="board" aria-label="Story steps"></ol>
-      <div class="adds"><button class="chipb" type="button" id="addText">✏️ Add my own words</button><button class="chipb" type="button" id="addJoin" aria-haspopup="menu">🔗 Joiners</button><button class="chipb" type="button" id="addScene">🎬 New scene</button>
+      <div class="adds"><button class="chipb" type="button" id="addText">✏️ Add my own words</button><button class="chipb" type="button" id="addJoin" aria-haspopup="menu">🔗 Joiners</button><button class="chipb" type="button" id="addTalk">💬 Conversation</button><button class="chipb" type="button" id="addScene">🎬 New scene</button>
         <span id="quick"></span></div>
       <div class="fitq" id="fitq" hidden></div>
       <div class="write" id="write"></div>
@@ -239,7 +239,9 @@ $("boxes").onclick=e=>{const b=e.target.closest("[data-box]");if(b){$("q").value
 // add a library word: linking words become the student's own words; others are vocabulary words
 // 🔗 joiners: the glowing slot [block, slot] takes the next word picked on the left
 let ACT=null;
-function fillSlot(i){if(!ACT||!CUR)return false;const b=CUR.blocks[ACT[0]];if(!b||b.k!=="j"){ACT=null;return false;}const v=D[i];if(!v)return false;
+function fillSlot(i){if(!ACT||!CUR)return false;const b=CUR.blocks[ACT[0]];if(!b||(b.k!=="j"&&b.k!=="d")){ACT=null;return false;}const v=D[i];if(!v)return false;
+  if(b.k==="d"){const o=b.o;if(Tense.isVerb(v)&&!o.v)o.v=v.w;else{const w=clean(v.w);o.rest=[(o.rest||"").trim(),w.charAt(0).toLowerCase()+w.slice(1)].filter(Boolean).join(" ");}
+    if(o.v)ACT=null;changed();drawBoard();return true;}
   const x=b.s[ACT[1]],cond=Joiners.TYPES[b.t].kind==="cond";
   if(cond){if(Tense.isVerb(v)&&!x.v){x.v=v.w;}else{const w=clean(v.w),ws=w.charAt(0).toLowerCase()+w.slice(1);x.rest=[(x.rest||"").trim(),ws].filter(Boolean).join(" ");}}
   else{b.s[ACT[1]]={w:v.w};}
@@ -259,7 +261,7 @@ const hasWord=(txt,w)=>{if(new RegExp(`(?<![a-z])${stemOf(w).replace(/[.*+?^${}(
   const bs=(CUR?CUR.blocks:[]).filter(b=>b.k==="w"&&b.w===w),fs=[...(Tense.isVerb(D[wi(w)])?[...Tense.allForms(w),...Tense.famForms(w)]:[]),...bs.flatMap(b=>[b.shape&&b.shape.w,b.tw,...(b.vb?Tense.allForms(b.vb):[])]).filter(Boolean)];
   return fs.some(f=>new RegExp(`(?<![a-z])${String(f).replace(/[.*+?^${}()|[\]\\]/g,"\\$&")}(?:e?s)?(?![a-z])`,"i").test(txt));};
 // scenes: [{n, words:[term], texts:[own words]}]
-function scenesOf(){const sc=[{n:1,words:[],texts:[]}];(CUR?CUR.blocks:[]).forEach(b=>{if(b.k==="s")sc.push({n:sc.length+1,words:[],texts:[]});else if(b.k==="w"){if(!Sets.isSaying(D[wi(b.w)]))sc[sc.length-1].words.push(b.w);}else if(b.k==="j"){Joiners.words(b).forEach(w=>{if(wi(w)>=0&&!Sets.isSaying(D[wi(w)]))sc[sc.length-1].words.push(w);});}else if((b.t||"").trim())sc[sc.length-1].texts.push(b.t.trim());});
+function scenesOf(){const sc=[{n:1,words:[],texts:[]}];(CUR?CUR.blocks:[]).forEach(b=>{if(b.k==="s")sc.push({n:sc.length+1,words:[],texts:[]});else if(b.k==="w"){if(!Sets.isSaying(D[wi(b.w)]))sc[sc.length-1].words.push(b.w);}else if(b.k==="d"){Talk.words(b).forEach(w=>{if(wi(w)>=0)sc[sc.length-1].words.push(w);});}else if(b.k==="j"){Joiners.words(b).forEach(w=>{if(wi(w)>=0&&!Sets.isSaying(D[wi(w)]))sc[sc.length-1].words.push(w);});}else if((b.t||"").trim())sc[sc.length-1].texts.push(b.t.trim());});
   return sc.filter(x=>x.words.length||x.texts.length);}
 // what she has to write at this level
 function items(){const L=LV(),sc=scenesOf();if(L.mode==="scene")return sc.map(x=>({key:"s"+x.n,scene:x.n,words:x.words}));
@@ -299,7 +301,7 @@ const ME=App.profile||{};
 const blank=()=>({id:null,owner_id:ME.id,title:"",blocks:[],characters:[],status:"draft",story_text:"",video_url:"",level:DEF_LEVEL,sentences:{},feedback:""});
 
 // ---------- library ----------
-function drawLib(){const q=$("q").value.trim().toLowerCase();const used=new Map();(CUR?.blocks||[]).forEach(b=>{if(b.k==="j"){Joiners.words(b).forEach(w=>used.set(w,(used.get(w)||0)+1));return;}const t=b.k==="w"||b.k==="q"||b.k==="c"?b.w:b.k==="t"?clean(b.t||""):"";if(t)used.set(t,(used.get(t)||0)+1);});
+function drawLib(){const q=$("q").value.trim().toLowerCase();const used=new Map();(CUR?.blocks||[]).forEach(b=>{if(b.k==="d"){Talk.words(b).forEach(w=>used.set(w,(used.get(w)||0)+1));return;}if(b.k==="j"){Joiners.words(b).forEach(w=>used.set(w,(used.get(w)||0)+1));return;}const t=b.k==="w"||b.k==="q"||b.k==="c"?b.w:b.k==="t"?clean(b.t||""):"";if(t)used.set(t,(used.get(t)||0)+1);});
   const hit=v=>v.w.toLowerCase().includes(q)||String(v.d).toLowerCase().includes(q);
   const card=i=>{const v=D[i],u=used.get(v.w)||used.get(clean(v.w)),sc=Sets.scaleOfWord(v);
     return `<div class="lw${u?" used":""}${v.boxKind==="link"?" link":""}" draggable="true" data-i="${i}">${u?`<span class="n">✓ ${u}</span>`:""}${sc?`<button class="mt" type="button" data-meter="${i}" title="See it on the ${esc(sc.g)} meter">🎚️</button>`:""}${Sets.media(v,{cls:"lm",alt:""})}<b>${esc(clean(v.w))}</b><small>${esc(v.d||"")}</small>${q&&v.box!==BOX?`<span class="from">in ${esc(boxOf(v.box).title)}</span>`:""}<button class="add" type="button" data-add="${i}">+ Add</button></div>`;};
@@ -322,7 +324,7 @@ function addBlock(b,at){if(!CUR)CUR=blank();if(CUR.blocks.length>=200){App.statu
   const k=at!=null?at:(SEL>=0?SEL+1:CUR.blocks.length);CUR.blocks.splice(k,0,b);SEL=k;changed();drawBoard();
   if(b.k==="t"){const inp=$("board").querySelector(`[data-k="${k}"] input`);if(inp){inp.focus();inp.setSelectionRange(inp.value.length,inp.value.length);}}
   else $("board").querySelector(`[data-k="${k}"]`)?.scrollIntoView({block:"nearest"});}
-function drawBoard(){if(ACT&&!(CUR&&CUR.blocks[ACT[0]]&&CUR.blocks[ACT[0]].k==="j"))ACT=null;(CUR?CUR.blocks:[]).forEach(b=>{if(b.k==="w"&&b.tense&&window.Tense)b.ph=Tense.phrase(b.vb||b.w,{tense:b.tense,person:b.per,when:b.when,partners:b.p,shape:b.shape});});const B=CUR?CUR.blocks:[];let scene=1,n=0;
+function drawBoard(){if(ACT&&!(CUR&&CUR.blocks[ACT[0]]&&/^[jd]$/.test(CUR.blocks[ACT[0]].k)))ACT=null;(CUR?CUR.blocks:[]).forEach(b=>{if(b.k==="w"&&b.tense&&window.Tense)b.ph=Tense.phrase(b.vb||b.w,{tense:b.tense,person:b.per,when:b.when,partners:b.p,shape:b.shape});});const B=CUR?CUR.blocks:[];let scene=1,n=0;
   const rows=[`<li class="scene" data-scene="1">Scene 1${shotChip(1)}</li>`];
   B.forEach((b,k)=>{const ctl=`<span class="ctl"><button type="button" data-up="${k}" aria-label="Move up" title="Move up">▲</button><button type="button" data-down="${k}" aria-label="Move down" title="Move down">▼</button><button type="button" data-del="${k}" aria-label="Remove" title="Remove">✕</button></span>`;
     if(b.k==="s"){scene++;rows.push(`<li class="scene bk-s" data-k="${k}" draggable="true">Scene ${scene}${shotChip(scene)}${ctl}</li>`);return;}
@@ -332,6 +334,7 @@ function drawBoard(){if(ACT&&!(CUR&&CUR.blocks[ACT[0]]&&CUR.blocks[ACT[0]].k==="
       const say=isSay(b,v),pic=v?(v.vid?`<video class="th" src="${esc(v.vid)}" muted loop playsinline preload="none" data-auto></video>`:`<img class="th" src="${esc(v.img)}" alt="">`):"";
       rows.push(`<li class="${cls}" data-k="${k}" draggable="true">${grip}${say?`<span class="thw${pic?"":" nopic"}">${pic}${spkDot(b,k)}</span>`:pic}<span class="tx"><b>${esc(clean(b.w))}</b>${b.tw?`<span class="tchip" title="Who, when and how: the sentence you built">🧱 ${esc(b.ph||b.tw)}</span>`:""}${say?spkLine(b):""}${b.from?`<span class="was">↺ instead of ${esc(clean(b.from))}</span>`:""}<small>${esc(v?v.d:"")}</small>${(b.p||[]).length?`<span class="subs">${b.p.map(x=>`<span>${esc(x)}</span>`).join("")}</span>`:""}</span><button type="button" class="wxbtn" data-wx="${k}" title="Explore: stronger, softer, similar, opposite, partners" aria-label="Explore this word">🔍</button>${ctl}</li>`);}
     else if(b.k==="c"){const v=D[wi(b.w)];rows.push(`<li class="${cls}" data-k="${k}" draggable="true">${grip}<span class="th qth">${b.m?"🎵":b.tr?"🎞️":"🎥"}</span><span class="tx"><b>${esc(v&&v.emoji?v.emoji+" ":"")}${esc(b.w)}</b><small>${b.m?"Music":b.tr?"Transition":"Camera"} · ${esc(v?v.d:"")}</small></span>${ctl}</li>`);}
+    else if(b.k==="d")rows.push(`<li class="${cls}" data-k="${k}" draggable="true">${grip}${Talk.frame(b,k,ACT,cast())}${ctl}</li>`);
     else if(b.k==="j")rows.push(`<li class="${cls}" data-k="${k}" draggable="true">${grip}${Joiners.frame(b,k,ACT,cast().map(castName).filter(Boolean))}${ctl}</li>`);
     else if(b.k==="q")rows.push(`<li class="${cls}" data-k="${k}" draggable="true">${grip}<span class="thw"><span class="th qth">📜</span>${spkDot(b,k)}</span><span class="tx"><b class="qt">“${esc(b.w)}”</b>${spkLine(b)}<small>${esc(b.a||"")}</small></span>${ctl}</li>`);
     else rows.push(`<li class="${cls}" data-k="${k}" draggable="true">${grip}<input value="${esc(b.t||"")}" maxlength="300" placeholder="Type your own words…" aria-label="My own words" data-t="${k}">${ctl}</li>`);});
@@ -343,7 +346,7 @@ function drawPreview(){const B=CUR?CUR.blocks:[];if(!B.some(b=>b.k!=="s")){$("pr
   const S_=CUR.sentences||{},L=LV();
   if(L.mode!=="none"&&Object.values(S_).some(v=>(v||"").trim())){const its=items();
     $("preview").innerHTML=`<h3>My story so far</h3>`+scenesOf().map(x=>`<p><span class="muted">Scene ${x.n}:</span> ${its.filter(it=>it.scene===x.n).map(it=>esc((S_[it.key]||"").trim())).filter(Boolean).join(" ")||'<span class="muted">…</span>'}</p>`).join("");return;}
-  const sc=[[]];B.forEach(b=>b.k==="s"?sc.push([]):sc[sc.length-1].push(b.k==="w"?`${b.by?`<i>${esc(b.by)}:</i> `:""}<b>${esc(b.ph||b.tw||clean(b.w))}</b>${(b.p||[]).length?` <i class="muted">(${esc(b.p.join(", "))})</i>`:""}`:b.k==="j"?`<b class="jprev">${esc(Joiners.text(b,cast().map(castName)))}</b>`:b.k==="q"?`<i>${b.by?esc(b.by)+": ":""}“${esc(b.w)}”</i>`:b.k==="c"?`<span class="muted">[${b.m?"🎵":b.tr?"🎞️":"🎥"} ${esc(b.w)}]</span>`:esc(b.t||"")));
+  const sc=[[]];B.forEach(b=>b.k==="s"?sc.push([]):sc[sc.length-1].push(b.k==="w"?`${b.by?`<i>${esc(b.by)}:</i> `:""}<b>${esc(b.ph||b.tw||clean(b.w))}</b>${(b.p||[]).length?` <i class="muted">(${esc(b.p.join(", "))})</i>`:""}`:b.k==="d"?Talk.lines(b,cast()).map(l=>`<br><i>${esc(l.by||"Someone")}:</i> “${esc(l.text)}”`).join("")+"<br>":b.k==="j"?`<b class="jprev">${esc(Joiners.text(b,cast().map(castName)))}</b>`:b.k==="q"?`<i>${b.by?esc(b.by)+": ":""}“${esc(b.w)}”</i>`:b.k==="c"?`<span class="muted">[${b.m?"🎵":b.tr?"🎞️":"🎥"} ${esc(b.w)}]</span>`:esc(b.t||"")));
   $("preview").innerHTML=`<h3>My story so far</h3>`+sc.filter(s=>s.length).map((s,k)=>`<p><span class="muted">Scene ${k+1}:</span> ${s.join(" ")}</p>`).join("");}
 function move(k,d){const B=CUR.blocks,j=k+d;if(j<0||j>=B.length)return;[B[k],B[j]]=[B[j],B[k]];SEL=j;changed();drawBoard();}
 $("board").addEventListener("click",e=>{const b=e.target.closest("button");
@@ -372,6 +375,24 @@ document.addEventListener("dragend",()=>{DRAG=null;$("board").classList.remove("
 $("addText").onclick=()=>addBlock({k:"t",t:""});
 $("addJoin").onclick=e=>Joiners.menu(e.currentTarget,t=>{const b=Joiners.make(t);if(!b)return;addBlock(b);const k=CUR.blocks.indexOf(b);ACT=[k,0];drawBoard();
   App.status(Joiners.TYPES[t].kind==="cond"?"Now pick a doing word on the left for the first box":"Now pick words on the left: they go into the glowing box",true);});
+$("addTalk").onclick=()=>{const b=Talk.make(cast());addBlock(b);ACT=[CUR.blocks.indexOf(b),"o"];drawBoard();App.status("Pick a doing word on the left for the first line (or choose Be for 'Are you tired?')",true);};
+// 💬 conversation frames
+const nextSpeaker=b=>{const N=cast().map(castName).filter(Boolean);if(!N.length)return "";const said=[b.o.by,...(b.r||[]).map(r=>r.by)];return N.find(n=>!said.includes(n))||N.find(n=>n!==said[said.length-1])||N[0];};
+$("board").addEventListener("click",e=>{const db=e.target.closest(".dbox");if(!db)return;e.stopPropagation();const t=e.target,d=x=>(t.closest(`[data-${x}]`)||{}).dataset,pr=v=>v.split("|"),B=CUR.blocks;let x;
+  if((x=d("dmode"))&&x.dmode){const [k,m]=pr(x.dmode),b=B[+k];b.o.mode=m;b.r=(b.r||[]).filter(r=>Talk.kinds(b.o).some(([kk])=>kk===r.kind));changed();return drawBoard();}
+  if((x=d("dt"))&&x.dt){const [k,v]=pr(x.dt);B[+k].o.t=v;changed();return drawBoard();}
+  if((x=d("dvx"))&&x.dvx!=null){const k=+x.dvx;B[k].o.v="";ACT=[k,"o"];changed();return drawBoard();}
+  if((x=d("drx"))&&x.drx){const [k,n]=pr(x.drx).map(Number);B[k].r.splice(n,1);changed();return drawBoard();}
+  if((x=d("dadd"))&&x.dadd){const [k,kind]=pr(x.dadd),b=B[+k];(b.r=b.r||[]).push({kind,by:nextSpeaker(b),who:"i"});changed();return drawBoard();}
+  if(t.closest("input,select"))return;
+  if((x=d("dslot"))&&x.dslot!=null){const k=+x.dslot;ACT=ACT&&ACT[0]===k?null:[k,"o"];SEL=k;drawBoard();}},true);
+$("board").addEventListener("change",e=>{const t=e.target,ds=t.dataset;if(!(ds.dby||ds.dwho||ds.dneg||ds.drwho||ds.drest))return;
+  if(ds.dby){const [k,n]=ds.dby.split("|").map(Number),b=CUR.blocks[k];if(n<0)b.o.by=t.value;else b.r[n].by=t.value;}
+  else if(ds.dwho)CUR.blocks[+ds.dwho].o.who=t.value;else if(ds.dneg){const b=CUR.blocks[+ds.dneg];b.o.neg=t.checked;b.r=(b.r||[]).filter(r=>Talk.kinds(b.o).some(([kk])=>kk===r.kind));}
+  else if(ds.drwho){const [k,n]=ds.drwho.split("|").map(Number);CUR.blocks[k].r[n].who=t.value;}
+  changed();drawBoard();});
+$("board").addEventListener("input",e=>{const t=e.target;if(!t.dataset.drest)return;const b=CUR.blocks[+t.dataset.drest];b.o.rest=t.value;
+  const L=Talk.lines(b,cast());t.closest(".dbox").querySelectorAll(".dl .say").forEach((el,n)=>{if(L[n])el.textContent=L[n].text;});changed();drawPreview();});
 // joiner frames: slots, switches and small inputs (handled here, before the board's own click)
 $("board").addEventListener("click",e=>{const jb=e.target.closest(".jbox");if(!jb)return;e.stopPropagation();const t=e.target,d=x=>(t.closest(`[data-${x}]`)||{}).dataset;
   const pr=v=>v.split("|"),B=CUR.blocks;let x;
