@@ -1,0 +1,72 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>My English level · Helper Academy</title><link rel="icon" href="assets/icons/brilliant.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<link rel="stylesheet" href="css/app.css">
+<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261125s"></script><script src="js/icons.js?v=20261125s"></script><script src="js/app.js?v=20261125s"></script><script src="js/tense.js?v=20261125s"></script><script src="js/joiners.js?v=20261125s"></script><script src="js/talk.js?v=20261125s"></script><script src="js/grammarmap.js?v=20261125s"></script>
+<style>
+.lhead{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;justify-content:space-between;margin-bottom:12px}.lhead h1{margin:0}.lhead p{margin:4px 0 0;color:var(--muted);max-width:70ch}
+.who{display:flex;gap:6px;flex-wrap:wrap}.who button{border:1.5px solid var(--rule);background:var(--sheet);border-radius:999px;padding:6px 12px;font:800 .9rem var(--f-body);cursor:pointer}.who button[aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:#fff}
+.badge{display:inline-grid;place-items:center;min-width:64px;height:64px;border-radius:18px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;font:800 1.6rem var(--f-display);padding:0 10px}
+.sum{display:flex;gap:14px;align-items:center;background:var(--sheet);border:1.5px solid var(--rule);border-radius:18px;padding:12px 16px;margin-bottom:14px;flex-wrap:wrap}
+.bars{display:grid;grid-template-columns:repeat(6,minmax(70px,1fr));gap:8px;flex:1;min-width:300px}.bar{display:grid;gap:3px;font:800 .8rem var(--f-body)}.bar .t{height:10px;border-radius:99px;background:#e2e8f0;overflow:hidden}.bar .t i{display:block;height:100%;background:#22c55e}
+.lv{margin:16px 0 6px;font:800 1.15rem var(--f-display)}.lv small{font:700 .82rem var(--f-body);color:var(--muted)}
+.pts{display:flex;flex-wrap:wrap;gap:6px}.pt{border:1.5px solid var(--rule);background:var(--sheet);border-radius:12px;padding:6px 10px;font:700 .88rem var(--f-body);cursor:pointer;display:inline-flex;gap:6px;align-items:center}
+.pt .d{width:10px;height:10px;border-radius:50%;background:#cbd5e1}.pt.tried .d{background:#fbbf24}.pt.met .d{background:#60a5fa}.pt.steady .d{background:#22c55e}.pt.mastered .d{background:#7c3aed}.pt.mastered{border-color:#c4b5fd}
+.pt small{color:var(--muted);font-weight:700}.key{display:flex;gap:12px;flex-wrap:wrap;font:700 .8rem var(--f-body);color:var(--muted)}.key span{display:inline-flex;gap:5px;align-items:center}.key i{width:10px;height:10px;border-radius:50%;display:inline-block}
+.dlg{border:0;border-radius:18px;padding:16px 18px;max-width:min(640px,96vw);width:100%;background:var(--sheet);color:var(--ink)}.dlg::backdrop{background:rgba(15,23,42,.45)}
+.dlg h3{margin:0 0 6px;font:800 1.2rem var(--f-display)}.ar{font-family:var(--f-ar,inherit);direction:rtl;color:#475569}.ex{background:#f8fafc;border-radius:10px;padding:6px 10px;margin:4px 0}
+.panel{background:var(--sheet);border:1.5px solid var(--rule);border-radius:16px;padding:12px 14px;margin:12px 0;display:grid;gap:8px}
+.panel textarea{font:600 1rem var(--f-body);padding:8px 10px;border:1.5px solid var(--rule);border-radius:10px;min-height:56px}.hint{background:#fef9c3;border-radius:10px;padding:8px 10px}.fix{background:#dcfce7;border-radius:10px;padding:8px 10px;font-weight:800}
+</style>
+</head><body>
+<div class="wrap" style="max-width:1100px">
+  <div class="lhead"><div><span class="eyebrow">Grammar by taste</span><h1>📈 My English level</h1>
+    <p>Every sentence you build in the Story builder counts. Each dot is one grammar point from A1 to C2: it fills up as you use it in your stories. No lessons needed: build, and watch it grow.</p></div><div class="who" id="who"></div></div>
+  <div id="out"><div class="empty">Loading…</div></div>
+</div>
+<dialog class="dlg" id="dlg"></dialog>
+<script>
+const $=id=>document.getElementById(id),esc=App.esc,C=App.client;let ME=null,KIDS=[],CUR=null,PTS=[],BY={},SET=null,CHK=[];
+const ST={none:"not yet",tried:"tried",met:"met",steady:"steady",mastered:"mastered"};
+async function loadFor(uid){
+  const [{data:st},{data:ck},{data:se}]=await Promise.all([C.from("stories").select("id,title,blocks").eq("owner_id",uid),
+    C.from("grammar_checks").select("id,sentence,ok,points,result,created_at").eq("user_id",uid).order("created_at",{ascending:false}).limit(200),
+    C.from("ai_check_settings").select("*").eq("student_id",uid).maybeSingle()]);
+  CHK=ck||[];SET=se||{student_id:uid,check_on:false,daily_cap:10};
+  const {data:ws}=await C.from("words").select("headword,tags").eq("lang","en").overlaps("tags",["Phrasal verb","Idiom"]).limit(2000);
+  const ph=new Set(),id=new Set();(ws||[]).forEach(w=>{const h=String(w.headword).replace(/\s*\(.*\)$/,"").toLowerCase();if((w.tags||[]).includes("Phrasal verb"))ph.add(h);if((w.tags||[]).includes("Idiom"))id.add(h);});
+  BY=GrammarMap.build(PTS,st||[],CHK,{phrasal:ph,idiom:id});draw();}
+function draw(){
+  const L=GrammarMap.levelOf(BY),rows=Object.values(BY),isKid=CUR===ME.id&&ME.role!=="teacher",canCheck=ME.role==="teacher"||SET.check_on;
+  const bars=GrammarMap.LEVELS.map(lv=>{const ps=rows.filter(r=>r.p.level===lv),used=ps.filter(r=>r.status!=="none").length,good=ps.filter(r=>r.status==="steady"||r.status==="mastered").length;
+    return `<div class="bar"><span>${lv} · ${used}/${ps.length}</span><span class="t" title="${good} steady or mastered"><i style="width:${ps.length?Math.round(100*used/ps.length):0}%"></i></span></div>`;}).join("");
+  $("out").innerHTML=`<div class="sum"><span class="badge" title="Level reached: 80% of its points steady">${L||"—"}</span><div style="display:grid;gap:6px;flex:1"><b>${L?`Level ${L} reached`:"Keep building: your first level appears when 80% of the A1 points are steady."}</b><div class="bars">${bars}</div>
+      <div class="key"><span><i style="background:#cbd5e1"></i>not yet</span><span><i style="background:#fbbf24"></i>tried</span><span><i style="background:#60a5fa"></i>met (3×)</span><span><i style="background:#22c55e"></i>steady (5× in 2 stories)</span><span><i style="background:#7c3aed"></i>mastered (10×)</span></div></div></div>
+    <div class="panel"><b>✅ Try a sentence</b><span class="muted">Type your own sentence. ${canCheck?"The AI gives you a hint first, then the fix if you want it.":"Ask your parent to turn on AI Check for you."}</span>
+      <textarea id="ts" maxlength="300" placeholder="e.g. Yesterday I have seen a big dog." ${canCheck?"":"disabled"}></textarea><div><button type="button" class="btn" id="tsGo" ${canCheck?"":"disabled"}>✅ Check</button> <span id="tsMsg" class="muted"></span></div><div id="tsOut"></div></div>
+    ${ME.role==="teacher"&&CUR!==ME.id?`<div class="panel"><b>🔒 AI Check for this learner</b><label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="acOn" ${SET.check_on?"checked":""}> Let this learner use AI Check (costs a little each time)</label>
+      <label style="display:flex;gap:8px;align-items:center">Up to <input type="number" id="acCap" min="0" max="50" value="${SET.daily_cap}" style="width:5em"> checks a day</label><div><button type="button" class="btn small" id="acSave">Save</button> <span id="acMsg" class="muted"></span></div></div>`:""}
+    ${GrammarMap.LEVELS.map(lv=>`<h2 class="lv">${lv} <small>${{A1:"Starter",A2:"Elementary",B1:"Intermediate",B2:"Upper-intermediate",C1:"Advanced",C2:"Proficiency"}[lv]}</small></h2><div class="pts">${rows.filter(r=>r.p.level===lv).map(r=>`<button type="button" class="pt ${r.status}" data-pt="${esc(r.p.key)}"><span class="d"></span>${esc(r.p.name)}${r.uses?` <small>×${r.uses}</small>`:""}</button>`).join("")}</div>`).join("")}`;
+  if($("tsGo"))$("tsGo").onclick=check;if($("acSave"))$("acSave").onclick=saveSet;}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-pt]");if(b){const r=BY[b.dataset.pt];$("dlg").innerHTML=`<h3>${esc(r.p.name)} <small class="muted">${r.p.level} · ${ST[r.status]}</small></h3>
+  <p>${esc(r.p.rule)}</p><p class="ar">${esc(r.p.rule_ar)}</p><p class="muted">🧱 Practise it in: <b>${esc(r.p.place)}</b>${r.uses?` · used ${r.uses}× in ${r.stories.size} ${r.stories.size===1?"story":"stories"}`:""}</p>
+  ${r.ex.length?`<b>Your sentences</b>${r.ex.map(x=>`<div class="ex">${esc(x)}</div>`).join("")}`:`<p class="muted">Not used yet. Open the Story builder and try it with any word.</p>`}<p><a class="btn small" href="story.html">🧱 Open the Story builder</a> <button type="button" class="btn small ghost" onclick="this.closest('dialog').close()">Close</button></p>`;$("dlg").showModal();return;}
+  const w=e.target.closest("[data-who]");if(w){CUR=w.dataset.who;drawWho();$("out").innerHTML=`<div class="empty">Loading…</div>`;loadFor(CUR);}});
+async function check(){const s=$("ts").value.trim();if(s.length<3)return;$("tsGo").disabled=true;$("tsMsg").textContent="Checking…";$("tsOut").innerHTML="";
+  try{const r=await C.functions.invoke("check",{body:{sentence:s}});let d=r.data;if(r.error){try{d=await r.error.context.json();}catch(x){d={error:r.error.message};}}
+    if(!d||d.error){$("tsMsg").textContent="Not checked: "+((d&&d.error)||"unknown error");return;}
+    $("tsMsg").textContent="";const names=(d.points||[]).map(k=>BY[k]?BY[k].p.name:k);
+    $("tsOut").innerHTML=d.ok?`<div class="fix">🌟 Well done: it's correct!${names.length?` <small>You used: ${names.map(esc).join(", ")}</small>`:""}</div>`
+      :`<div class="hint">💡 ${esc(d.hint||"Look again at the verb.")}${d.hint_ar?`<div class="ar">${esc(d.hint_ar)}</div>`:""}</div><p><button type="button" class="btn small ghost" id="showFix">Show the fix</button></p><div id="fixBox" hidden class="fix">✅ ${esc(d.fixed||"")}</div>`;
+    if($("showFix"))$("showFix").onclick=()=>{$("fixBox").hidden=false;$("showFix").remove();};
+    loadFor(CUR);}finally{$("tsGo").disabled=false;}}
+async function saveSet(){const row={student_id:CUR,check_on:$("acOn").checked,daily_cap:Math.max(0,Math.min(50,+$("acCap").value||0)),updated_at:new Date().toISOString()};
+  const {error}=await C.from("ai_check_settings").upsert(row);$("acMsg").textContent=error?"Not saved: "+error.message:"Saved.";if(!error)SET=row;}
+function drawWho(){if(ME.role!=="teacher"){$("who").innerHTML="";return;}$("who").innerHTML=[[ME.id,"🧑 Me"],...KIDS.map(k=>[k.id,"🧒 "+k.name])].map(([id,l])=>`<button type="button" data-who="${id}" aria-pressed="${CUR===id}">${esc(l)}</button>`).join("");}
+App.requireUser().then(async()=>{ME={id:App.user.id,role:(App.profile||{}).role};const {data:gp}=await C.from("grammar_points").select("*").order("position");PTS=gp||[];
+  if(ME.role==="teacher"){const {data:cl}=await C.from("classes").select("id").eq("teacher_id",ME.id);const ids=(cl||[]).map(c=>c.id);
+    if(ids.length){const {data:m}=await C.from("class_members").select("student_id, profiles(full_name)").in("class_id",ids);const seen=new Set();KIDS=(m||[]).filter(x=>!seen.has(x.student_id)&&seen.add(x.student_id)).map(x=>({id:x.student_id,name:(x.profiles&&x.profiles.full_name)||"Learner"}));}}
+  CUR=KIDS[0]?KIDS[0].id:ME.id;drawWho();loadFor(CUR);});
+</script>
+</body></html>
