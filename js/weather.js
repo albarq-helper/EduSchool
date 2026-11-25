@@ -18,6 +18,7 @@
   add("observe,observed,observes,observing,observation,observant,examine,examined,inspect,inspected,magnify,magnified,magnifying,magnifying glass,magnifier,study,studied,detail,details,detailed,closely,scrutinize", { e: "🔍", name: "Magnifier", mag: 2.2, long: 1, dur: 20000 });
   add("spy,spied,spying,binoculars,scan,scanned,survey,surveyed,lookout,peer,peered,peering", { e: "🔭", name: "Spy", bino: 1, long: 1, dur: 14000 });
   add("separate,separated,separates,separating,separation,split,splits,splitting,divide,divided,dividing,apart,torn,tear apart,rip,ripped,halves,half", { e: "✂️", name: "Separated", split: 1, dur: 6500 });
+  add("rifle,rifles,gun,guns,shoot,shoots,shooting,bullet,bullets,aim,aimed,aiming,target,targets,marksman,sniper", { e: "🎯", name: "Target practice", rifle: 1, long: 1, dur: 20000 });
   add("faraway,far away,far off,far-off,distant,distance,far,afar,vanish,vanished,disappear,disappeared", { e: "🛣️", name: "Far away", far: 1, dur: 7000 });
   add("sway,sways,swayed,swaying,swing,swinging,rocking,wobble,wobbly", { e: "🌴", name: "Sway", sway: 1 });
   add("breeze,breezy", { e: "🍃", name: "Breeze", wind: 1 });
@@ -68,14 +69,16 @@
   let AC = null;
   const ac = () => { try { AC = AC || new (window.AudioContext || window.webkitAudioContext)(); if (AC.state === "suspended") AC.resume(); } catch (e) { AC = null; } return AC; };
   ["pointerdown", "keydown"].forEach(t => addEventListener(t, () => ac(), { once: true, capture: true }));
-  function noise(dur, vol, type, f0, f1, q, t0) {
+  function noise(dur, vol, type, f0, f1, q, t0) { try { return noise0(dur, vol, type, f0, f1, q, t0); } catch (e) { return null; } }
+  function noise0(dur, vol, type, f0, f1, q, t0) {
     const a = ac(); if (!a || a.state !== "running") return null;
     const len = Math.floor(a.sampleRate * dur), b = a.createBuffer(1, len, a.sampleRate), d = b.getChannelData(0);
     let last = 0; for (let i = 0; i < len; i++) { const w = Math.random() * 2 - 1; last = type === "lowpass" ? (last + 0.02 * w) / 1.02 : w; d[i] = type === "lowpass" ? last * 3.5 : w; }
     const n = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain(), now = a.currentTime + (t0 || 0);
     n.buffer = b; f.type = type === "lowpass" ? "lowpass" : "bandpass"; f.Q.value = q || 1;
-    f.frequency.setValueAtTime(f0, now); f.frequency.linearRampToValueAtTime(f1, now + dur * 0.6); f.frequency.linearRampToValueAtTime(f0, now + dur);
-    g.gain.setValueAtTime(0.0001, now); g.gain.exponentialRampToValueAtTime(vol, now + 0.6); g.gain.setValueAtTime(vol, now + dur - 0.9); g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+    f.frequency.setValueAtTime(f0, now); f.frequency.linearRampToValueAtTime(f1, now + dur * 0.6); f.frequency.linearRampToValueAtTime(dur < 1 ? f1 : f0, now + dur);
+    const att = Math.min(0.6, dur * 0.15), rel = Math.min(0.9, dur * 0.6); // short sounds (a bang, a pop) get a fast attack and release
+    g.gain.setValueAtTime(0.0001, now); g.gain.exponentialRampToValueAtTime(vol, now + att); g.gain.setValueAtTime(vol, now + Math.max(att, dur - rel)); g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
     n.connect(f); f.connect(g); g.connect(a.destination); n.start(now); n.stop(now + dur + 0.1);
     return { stop: () => { try { g.gain.cancelScheduledValues(a.currentTime); g.gain.setTargetAtTime(0.0001, a.currentTime, 0.15); } catch (e) {} } };
   }
@@ -95,6 +98,8 @@
     return { stop: () => s.forEach(x => x && x.stop()) };
   }
   function plink(t0) { const a = ac(); if (!a || a.state !== "running") return; const o = a.createOscillator(), g = a.createGain(), n = a.currentTime + t0, f = 900 + Math.random() * 700; o.type = "sine"; o.frequency.setValueAtTime(f, n); o.frequency.exponentialRampToValueAtTime(f * 2.2, n + .06); g.gain.setValueAtTime(.0001, n); g.gain.exponentialRampToValueAtTime(.06, n + .01); g.gain.exponentialRampToValueAtTime(.0001, n + .18); o.connect(g); g.connect(a.destination); o.start(n); o.stop(n + .2); }
+  function bang() { noise(0.35, 0.5, "lowpass", 900, 120, 1); noise(0.08, 0.35, "band", 3000, 1500, 1); }
+  function pop() { noise(0.12, 0.3, "band", 2500, 900, 2); plink(0.05); }
   function thunder(t0) { noise(2.4, 0.5, "lowpass", 120, 60, 1, t0); }
 
   // 🎨 the stage: a full-screen canvas above the page that ignores clicks
@@ -132,11 +137,19 @@
     // 👆 where the finger or mouse is (the torch and laser follow it; until it moves, they sweep by themselves)
     const ptr = { x: W() / 2, y: H() / 2, moved: 0 };
     const onMove = e => { if (e.target && e.target.closest && e.target.closest(".wx-chip")) return; const q = e.touches ? e.touches[0] : e; if (!q) return; ptr.x = q.clientX; ptr.y = q.clientY; ptr.moved = performance.now(); };
-    const track = r.torch || r.laser || r.eyes || r.bino || r.mag || r.peep;
+    const track = r.torch || r.laser || r.eyes || r.bino || r.mag || r.peep || r.rifle;
     if (track) { addEventListener("pointermove", onMove, { passive: true }); addEventListener("touchmove", onMove, { passive: true }); addEventListener("pointerdown", onMove, { passive: true }); }
     const dark = r.torch ? layer("rgba(3,5,18,.94)", 1) : null;
     const bino = !!r.bino;
     const eye = { lid: 0, next: 1800 };
+    // 🎯 target practice: balloons float up; click to fire; hits pop, misses leave a cracked hole that fades
+    const G = { balloons: [], holes: [], bits: [], score: 0, kick: 0, nextB: 0 };
+    const fire = e => { if (e.target && e.target.closest && e.target.closest(".wx-chip")) return; e.preventDefault(); e.stopPropagation(); if (e.type !== "pointerdown") return;
+      const q = e.touches ? e.touches[0] : e; ptr.x = q.clientX; ptr.y = q.clientY; ptr.moved = performance.now(); bang(); G.kick = 1;
+      const hit = G.balloons.find(b => !b.dead && Math.hypot((b.x0 == null ? b.x : b.x0) - ptr.x, b.y - ptr.y) < b.r * 1.15);
+      if (hit) { hit.dead = 1; pop(); G.score++; for (let k = 0; k < 22; k++) G.bits.push({ x: hit.x, y: hit.y, vx: rnd(-5, 5), vy: rnd(-6, 2), c: ["#f43f5e", "#f59e0b", "#22c55e", "#3b82f6", "#a855f7", "#fde047"][k % 6], a: 1 }); const sc = chip.querySelector("[data-score]"); if (sc) sc.textContent = "🎈 " + G.score; }
+      else G.holes.push({ x: ptr.x, y: ptr.y, a: 1, rot: rnd(0, 6) }); };
+    if (r.rifle) ["pointerdown", "click", "mousedown", "touchstart"].forEach(ev => addEventListener(ev, fire, { capture: true, passive: false }));
     let lens = null, lensIn = null, lensWord = null; const pairs = []; const LR = Math.round(Math.min(W(), H()) * .19);
     if (r.mag) {
       lens = document.createElement("div"); lens.className = "wx-mag"; lens.setAttribute("aria-hidden", "true");
@@ -157,7 +170,7 @@
     const onKey = e => { if (!r.torch || r.torch.flicker) return; const k = { ArrowUp: () => lenBy(30), ArrowDown: () => lenBy(-30), ArrowLeft: () => tiltBy(-.15), ArrowRight: () => tiltBy(.15) }[e.key]; if (k) { e.preventDefault(); k(); } };
     const onWheel = e => { if (!r.torch || r.torch.flicker) return; e.preventDefault(); lenBy(-e.deltaY * .4); };
     if (r.torch && !r.torch.flicker) { addEventListener("keydown", onKey); addEventListener("wheel", onWheel, { passive: false }); }
-    const oldCur = document.documentElement.style.cursor; if (r.torch || r.laser || r.mag) document.documentElement.style.cursor = "none";
+    const oldCur = document.documentElement.style.cursor; if (r.torch || r.laser || r.mag || r.rifle) document.documentElement.style.cursor = "none";
     const cat = { x: -60, y: H() * .8, f: 1 };
     let puddle = null;
     if (r.puddle) { puddle = document.createElement("div"); puddle.className = "wx-layer"; Object.assign(puddle.style, { top: "auto", height: "0", background: "linear-gradient(to bottom, rgba(90,160,230,.35), rgba(40,110,200,.55))", transition: "height 4s ease-in, opacity .8s" }); document.body.appendChild(puddle); layers.push(puddle); requestAnimationFrame(() => puddle.style.height = (r.puddle > 1 ? 22 : 9) + "vh"); }
@@ -216,6 +229,24 @@
         const w = wordAt(x, y); if (w && w.length > 1) { lensWord.textContent = w; lensWord.style.display = "block"; lensWord.style.left = x + "px"; lensWord.style.top = Math.min(H() - 60, y + LR + 18) + "px"; } else lensWord.style.display = "none";
         ctx.save(); ctx.translate(x + (LR + 4) * .707, y + (LR + 4) * .707); ctx.rotate(Math.PI / 4); const hg = ctx.createLinearGradient(0, -9, 0, 9); hg.addColorStop(0, "#8b5a2b"); hg.addColorStop(.5, "#c08040"); hg.addColorStop(1, "#5c3a1a"); ctx.fillStyle = "#334155"; ctx.fillRect(0, -7, 18, 14); ctx.fillStyle = hg; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(16, -9, Math.max(60, LR * .9), 18, 9) : ctx.rect(16, -9, LR, 18); ctx.fill(); ctx.restore();
         ctx.strokeStyle = "rgba(255,255,255,.55)"; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(x, y, LR * .8, Math.PI * 1.1, Math.PI * 1.45); ctx.stroke(); }
+      if (r.rifle) {
+        G.kick = Math.max(0, G.kick - .08); const sx = ptr.x, sy = ptr.y - G.kick * 18, SR = Math.min(W(), H()) * .22;
+        ctx.save(); ctx.fillStyle = `rgba(0,0,0,${.55 * fade})`; ctx.fillRect(0, 0, W(), H()); ctx.globalCompositeOperation = "destination-out"; ctx.beginPath(); ctx.arc(sx, sy, SR, 0, 7); ctx.fill(); ctx.restore();
+        if (t > G.nextB && life < .9) { const rr = rnd(26, 40); G.balloons.push({ x: rnd(rr * 2, W() - rr * 2), y: H() + rr * 2, r: rr, vy: rnd(.9, 1.8), ph: rnd(0, 6), c: ["#f43f5e", "#f59e0b", "#22c55e", "#3b82f6", "#a855f7", "#ec4899"][Math.floor(rnd(0, 6))] }); G.nextB = t + rnd(500, 1000); }
+        G.balloons.forEach(b => { if (b.dead) return; b.y -= b.vy; b.ph += .03; const bx = b.x + Math.sin(b.ph) * 10;
+          ctx.strokeStyle = "rgba(100,100,100,.7)"; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(bx, b.y + b.r * 1.15); ctx.quadraticCurveTo(bx + 8, b.y + b.r * 1.8, bx - 2, b.y + b.r * 2.6); ctx.stroke();
+          const g = ctx.createRadialGradient(bx - b.r * .35, b.y - b.r * .4, b.r * .1, bx, b.y, b.r * 1.2); g.addColorStop(0, "#fff"); g.addColorStop(.25, b.c); g.addColorStop(1, b.c); ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(bx, b.y, b.r * .9, b.r * 1.1, 0, 0, 7); ctx.fill();
+          ctx.fillStyle = b.c; ctx.beginPath(); ctx.moveTo(bx - 5, b.y + b.r * 1.15); ctx.lineTo(bx + 5, b.y + b.r * 1.15); ctx.lineTo(bx, b.y + b.r * 1.05); ctx.fill(); b.x0 = bx; });
+        G.balloons = G.balloons.filter(b => !b.dead && b.y > -b.r * 3);
+        G.bits.forEach(p => { p.x += p.vx; p.y += p.vy; p.vy += .25; p.a -= .025; ctx.fillStyle = p.c; ctx.globalAlpha = Math.max(0, p.a) * fade; ctx.fillRect(p.x, p.y, 6, 4); }); G.bits = G.bits.filter(p => p.a > 0); ctx.globalAlpha = fade;
+        G.holes.forEach(h => { h.a -= .006; ctx.save(); ctx.globalAlpha = Math.max(0, h.a) * fade; ctx.translate(h.x, h.y); ctx.rotate(h.rot); ctx.strokeStyle = "rgba(255,255,255,.85)"; ctx.lineWidth = 1.5; for (let k = 0; k < 7; k++) { const a = k * .9; ctx.beginPath(); ctx.moveTo(Math.cos(a) * 6, Math.sin(a) * 6); ctx.lineTo(Math.cos(a + .2) * 22, Math.sin(a + .2) * 22); ctx.lineTo(Math.cos(a - .1) * 34, Math.sin(a - .1) * 34); ctx.stroke(); }
+          ctx.fillStyle = "#111"; ctx.beginPath(); ctx.arc(0, 0, 6, 0, 7); ctx.fill(); ctx.strokeStyle = "#555"; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, 0, 7, 0, 7); ctx.stroke(); ctx.restore(); }); G.holes = G.holes.filter(h => h.a > 0); ctx.globalAlpha = fade;
+        // the scope
+        ctx.strokeStyle = "#111"; ctx.lineWidth = 8; ctx.beginPath(); ctx.arc(sx, sy, SR + 3, 0, 7); ctx.stroke();
+        ctx.strokeStyle = "rgba(0,0,0,.85)"; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(sx - SR, sy); ctx.lineTo(sx - 10, sy); ctx.moveTo(sx + 10, sy); ctx.lineTo(sx + SR, sy); ctx.moveTo(sx, sy - SR); ctx.lineTo(sx, sy - 10); ctx.moveTo(sx, sy + 10); ctx.lineTo(sx, sy + SR); ctx.stroke();
+        ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(sx - SR, sy); ctx.lineTo(sx - SR * .6, sy); ctx.moveTo(sx + SR * .6, sy); ctx.lineTo(sx + SR, sy); ctx.moveTo(sx, sy + SR * .6); ctx.lineTo(sx, sy + SR); ctx.stroke();
+        ctx.fillStyle = "#ef4444"; ctx.beginPath(); ctx.arc(sx, sy, 3.5, 0, 7); ctx.fill();
+        if (G.kick > .6) { ctx.fillStyle = `rgba(255,220,120,${(G.kick - .6) * 2})`; ctx.beginPath(); ctx.arc(sx, sy, 26, 0, 7); ctx.fill(); } }
       if (r.split && life < .24) { const k = Math.min(1, life / .2), sy = k * (H() + 40) - 20; ctx.save(); ctx.translate(W() / 2 + Math.sin(t / 40) * 3, sy); ctx.rotate(Math.PI / 2); ctx.font = "56px system-ui"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("✂️", 0, 0); ctx.restore();
         ctx.strokeStyle = "rgba(30,41,59,.7)"; ctx.lineWidth = 2; ctx.setLineDash([6, 5]); ctx.beginPath(); ctx.moveTo(W() / 2, 0); ctx.lineTo(W() / 2, sy); ctx.stroke(); ctx.setLineDash([]); }
       if (r.peep) { // a black wall with a hole; an eye on the other side peeks through, looks around, blinks, leaves; then the hole opens
@@ -310,12 +341,13 @@
     if (r.torch && !r.torch.flicker) { const c = document.createElement("span"); c.style.display = "flex"; c.style.gap = "4px";
       [["↺", "Tilt left", () => tiltBy(-.2)], ["➖", "Shorter beam", () => lenBy(-40)], ["➕", "Longer beam", () => lenBy(40)], ["↻", "Tilt right", () => tiltBy(.2)]].forEach(([t, l, f]) => { const b = document.createElement("button"); b.type = "button"; b.textContent = t; b.title = l; b.setAttribute("aria-label", l); b.onpointerdown = e => { e.stopPropagation(); f(); }; c.appendChild(b); });
       chip.insertBefore(c, chip.querySelector("[data-x]")); }
-    if (r.torch || r.laser || r.eyes || r.bino || r.mag || r.peep) chip.classList.add("top");
+    if (r.torch || r.laser || r.eyes || r.bino || r.mag || r.peep || r.rifle) chip.classList.add("top");
+    if (r.rifle) { const sc = document.createElement("b"); sc.dataset.score = "1"; sc.textContent = "🎈 0"; sc.style.padding = "0 6px"; chip.insertBefore(sc, chip.querySelector("[data-x]")); }
     chip.querySelector("[data-x]").onclick = () => stop();
     chip.querySelector("[data-off]").onclick = () => { try { localStorage.setItem(OFF_KEY, "1"); } catch (e) {} stop(); };
     document.body.appendChild(chip);
     addEventListener("resize", size);
-    current = { stop() { if (ended) return; ended = true; cancelAnimationFrame(raf); sfx.stop(); moved.stop(); removeEventListener("resize", size); if (r.torch || r.laser || r.mag) document.documentElement.style.cursor = oldCur; removeEventListener("pointermove", onMove); removeEventListener("keydown", onKey); removeEventListener("wheel", onWheel); removeEventListener("touchmove", onMove); removeEventListener("pointerdown", onMove); cv.remove(); chip.remove(); layers.forEach(l => { l.style.opacity = 0; if (l === puddle) l.style.height = "0"; setTimeout(() => l.remove(), 900); }); } };
+    current = { stop() { if (ended) return; ended = true; cancelAnimationFrame(raf); sfx.stop(); moved.stop(); removeEventListener("resize", size); if (r.torch || r.laser || r.mag || r.rifle) document.documentElement.style.cursor = oldCur; removeEventListener("pointermove", onMove); if (r.rifle) ["pointerdown", "click", "mousedown", "touchstart"].forEach(ev => removeEventListener(ev, fire, { capture: true })); removeEventListener("keydown", onKey); removeEventListener("wheel", onWheel); removeEventListener("touchmove", onMove); removeEventListener("pointerdown", onMove); cv.remove(); chip.remove(); layers.forEach(l => { l.style.opacity = 0; if (l === puddle) l.style.height = "0"; setTimeout(() => l.remove(), 900); }); } };
     raf = requestAnimationFrame(frame);
     return true;
   }
