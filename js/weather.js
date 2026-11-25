@@ -11,6 +11,7 @@
   add("gale", { e: "🌬️", name: "Gale", wind: 4, rain: 1 });
   add("wind,windy,blustery", { e: "💨", name: "Wind", wind: 3 });
   add("gust,gusty", { e: "💨", name: "Gust", wind: 2, gust: 1 });
+  add("sway,sways,swayed,swaying,swing,swinging,rocking,wobble,wobbly", { e: "🌴", name: "Sway", sway: 1 });
   add("breeze,breezy", { e: "🍃", name: "Breeze", wind: 1 });
   // the wet family is NOT rain: water on the glass, then water in the page itself
   add("moist,humid,humidity,muggy,dewy,clammy,steamy", { e: "💧", name: "Moist", glass: 0.6, beads: 70 });
@@ -77,6 +78,7 @@
     if (r.wind) s.push(noise(dur, 0.05 + r.wind * 0.04, "band", 300 + r.wind * 80, 900 + r.wind * 250, 2.5));
     if (r.snow && !r.wind) s.push(noise(dur, 0.02, "band", 6000, 7000, 1));
     if (r.sun && !r.heat) [0.4, 1.6, 3].forEach(t => chirp(t));
+    if (r.sway) s.push(noise(dur, 0.06, "band", 350, 700, 2));
     if (r.glass && !r.trickles) s.push(noise(dur, 0.02, "lowpass", 400, 300, 1));
     if (r.trickles || r.drip) for (let i = 0; i < (r.drip ? 14 : 6); i++) plink(0.5 + Math.random() * (dur - 1));
     if (r.wring) [1.2, 2.4, 3.6].forEach(t => noise(0.5, 0.12, "band", 700, 300, 2, t));
@@ -208,6 +210,7 @@
           ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(ox, -10); ctx.lineTo(ox + Math.cos(ang - wd) * len, -10 + Math.sin(ang - wd) * len); ctx.lineTo(ox + Math.cos(ang + wd) * len, -10 + Math.sin(ang + wd) * len); ctx.closePath(); ctx.fill(); }
         motes.forEach(m => { m.x += Math.sin(t / 900 + m.ph) * .25; m.y += m.vy; if (m.y > H()) m.y = -5; const tw = .45 + .55 * Math.sin(t / 250 + m.ph); ctx.fillStyle = `rgba(${B.c},${tw * .9 * fade})`; ctx.beginPath(); ctx.arc(m.x, m.y, m.r, 0, 7); ctx.fill(); });
         ctx.restore(); ctx.font = "54px system-ui"; ctx.fillText("🪟", ox - 27, 44); }
+      if (r.sway) { const sw = Math.sin(t / 1100 * Math.PI) * .22, sz = Math.min(W(), H()) * .28; [[sz * .45, 1], [W() - sz * .45, -1]].forEach(([x, f]) => { ctx.save(); ctx.translate(x, H() + 6); ctx.rotate(sw); ctx.scale(f, 1); ctx.font = sz + "px system-ui"; ctx.textAlign = "center"; ctx.textBaseline = "bottom"; ctx.fillText("🌴", 0, 0); ctx.restore(); }); }
       if (beads.length) beads.forEach(b => { if (t < b.born) return; if (b.r < b.max) b.r += .08; 
           if (b.run && b.r >= b.max) { b.vy = Math.min(b.vy + .04, 2.4); b.x += Math.sin(t / 180 + b.max) * .3; b.y += b.vy; b.trail.push([b.x, b.y]); if (b.trail.length > 90) b.trail.shift(); if (b.y > H() + 10) { b.y = rnd(-20, H() * .3); b.x = rnd(0, W()); b.r = 0; b.vy = 0; b.trail = []; b.born = t; } }
           if (b.trail.length > 1) { ctx.strokeStyle = "rgba(255,255,255,.35)"; ctx.lineWidth = b.r * .7; ctx.beginPath(); b.trail.forEach(([x, y], k) => k ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.stroke(); }
@@ -254,6 +257,13 @@
     const anims = [];
     const ani = (el, kf, o) => { try { const a = el.animate(kf, o); anims.push(a); } catch (e) {} };
     if (reduce()) return { stop() {} };
+    if (r.sway) { // the whole page sways from the bottom of the screen, like a tree; cards sway a little on their own too
+      const kids = [...document.body.children].filter(el => !/^(SCRIPT|STYLE|CANVAS|DIALOG)$/.test(el.tagName) && !/(wx-|egg-)/.test(el.className || "") && getComputedStyle(el).position !== "fixed");
+      kids.forEach(el => { const top = el.getBoundingClientRect().top; el.style.transformOrigin = `50% ${innerHeight - top}px`;
+        ani(el, [{ transform: "rotate(0deg)" }, { transform: "rotate(2.2deg)" }, { transform: "rotate(0deg)" }, { transform: "rotate(-2.2deg)" }, { transform: "rotate(0deg)" }], { duration: 2200, iterations: Math.ceil(dur / 2200), easing: "ease-in-out" }); });
+      document.querySelectorAll(".card, .item, img.pic, .tag, .btn").forEach((el, i) => { if (i < 40) ani(el, [{ transform: "none" }, { transform: `rotate(${i % 2 ? 1.2 : -1.2}deg)` }, { transform: "none" }], { duration: 1100, iterations: Math.ceil(dur / 1100), delay: (i % 6) * 120, easing: "ease-in-out" }); });
+      return { stop() { anims.forEach(a => { try { a.cancel(); } catch (e) {} }); kids.forEach(el => el.style.transformOrigin = ""); } };
+    }
     if (r.vortex) {
       const cx = innerWidth / 2, cy = innerHeight * .45;
       const pieces = [...document.querySelectorAll(".card, .item, .say1, h1, h2, img.pic, video, .chipb, .btn, button.round, .tag")]
