@@ -203,7 +203,7 @@
     const sfx = soundFor(r, dur / 1000);
     flashes.forEach(t => thunder(t / 1000 + .25));
     // 🌀 the page itself moves
-    const moved = movePage(r, dur);
+    const moved = movePage(r, dur, typeof word === "string" ? word : "");
     let raf = 0, ended = false;
     function frame(now) {
       const t = now - t0, life = t / dur, fade = life < .1 ? life / .1 : life > .85 ? Math.max(0, (1 - life) / .15) : 1;
@@ -369,7 +369,7 @@
   function stop() { if (current) { current.stop(); current = null; } }
 
   // The page moves: a breeze sways it, a gale shakes it, a hurricane lifts things up, spins them round the 🌀 and puts them back.
-  function movePage(r, dur) {
+  function movePage(r, dur, word) {
     const anims = [];
     const ani = (el, kf, o) => { try { const a = el.animate(kf, o); anims.push(a); } catch (e) {} };
     if (reduce()) return { stop() {} };
@@ -385,7 +385,23 @@
     if (r.stomp) { // every stomp shakes the page hard and makes the cards jump
       const kids = [...document.body.children].filter(el => !/^(SCRIPT|STYLE|CANVAS|DIALOG)$/.test(el.tagName) && !/(wx-|egg-)/.test(el.className || ""));
       r.stomp.forEach(ms => { kids.forEach(el => ani(el, [{ transform: "none" }, { transform: "translate(-9px,7px)" }, { transform: "translate(8px,-6px)" }, { transform: "translate(-6px,4px)" }, { transform: "translate(4px,-2px)" }, { transform: "none" }], { duration: 320, delay: ms }));
-        document.querySelectorAll(".card, .item, img.pic, .btn, h1, h2, .tag").forEach((el, i) => { if (i < 50) ani(el, [{ transform: "none" }, { transform: `translateY(-${10 + (i % 4) * 5}px) rotate(${i % 2 ? 2 : -2}deg)`, offset: .35 }, { transform: "none" }], { duration: 420, delay: ms + (i % 5) * 20, easing: "ease-out" }); }); });
+        document.querySelectorAll(".card, .item, .panel").forEach((el, i) => { if (i < 30) ani(el, [{ transform: "none" }, { transform: `translateY(-${10 + (i % 4) * 5}px) rotate(${i % 2 ? 2 : -2}deg)`, offset: .35 }, { transform: "none" }], { duration: 420, delay: ms + (i % 5) * 20, easing: "ease-out" }); }); });
+      // the page itself falls apart: words, titles, chips, buttons and pictures near each foot (above and below it) get knocked loose,
+      // tumble to the bottom of the screen and pile up; the stomped word falls first; at the end everything flies back
+      const vw = innerWidth, vh = innerHeight, n = r.stomp.length, taken = new Set();
+      const cands = [...document.querySelectorAll("h1, h2, h3, h4, p, li, label, button, a, img, .syl, .tag, .chipb, .say1, [class*=chip], [class*=pill], b, strong, em, i, small, span")]
+        .filter(el => { if (el.closest(".wx-chip, .wx-mag, .wx-split, .wx-back, .wx-stage, .wx-layer, nav, header")) return false; const b = el.getBoundingClientRect(); if (b.bottom < 0 || b.top > vh || b.width < 8 || b.height < 8 || b.width > vw * .92 || b.height > 160) return false;
+          if (el.children.length > 4) return false; return !(el.parentElement && el.parentElement.closest("h1, h2, h3, button, a, label") && !/^(IMG)$/.test(el.tagName)); });
+      const fall = (el, ms, k) => { if (taken.has(el) || [...taken].some(t => t.contains(el) || el.contains(t))) return; taken.add(el); const b = el.getBoundingClientRect(), total = dur - ms; if (total < 1200) return;
+        const drop = Math.max(20, vh - b.bottom - 6 - (k % 4) * 14), rot = ((k * 37) % 70) - 35, dx = ((k * 53) % 60) - 30, f1 = Math.min(.5, 900 / total), back = Math.max(f1 + .05, (total - 750) / total);
+        if (getComputedStyle(el).display === "inline") el.style.display = "inline-block";
+        ani(el, [{ transform: "none", offset: 0 }, { transform: `translate(${dx * .5}px, ${drop * .55}px) rotate(${rot * .5}deg)`, offset: f1 * .55, easing: "ease-in" }, { transform: `translate(${dx}px, ${drop}px) rotate(${rot}deg)`, offset: f1 * .8, easing: "ease-out" },
+          { transform: `translate(${dx}px, ${drop - 18}px) rotate(${rot * 1.1}deg)`, offset: f1 * .9, easing: "ease-in" }, { transform: `translate(${dx}px, ${drop}px) rotate(${rot}deg)`, offset: f1 }, { transform: `translate(${dx}px, ${drop}px) rotate(${rot}deg)`, offset: back, easing: "ease-in-out" }, { transform: "none", offset: 1 }],
+          { duration: total, delay: ms + (k % 6) * 40 }); };
+      const me = word ? [...document.querySelectorAll("[data-wx-word]")].find(el => el.dataset.wxWord.toLowerCase() === word.toLowerCase() && el.getBoundingClientRect().bottom > 0 && el.getBoundingClientRect().top < vh) : null;
+      if (me) fall(me, r.stomp[0], 0);
+      r.stomp.forEach((ms, i) => { const fx = vw * (i % 2 ? .64 : .36), fy = vh * (.25 + i * (.5 / Math.max(1, n - 1)));
+        cands.map(el => { const b = el.getBoundingClientRect(); return [el, Math.hypot((b.left + b.width / 2 - fx) * .6, b.top + b.height / 2 - fy)]; }).filter(([, d]) => d < vh * .32).sort((a, b) => a[1] - b[1]).slice(0, 9).forEach(([el], k) => fall(el, ms + 40, k + i)); });
       return { stop() { anims.forEach(a => { try { a.cancel(); } catch (e) {} }); } };
     }
     if (r.split) { // scissors cut the page down the middle along a jagged tear, the halves slide apart, then join again
