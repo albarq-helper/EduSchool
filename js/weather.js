@@ -87,7 +87,7 @@
 
   // 🎨 the stage: a full-screen canvas above the page that ignores clicks
   const css = document.createElement("style");
-  css.textContent = `.wx-stage{position:fixed;inset:0;z-index:9990;pointer-events:none}
+  css.textContent = `.wx-stage{position:fixed;left:0;top:0;width:100vw;height:100vh;z-index:9990;pointer-events:none}
 .wx-layer{position:fixed;inset:0;z-index:9989;pointer-events:none;transition:opacity .8s}
 .wx-chip{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:9995;display:flex;gap:6px;align-items:center;background:#fff;border-radius:999px;padding:6px 8px 6px 12px;box-shadow:0 4px 18px #0003;font:700 14px var(--f-display,system-ui);color:#333}
 .wx-chip button{border:0;border-radius:999px;padding:4px 10px;font:inherit;cursor:pointer;background:#F1F1F4}
@@ -107,7 +107,7 @@
     const cv = document.createElement("canvas"); cv.className = "wx-stage"; cv.setAttribute("aria-hidden", "true");
     const ctx = cv.getContext("2d"); document.body.appendChild(cv);
     const W = () => innerWidth, H = () => innerHeight, dpr = Math.min(2, devicePixelRatio || 1);
-    const size = () => { cv.width = W() * dpr; cv.height = H() * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); }; size();
+    const size = () => { cv.width = W() * dpr; cv.height = H() * dpr; cv.style.width = W() + "px"; cv.style.height = H() + "px"; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); }; size();
     const layers = [];
     const layer = (bg, op) => { const d = document.createElement("div"); d.className = "wx-layer"; d.style.background = bg; d.style.opacity = 0; document.body.appendChild(d); layers.push(d); requestAnimationFrame(() => d.style.opacity = op); return d; };
     if (r.night) layer("radial-gradient(ellipse at 50% 30%, rgba(10,15,40," + (r.night * .7) + "), rgba(5,8,25," + r.night + "))", 1);
