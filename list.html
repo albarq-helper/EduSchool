@@ -113,6 +113,9 @@ input.ok,textarea.ok{border-color:var(--good)!important;background:var(--good-so
 .partners .pc b{color:var(--accent)}
 .partners .arr{color:var(--muted);font-weight:800}.partners .pmeter{margin:6px 0}
 .partners a.pc,.partners button.pc{cursor:pointer;text-decoration:none;font:inherit}
+.partners .pcx{border-color:#f59e0b;background:#fffbeb}.partners .prx .pk{color:#b45309}
+.mdq{background:var(--accent-soft);border-radius:12px;padding:8px 10px;display:grid;gap:6px}.mdq p{margin:0}.mdq .pc{justify-self:start;margin-right:6px}
+.mdline{font-size:1rem}.mdok{color:#15803d;font-weight:800}.mdno{color:#b91c1c;font-weight:800}
 .partners a.pc:hover,.partners button.pc:hover{border-color:var(--accent)}
 @media print{.partners .pc{border:0;padding:0 4px}}
 .explore{margin-top:8px}
@@ -130,7 +133,7 @@ input.ok,textarea.ok{border-color:var(--good)!important;background:var(--good-so
 .sk{font:800 .75rem var(--f-body);border-radius:999px;padding:2px 9px}.sk-main{background:#dcfce7;color:#166534}.sk-exaggeration{background:#fef3c7;color:#92400e}.sk-figurative{background:#ede9fe;color:#5b21b6}
 .mchk{margin:6px 0;font-size:.85rem;background:var(--paper);border:1px dashed var(--rule);border-radius:10px;padding:5px 10px}.mchk summary{cursor:pointer;font-weight:800}.mchk p{margin:4px 0}
 </style>
-<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261124p"></script><script src="js/icons.js?v=20261124p"></script><script src="js/app.js?v=20261124p"></script><script src="js/sets.js?v=20261124p"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261124p"></script><script src="js/tense.js?v=20261124p"></script><script src="js/views.js?v=20261124p"></script>
+<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261125a"></script><script src="js/icons.js?v=20261125a"></script><script src="js/app.js?v=20261125a"></script><script src="js/sets.js?v=20261125a"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261125a"></script><script src="js/tense.js?v=20261125a"></script><script src="js/views.js?v=20261125a"></script>
 </head><body>
 <div class="wrap" style="max-width:1180px">
   <div class="head2">
@@ -281,9 +284,30 @@ function partnersHTML(i,v){if(wordHidden(i)||!v.wid)return "";const P=PARTNERS.g
   const SC=Sets.partnerScales(P.own),onMeter=new Set(SC.filter(s=>s.items.length>1).flatMap(s=>s.items.map(x=>x.phrase)));
   const KL={adjective:"adjectives",adverb:"adverbs",idiom:"idioms",verb:"verbs",noun:"nouns",preposition:"little words"};
   const meters=SC.filter(s=>s.items.length>1).map((s,n)=>`<div class="pr"><span class="pk">🎚️ ${esc(s.g.split(" · ").slice(0,/how long/.test(s.g)?2:1).join(" · "))} · ${KL[s.kind]||s.kind}</span>${s.items.map(x=>`<span class="pc">${x.kind==="idiom"?"💬 "+esc(x.phrase):boldPartner(x.phrase,x.partner)}</span>`).join('<span class="arr">→</span>')}<button type="button" class="pc pmb" data-pm="${i}|${n}">🎚️ Open meter</button></div><div class="pmeter" id="pm-${i}-${n}" hidden></div>`).join("");
-  const rows=meters+Sets.PARTNER_KINDS.filter(([k])=>k!=="saying").map(([k,lab,hint])=>{const xs=P.own.filter(x=>x.kind===k&&!onMeter.has(x.phrase));return xs.length?`<div class="pr"><span class="pk">${lab}${hint?` <small>${hint}</small>`:""}</span>${xs.map(x=>partnerChip(x)).join("")}</div>`:"";}).join("");
+  // 🧭 rule groups (Make or do?): partners tagged "🧭 group" are shown by the rule, exceptions marked ⚠️
+  const ruleOf=x=>(x.tags||[]).find(t=>t.startsWith("🧭 ")),inRule=new Set(P.own.filter(ruleOf).map(x=>x.phrase));
+  const rg=[...new Set(P.own.filter(ruleOf).map(x=>ruleOf(x).slice(2).trim()))];
+  const rules=rg.map(g=>{const xs=P.own.filter(x=>ruleOf(x)&&ruleOf(x).slice(2).trim()===g),ex=/exception/i.test(g);
+    return `<div class="pr${ex?" prx":""}"><span class="pk">🧭 ${esc(g)}</span>${xs.map(x=>{const w=(x.tags||[]).find(t=>t.startsWith("⚠️"));return partnerChip(x).replace('class="pc"',`class="pc${w?" pcx":""}"${w?` title="${esc(w)}"`:""}`);}).join("")}</div>`;}).join("");
+  const rows=meters+rules+(MD_RULE[v.w]?mdQuizHTML(i,v):"")+Sets.PARTNER_KINDS.filter(([k])=>k!=="saying").map(([k,lab,hint])=>{const xs=P.own.filter(x=>x.kind===k&&!onMeter.has(x.phrase)&&!inRule.has(x.phrase));return xs.length?`<div class="pr"><span class="pk">${lab}${hint?` <small>${hint}</small>`:""}</span>${xs.map(x=>partnerChip(x)).join("")}</div>`:"";}).join("");
   const also=P.also.length?(v.author?`<div class="pr"><span class="pk">📖 Words in this saying</span>${P.also.map(x=>partnerChip(x,"word")).join("")}</div>`:`<div class="pr"><span class="pk">🔁 Also used in</span>${P.also.map(x=>partnerChip(x)).join("")}</div>`):"";
   return `<div class="partners">${rows}${also}</div>`;}
+// ---- 🎯 Make or do? the rule and a quick 5-question check, on the Make and Do cards ----
+const MD_RULE={Do:"DO = activities, jobs and chores: do the dishes, do your homework, do your best.",Make:"MAKE = something new comes out: make a cake, make a decision, make a noise. ⚠️ Exception: make your bed."};
+let MDQ=null,MDS={};
+async function mdLoad(){if(MDQ)return MDQ;MDQ=[];try{const w=(await App.client.from("words").select("id,headword").in("headword",["Make","Do"])).data||[];
+  const r=(await App.client.from("word_partners").select("word_id,phrase,tags").in("word_id",w.map(x=>x.id))).data||[];
+  const vb=Object.fromEntries(w.map(x=>[x.id,x.headword]));MDQ=r.filter(x=>(x.tags||[]).some(t=>t.startsWith("🧭 "))).map(x=>({v:vb[x.word_id],rest:x.phrase.split(" ").slice(1).join(" "),ex:(x.tags||[]).some(t=>t.startsWith("⚠️"))}));}catch(e){}return MDQ;}
+function mdQuizHTML(i,v){const st=MDS[i];
+  if(!st)return `<div class="mdq"><p><b>📏 The rule:</b> ${esc(MD_RULE[v.w])}</p><button type="button" class="pc" data-mdstart="${i}">🎯 Make or do? Try 5</button></div>`;
+  if(st.n>=st.qs.length)return `<div class="mdq"><p><b>📏 The rule:</b> ${esc(MD_RULE[v.w])}</p><p class="mdok">${st.ok===st.qs.length?"🌟":"👍"} ${st.ok} / ${st.qs.length} right!</p><button type="button" class="pc" data-mdstart="${i}">🔁 Again</button></div>`;
+  const q=st.qs[st.n];return `<div class="mdq"><p><b>📏 The rule:</b> ${esc(MD_RULE[v.w])}</p><p class="mdline">${st.n+1}/${st.qs.length} · <b>___</b> ${esc(q.rest)}${st.fb?` <span class="${st.fb.ok?"mdok":"mdno"}">${st.fb.ok?"✓":"✗"} ${esc(q.v.toLowerCase())} ${esc(q.rest)}${q.ex?" (the exception!)":""}</span>`:""}</p>
+    ${st.fb?`<button type="button" class="pc" data-mdnext="${i}">Next ▶</button>`:`<button type="button" class="pc" data-mdans="${i}|Make">make</button><button type="button" class="pc" data-mdans="${i}|Do">do</button>`}</div>`;}
+document.addEventListener("click",async e=>{const s=e.target.closest("[data-mdstart]");if(s){const i=+s.dataset.mdstart,all=await mdLoad();if(!all.length)return;
+    const pool=[...all].sort(()=>Math.random()-.5),ex=pool.find(x=>x.ex),qs=pool.filter(x=>!x.ex).slice(0,ex?4:5);if(ex)qs.splice(Math.floor(Math.random()*5),0,ex);
+    MDS[i]={qs,n:0,ok:0,fb:null};render();return;}
+  const a=e.target.closest("[data-mdans]");if(a){const [i,ans]=a.dataset.mdans.split("|"),st=MDS[i],q=st.qs[st.n],ok=q.v===ans;st.fb={ok};if(ok)st.ok++;render();return;}
+  const n=e.target.closest("[data-mdnext]");if(n){const st=MDS[n.dataset.mdnext];st.n++;st.fb=null;render();}});
 // ---- the card's "explore" row: Word family · Goes with · Sayings, each opens in place (one at a time) ----
 const SAYSET="00000000-0000-4000-8000-000000009007";let SAYS=[];
 App.client.from("set_items").select("term,author,meaning,tags,unit").eq("set_id",SAYSET).then(r=>{SAYS=((r&&r.data)||[]).filter(x=>x.author||(x.tags||[]).some(t=>/^(≈|⇄)\s/.test(t)));if(SAYS.length)render();},()=>{});
