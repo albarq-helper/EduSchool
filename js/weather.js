@@ -5,7 +5,7 @@
 (function () {
   "use strict";
   // word → recipe. Numbers are strength 1–5 (taken from the meters where a meter exists).
-  const R = {};
+  const R = {}, FX = {};
   const add = (ws, r) => ws.split(",").forEach(w => R[w.trim()] = r);
   add("hurricane,tornado,cyclone,typhoon,twister", { e: "🌀", name: "Hurricane", wind: 5, vortex: 1, rain: 3 });
   add("gale", { e: "🌬️", name: "Gale", wind: 4, rain: 1 });
@@ -140,7 +140,7 @@
     // 👆 where the finger or mouse is (the torch and laser follow it; until it moves, they sweep by themselves)
     const ptr = { x: W() / 2, y: H() / 2, moved: 0 };
     const onMove = e => { if (e.target && e.target.closest && e.target.closest(".wx-chip")) return; const q = e.touches ? e.touches[0] : e; if (!q) return; ptr.x = q.clientX; ptr.y = q.clientY; ptr.moved = performance.now(); };
-    const track = r.torch || r.laser || r.eyes || r.bino || r.mag || r.peep || r.rifle;
+    const track = r.torch || r.laser || r.eyes || r.bino || r.mag || r.peep || r.rifle || r.track;
     if (track) { addEventListener("pointermove", onMove, { passive: true }); addEventListener("touchmove", onMove, { passive: true }); addEventListener("pointerdown", onMove, { passive: true }); }
     const dark = r.torch ? layer("rgba(3,5,18,.94)", 1) : null;
     const bino = !!r.bino;
@@ -174,7 +174,7 @@
     const onKey = e => { if (!r.torch || r.torch.flicker) return; const k = { ArrowUp: () => lenBy(30), ArrowDown: () => lenBy(-30), ArrowLeft: () => tiltBy(-.15), ArrowRight: () => tiltBy(.15) }[e.key]; if (k) { e.preventDefault(); k(); } };
     const onWheel = e => { if (!r.torch || r.torch.flicker) return; e.preventDefault(); lenBy(-e.deltaY * .4); };
     if (r.torch && !r.torch.flicker) { addEventListener("keydown", onKey); addEventListener("wheel", onWheel, { passive: false }); }
-    const oldCur = document.documentElement.style.cursor; if (r.torch || r.laser || r.mag || r.rifle) document.documentElement.style.cursor = "none";
+    const oldCur = document.documentElement.style.cursor; if (r.torch || r.laser || r.mag || r.rifle || r.nocursor) document.documentElement.style.cursor = "none";
     const cat = { x: -60, y: H() * .8, f: 1 };
     let puddle = null;
     if (r.puddle) { puddle = document.createElement("div"); puddle.className = "wx-layer"; Object.assign(puddle.style, { top: "auto", height: "0", background: "linear-gradient(to bottom, rgba(90,160,230,.35), rgba(40,110,200,.55))", transition: "height 4s ease-in, opacity .8s" }); document.body.appendChild(puddle); layers.push(puddle); requestAnimationFrame(() => puddle.style.height = (r.puddle > 1 ? 22 : 9) + "vh"); }
@@ -204,6 +204,13 @@
     flashes.forEach(t => thunder(t / 1000 + .25));
     // 🌀 the page itself moves
     const moved = movePage(r, dur, typeof word === "string" ? word : "");
+    // 🧩 effects from js/fx.js: { frame(t, life, fade), down(x, y), move(x, y), up(x, y), stop() }
+    let plug = null; const kidsOf = () => [...document.body.children].filter(el => !/^(SCRIPT|STYLE|CANVAS|DIALOG)$/.test(el.tagName) && !/(wx-|egg-)/.test(el.className || ""));
+    if (r.fx && FX[r.fx]) { try { plug = FX[r.fx]({ ctx, W, H, dur, ptr, rnd, noise, boom, plink, chirp, ani: (el, kf, o) => { try { const a = el.animate(kf, o); return a; } catch (e) { return null; } }, kids: kidsOf, word: typeof word === "string" ? word : "", setChip: html => { const c = document.querySelector(".wx-chip [data-fx]"); if (c) c.innerHTML = html; }, reduce: reduce() }) || null; } catch (e) { plug = null; } }
+    const pDown = e => { if (!plug || (e.target && e.target.closest && e.target.closest(".wx-chip"))) return; if (r.capture) { e.preventDefault(); e.stopPropagation(); } if (e.type === "pointerdown" && plug.down) plug.down(e.clientX, e.clientY); };
+    const pMove = e => { if (plug && plug.move) plug.move(e.clientX, e.clientY); };
+    const pUp = e => { if (!plug || (e.target && e.target.closest && e.target.closest(".wx-chip"))) return; if (r.capture) { e.preventDefault(); e.stopPropagation(); } if (e.type === "pointerup" && plug.up) plug.up(e.clientX, e.clientY); };
+    if (plug) { ["pointerdown", "mousedown", "click", "touchstart"].forEach(ev => addEventListener(ev, pDown, { capture: true, passive: false })); addEventListener("pointermove", pMove, { passive: true }); ["pointerup", "mouseup", "touchend"].forEach(ev => addEventListener(ev, pUp, { capture: true, passive: false })); }
     let raf = 0, ended = false;
     function frame(now) {
       const t = now - t0, life = t / dur, fade = life < .1 ? life / .1 : life > .85 ? Math.max(0, (1 - life) / .15) : 1;
@@ -340,6 +347,7 @@
         if (Math.abs(tw) > .6 && Math.random() < .7) dripping.push({ x: cx + rnd(-s * .25, s * .25), y: cy + s * .4, r: 4, vy: rnd(1, 3) }); }
       if (r.vortex) { const cx = W() / 2, cy = H() * .45; ctx.save(); ctx.translate(cx, cy); ctx.rotate(-t / 140); ctx.globalAlpha = fade * .9; ctx.font = Math.min(W(), H()) * .35 * Math.min(1, life * 4) + "px system-ui"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("🌀", 0, 0); ctx.restore();
         ctx.globalAlpha = fade; for (let k = 0; k < 14; k++) { const ang = t / 260 + k * .45, rad = 60 + (k * 37 + t / 12) % (Math.min(W(), H()) * .55); ctx.font = "26px system-ui"; ctx.fillText(["🍃", "🍂", "📄", "🧢", "🌿", "🪵", "☂️"][k % 7], cx + Math.cos(ang) * rad - 13, cy + Math.sin(ang) * rad * .6 + 9); } }
+      if (plug && plug.frame) { try { ctx.save(); plug.frame(t, life, fade); ctx.restore(); } catch (e) { plug = null; } }
       flashes.forEach(ft => { const d = t - ft; if (d > 0 && d < 260) { ctx.globalAlpha = (d < 60 ? 1 : d < 120 ? .3 : d < 180 ? .8 : .2) * .85; ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, W(), H()); if (d < 180) bolt(ft); ctx.globalAlpha = fade; } });
       if (t < dur && !ended) raf = requestAnimationFrame(frame); else stop();
     }
@@ -356,13 +364,14 @@
     if (r.torch && !r.torch.flicker) { const c = document.createElement("span"); c.style.display = "flex"; c.style.gap = "4px";
       [["↺", "Tilt left", () => tiltBy(-.2)], ["➖", "Shorter beam", () => lenBy(-40)], ["➕", "Longer beam", () => lenBy(40)], ["↻", "Tilt right", () => tiltBy(.2)]].forEach(([t, l, f]) => { const b = document.createElement("button"); b.type = "button"; b.textContent = t; b.title = l; b.setAttribute("aria-label", l); b.onpointerdown = e => { e.stopPropagation(); f(); }; c.appendChild(b); });
       chip.insertBefore(c, chip.querySelector("[data-x]")); }
-    if (r.torch || r.laser || r.eyes || r.bino || r.mag || r.peep || r.rifle) chip.classList.add("top");
+    if (r.torch || r.laser || r.eyes || r.bino || r.mag || r.peep || r.rifle || r.top) chip.classList.add("top");
+    if (r.fx) { const fxs = document.createElement("b"); fxs.dataset.fx = "1"; fxs.style.padding = "0 4px"; chip.insertBefore(fxs, chip.querySelector("[data-x]")); }
     if (r.rifle) { const sc = document.createElement("b"); sc.dataset.score = "1"; sc.textContent = "🎈 0"; sc.style.padding = "0 6px"; chip.insertBefore(sc, chip.querySelector("[data-x]")); }
     chip.querySelector("[data-x]").onclick = () => stop();
     chip.querySelector("[data-off]").onclick = () => { try { localStorage.setItem(OFF_KEY, "1"); } catch (e) {} stop(); };
     document.body.appendChild(chip);
     addEventListener("resize", size);
-    current = { stop() { if (ended) return; ended = true; cancelAnimationFrame(raf); sfx.stop(); moved.stop(); removeEventListener("resize", size); if (r.torch || r.laser || r.mag || r.rifle) document.documentElement.style.cursor = oldCur; removeEventListener("pointermove", onMove); if (r.rifle) ["pointerdown", "click", "mousedown", "touchstart"].forEach(ev => removeEventListener(ev, fire, { capture: true })); removeEventListener("keydown", onKey); removeEventListener("wheel", onWheel); removeEventListener("touchmove", onMove); removeEventListener("pointerdown", onMove); cv.remove(); chip.remove(); layers.forEach(l => { l.style.opacity = 0; if (l === puddle) l.style.height = "0"; setTimeout(() => l.remove(), 900); }); } };
+    current = { stop() { if (ended) return; ended = true; if (plug && plug.stop) { try { plug.stop(); } catch (e) {} } ["pointerdown", "mousedown", "click", "touchstart"].forEach(ev => removeEventListener(ev, pDown, { capture: true })); removeEventListener("pointermove", pMove); ["pointerup", "mouseup", "touchend"].forEach(ev => removeEventListener(ev, pUp, { capture: true })); cancelAnimationFrame(raf); sfx.stop(); moved.stop(); removeEventListener("resize", size); if (r.torch || r.laser || r.mag || r.rifle || r.nocursor) document.documentElement.style.cursor = oldCur; removeEventListener("pointermove", onMove); if (r.rifle) ["pointerdown", "click", "mousedown", "touchstart"].forEach(ev => removeEventListener(ev, fire, { capture: true })); removeEventListener("keydown", onKey); removeEventListener("wheel", onWheel); removeEventListener("touchmove", onMove); removeEventListener("pointerdown", onMove); cv.remove(); chip.remove(); layers.forEach(l => { l.style.opacity = 0; if (l === puddle) l.style.height = "0"; setTimeout(() => l.remove(), 900); }); } };
     raf = requestAnimationFrame(frame);
     return true;
   }
@@ -475,5 +484,7 @@
   const start = () => { scan(); mo.observe(document.body, { childList: true, subtree: true }); };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start); else start();
   addEventListener("keydown", e => { if (e.key === "Escape") stop(); });
-  window.Weather = { play, stop, recipe, R };
+  // js/fx.js adds effects: Weather.add("word,word", recipe, fxFunction)
+  const addFx = (words, rec, fn) => { const name = rec.fx || (rec.fx = "fx" + Object.keys(FX).length); if (fn) FX[name] = fn; add(words, rec); };
+  window.Weather = { play, stop, recipe, R, FX, add: addFx, rescan: () => { document.querySelectorAll("[data-wx-done]").forEach(el => { if (!el.dataset.wxWord) delete el.dataset.wxDone; }); scan(); } };
 })();
