@@ -84,7 +84,7 @@
 .mtr-nav .mid{font:800 .85rem var(--f-body,system-ui);background:rgba(255,255,255,.7);border-radius:999px;padding:6px 12px}`;
   // Every meter reads left → right as bad/negative (red) → good/positive (green). Meters that are neither
   // (size, distance, how loud a voice is…) are NEUTRAL and use calm blues.
-  const NEUTRAL = new Set(["smile → burst out laughing", "gullible ⇄ distrustful", "passive ⇄ rude", "resisting ⇄ indifferent", "hands-off ⇄ controlling", "low mood → depression", "tiny → gigantic", "near → far", "dry → soaked", "dark → dazzling", "glance → stare", "tiptoe → stomp", "minor → crucial",
+  const NEUTRAL = new Set(["detached ⇄ clingy", "smile → burst out laughing", "gullible ⇄ distrustful", "passive ⇄ rude", "resisting ⇄ indifferent", "hands-off ⇄ controlling", "low mood → depression", "tiny → gigantic", "near → far", "dry → soaked", "dark → dazzling", "glance → stare", "tiptoe → stomp", "minor → crucial",
     "rain · light → pouring", "rain · how long · short → all day", "snow · light → heavy", "sun · weak → blazing", "voice · whispering → booming",
     "speak · whisper → shout", "laugh · quietly → loudly", "impact · small → huge", "obvious · very → perfectly", "decision · small → crucial"]);
   // how a meter behaves: two-sided (−5 … +5), negative only (−5 … 0, 0 = the good end), or positive only (0 … +5)
