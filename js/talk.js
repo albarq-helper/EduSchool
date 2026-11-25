@@ -39,15 +39,35 @@
       if (t.k === "did") return words(subj(p, 1), Tense.forms(o.v).past, rest);
       return words(subj(p, 1), t.aux(p), vp, rest);
     };
-    const question = () => { const a = o.neg ? t.neg(p).replace(/^'m not$/, "am not") : t.aux(p);
+    const pol = o.pol && canPol(o), qm = pol ? ", please?" : "?";
+    const question = () => { const a = o.neg ? t.neg(p).replace(/^'m not$/, "am not") : pol ? { can: "could", will: "would" }[t.k] : t.aux(p);
       if (o.neg && /n't$/.test(a)) return cap(words(a, subj(p), vp, rest)) + "?";
       if (o.neg) return cap(words(t.aux(p), subj(p), "not", vp, rest)) + "?";
-      return cap(words(a, subj(p), vp, rest)) + "?"; };
+      return cap(words(a, subj(p), vp, rest)) + qm; };
     if (o.mode === "q") return question();
     const st = cap(statement()) + ".";
     if (o.mode === "sq") { const back = o.neg ? `${cap(t.neg("you").replace(/^'m not$/, "aren't"))} you?` : `${cap(t.aux("you"))} you?`; return `${st} ${back}`; }
     return st;
   }
+  // 🙏 polite requests: Can you…? → Could you…, please? · Will you…? → Would you…, please?
+  const canPol = o => o.mode === "q" && !o.neg && (o.t === "can" || o.t === "will") && (o.who || "you") === "you";
+  // 🗣️ reported speech: "Do you like tea?" → Mia asked if I liked tea. · "I like tea." → Mia said that she liked tea.
+  function reported(o, cast) {
+    const t = T(o.t), sp = (o.by || "").trim(), c = (cast || []).find(x => (x.name || "").trim() === sp), spPr = c && Tense.prOf ? Tense.prOf(c) : "they";
+    if (!t.noVerb && !o.v) return "";
+    const p0 = o.who || "you", p = p0 === "i" ? spPr : p0 === "you" ? "i" : p0 === "we" ? "they" : p0;   // I → the speaker, you → me
+    const adjOf = k => ((Tense.PRON || []).find(r => r.k === k) || {}).adj || "their", objOf = k => ((Tense.PRON || []).find(r => r.k === k) || {}).obj || "them";
+    const swap = { i: { my: adjOf(spPr), me: objOf(spPr), mine: "", myself: "" }, we: { our: "their", us: "them" }, you: { your: "my", you: "me" } }[p0] || {};
+    const rest = (o.rest || "").trim().replace(/\b(my|me|our|us|your|you)\b/gi, m => swap[m.toLowerCase()] || m);
+    const S = p === "i" ? "I" : Tense.subjOf(p).replace(/^(He|She|It|They|You|We)$/, m => m.toLowerCase()), F = o.v ? Tense.forms(o.v) : null, one2 = one(p) || p === "i";
+    const back = { do: () => o.neg ? `didn't ${F.base}` : F.past, did: () => o.neg ? `hadn't ${F.pp}` : `had ${F.pp}`, ing: () => `${one2 ? "was" : "were"}${o.neg ? "n't" : ""} ${F.ing}`,
+      have: () => `had${o.neg ? "n't" : ""} ${F.pp}`, will: () => `would${o.neg ? "n't" : ""} ${F.base}`, can: () => `could${o.neg ? "n't" : ""} ${F.base}`,
+      be: () => `${one2 ? "was" : "were"}${o.neg ? "n't" : ""}`, was: () => `had${o.neg ? "n't" : ""} been` }[t.k]();
+    const who = sp || "Someone", body = [S, back, rest].filter(Boolean).join(" ");
+    if (o.mode === "q") return pol2(o) ? `${who} asked me to ${F.base}${rest ? " " + rest : ""}.` : `${who} asked if ${body}.`;
+    return `${who} said that ${body}.`;
+  }
+  const pol2 = o => o.pol && canPol(o);
   // who answers a question: "Do you…?" → I · "Does Rover…?" → he · "Do I…?" → you
   function answerer(o, cast) {
     const p = o.who || "you";
@@ -124,9 +144,12 @@
       <span class="dseg" title="Time">${TIMES.map(x => `<button type="button" data-dt="${k}|${x.k}" aria-pressed="${o.t === x.k}" title="${esc(x.ex)}">${esc(x.name)}</button>`).join("")}</span>
       ${op}
       <span class="dl op">${spk(k, -1, o.by, names)}<span class="say">${esc(ls[0].text)}</span></span>
+      ${o.v || t.noVerb ? `<span class="dseg"><button type="button" data-dopt="${k}|rep" aria-pressed="${!!o.rep}" title="Tell it later: what did they say?">🗣️ ${esc(o.by || "She")} said…</button>${canPol(o) ? `<button type="button" data-dopt="${k}|pol" aria-pressed="${!!o.pol}" title="Ask politely">🙏 polite</button>` : ""}</span>` : ""}
+      ${o.rep && (o.v || t.noVerb) ? `<span class="dl"><span class="say" style="color:#7c3aed">🗣️ ${esc(reported(o, cast))}</span></span><span class="dtip">💡 Telling what someone said: the time goes one step back (like → liked, will → would, can → could) and I / you change to fit who is telling it. Questions become "asked if …" with no question mark.</span><span class="dtip" dir="rtl" lang="ar">‏في الكلام المنقول نرجع الزمن خطوة للوراء (like → liked, will → would) ونغيّر الضمائر، والسؤال يصبح asked if بدون علامة استفهام.</span>` : ""}
+      ${o.pol && canPol(o) ? `<span class="dtip">🙏 Could you…? and Would you…? are softer than Can you…? and Will you…?, and please makes it kinder.</span>` : ""}
       ${(b.r || []).map((r, n) => `<span class="dl">${spk(k, n, r.by, names)}<span class="say">${esc(ls[n + 1].text)}</span>${["so", "neither", "disagree", "yesso"].includes(r.kind) ? `<select data-drwho="${k}|${n}" aria-label="Who agrees">${[["i", "I"], ["we", "we"], ...names.map(x => ["c:" + x, x])].map(([v, l]) => `<option value="${esc(v)}"${(r.who || "i") === v ? " selected" : ""}>${esc(l)}</option>`).join("")}</select>` : ""}<button type="button" class="x" data-drx="${k}|${n}" aria-label="Remove this reply">✕</button></span>`).join("")}
       ${(b.r || []).length < 8 && (o.v || t.noVerb) ? `<span class="dadd"><small>＋ Reply:</small>${kinds(o).map(([kk, l]) => `<button type="button" data-dadd="${k}|${kk}" title="${esc(TIPS[kk])}">${esc(l)}</button>`).join("")}</span>` : ""}
       <span class="dtip">💡 ${esc((b.r || []).length ? TIPS[b.r[b.r.length - 1].kind] : o.mode === "q" ? "Ask a question, then add the answers." : "Say something, then let the others agree or disagree.")}</span></span>`;
   }
-  window.Talk = { TIMES, MODES, make, opener, reply, lines, complete, words, kinds, frame, answerer, TIPS };
+  window.Talk = { reported, canPol, TIMES, MODES, make, opener, reply, lines, complete, words, kinds, frame, answerer, TIPS };
 })();

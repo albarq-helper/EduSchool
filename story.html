@@ -164,7 +164,7 @@
 .tchip{display:inline-block;margin-left:6px;font:800 .78rem var(--f-body);color:#4338ca;background:#e0e7ff;border-radius:999px;padding:1px 8px;vertical-align:middle}
 .wxdif{border-left:4px solid #f97316;padding:4px 0 4px 10px;margin:8px 0}.wxdif p{margin:2px 0 6px}.wxw.on{border-color:#fdba74;background:#fff7ed}
 </style>
-<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261125p"></script><script src="js/icons.js?v=20261125p"></script><script src="js/app.js?v=20261125p"></script><script src="js/sets.js?v=20261125p"></script><script src="js/weather.js?v=20261125p"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261125p"></script><script src="js/tense.js?v=20261125p"></script><script src="js/wordbox.js?v=20261125p"></script><script src="js/views.js?v=20261125p"></script><script src="js/joiners.js?v=20261125p"></script><script src="js/talk.js?v=20261125p"></script><script src="js/chars.js?v=20261125p"></script><script src="js/storycore.js?v=20261125p"></script><script src="js/montage.js?v=20261125p"></script>
+<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261125q"></script><script src="js/icons.js?v=20261125q"></script><script src="js/app.js?v=20261125q"></script><script src="js/sets.js?v=20261125q"></script><script src="js/weather.js?v=20261125q"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261125q"></script><script src="js/tense.js?v=20261125q"></script><script src="js/wordbox.js?v=20261125q"></script><script src="js/views.js?v=20261125q"></script><script src="js/joiners.js?v=20261125q"></script><script src="js/talk.js?v=20261125q"></script><script src="js/chars.js?v=20261125q"></script><script src="js/storycore.js?v=20261125q"></script><script src="js/montage.js?v=20261125q"></script>
 </head><body>
 <div class="wrap" style="max-width:1280px">
   <div class="head2">
@@ -241,11 +241,12 @@ $("boxes").onclick=e=>{const b=e.target.closest("[data-box]");if(b){$("q").value
 // 🔗 joiners: the glowing slot [block, slot] takes the next word picked on the left
 let ACT=null;
 // a / an / the: only naming words (nouns) from the dictionary get the article button in joiner boxes
+Joiners.isPerson=w=>{const v=D[wi(w)];return !!v&&(v.tags||[]).some(t=>/^Naming: people/i.test(t));};
 Joiners.isNoun=w=>{const v=D[wi(w)];return !!v&&!v.author&&v.boxKind!=="link"&&(v.tags||[]).some(t=>/^Naming/.test(t));};
 function fillSlot(i){if(!ACT||!CUR)return false;const b=CUR.blocks[ACT[0]];if(!b||(b.k!=="j"&&b.k!=="d")){ACT=null;return false;}const v=D[i];if(!v)return false;
   if(b.k==="d"){const o=b.o;if(Tense.isVerb(v)&&!o.v)o.v=v.w;else{const w=clean(v.w);o.rest=[(o.rest||"").trim(),w.charAt(0).toLowerCase()+w.slice(1)].filter(Boolean).join(" ");}
     if(o.v)ACT=null;changed();drawBoard();return true;}
-  const x=b.s[ACT[1]],cond=Joiners.TYPES[b.t].kind==="cond";
+  const x=b.s[ACT[1]],cond=Joiners.TYPES[b.t].kind==="cond"||!!(x&&x.cl);
   if(cond){if(Tense.isVerb(v)&&!x.v){x.v=v.w;}else{const w=clean(v.w),ws=w.charAt(0).toLowerCase()+w.slice(1);x.rest=[(x.rest||"").trim(),ws].filter(Boolean).join(" ");}}
   else{b.s[ACT[1]]={w:v.w};}
   const nx=cond?(x.v?Joiners.nextEmpty(b,ACT[1]):ACT[1]):Joiners.nextEmpty(b,ACT[1]);ACT=nx>=0?[ACT[0],nx]:null;
@@ -382,6 +383,7 @@ $("addTalk").onclick=()=>{const b=Talk.make(cast());addBlock(b);ACT=[CUR.blocks.
 // 💬 conversation frames
 const nextSpeaker=b=>{const N=cast().map(castName).filter(Boolean);if(!N.length)return "";const said=[b.o.by,...(b.r||[]).map(r=>r.by)];return N.find(n=>!said.includes(n))||N.find(n=>n!==said[said.length-1])||N[0];};
 $("board").addEventListener("click",e=>{const db=e.target.closest(".dbox");if(!db)return;e.stopPropagation();const t=e.target,d=x=>(t.closest(`[data-${x}]`)||{}).dataset,pr=v=>v.split("|"),B=CUR.blocks;let x;
+  if((x=d("dopt"))&&x.dopt){const [k,key]=pr(x.dopt),b=B[+k];b.o[key]=!b.o[key];changed();return drawBoard();}
   if((x=d("dmode"))&&x.dmode){const [k,m]=pr(x.dmode),b=B[+k];b.o.mode=m;b.r=(b.r||[]).filter(r=>Talk.kinds(b.o).some(([kk])=>kk===r.kind));changed();return drawBoard();}
   if((x=d("dt"))&&x.dt){const [k,v]=pr(x.dt);B[+k].o.t=v;changed();return drawBoard();}
   if((x=d("dvx"))&&x.dvx!=null){const k=+x.dvx;B[k].o.v="";ACT=[k,"o"];changed();return drawBoard();}
@@ -399,21 +401,23 @@ $("board").addEventListener("input",e=>{const t=e.target;if(!t.dataset.drest)ret
 // joiner frames: slots, switches and small inputs (handled here, before the board's own click)
 $("board").addEventListener("click",e=>{const jb=e.target.closest(".jbox");if(!jb)return;e.stopPropagation();const t=e.target,d=x=>(t.closest(`[data-${x}]`)||{}).dataset;
   const pr=v=>v.split("|"),B=CUR.blocks;let x;
-  if((x=d("jx"))&&x.jx){const [k,n]=pr(x.jx).map(Number),b=B[k];if(Joiners.TYPES[b.t].kind==="cond")b.s[n].v="";else b.s[n]={};ACT=[k,n];changed();return drawBoard();}
+  if((x=d("jx"))&&x.jx){const [k,n]=pr(x.jx).map(Number),b=B[k];if(Joiners.TYPES[b.t].kind==="cond"||b.s[n].cl)b.s[n].v="";else b.s[n]={};ACT=[k,n];changed();return drawBoard();}
   if((x=d("jadd"))&&x.jadd!=null){const k=+x.jadd;B[k].s.push({});ACT=[k,B[k].s.length-1];changed();return drawBoard();}
   if((x=d("jend"))&&x.jend){const [k,v]=pr(x.jend);B[+k].end=v;changed();return drawBoard();}
   if((x=d("jox"))&&x.jox!=null){const b=B[+x.jox];b.ox=!b.ox;changed();return drawBoard();}
   if((x=d("jc"))&&x.jc){const [k,v]=pr(x.jc),b=B[+k];b.c=v;const C=Joiners.CONJ.find(c=>c.k===v);if(C&&C.real&&!["zero","first"].includes(b.lv))b.lv="first";changed();return drawBoard();}
   if((x=d("jlv"))&&x.jlv){const [k,v]=pr(x.jlv);B[+k].lv=v;changed();return drawBoard();}
   if((x=d("jmf"))&&x.jmf!=null){const b=B[+x.jmf];b.mf=!b.mf;changed();return drawBoard();}
+  if((x=d("jopt"))&&x.jopt){const [k,key,val]=pr(x.jopt),b=B[+k];b[key]=val==="!"?!b[key]:val;changed();return drawBoard();}
   if((x=d("jart"))&&x.jart){const [k,n]=pr(x.jart).map(Number),s=B[k].s[n];s.a=s.a==="a"?"the":s.a==="the"?"":"a";changed();return drawBoard();}
   if(t.closest("input,select"))return;
   if((x=d("jslot"))&&x.jslot){const [k,n]=pr(x.jslot).map(Number);ACT=ACT&&ACT[0]===k&&ACT[1]===n?null:[k,n];SEL=k;drawBoard();}},true);
 $("board").addEventListener("change",e=>{const t=e.target;
   if(t.dataset.jwho){const [k,n]=t.dataset.jwho.split("|").map(Number);CUR.blocks[k].s[n].who=t.value;changed();drawBoard();}
   else if(t.dataset.jneg){const [k,n]=t.dataset.jneg.split("|").map(Number);CUR.blocks[k].s[n].neg=t.checked;changed();drawBoard();}
-  else if(t.dataset.jrest){changed();drawBoard();}});
-$("board").addEventListener("input",e=>{const t=e.target;if(!t.dataset.jrest)return;const [k,n]=t.dataset.jrest.split("|").map(Number),b=CUR.blocks[k];b.s[n].rest=t.value;
+  else if(t.dataset.jwho0){CUR.blocks[+t.dataset.jwho0].who0=t.value;changed();drawBoard();}
+  else if(t.dataset.jrest||t.dataset.jtxt){changed();drawBoard();}});
+$("board").addEventListener("input",e=>{const t=e.target;if(t.dataset.jtxt){const [k,key]=t.dataset.jtxt.split("|"),b=CUR.blocks[+k];b[key]=t.value;const o=t.closest(".jbox").querySelector(".jout");if(o)o.textContent=Joiners.text(b,cast().map(castName));changed();drawPreview();return;}if(!t.dataset.jrest)return;const [k,n]=t.dataset.jrest.split("|").map(Number),b=CUR.blocks[k];b.s[n].rest=t.value;
   const o=t.closest(".jbox").querySelector(".jout");if(o)o.textContent=Joiners.text(b,cast().map(castName));changed();drawPreview();});
 $("addScene").onclick=()=>addBlock({k:"s"});
 $("quick").innerHTML=QUICK.map(q=>`<button class="chipb" type="button" data-q="${esc(q)}">${esc(q)}</button>`).join("");
