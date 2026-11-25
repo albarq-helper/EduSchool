@@ -297,11 +297,11 @@ const MD_RULE={Do:"DO = activities, jobs and chores: do the dishes, do your home
 let MDQ=null,MDS={};
 async function mdLoad(){if(MDQ)return MDQ;MDQ=[];try{const w=(await App.client.from("words").select("id,headword").in("headword",["Make","Do"])).data||[];
   const r=(await App.client.from("word_partners").select("word_id,phrase,tags").in("word_id",w.map(x=>x.id))).data||[];
-  const vb=Object.fromEntries(w.map(x=>[x.id,x.headword]));MDQ=r.filter(x=>(x.tags||[]).some(t=>t.startsWith("🧭 "))).map(x=>({v:vb[x.word_id],rest:x.phrase.split(" ").slice(1).join(" "),ex:(x.tags||[]).some(t=>t.startsWith("⚠️"))}));}catch(e){}return MDQ;}
+  const vb=Object.fromEntries(w.map(x=>[x.id,x.headword]));MDQ=r.filter(x=>(x.tags||[]).some(t=>t.startsWith("🧭 "))).map(x=>{const w=(x.tags||[]).find(t=>t.startsWith("⚠️"));return {v:vb[x.word_id],rest:x.phrase.split(" ").slice(1).join(" "),ex:w==="⚠️ Exception",note:w&&w!=="⚠️ Exception"?w.replace(/^⚠️\s*/,""):""};});}catch(e){}return MDQ;}
 function mdQuizHTML(i,v){const st=MDS[i];
   if(!st)return `<div class="mdq"><p><b>📏 The rule:</b> ${esc(MD_RULE[v.w])}</p><button type="button" class="pc" data-mdstart="${i}">🎯 Make or do? Try 5</button></div>`;
   if(st.n>=st.qs.length)return `<div class="mdq"><p><b>📏 The rule:</b> ${esc(MD_RULE[v.w])}</p><p class="mdok">${st.ok===st.qs.length?"🌟":"👍"} ${st.ok} / ${st.qs.length} right!</p><button type="button" class="pc" data-mdstart="${i}">🔁 Again</button></div>`;
-  const q=st.qs[st.n];return `<div class="mdq"><p><b>📏 The rule:</b> ${esc(MD_RULE[v.w])}</p><p class="mdline">${st.n+1}/${st.qs.length} · <b>___</b> ${esc(q.rest)}${st.fb?` <span class="${st.fb.ok?"mdok":"mdno"}">${st.fb.ok?"✓":"✗"} ${esc(q.v.toLowerCase())} ${esc(q.rest)}${q.ex?" (the exception!)":""}</span>`:""}</p>
+  const q=st.qs[st.n];return `<div class="mdq"><p><b>📏 The rule:</b> ${esc(MD_RULE[v.w])}</p><p class="mdline">${st.n+1}/${st.qs.length} · <b>___</b> ${esc(q.rest)}${st.fb?` <span class="${st.fb.ok?"mdok":"mdno"}">${st.fb.ok?"✓":"✗"} ${esc(q.v.toLowerCase())} ${esc(q.rest)}${q.ex?" (the exception!)":q.note?` (${esc(q.note)})`:""}</span>`:""}</p>
     ${st.fb?`<button type="button" class="pc" data-mdnext="${i}">Next ▶</button>`:`<button type="button" class="pc" data-mdans="${i}|Make">make</button><button type="button" class="pc" data-mdans="${i}|Do">do</button>`}</div>`;}
 document.addEventListener("click",async e=>{const s=e.target.closest("[data-mdstart]");if(s){const i=+s.dataset.mdstart,all=await mdLoad();if(!all.length)return;
     const pool=[...all].sort(()=>Math.random()-.5),ex=pool.find(x=>x.ex),qs=pool.filter(x=>!x.ex).slice(0,ex?4:5);if(ex)qs.splice(Math.floor(Math.random()*5),0,ex);
