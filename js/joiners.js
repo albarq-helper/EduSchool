@@ -35,9 +35,15 @@
     if (T.kind === "cond") return { k: "j", t, c: "if", lv: "first", s: [{ who: "it" }, { who: "we" }] };
     return { k: "j", t, s: [{}, {}] };
   }
-  // a word in a slot, as it reads in a sentence ("a cake", "Rover")
-  const wordOf = (x, names) => { if (!x) return ""; if (x.t) return x.t.trim(); const w = clean(x.w); if (!w) return "";
-    return (names || []).some(n => n.toLowerCase() === w.toLowerCase()) || w === "I" ? w : w.charAt(0).toLowerCase() + w.slice(1); };
+  // a word in a slot, as it reads in a sentence ("a cake", "the moon", "Rover"); x.a = "a" (a/an by sound) | "the" | "" (nothing)
+  const AN = w => /^(hour|honou?r|honest|heir)/i.test(w) ? "an" : /^(uni|use|usu|eu|one|once|u[bcfhjklmnpqrstvwxyz][aeiou])/i.test(w) && !/^un[^i]/i.test(w) ? "a" : /^[aeiou]/i.test(w) ? "an" : "a";
+  const artOf = (x, w) => x && x.a === "a" ? AN(w) : x && x.a === "the" ? "the" : "";
+  const isName = (w, names) => (names || []).some(n => n.toLowerCase() === w.toLowerCase()) || w === "I";
+  const wordOf = (x, names, bare) => { if (!x) return ""; if (x.t) return x.t.trim(); const w = clean(x.w); if (!w) return "";
+    const ww = isName(w, names) ? w : w.charAt(0).toLowerCase() + w.slice(1), a = !bare && !isName(w, names) ? artOf(x, ww) : "";
+    return a ? a + " " + ww : ww; };
+  // can this slot take a / an / the? (story.html sets Joiners.isNoun from the dictionary: naming words only)
+  const canArt = (x, names) => !!(x && x.w && !x.t && !isName(clean(x.w), names) && api.isNoun && api.isNoun(x.w));
   const filled = x => !!(x && ((x.w || x.t || "").trim() || x.v));
   const cap = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
   function lvOf(b) { const L = LV.find(x => x.k === b.lv) || LV[1]; const C = CONJ.find(x => x.k === b.c) || CONJ[0]; return C.real && !["zero", "first"].includes(L.k) ? LV[1] : L; }
@@ -69,6 +75,7 @@
 .jslot{display:inline-flex;align-items:center;gap:4px;border:2px dashed #c4b5fd;background:#faf5ff;border-radius:12px;padding:4px 10px;font:700 .92rem var(--f-body,system-ui);cursor:pointer;color:#1e1b4b;min-height:34px}
 .jslot.full{border-style:solid;border-color:#a78bfa;background:#fff}.jslot.act{border-color:#7c3aed;box-shadow:0 0 0 4px #ddd6fe;animation:jglow 1.4s ease-in-out infinite}
 @keyframes jglow{50%{box-shadow:0 0 0 7px #ede9fe}}
+.jart{border:1px dashed #a78bfa;background:#fff;color:#7c3aed;border-radius:8px;font:700 .78rem var(--f-body,system-ui);padding:1px 6px;margin-right:4px;cursor:pointer}.jart.on{border-style:solid;background:#ede9fe;font-size:.9rem}
 .jx{border:0;background:none;color:#94a3b8;cursor:pointer;font-size:.8rem;padding:0 2px}.jslot .ph{color:#7c3aed;font-weight:700}
 .jcl{display:flex;flex-wrap:wrap;gap:5px;align-items:center;border:2px dashed #c4b5fd;background:#faf5ff;border-radius:12px;padding:5px 8px;cursor:pointer}
 .jcl.act{border-color:#7c3aed;box-shadow:0 0 0 4px #ddd6fe}.jcl.full{border-style:solid;border-color:#a78bfa;background:#fff}
@@ -88,7 +95,7 @@
   function frame(b, k, act, cast) {
     addCss(); const T = TYPES[b.t]; if (!T) return "";
     const on = n => act && act[0] === k && act[1] === n, A = age();
-    const wslot = (x, n) => `<span class="jslot${filled(x) ? " full" : ""}${on(n) ? " act" : ""}" data-jslot="${k}|${n}" role="button" tabindex="0" title="Tap, then pick a word on the left">${filled(x) ? `${esc(wordOf(x, cast))}<button type="button" class="jx" data-jx="${k}|${n}" aria-label="Empty this box">✕</button>` : `<span class="ph">⬚ ${on(n) ? "pick a word" : "tap here"}</span>`}</span>`;
+    const wslot = (x, n) => `<span class="jslot${filled(x) ? " full" : ""}${on(n) ? " act" : ""}" data-jslot="${k}|${n}" role="button" tabindex="0" title="Tap, then pick a word on the left">${filled(x) ? `${canArt(x, cast) ? `<button type="button" class="jart${x.a ? " on" : ""}" data-jart="${k}|${n}" title="${x.a ? "Tap to change: a/an → the → nothing" : "Does it need a, an or the? Tap to add"}">${x.a ? esc(artOf(x, wordOf(x, cast, true))) : "＋a/the"}</button>` : ""}${esc(wordOf(x, cast, true))}<button type="button" class="jx" data-jx="${k}|${n}" aria-label="Empty this box">✕</button>` : `<span class="ph">⬚ ${on(n) ? "pick a word" : "tap here"}</span>`}</span>`;
     let body = "", ctl = "", tip = T.tip, warn = "";
     if (T.kind === "list") {
       body = (b.s || []).map((x, n) => (n ? `<span class="jw">${n === b.s.length - 1 ? esc(b.end || "and") : ","}</span>` : "") + wslot(x, n)).join("") + (b.s.length < 8 ? `<button type="button" class="jslot" data-jadd="${k}" title="One more">＋</button>` : "");
@@ -122,5 +129,6 @@
     setTimeout(() => document.addEventListener("click", off, true));
     m.onclick = e => { const b = e.target.closest("[data-jpick]"); if (!b) return; m.remove(); document.removeEventListener("click", off, true); onPick(b.dataset.jpick); };
   }
-  window.Joiners = { TYPES, LV, CONJ, make, text, complete, label, words, nextEmpty, frame, menu, filled, age };
+  const api = { TYPES, LV, CONJ, make, text, complete, label, words, nextEmpty, frame, menu, filled, age, AN, isNoun: null };
+  window.Joiners = api;
 })();

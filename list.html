@@ -137,7 +137,7 @@ input.ok,textarea.ok{border-color:var(--good)!important;background:var(--good-so
 .dp{display:grid;gap:2px;background:var(--paper);border-radius:10px;padding:6px 8px;font-size:.88rem}.dp.me{background:#fff7ed;border:1px solid #fdba74}.dp b{font-size:.95rem}.dp .ar,.dar{font-size:.88rem;color:var(--muted)}
 .dx{color:#9a3412}.dn{color:var(--muted);font-size:.82rem!important}.linkb{background:none;border:0;padding:0;font:inherit;font-weight:800;color:var(--accent);cursor:pointer}
 </style>
-<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261125m"></script><script src="js/icons.js?v=20261125m"></script><script src="js/app.js?v=20261125m"></script><script src="js/sets.js?v=20261125m"></script><script src="js/weather.js?v=20261125m"></script><script src="js/eggs.js?v=20261125m"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261125m"></script><script src="js/tense.js?v=20261125m"></script><script src="js/views.js?v=20261125m"></script>
+<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261125n"></script><script src="js/icons.js?v=20261125n"></script><script src="js/app.js?v=20261125n"></script><script src="js/sets.js?v=20261125n"></script><script src="js/weather.js?v=20261125n"></script><script src="js/eggs.js?v=20261125n"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261125n"></script><script src="js/tense.js?v=20261125n"></script><script src="js/views.js?v=20261125n"></script>
 </head><body>
 <div class="wrap" style="max-width:1180px">
   <div class="head2">
@@ -296,21 +296,46 @@ function partnersHTML(i,v){if(wordHidden(i)||!v.wid)return "";const P=PARTNERS.g
   const rows=meters+rules+(MD_RULE[v.w]?mdQuizHTML(i,v):"")+Sets.PARTNER_KINDS.filter(([k])=>k!=="saying").map(([k,lab,hint])=>{const xs=P.own.filter(x=>x.kind===k&&!onMeter.has(x.phrase)&&!inRule.has(x.phrase));return xs.length?`<div class="pr"><span class="pk">${lab}${hint?` <small>${hint}</small>`:""}</span>${xs.map(x=>partnerChip(x)).join("")}</div>`:"";}).join("");
   const also=P.also.length?(v.author?`<div class="pr"><span class="pk">📖 Words in this saying</span>${P.also.map(x=>partnerChip(x,"word")).join("")}</div>`:`<div class="pr"><span class="pk">🔁 Also used in</span>${P.also.map(x=>partnerChip(x)).join("")}</div>`):"";
   return `<div class="partners">${rows}${also}</div>`;}
-// ---- 🎯 Make or do? the rule and a quick 5-question check, on the Make and Do cards ----
-const MD_RULE={Do:"DO = activities, jobs and chores: do the dishes, do your homework, do your best.",Make:"MAKE = something new comes out: make a cake, make a decision, make a noise. ⚠️ Exception: make your bed."};
-let MDQ=null,MDS={};
-async function mdLoad(){if(MDQ)return MDQ;MDQ=[];try{const w=(await App.client.from("words").select("id,headword").in("headword",["Make","Do"])).data||[];
-  const r=(await App.client.from("word_partners").select("word_id,phrase,tags").in("word_id",w.map(x=>x.id))).data||[];
-  const vb=Object.fromEntries(w.map(x=>[x.id,x.headword]));MDQ=r.filter(x=>(x.tags||[]).some(t=>t.startsWith("🧭 "))).map(x=>{const w=(x.tags||[]).find(t=>t.startsWith("⚠️"));return {v:vb[x.word_id],rest:x.phrase.split(" ").slice(1).join(" "),ex:w==="⚠️ Exception",note:w&&w!=="⚠️ Exception"?w.replace(/^⚠️\s*/,""):""};});}catch(e){}return MDQ;}
-function mdQuizHTML(i,v){const st=MDS[i];
-  if(!st)return `<div class="mdq"><p><b>📏 The rule:</b> ${esc(MD_RULE[v.w])}</p><button type="button" class="pc" data-mdstart="${i}">🎯 Make or do? Try 5</button></div>`;
-  if(st.n>=st.qs.length)return `<div class="mdq"><p><b>📏 The rule:</b> ${esc(MD_RULE[v.w])}</p><p class="mdok">${st.ok===st.qs.length?"🌟":"👍"} ${st.ok} / ${st.qs.length} right!</p><button type="button" class="pc" data-mdstart="${i}">🔁 Again</button></div>`;
-  const q=st.qs[st.n];return `<div class="mdq"><p><b>📏 The rule:</b> ${esc(MD_RULE[v.w])}</p><p class="mdline">${st.n+1}/${st.qs.length} · <b>___</b> ${esc(q.rest)}${st.fb?` <span class="${st.fb.ok?"mdok":"mdno"}">${st.fb.ok?"✓":"✗"} ${esc(q.v.toLowerCase())} ${esc(q.rest)}${q.ex?" (the exception!)":q.note?` (${esc(q.note)})`:""}</span>`:""}</p>
-    ${st.fb?`<button type="button" class="pc" data-mdnext="${i}">Next ▶</button>`:`<button type="button" class="pc" data-mdans="${i}|Make">make</button><button type="button" class="pc" data-mdans="${i}|Do">do</button>`}</div>`;}
-document.addEventListener("click",async e=>{const s=e.target.closest("[data-mdstart]");if(s){const i=+s.dataset.mdstart,all=await mdLoad();if(!all.length)return;
+// ---- 🎯 Choose the right little word: the rule (English + Arabic) and a quick 5-question check ----
+//   Make / Do · In / On / At · By / On / In (travel) · A / An / The / nothing. Questions come from the partners tagged 🧭; articles use sentences.
+const R_IOA={en:"⏰ AT a clock time, ON a day or date, IN a month, year or part of the day (at 7, on Monday, in July, in the morning; ⚠️ at night). 📍 AT a point or a place where something happens, ON a surface, IN inside a space (at the door, on the table, in the box).",ar:"‏AT للوقت الدقيق وللنقطة أو المكان الذي يحدث فيه شيء، ON للأيام والتواريخ وللسطح، IN للشهور والسنوات وأجزاء اليوم ولداخل المكان. ⚠️ نقول at night."};
+const R_BY={en:"🚗 BY + vehicle, with no a or the, tells HOW you travel: by car, by bus, by plane. ⚠️ Walking is ON foot. When you mean one real car or bus: IN a car, ON the bus (big vehicles you can stand in, and bikes).",ar:"‏BY + وسيلة النقل بدون a أو the لبيان طريقة السفر: by car. ⚠️ المشي: on foot. وعند الحديث عن سيارة أو حافلة بعينها: in a car (الصغيرة)، on the bus (الكبيرة والدراجة)."};
+const R_TO={en:"➡️ TO shows where you are going: go to school, go to bed, go to the park. ⚠️ But: go home, come home (no to).",ar:"‏TO تدل على الاتجاه: go to school. ⚠️ لكن نقول go home بدون to."};
+const R_ART={en:"🔤 A before a consonant SOUND, AN before a vowel SOUND (it's the sound: a university, an hour). 👉 THE when we both know which one, or there is only one (the sun). 🚫 Nothing in fixed phrases: at home, by car, in bed, go to school.",ar:"‏A قبل صوت ساكن و AN قبل صوت متحرك (العبرة بالصوت: a university, an hour). THE عندما نعرف المقصود أو لا يوجد إلا واحد (the sun). وبدون أداة في عبارات ثابتة: at home, by car."};
+const CHO={Make:{set:["Make","Do"],rule:{en:"MAKE = something new comes out: make a cake, make a decision, make a noise. ⚠️ Exception: make your bed.",ar:""},title:"Make or do?"},
+  Do:{set:["Make","Do"],rule:{en:"DO = activities, jobs and chores: do the dishes, do your homework, do your best.",ar:""},title:"Make or do?"},
+  In:{set:["In","On","At"],skip:/^🧭 (🚗|🏥)/,rule:R_IOA,title:"In, on or at?"},On:{set:["In","On","At"],skip:/^🧭 (🚗|🏥)/,rule:R_IOA,title:"In, on or at?"},At:{set:["In","On","At"],skip:/^🧭 (🚗|🏥)/,rule:R_IOA,title:"In, on or at?"},
+  By:{set:["By","On","In"],only:/^🧭 🚗/,rule:R_BY,title:"By, on or in?"},To:{rule:R_TO},
+  A:{art:1,rule:R_ART,title:"A, an, the or nothing?"},An:{art:1,rule:R_ART,title:"A, an, the or nothing?"},The:{art:1,rule:R_ART,title:"A, an, the or nothing?"}};
+const ARTQ=[["I saw ___ elephant at the zoo.","an","elephant starts with a vowel sound"],["She is ___ honest girl.","an","the h is silent: 'onest'"],["My brother goes to ___ university.","a","university starts with a 'yoo' sound"],
+  ["___ sun is very hot today.","the","there is only one sun"],["We went to Jeddah by ___ car.","–","by + vehicle has no article"],["I stayed at ___ home all day.","–","at home has no article"],
+  ["Can you open ___ door, please?","the","we both know which door"],["I have ___ idea!","an","idea starts with a vowel sound"],["Dinner is in ___ hour.","an","the h is silent"],
+  ["My mom is ___ doctor.","a","one of many doctors"],["Let's go to ___ park after school.","the","places in town take the"],["I go to ___ bed at nine.","–","go to bed has no article"],
+  ["___ moon is bright tonight.","the","there is only one moon"],["She wants ___ new bike.","a","new starts with a consonant sound"],["We have ___ breakfast at seven.","–","meals have no article"],
+  ["He plays ___ football after school.","–","sports have no article"],["Can I have ___ orange?","an","orange starts with a vowel sound"],["This is ___ uniform for my school.","a","uniform starts with a 'yoo' sound"],
+  ["We saw ___ owl in the barn at night.","an","owl starts with a vowel sound"]];
+const MD_RULE=Object.fromEntries(Object.entries(CHO).map(([k,v])=>[k,v.rule.en]));   // kept for the card check below
+let MDQ={},MDS={};
+async function mdLoad(w){const C=CHO[w];if(C.art)return ARTQ.map(([s,a,why])=>({art:1,s,v:a,note:why}));const key=C.set.join("|");if(MDQ[key])return MDQ[key];MDQ[key]=[];
+  try{const ws=(await App.client.from("words").select("id,headword").in("headword",C.set).eq("sense","")).data||[];
+    const r=(await App.client.from("word_partners").select("word_id,phrase,tags").in("word_id",ws.map(x=>x.id))).data||[];
+    const vb=Object.fromEntries(ws.map(x=>[x.id,x.headword])),grp=x=>(x.tags||[]).find(t=>t.startsWith("🧭 "));
+    let qs=r.filter(x=>grp(x)&&(!C.only||C.only.test(grp(x)))&&!(C.skip&&C.skip.test(grp(x)))&&x.phrase.split(" ")[0].toLowerCase()===vb[x.word_id].toLowerCase())
+      .map(x=>{const w2=(x.tags||[]).find(t=>/^(⚠️|🇺🇸)/.test(t));return {v:vb[x.word_id],rest:x.phrase.split(" ").slice(1).join(" "),ex:/^⚠️ Exception/.test(w2||"")||/exception/i.test(grp(x)),note:w2?w2.replace(/^⚠️\s*/,""):grp(x).slice(2).trim()};});
+    const seen={};qs.forEach(x=>{const k=x.rest.toLowerCase();seen[k]=(seen[k]||new Set()).add(x.v);});
+    MDQ[key]=qs.filter(x=>seen[x.rest.toLowerCase()].size===1);}catch(e){}return MDQ[key];}
+function mdQuizHTML(i,v){const C=CHO[v.w],st=MDS[i],R=`<p><b>📏 The rule:</b> ${esc(C.rule.en)}</p>${C.rule.ar?`<p dir="rtl" lang="ar" style="font-family:var(--f-ar);margin:4px 0 8px">${esc(C.rule.ar)}</p>`:""}`;
+  if(!C.set&&!C.art)return `<div class="mdq">${R}</div>`;
+  if(!st)return `<div class="mdq">${R}<button type="button" class="pc" data-mdstart="${i}">🎯 ${esc(C.title)} Try 5</button></div>`;
+  if(st.n>=st.qs.length)return `<div class="mdq">${R}<p class="mdok">${st.ok===st.qs.length?"🌟":"👍"} ${st.ok} / ${st.qs.length} right!</p><button type="button" class="pc" data-mdstart="${i}">🔁 Again</button></div>`;
+  const q=st.qs[st.n],opts=C.art?["a","an","the","–"]:C.set.map(x=>x.toLowerCase()),full=q.art?q.s.replace(/___/g,q.v==="–"?"":q.v).replace(/\s{2,}/g," ").replace(/^\s/,"").replace(/^./,c=>c.toUpperCase()):`${q.v.toLowerCase()} ${q.rest}`;
+  const line=q.art?esc(q.s).replace(/___/g,"<b>___</b>"):`<b>___</b> ${esc(q.rest)}`;
+  return `<div class="mdq">${R}<p class="mdline">${st.n+1}/${st.qs.length} · ${line}${st.fb?` <span class="${st.fb.ok?"mdok":"mdno"}">${st.fb.ok?"✓":"✗"} ${esc(full)}${q.note?` (${esc(q.note)})`:""}</span>`:""}</p>
+    ${st.fb?`<button type="button" class="pc" data-mdnext="${i}">Next ▶</button>`:opts.map(o=>`<button type="button" class="pc" data-mdans="${i}|${esc(o)}">${o==="–"?"– (nothing)":esc(o)}</button>`).join("")}</div>`;}
+document.addEventListener("click",async e=>{const s=e.target.closest("[data-mdstart]");if(s){const i=+s.dataset.mdstart,all=await mdLoad(D[i].w);if(!all.length)return;
     const pool=[...all].sort(()=>Math.random()-.5),ex=pool.find(x=>x.ex),qs=pool.filter(x=>!x.ex).slice(0,ex?4:5);if(ex)qs.splice(Math.floor(Math.random()*5),0,ex);
     MDS[i]={qs,n:0,ok:0,fb:null};render();return;}
-  const a=e.target.closest("[data-mdans]");if(a){const [i,ans]=a.dataset.mdans.split("|"),st=MDS[i],q=st.qs[st.n],ok=q.v===ans;st.fb={ok};if(ok)st.ok++;render();return;}
+  const a=e.target.closest("[data-mdans]");if(a){const [i,ans]=a.dataset.mdans.split("|"),st=MDS[i],q=st.qs[st.n],ok=q.v.toLowerCase()===ans.toLowerCase();st.fb={ok};if(ok)st.ok++;render();return;}
   const n=e.target.closest("[data-mdnext]");if(n){const st=MDS[n.dataset.mdnext];st.n++;st.fb=null;render();}});
 // ---- the card's "explore" row: Word family · Goes with · Sayings, each opens in place (one at a time) ----
 const SAYSET="00000000-0000-4000-8000-000000009007";let SAYS=[];

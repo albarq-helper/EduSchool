@@ -164,7 +164,7 @@
 .tchip{display:inline-block;margin-left:6px;font:800 .78rem var(--f-body);color:#4338ca;background:#e0e7ff;border-radius:999px;padding:1px 8px;vertical-align:middle}
 .wxdif{border-left:4px solid #f97316;padding:4px 0 4px 10px;margin:8px 0}.wxdif p{margin:2px 0 6px}.wxw.on{border-color:#fdba74;background:#fff7ed}
 </style>
-<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261125m"></script><script src="js/icons.js?v=20261125m"></script><script src="js/app.js?v=20261125m"></script><script src="js/sets.js?v=20261125m"></script><script src="js/weather.js?v=20261125m"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261125m"></script><script src="js/tense.js?v=20261125m"></script><script src="js/views.js?v=20261125m"></script><script src="js/joiners.js?v=20261125m"></script><script src="js/talk.js?v=20261125m"></script><script src="js/chars.js?v=20261125m"></script><script src="js/storycore.js?v=20261125m"></script><script src="js/montage.js?v=20261125m"></script>
+<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261125n"></script><script src="js/icons.js?v=20261125n"></script><script src="js/app.js?v=20261125n"></script><script src="js/sets.js?v=20261125n"></script><script src="js/weather.js?v=20261125n"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261125n"></script><script src="js/tense.js?v=20261125n"></script><script src="js/views.js?v=20261125n"></script><script src="js/joiners.js?v=20261125n"></script><script src="js/talk.js?v=20261125n"></script><script src="js/chars.js?v=20261125n"></script><script src="js/storycore.js?v=20261125n"></script><script src="js/montage.js?v=20261125n"></script>
 </head><body>
 <div class="wrap" style="max-width:1280px">
   <div class="head2">
@@ -240,6 +240,8 @@ $("boxes").onclick=e=>{const b=e.target.closest("[data-box]");if(b){$("q").value
 // add a library word: linking words become the student's own words; others are vocabulary words
 // 🔗 joiners: the glowing slot [block, slot] takes the next word picked on the left
 let ACT=null;
+// a / an / the: only naming words (nouns) from the dictionary get the article button in joiner boxes
+Joiners.isNoun=w=>{const v=D[wi(w)];return !!v&&!v.author&&v.boxKind!=="link"&&(v.tags||[]).some(t=>/^Naming/.test(t));};
 function fillSlot(i){if(!ACT||!CUR)return false;const b=CUR.blocks[ACT[0]];if(!b||(b.k!=="j"&&b.k!=="d")){ACT=null;return false;}const v=D[i];if(!v)return false;
   if(b.k==="d"){const o=b.o;if(Tense.isVerb(v)&&!o.v)o.v=v.w;else{const w=clean(v.w);o.rest=[(o.rest||"").trim(),w.charAt(0).toLowerCase()+w.slice(1)].filter(Boolean).join(" ");}
     if(o.v)ACT=null;changed();drawBoard();return true;}
@@ -404,6 +406,7 @@ $("board").addEventListener("click",e=>{const jb=e.target.closest(".jbox");if(!j
   if((x=d("jc"))&&x.jc){const [k,v]=pr(x.jc),b=B[+k];b.c=v;const C=Joiners.CONJ.find(c=>c.k===v);if(C&&C.real&&!["zero","first"].includes(b.lv))b.lv="first";changed();return drawBoard();}
   if((x=d("jlv"))&&x.jlv){const [k,v]=pr(x.jlv);B[+k].lv=v;changed();return drawBoard();}
   if((x=d("jmf"))&&x.jmf!=null){const b=B[+x.jmf];b.mf=!b.mf;changed();return drawBoard();}
+  if((x=d("jart"))&&x.jart){const [k,n]=pr(x.jart).map(Number),s=B[k].s[n];s.a=s.a==="a"?"the":s.a==="the"?"":"a";changed();return drawBoard();}
   if(t.closest("input,select"))return;
   if((x=d("jslot"))&&x.jslot){const [k,n]=pr(x.jslot).map(Number);ACT=ACT&&ACT[0]===k&&ACT[1]===n?null:[k,n];SEL=k;drawBoard();}},true);
 $("board").addEventListener("change",e=>{const t=e.target;
