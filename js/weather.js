@@ -11,6 +11,7 @@
   add("gale", { e: "🌬️", name: "Gale", wind: 4, rain: 1 });
   add("wind,windy,blustery", { e: "💨", name: "Wind", wind: 3 });
   add("gust,gusty", { e: "💨", name: "Gust", wind: 2, gust: 1 });
+  add("faraway,far away,far off,far-off,distant,distance,far,afar,vanish,vanished,disappear,disappeared", { e: "🛣️", name: "Far away", far: 1, dur: 7000 });
   add("sway,sways,swayed,swaying,swing,swinging,rocking,wobble,wobbly", { e: "🌴", name: "Sway", sway: 1 });
   add("breeze,breezy", { e: "🍃", name: "Breeze", wind: 1 });
   // the wet family is NOT rain: water on the glass, then water in the page itself
@@ -78,6 +79,7 @@
     if (r.wind) s.push(noise(dur, 0.05 + r.wind * 0.04, "band", 300 + r.wind * 80, 900 + r.wind * 250, 2.5));
     if (r.snow && !r.wind) s.push(noise(dur, 0.02, "band", 6000, 7000, 1));
     if (r.sun && !r.heat) [0.4, 1.6, 3].forEach(t => chirp(t));
+    if (r.far) { s.push(noise(2.6, 0.12, "band", 1400, 250, 1.5)); s.push(noise(2.4, 0.08, "band", 250, 1200, 1.5, dur - 2.6)); }
     if (r.sway) s.push(noise(dur, 0.06, "band", 350, 700, 2));
     if (r.glass && !r.trickles) s.push(noise(dur, 0.02, "lowpass", 400, 300, 1));
     if (r.trickles || r.drip) for (let i = 0; i < (r.drip ? 14 : 6); i++) plink(0.5 + Math.random() * (dur - 1));
@@ -105,7 +107,7 @@
     const r = typeof word === "object" ? word : recipe(word);
     if (!r || (isOff() && !(opts && opts.force))) return false;
     stop();
-    const dur = (opts && opts.dur) || (r.long ? (r.torch && !r.torch.flicker ? 25000 : 14000) : r.vortex ? 6500 : 6000), t0 = performance.now();
+    const dur = (opts && opts.dur) || r.dur || (r.long ? (r.torch && !r.torch.flicker ? 25000 : 14000) : r.vortex ? 6500 : 6000), t0 = performance.now();
     const cv = document.createElement("canvas"); cv.className = "wx-stage"; cv.setAttribute("aria-hidden", "true");
     const ctx = cv.getContext("2d"); document.body.appendChild(cv);
     const W = () => innerWidth, H = () => innerHeight, dpr = Math.min(2, devicePixelRatio || 1);
@@ -257,6 +259,15 @@
     const anims = [];
     const ani = (el, kf, o) => { try { const a = el.animate(kf, o); anims.push(a); } catch (e) {} };
     if (reduce()) return { stop() {} };
+    if (r.far) { // the page flies down a road to the horizon, waits there as a speck, then comes back
+      const hz = innerHeight * .52, back = document.createElement("div"); back.className = "wx-back";
+      back.innerHTML = `<i style="position:absolute;inset:0 0 48% 0;background:linear-gradient(#5aa9e6,#bfe3ff)"></i><i style="position:absolute;inset:52% 0 0 0;background:linear-gradient(#9bd37a,#4f9a3a)"></i><i style="position:absolute;inset:52% 0 0 0;background:linear-gradient(#8a8f98,#4b5058);clip-path:polygon(49.4% 0,50.6% 0,78% 100%,22% 100%)"></i><i style="position:absolute;inset:52% 0 0 0;background:#fff8;clip-path:polygon(49.95% 0,50.05% 0,50.6% 100%,49.4% 100%)"></i><b style="position:absolute;left:12%;top:18%;font-size:52px">☁️</b><b style="position:absolute;right:16%;top:10%;font-size:40px">☁️</b><b style="position:absolute;left:14%;top:44%;font-size:46px">⛰️</b><b style="position:absolute;right:12%;top:41%;font-size:58px">⛰️</b><b style="position:absolute;right:30%;top:47%;font-size:26px">🌳</b>`;
+      Object.assign(back.style, { position: "fixed", inset: "0", zIndex: "-1", opacity: "0", transition: "opacity .6s" }); document.body.appendChild(back); requestAnimationFrame(() => back.style.opacity = 1);
+      const kids = [...document.body.children].filter(el => el !== back && !/^(SCRIPT|STYLE|CANVAS|DIALOG)$/.test(el.tagName) && !/(wx-|egg-)/.test(el.className || ""));
+      kids.forEach(el => { const top = el.getBoundingClientRect().top; el.style.transformOrigin = `50% ${hz - top}px`;
+        ani(el, [{ transform: "scale(1)", opacity: 1, offset: 0 }, { transform: "scale(.04)", opacity: .7, offset: .42, easing: "ease-in" }, { transform: "scale(.04)", opacity: .7, offset: .62 }, { transform: "scale(1)", opacity: 1, offset: 1 }], { duration: dur, easing: "ease-in-out" }); });
+      return { stop() { anims.forEach(a => { try { a.cancel(); } catch (e) {} }); kids.forEach(el => el.style.transformOrigin = ""); back.style.opacity = 0; setTimeout(() => back.remove(), 700); } };
+    }
     if (r.sway) { // the whole page sways from the bottom of the screen, like a tree; cards sway a little on their own too
       const kids = [...document.body.children].filter(el => !/^(SCRIPT|STYLE|CANVAS|DIALOG)$/.test(el.tagName) && !/(wx-|egg-)/.test(el.className || "") && getComputedStyle(el).position !== "fixed");
       kids.forEach(el => { const top = el.getBoundingClientRect().top; el.style.transformOrigin = `50% ${innerHeight - top}px`;
