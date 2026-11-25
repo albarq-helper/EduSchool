@@ -12,7 +12,8 @@
   add("wind,windy,blustery", { e: "💨", name: "Wind", wind: 3 });
   add("gust,gusty", { e: "💨", name: "Gust", wind: 2, gust: 1 });
   // 👀 being watched: big eyes follow your finger; binoculars let you spy on the page
-  add("look,looks,looked,looking,peep,peeps,peeped,peeping,peek,peeks,peeked,peeking,watch,watched,watching,stare,stared,staring,gaze,gazed,gazing,glance,glanced,notice,noticed", { e: "👀", name: "Watching you", eyes: 1, long: 1, dur: 10000 });
+  add("peep,peeps,peeped,peeping,peek,peeks,peeked,peeking,peephole,keyhole", { e: "🕳️", name: "Peep", peep: 1, dur: 9000 });
+  add("look,looks,looked,looking,watch,watched,watching,stare,stared,staring,gaze,gazed,gazing,glance,glanced,notice,noticed", { e: "👀", name: "Watching you", eyes: 1, long: 1, dur: 10000 });
   // 🔍 a magnifying glass over the page: everything under it twice as big, and the word under it in large letters
   add("observe,observed,observes,observing,observation,observant,examine,examined,inspect,inspected,magnify,magnified,magnifying,magnifying glass,magnifier,study,studied,detail,details,detailed,closely,scrutinize", { e: "🔍", name: "Magnifier", mag: 2.2, long: 1, dur: 20000 });
   add("spy,spied,spying,binoculars,scan,scanned,survey,surveyed,lookout,peer,peered,peering", { e: "🔭", name: "Spy", bino: 1, long: 1, dur: 14000 });
@@ -129,7 +130,7 @@
     // 👆 where the finger or mouse is (the torch and laser follow it; until it moves, they sweep by themselves)
     const ptr = { x: W() / 2, y: H() / 2, moved: 0 };
     const onMove = e => { if (e.target && e.target.closest && e.target.closest(".wx-chip")) return; const q = e.touches ? e.touches[0] : e; if (!q) return; ptr.x = q.clientX; ptr.y = q.clientY; ptr.moved = performance.now(); };
-    const track = r.torch || r.laser || r.eyes || r.bino || r.mag;
+    const track = r.torch || r.laser || r.eyes || r.bino || r.mag || r.peep;
     if (track) { addEventListener("pointermove", onMove, { passive: true }); addEventListener("touchmove", onMove, { passive: true }); addEventListener("pointerdown", onMove, { passive: true }); }
     const dark = r.torch ? layer("rgba(3,5,18,.94)", 1) : null;
     const bino = !!r.bino;
@@ -213,6 +214,25 @@
         const w = wordAt(x, y); if (w && w.length > 1) { lensWord.textContent = w; lensWord.style.display = "block"; lensWord.style.left = x + "px"; lensWord.style.top = Math.min(H() - 60, y + LR + 18) + "px"; } else lensWord.style.display = "none";
         ctx.save(); ctx.translate(x + (LR + 4) * .707, y + (LR + 4) * .707); ctx.rotate(Math.PI / 4); const hg = ctx.createLinearGradient(0, -9, 0, 9); hg.addColorStop(0, "#8b5a2b"); hg.addColorStop(.5, "#c08040"); hg.addColorStop(1, "#5c3a1a"); ctx.fillStyle = "#334155"; ctx.fillRect(0, -7, 18, 14); ctx.fillStyle = hg; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(16, -9, Math.max(60, LR * .9), 18, 9) : ctx.rect(16, -9, LR, 18); ctx.fill(); ctx.restore();
         ctx.strokeStyle = "rgba(255,255,255,.55)"; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(x, y, LR * .8, Math.PI * 1.1, Math.PI * 1.45); ctx.stroke(); }
+      if (r.peep) { // a black wall with a hole; an eye on the other side peeks through, looks around, blinks, leaves; then the hole opens
+        const hx = W() / 2, hy = H() * .45, R0 = Math.min(W(), H()) * .2, open = life > .8 ? Math.pow((life - .8) / .2, 2) : 0, HR = R0 * (1 + open * 6);
+        const slide = life < .15 ? 1 - (life - .05) / .1 : life > .7 ? (life - .7) / .08 : 0, ex = hx + Math.max(0, Math.min(1, slide)) * R0 * 2.6;
+        ctx.save(); ctx.globalAlpha = Math.min(1, life * 12); ctx.fillStyle = "#050505"; ctx.fillRect(0, 0, W(), H());
+        ctx.globalCompositeOperation = "destination-out"; ctx.beginPath(); ctx.arc(hx, hy, HR, 0, 7); ctx.fill(); ctx.globalCompositeOperation = "source-over";
+        if (life < .8 && life > .05) { ctx.beginPath(); ctx.arc(hx, hy, R0, 0, 7); ctx.clip();
+          const sk = ctx.createRadialGradient(ex, hy, R0 * .2, ex, hy, R0 * 1.4); sk.addColorStop(0, "#e9b48c"); sk.addColorStop(1, "#7a4a2c"); ctx.fillStyle = "#1a1208"; ctx.fillRect(hx - R0, hy - R0, R0 * 2, R0 * 2); ctx.fillStyle = sk; ctx.beginPath(); ctx.ellipse(ex, hy, R0 * 1.25, R0 * 1.05, 0, 0, 7); ctx.fill();
+          if (t > eye.next) { eye.lid = 1; eye.next = t + rnd(1500, 2600); } eye.lid = Math.max(0, eye.lid - .07); const lk = eye.lid > .5 ? (1 - eye.lid) * 2 : eye.lid * 2;
+          const ew = R0 * .78, eh = R0 * .42 * (1 - lk);
+          ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.ellipse(ex, hy, ew, Math.max(1, eh), 0, 0, 7); ctx.fill();
+          ctx.save(); ctx.beginPath(); ctx.ellipse(ex, hy, ew, Math.max(1, eh), 0, 0, 7); ctx.clip();
+          const look = ptr.moved ? Math.atan2(ptr.y - hy, ptr.x - ex) : t / 700, dd = ptr.moved ? Math.min(ew * .45, Math.hypot(ptr.x - ex, ptr.y - hy) / 5) : ew * .4, px = ex + Math.cos(look) * dd, py = hy + Math.sin(look) * dd * .5;
+          const ir = ctx.createRadialGradient(px, py, 2, px, py, R0 * .3); ir.addColorStop(0, "#5a8a3a"); ir.addColorStop(.7, "#3d6b2a"); ir.addColorStop(1, "#1d3a12");
+          ctx.fillStyle = ir; ctx.beginPath(); ctx.arc(px, py, R0 * .3, 0, 7); ctx.fill(); ctx.fillStyle = "#000"; ctx.beginPath(); ctx.arc(px, py, R0 * .14, 0, 7); ctx.fill(); ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(px - R0 * .08, py - R0 * .09, R0 * .05, 0, 7); ctx.fill(); ctx.restore();
+          ctx.strokeStyle = "#3a2010"; ctx.lineWidth = 4; ctx.beginPath(); ctx.ellipse(ex, hy, ew, Math.max(1, eh), 0, 0, 7); ctx.stroke();
+          ctx.lineWidth = 3; for (let k = -4; k <= 4; k++) { const a = Math.PI * 1.5 + k * .16, bx = ex + Math.cos(a) * ew, by = hy + Math.sin(a) * Math.max(1, eh); ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(bx + k * 3, by - 12); ctx.stroke(); }
+          ctx.strokeStyle = "#2a1608"; ctx.lineWidth = 9; ctx.beginPath(); ctx.ellipse(ex, hy - R0 * .72, R0 * .7, R0 * .18, 0, Math.PI * 1.1, Math.PI * 1.9); ctx.stroke(); }
+        ctx.restore();
+        if (open < .3) { ctx.strokeStyle = `rgba(60,60,60,${1 - open * 3})`; ctx.lineWidth = 6; ctx.beginPath(); ctx.arc(hx, hy, HR + 2, 0, 7); ctx.stroke(); } }
       if (bino) { const R0 = Math.min(W(), H()) * .2, x1 = ptr.x - R0 * .78, x2 = ptr.x + R0 * .78, y = ptr.y;
         ctx.save(); ctx.fillStyle = `rgba(4,8,14,${.96 * fade})`; ctx.fillRect(0, 0, W(), H()); ctx.globalCompositeOperation = "destination-out"; ctx.fillStyle = "#000";
         [x1, x2].forEach(x => { ctx.beginPath(); ctx.arc(x, y, R0, 0, 7); ctx.fill(); }); ctx.restore();
@@ -286,7 +306,7 @@
     if (r.torch && !r.torch.flicker) { const c = document.createElement("span"); c.style.display = "flex"; c.style.gap = "4px";
       [["↺", "Tilt left", () => tiltBy(-.2)], ["➖", "Shorter beam", () => lenBy(-40)], ["➕", "Longer beam", () => lenBy(40)], ["↻", "Tilt right", () => tiltBy(.2)]].forEach(([t, l, f]) => { const b = document.createElement("button"); b.type = "button"; b.textContent = t; b.title = l; b.setAttribute("aria-label", l); b.onpointerdown = e => { e.stopPropagation(); f(); }; c.appendChild(b); });
       chip.insertBefore(c, chip.querySelector("[data-x]")); }
-    if (r.torch || r.laser || r.eyes || r.bino || r.mag) chip.classList.add("top");
+    if (r.torch || r.laser || r.eyes || r.bino || r.mag || r.peep) chip.classList.add("top");
     chip.querySelector("[data-x]").onclick = () => stop();
     chip.querySelector("[data-off]").onclick = () => { try { localStorage.setItem(OFF_KEY, "1"); } catch (e) {} stop(); };
     document.body.appendChild(chip);
