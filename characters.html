@@ -85,7 +85,7 @@ function drawConds(){const top=L.conditions.filter(x=>!x.parent||!L.C[x.parent])
 const RKIND={fear:"Fear",learned:"Learned",situation:"Situation",trauma:"Something that happened",born:"From birth"};
 const chipOf=(x,cls)=>`<span class="chip ${cls||(x.t==="root"?"root":x.t==="condition"?"cond":"")}">${esc(Chars.label(x.t,x.k,x.lv))}</span>`;
 // Arabic sayings keep their original words under the English
-const ARQ=/Arabic|Shafi|Mutanabbi|Ma'arri|Ali ibn|Zuhayr|Antara|Meri/i,orig=q=>q.translation&&ARQ.test(q.author||"")?`<span dir="rtl" lang="ar" style="display:block;font:700 1rem/1.6 var(--f-body);white-space:pre-line;margin-top:3px">${esc(q.translation.replace(/ \.\.\. /g,"  ·  "))}</span>`:"";
+const ARQ=/Arabic|Shafi|Mutanabbi|Ma'arri|Ali ibn|Zuhayr|Antara|Meri|Dostoevsky/i,orig=q=>q.translation&&ARQ.test(q.author||"")?`<span dir="rtl" lang="ar" style="display:block;font:700 1rem/1.6 var(--f-body);white-space:pre-line;margin-top:3px">${esc(q.translation.replace(/ \.\.\. /g,"  ·  "))}</span>`:"";
 const quotes=qs=>qs.length?`<div class="adv">${qs.map(q=>`<blockquote>“${esc(q.headword)}”${orig(q)}${q.author?`<small>${esc(q.author)}</small>`:""}</blockquote>`).join("")}</div>`:"";
 const into=(t,k,eff)=>L.links.filter(l=>l.dst_type===t&&l.dst_key===k&&l.effect===eff&&Chars.lib&&(l.src_type==="trait"?L.T[l.src_key]:l.src_type==="root"?L.RT[l.src_key]:l.src_type==="sign"?L.S[l.src_key]:L.C[l.src_key])).sort((a,b)=>b.strength-a.strength);
 const outOf=(t,k)=>L.links.filter(l=>l.src_type===t&&l.src_key===k&&l.effect==="raises"&&(l.dst_type==="trait"?L.T[l.dst_key]:l.dst_type==="sign"?L.S[l.dst_key]:L.C[l.dst_key])).sort((a,b)=>b.strength-a.strength);
