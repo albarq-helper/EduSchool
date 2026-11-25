@@ -401,5 +401,24 @@
     const run = root => (root.querySelectorAll ? root : document).querySelectorAll("[data-tm]:not([data-tm-on])").forEach(el => { el.setAttribute("data-tm-on", "1"); const v = get(+el.dataset.tm); if (v) mount(el, { word: v, ...(opts ? opts() : {}) }); });
     run(document); new MutationObserver(ms => ms.forEach(m => m.addedNodes.forEach(n => n.nodeType === 1 && run(n.parentNode || n)))).observe(document.body, { childList: true, subtree: true });
   }
-  window.Tense = { reverse, family, famForms, dtWhen, NEED, PRON, RELS, prOf, phrase, subjOf, forms, say, allForms, mount, auto, isVerb, TENSES, IRR, LEMMA };
+  // ---- a clause with a fixed verb form, for joiners (if / when / unless): "it rains", "we would fly", "I had studied" ----
+  // form: present | past | will | would | pastperf | wouldhave ; neg: true for "not" ; rest: words after the verb ("to school")
+  function clause(o) {
+    const p = o.person || "she", F = forms(o.word || "be"), base = F.base.split(" ")[0], tail = F.base.split(" ").slice(1).join(" "), isBe = base === "be";
+    const T = x => [x, tail].filter(Boolean).join(" ");
+    let v;
+    if (isBe) {
+      const pres = be(p), past = o.form === "past" && o.were ? "were" : was(p);
+      v = { present: o.neg ? (pres === "am" ? "am not" : pres + "n't") : pres, past: o.neg ? past + "n't" : past, will: o.neg ? "won't be" : "will be", would: o.neg ? "wouldn't be" : "would be",
+            pastperf: o.neg ? "hadn't been" : "had been", wouldhave: o.neg ? "wouldn't have been" : "would have been" }[o.form];
+    } else {
+      const s3 = one(p);
+      v = { present: o.neg ? `${s3 ? "doesn't" : "don't"} ${T(base)}` : (s3 ? F.s : F.base), past: o.neg ? `didn't ${T(base)}` : F.past,
+            will: `${o.neg ? "won't" : "will"} ${T(base)}`, would: `${o.neg ? "wouldn't" : "would"} ${T(base)}`,
+            pastperf: `${o.neg ? "hadn't" : "had"} ${F.pp}`, wouldhave: `${o.neg ? "wouldn't" : "would"} have ${F.pp}` }[o.form];
+    }
+    const subj = subjOf(p), sj = PEOPLE.some(x => x[1] === subj) && subj !== "I" ? subj.toLowerCase() : subj;
+    return [sj, v, (o.rest || "").trim()].filter(Boolean).join(" ");
+  }
+  window.Tense = { clause, PEOPLE, reverse, family, famForms, dtWhen, NEED, PRON, RELS, prOf, phrase, subjOf, forms, say, allForms, mount, auto, isVerb, TENSES, IRR, LEMMA };
 })();
