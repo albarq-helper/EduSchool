@@ -80,7 +80,7 @@ mark.vw.chunks{background:var(--sun-soft)}
 .spk{flex:none;font:800 .72rem var(--f-body);padding:2px 8px;border-radius:999px;color:#fff;align-self:center}.spk.sp1{background:#E11D48}.spk.sp2{background:#0284C7}
 .ulab{font:700 .8rem var(--f-body);color:var(--muted);margin-left:8px;letter-spacing:.02em}
 </style>
-<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261125l"></script><script src="js/icons.js?v=20261125l"></script><script src="js/app.js?v=20261125l"></script><script src="js/sets.js?v=20261125l"></script>
+<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261125m"></script><script src="js/icons.js?v=20261125m"></script><script src="js/app.js?v=20261125m"></script><script src="js/sets.js?v=20261125m"></script>
 </head><body>
 <div class="wrap" style="max-width:1180px">
   <div class="head2">
@@ -209,7 +209,7 @@ function build(){const uv=$("unit").value, K=$("kind").value, all=uv==="all", U=
     ts.forEach(t=>GROUPS.push({id:"g"+t.id,text:t,ulabel:all?uname(u):"",songs:SONGS.filter(s=>s.text_id===t.id&&!isDlg(s)).sort((a,b)=>a.position-b.position)}));
     const loose=SONGS.filter(s=>!isDlg(s)&&s.unit===u&&!ts.some(t=>t.id===s.text_id));
     if(loose.length)GROUPS.push({id:"gloose"+u,text:null,ulabel:all?uname(u):"",songs:loose.sort((a,b)=>a.position-b.position)});});
-  if(K!=="song"){const dl=SONGS.filter(s=>isDlg(s)&&inU(s,uv)).sort((a,b)=>a.unit-b.unit||a.position-b.position);
+  if(K!=="song"){const dl=SONGS.filter(s=>isDlg(s)&&inU(s,uv)).sort((a,b)=>(!all&&(b.unit===+uv)-(a.unit===+uv))||a.position-b.position||a.unit-b.unit);
     if(dl.length)GROUPS.push({id:"gdlg"+uv,text:null,dialog:true,ulabel:dl.map(s=>unitsOf(s)).flat().length?"Units "+[...new Set(dl.map(unitsOf).flat())].sort((a,b)=>a-b).join(", "):"",songs:dl});}
   drawCov();
   try{const q=new URLSearchParams(location.search);q.set("unit",uv);q.set("kind",K);history.replaceState(null,"","?"+q);}catch(e){}
