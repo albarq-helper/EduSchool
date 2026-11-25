@@ -164,7 +164,7 @@
 .tchip{display:inline-block;margin-left:6px;font:800 .78rem var(--f-body);color:#4338ca;background:#e0e7ff;border-radius:999px;padding:1px 8px;vertical-align:middle}
 .wxdif{border-left:4px solid #f97316;padding:4px 0 4px 10px;margin:8px 0}.wxdif p{margin:2px 0 6px}.wxw.on{border-color:#fdba74;background:#fff7ed}
 </style>
-<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261125n"></script><script src="js/icons.js?v=20261125n"></script><script src="js/app.js?v=20261125n"></script><script src="js/sets.js?v=20261125n"></script><script src="js/weather.js?v=20261125n"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261125n"></script><script src="js/tense.js?v=20261125n"></script><script src="js/views.js?v=20261125n"></script><script src="js/joiners.js?v=20261125n"></script><script src="js/talk.js?v=20261125n"></script><script src="js/chars.js?v=20261125n"></script><script src="js/storycore.js?v=20261125n"></script><script src="js/montage.js?v=20261125n"></script>
+<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261125o"></script><script src="js/icons.js?v=20261125o"></script><script src="js/app.js?v=20261125o"></script><script src="js/sets.js?v=20261125o"></script><script src="js/weather.js?v=20261125o"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261125o"></script><script src="js/tense.js?v=20261125o"></script><script src="js/views.js?v=20261125o"></script><script src="js/joiners.js?v=20261125o"></script><script src="js/talk.js?v=20261125o"></script><script src="js/chars.js?v=20261125o"></script><script src="js/storycore.js?v=20261125o"></script><script src="js/montage.js?v=20261125o"></script>
 </head><body>
 <div class="wrap" style="max-width:1280px">
   <div class="head2">
@@ -327,7 +327,7 @@ function addBlock(b,at){if(!CUR)CUR=blank();if(CUR.blocks.length>=200){App.statu
   const k=at!=null?at:(SEL>=0?SEL+1:CUR.blocks.length);CUR.blocks.splice(k,0,b);SEL=k;changed();drawBoard();
   if(b.k==="t"){const inp=$("board").querySelector(`[data-k="${k}"] input`);if(inp){inp.focus();inp.setSelectionRange(inp.value.length,inp.value.length);}}
   else $("board").querySelector(`[data-k="${k}"]`)?.scrollIntoView({block:"nearest"});}
-function drawBoard(){if(ACT&&!(CUR&&CUR.blocks[ACT[0]]&&/^[jd]$/.test(CUR.blocks[ACT[0]].k)))ACT=null;(CUR?CUR.blocks:[]).forEach(b=>{if(b.k==="w"&&b.tense&&window.Tense)b.ph=Tense.phrase(b.vb||b.w,{tense:b.tense,person:b.per,when:b.when,partners:b.p,shape:b.shape});});const B=CUR?CUR.blocks:[];let scene=1,n=0;
+function drawBoard(){if(ACT&&!(CUR&&CUR.blocks[ACT[0]]&&/^[jd]$/.test(CUR.blocks[ACT[0]].k)))ACT=null;(CUR?CUR.blocks:[]).forEach(b=>{if(b.k==="w"&&b.tense&&window.Tense)b.ph=Tense.phrase(b.vb||b.w,{tense:b.tense,person:b.per,when:b.when,partners:b.p,shape:b.shape,neg:b.neg,q:b.q,modal:b.md});});const B=CUR?CUR.blocks:[];let scene=1,n=0;
   const rows=[`<li class="scene" data-scene="1">Scene 1${shotChip(1)}</li>`];
   B.forEach((b,k)=>{const ctl=`<span class="ctl"><button type="button" data-up="${k}" aria-label="Move up" title="Move up">▲</button><button type="button" data-down="${k}" aria-label="Move down" title="Move down">▼</button><button type="button" data-del="${k}" aria-label="Remove" title="Remove">✕</button></span>`;
     if(b.k==="s"){scene++;rows.push(`<li class="scene bk-s" data-k="${k}" draggable="true">Scene ${scene}${shotChip(scene)}${ctl}</li>`);return;}
@@ -671,9 +671,9 @@ function drawWX(){const b=CUR.blocks[WX.k],i=wi(b.w),v=D[i]||{},G=WX.G=wxGroups(
       ${b.from?`<p class="wxfrom">↺ You first chose <b>${esc(clean(b.from))}</b>. <button type="button" class="btn small" data-back="1">Go back to ${esc(clean(b.from))}</button></p>`:""}
       ${subs?`<div class="wxsubs">With: ${subs}</div>`:""}${b.tw?`<p class="wxfrom">🧱 In your story: <b>${esc(b.ph||b.tw)}</b> <button type="button" class="btn small" data-untense="1">✕ Back to "${esc(clean(b.w))}"</button></p>`:""}</div></div>
     <div class="wxtabs" role="tablist">${tabs.map(x=>`<button type="button" role="tab" class="wxt" data-wxt="${x.id}" aria-selected="${x.id===WX.tab}">${esc(x.label)}</button>`).join("")}</div>${body}`;
-  if(t&&t.id==="time"&&$("wxTime")){const R=WX.rev;Tense.mount($("wxTime"),{word:R?R.base:b.w,tense:b.tense,person:b.per,when:b.when,dt:b.dt||null,shape:b.shape||(R?{k:R.kind,w:R.form,c:R.c,own:"the",many:false}:null),partners:R?[]:b.p||[],cast:cast(),
+  if(t&&t.id==="time"&&$("wxTime")){const R=WX.rev;Tense.mount($("wxTime"),{word:R?R.base:b.w,tense:b.tense,person:b.per,when:b.when,dt:b.dt||null,neg:b.neg,q:b.q,modal:b.md,shape:b.shape||(R?{k:R.kind,w:R.form,c:R.c,own:"the",many:false}:null),partners:R?[]:b.p||[],cast:cast(),
     addChar:()=>pickChar(),
-    onPick:r=>{b.tense=r.tense;b.per=r.person;b.who=r.who;b.when=r.when;b.dt=r.dt||null;b.shape=r.shape||null;if(R)b.vb=R.base;else delete b.vb;if(!r.tense)delete b.tense;b.tw=r.form;b.ph=r.phrase;changed();drawBoard();drawWX();App.status(`Now it says "${r.phrase}"`,true);}});}
+    onPick:r=>{b.tense=r.tense;b.per=r.person;b.who=r.who;b.when=r.when;b.dt=r.dt||null;b.shape=r.shape||null;b.neg=r.neg||undefined;b.q=r.q||undefined;b.md=r.modal||undefined;b.gr=(r.grammar||[]).length?r.grammar:undefined;if(R)b.vb=R.base;else delete b.vb;if(!r.tense)delete b.tense;b.tw=r.form;b.ph=r.phrase;changed();drawBoard();drawWX();App.status(`Now it says "${r.phrase}"`,true);}});}
   if(t&&t.id==="desc"&&WX.kind!=="idiom"){const D2=wxDesc(b,G),mine=D2.scs.filter(s=>s.kind===WX.kind).sort((a,c)=>(a.g===D2.g?0:1)-(c.g===D2.g?0:1)),sc=mine[0],el=$("wxpm");
     mine.slice(1).forEach((s2,n)=>{const el2=$("wxpm2-"+n);if(!el2)return;const have=(b.p||[]).map(x=>x.toLowerCase()),cur=s2.items.find(x=>have.includes(x.phrase.toLowerCase()));
       Sets.mountPartnerMeter(el2,s2,{emoji:v.emoji,start:cur?cur.r:undefined,addLabel:`+ Use with ${nmw(i)}`,onAdd:x=>{b.p=(b.p||[]).filter(p=>!s2.items.some(y=>y.phrase.toLowerCase()===p.toLowerCase()));if(b.p.length<4)b.p.push(x.phrase);changed();drawBoard();drawWX();}});});
@@ -698,7 +698,7 @@ function replaceWord(j){const b=CUR.blocks[WX.k];if(!b||!D[j])return;const nw=D[
   drawWX();App.status(`Now: ${clean(nw)}`,true);}
 $("wxBody").addEventListener("click",e=>{const b=CUR.blocks[WX.k];
   const t=e.target.closest("[data-wxt]");if(t){WX.tab=t.dataset.wxt;drawWX();return;}
-  if(e.target.closest("[data-untense]")){const b=CUR.blocks[WX.k];["tense","per","tw","who","when","ph","dt","shape","vb"].forEach(x=>delete b[x]);changed();drawBoard();drawWX();return;}
+  if(e.target.closest("[data-untense]")){const b=CUR.blocks[WX.k];["tense","per","tw","who","when","ph","dt","shape","vb","neg","q","md","gr"].forEach(x=>delete b[x]);changed();drawBoard();drawWX();return;}
   const kk=e.target.closest("[data-wxk]");if(kk){WX.kind=kk.dataset.wxk;drawWX();return;}
   const u=e.target.closest("[data-use]");if(u){replaceWord(+u.dataset.use);return;}
   const s=e.target.closest("[data-sub]");if(s){const p=s.dataset.sub;b.p=b.p||[];const n=b.p.findIndex(x=>x.toLowerCase()===p.toLowerCase());if(n>=0)b.p.splice(n,1);else if(b.p.length<4)b.p.push(p);else App.status("Up to 4 partners for one word",false);if(!b.p.length)delete b.p;changed();drawBoard();drawWX();return;}
