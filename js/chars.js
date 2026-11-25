@@ -127,7 +127,7 @@
     Object.entries(c.traits || {}).forEach(([k, v]) => { const t = L && L.T[k]; if (!t) return; const b = base(v);
       let s = `${t.name}: ${levelName(t, b)}`; const pl = byPlace(v).filter(([, x]) => x !== b);
       if (pl.length) s += ` (${pl.map(([p, x]) => `${(L.P[p] || {}).name || p}: ${levelName(t, x)}`).join("; ")})`; parts.push(s); });
-    (c.conditions || []).forEach(k => { const x = L && L.C[k]; if (x) parts.push(`${x.kind === "tactic" ? "uses" : x.kind === "emotion" ? "feels" : "shows signs of"} ${x.name} (${STR[lvl(c, k)]})`); });
+    (c.conditions || []).forEach(k => { const x = L && L.C[k]; if (x) parts.push(`${x.kind === "tactic" ? "uses" : x.kind === "emotion" ? "feels" : "shows signs of"} ${x.name} (${STR[lvl(c, k)]}${x.core ? `; core: ${x.core}; with others' pain: ${x.others_pain}` : ""})`); });
     const sg = Object.entries(c.signs || {}).filter(([k, n]) => n > 0 && L && L.S[k]).sort((a, b) => b[1] - a[1]);
     if (sg.length) parts.push("signs: " + sg.map(([k, n]) => `${L.S[k].name} (${STR[n]})`).join(", "));
     const rt = Object.entries(c.roots || {}).filter(([k, n]) => n > 0 && L && L.RT[k]);
