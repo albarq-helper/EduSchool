@@ -164,7 +164,7 @@
 .tchip{display:inline-block;margin-left:6px;font:800 .78rem var(--f-body);color:#4338ca;background:#e0e7ff;border-radius:999px;padding:1px 8px;vertical-align:middle}
 .wxdif{border-left:4px solid #f97316;padding:4px 0 4px 10px;margin:8px 0}.wxdif p{margin:2px 0 6px}.wxw.on{border-color:#fdba74;background:#fff7ed}
 </style>
-<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261125j"></script><script src="js/icons.js?v=20261125j"></script><script src="js/app.js?v=20261125j"></script><script src="js/sets.js?v=20261125j"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261125j"></script><script src="js/tense.js?v=20261125j"></script><script src="js/views.js?v=20261125j"></script><script src="js/joiners.js?v=20261125j"></script><script src="js/talk.js?v=20261125j"></script><script src="js/chars.js?v=20261125j"></script><script src="js/storycore.js?v=20261125j"></script><script src="js/montage.js?v=20261125j"></script>
+<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261125k"></script><script src="js/icons.js?v=20261125k"></script><script src="js/app.js?v=20261125k"></script><script src="js/sets.js?v=20261125k"></script><script src="js/weather.js?v=20261125k"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261125k"></script><script src="js/tense.js?v=20261125k"></script><script src="js/views.js?v=20261125k"></script><script src="js/joiners.js?v=20261125k"></script><script src="js/talk.js?v=20261125k"></script><script src="js/chars.js?v=20261125k"></script><script src="js/storycore.js?v=20261125k"></script><script src="js/montage.js?v=20261125k"></script>
 </head><body>
 <div class="wrap" style="max-width:1280px">
   <div class="head2">
@@ -248,7 +248,7 @@ function fillSlot(i){if(!ACT||!CUR)return false;const b=CUR.blocks[ACT[0]];if(!b
   else{b.s[ACT[1]]={w:v.w};}
   const nx=cond?(x.v?Joiners.nextEmpty(b,ACT[1]):ACT[1]):Joiners.nextEmpty(b,ACT[1]);ACT=nx>=0?[ACT[0],nx]:null;
   if(!ACT&&Joiners.complete(b))App.status(`🔗 "${Joiners.text(b,cast().map(castName))}"`,true);changed();drawBoard();return true;}
-function addIdx(i,at){const v=D[i];if(!v)return;if(at==null&&fillSlot(i))return;addBlock(v.boxKind==="link"?{k:"t",t:clean(v.w)}:(v.boxKind==="sayings"||v.author)?{k:"q",w:v.w,a:v.author||"",by:defaultSpeaker()}:(v.boxKind==="director"||v.film)?{k:"c",w:v.w,f:v.film||"",m:(v.tags||[]).includes("Music")||undefined,tr:(v.tags||[]).includes("🎬 Transitions")||undefined}:{k:"w",w:v.w},at);}
+function addIdx(i,at){const v=D[i];if(!v)return;if(window.Weather)Weather.play(v.w);if(at==null&&fillSlot(i))return;addBlock(v.boxKind==="link"?{k:"t",t:clean(v.w)}:(v.boxKind==="sayings"||v.author)?{k:"q",w:v.w,a:v.author||"",by:defaultSpeaker()}:(v.boxKind==="director"||v.film)?{k:"c",w:v.w,f:v.film||"",m:(v.tags||[]).includes("Music")||undefined,tr:(v.tags||[]).includes("🎬 Transitions")||undefined}:{k:"w",w:v.w},at);}
 // who can say a famous saying: a voice-over, or the people and animals already in the story
 function speakers(){const s=new Set(["Voice-over","Narrator","A wise old man","A wise old woman","A wise owl","Grandma","Grandpa","The teacher"]);(CUR?.blocks||[]).forEach(b=>{if(b.k==="q"&&(b.by||"").trim())s.add(b.by.trim());if(b.k!=="w")return;const v=D[wi(b.w)];if(v&&(v.tags||[]).some(t=>t==="Naming: people"||t==="Animals"))s.add(clean(b.w));});return [...s];}
 const QUICK=["One day,","Then","Suddenly,","After that,","Because","But","In the end,"];
