@@ -33,10 +33,10 @@ async function open(id){CUR=TXT.find(t=>t.id===id);if(!CUR)return;
   const names=[...new Set(toks.flatMap(w=>[w,w.charAt(0).toUpperCase()+w.slice(1)]))];
   const {data}=await C.from("words").select("headword,meaning,translation,emoji").eq("lang","en").in("headword",names).limit(800);
   VOC=new Map((data||[]).map(w=>[clean(w.headword).toLowerCase(),w]));
-  const body=String(CUR.body).split(/([A-Za-z][A-Za-z'-]*)/).map((w,i)=>i%2?`<span class="w${VOC.has(w.toLowerCase())?" v":""}" data-w="${esc(w)}">${esc(w)}</span>`:esc(w)).join("");
+  const body=String(CUR.body).split(/([A-Za-z][A-Za-z'-]*)/).map((w,i)=>i%2?`<span class="w${VOC.has(w.toLowerCase())&&w.length>4?" v":""}" data-w="${esc(w)}">${esc(w)}</span>`:esc(w)).join("");
   $("out").innerHTML=`<div class="tools"><button class="btn small ghost" type="button" data-back="1">◀ All texts</button><button class="btn small" type="button" data-hearall="1">🔊 Read it to me</button><button class="btn small" type="button" data-quiz="1">🎯 5 questions</button></div>
     <h2 style="margin:6px 0">${esc(CUR.title)}</h2><div class="text">${body}</div><div class="help" id="help"></div><div id="qz"></div>`;}
-function quiz(){const vs=[...VOC.values()].filter(v=>v.meaning);if(vs.length<2){$("qz").innerHTML=`<div class="qz">This text has too few dictionary words for questions.</div>`;return;}
+function quiz(){const all=[...VOC.values()].filter(v=>v.meaning),big=all.filter(v=>clean(v.headword).length>4),vs=big.length>=5?big:all;if(vs.length<2){$("qz").innerHTML=`<div class="qz">This text has too few dictionary words for questions.</div>`;return;}
   const sents=CUR.body.split(/(?<=[.!?])\s+/);const qs=[];
   vs.sort(()=>Math.random()-.5).forEach(v=>{if(qs.length>=5)return;const h=clean(v.headword),re=new RegExp(`\\b${h.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")}\\b`,"i"),s=sents.find(x=>re.test(x));if(!s)return;
     const others=vs.filter(x=>x!==v).sort(()=>Math.random()-.5).slice(0,3).map(x=>clean(x.headword));
