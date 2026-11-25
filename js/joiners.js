@@ -14,6 +14,8 @@
     rel:     { i: "👉", name: "who / which / that", age: 9, kind: "rel", tip: "Say which one you mean: who for people, which for things, that for both.", ar: "‏who للأشخاص و which للأشياء و that للاثنين، لتحديد من أو ما نقصد." },
     vv:      { i: "🔗", name: "verb + verb (enjoy reading, want to read)", age: 9, kind: "vv", tip: "Some verbs are followed by -ing (enjoy, finish, stop, avoid), some by to (want, decide, hope, need), some by both (like, love, start).", ar: "‏بعض الأفعال يأتي بعدها الفعل بـ ing مثل enjoy، وبعضها بـ to مثل want، وبعضها بالاثنين مثل like." },
     so:      { i: "💥", name: "so … that / such … that", age: 10, kind: "so", tip: "so + describing word; such + a describing word + a thing. Then that + what happened because of it.", ar: "‏so + صفة، و such + a + صفة + اسم، ثم that + النتيجة." },
+    part:    { i: "🎬", name: "Having done… / Walking home…", age: 12, kind: "part", tip: "Start with an -ing word (at the same time) or having + done (first), then the main sentence. Both parts must be about the same person.", ar: "‏نبدأ بفعل ينتهي بـ ing (في نفس الوقت) أو having + التصريف الثالث (قبلها)، ثم الجملة الرئيسية، والفاعل واحد في الجزأين." },
+    sub:     { i: "⚖️", name: "I suggest that she be…", age: 12, kind: "sub", tip: "After suggest, insist, recommend, demand and it is important that…, use the base verb for everyone: that she be, that he go, that they not leave.", ar: "‏بعد suggest / insist / recommend / it is important that نستخدم الفعل في أصله مع كل الضمائر: that she be." },
     wish:    { i: "🌠", name: "I wish / If only", age: 10, kind: "wish", tip: "A wish about now goes one step back in time (I wish I had a dog). A wish about the past uses had + done (I wish I had studied).", ar: "‏التمني عن الحاضر نرجع فيه خطوة للماضي، وعن الماضي نستخدم had + التصريف الثالث." },
   };
   // verb + verb: which second form?
@@ -45,6 +47,8 @@
     if (T.kind === "vv") return { k: "j", t, f: "present", s: [{ cl: 1, who: "i" }, { cl: 1, two: 1 }] };
     if (T.kind === "so") return { k: "j", t, f: "past", su: "so", who0: "it", noun: "", s: [{}, { cl: 1, who: "we" }] };
     if (T.kind === "wish") return { k: "j", t, wt: "now", s: [{ cl: 1, who: "i" }] };
+    if (T.kind === "part") return { k: "j", t, pt: "having", f: "past", s: [{ cl: 1, two: 1 }, { cl: 1, who: "she" }] };
+    if (T.kind === "sub") return { k: "j", t, sv: "suggest", f: "present", w0: "i", s: [{ cl: 1, who: "she" }] };
     return { k: "j", t, s: [{}, {}] };
   }
   // a word in a slot, as it reads in a sentence ("a cake", "the moon", "Rover"); x.a = "a" (a/an by sound) | "the" | "" (nothing)
@@ -73,6 +77,10 @@
       if (xs.length === 1) return xs[0]; const last = xs.pop(); return `${xs.join(", ")}${b.ox && xs.length > 1 ? "," : ""} ${b.end || "and"} ${last}`; }
     if (T.kind === "cond") { const L = lvOf(b), c = (CONJ.find(x => x.k === b.c) || CONJ[0]).k;
       const a = clauseText(b.s[0], L.f[0], true), m = clauseText(b.s[1], L.f[1]);
+      if (b.inv && c === "if" && ["first", "second", "third"].includes(L.k) && b.s[0] && b.s[0].v) {   // ✨ Had I known… · Were I to win… · Should it rain…
+        const x = b.s[0], S = Tense.subjOf(x.who || "she"), Sx = S === "I" || !/^(He|She|It|We|They|You)$/.test(S) ? S : S.toLowerCase(), F = Tense.forms(x.v), r = (x.rest || "").trim();
+        const lead = L.k === "third" ? `had ${Sx}${x.neg ? " not" : ""} ${F.pp}` : L.k === "second" ? `were ${Sx}${x.neg ? " not" : ""} to ${F.base}` : `should ${Sx}${x.neg ? " not" : ""} ${F.base}`;
+        return `${cap(lead)}${r ? " " + r : ""}, ${m}.`; }
       return b.mf ? `${cap(m)} ${c} ${a}.` : `${cap(c)} ${a}, ${m}.`; }
     if (T.kind === "rel") { const x0 = b.s[0] || {}, bare = wordOf(x0, names, true), np = !bare ? "…" : b.many && !isName(bare, names) ? [x0.a === "the" ? "the" : "", Tense.PL(bare)].filter(Boolean).join(" ") : wordOf(x0, names), x = b.s[1] || {}, rp = relOf(b, names), f = b.f || "past";
       let cl = "…";
@@ -87,6 +95,14 @@
       const k2 = x.v ? vvKind(x.v) : "to", useIng = k2 === "ing" || (k2 === "both" && b.vp === "ing"), F2 = y.v ? Tense.forms(y.v) : null;
       const sec = F2 ? (useIng ? F2.ing : "to " + F2.base) : "…";
       return `${cap(main)} ${sec}${(y.rest || "").trim() ? " " + y.rest.trim() : ""}.`; }
+    if (T.kind === "part") { const x = b.s[0] || {}, y = b.s[1] || {}, F = x.v ? Tense.forms(x.v) : null;
+      const lead = F ? (b.pt === "having" ? `having ${F.pp}` : F.ing) + ((x.rest || "").trim() ? " " + x.rest.trim() : "") : "…";
+      return `${cap(lead)}, ${clauseText(y, b.f || "past")}.`; }
+    if (T.kind === "sub") { const x = b.s[0] || {}, sv = b.sv || "suggest", w0 = b.w0 || "i";
+      const head = sv === "important" ? `It ${b.f === "past" ? "was" : "is"} important` : Tense.clause({ word: sv, person: w0, form: b.f || "present", neg: false, rest: "" });
+      const S = x.who ? Tense.subjOf(x.who) : "she", Sx = S === "I" || /^[A-Z][a-z]+$/.test(S) && !/^(He|She|It|We|They|You)$/.test(S) ? S : S.toLowerCase();
+      const v = x.v ? Tense.forms(x.v).base : "…";
+      return `${cap(head)} that ${Sx} ${x.neg ? "not " : ""}${v}${(x.rest || "").trim() ? " " + x.rest.trim() : ""}.`; }
     if (T.kind === "so") { const adj = (wordOf(b.s[0], names, true) || "…").toLowerCase(), x = b.s[1] || {}, f = b.f || "past", p = b.who0 || "it";
       const one = Tense.one(p), be = { past: p === "i" || one ? "was" : "were", present: p === "i" ? "am" : one ? "is" : "are", will: "will be" }[f] || "was";
       const S = Tense.subjOf(p), mid = b.su === "such" ? `such ${AN(adj)} ${adj} ${(b.noun || "day").trim()}` : `so ${adj}`;
@@ -150,8 +166,8 @@
       body = b.mf ? main + first : first + main;
       ctl = `<span class="jseg">${CONJ.filter(x => x.age <= A).map(x => `<button type="button" data-jc="${k}|${x.k}" aria-pressed="${C.k === x.k}">${esc(x.name)}</button>`).join("")}</span>
         <span class="jseg" title="How real is it?">${LV.filter(x => x.age <= A && (!C.real || ["zero", "first"].includes(x.k))).map(x => `<button type="button" data-jlv="${k}|${x.k}" aria-pressed="${L.k === x.k}" title="${esc(x.ex)}">${x.i} ${esc(x.name)}</button>`).join("")}</span>
-        <span class="jseg"><button type="button" data-jmf="${k}" aria-pressed="${!!b.mf}" title="Put the ${esc(C.name)} part second">⇄ ${b.mf ? `${C.name} part last` : `${C.name} part first`}</button></span>`;
-      tip = `${L.tip} ${C.tip}`;
+        <span class="jseg"><button type="button" data-jmf="${k}" aria-pressed="${!!b.mf}" title="Put the ${esc(C.name)} part second">⇄ ${b.mf ? `${C.name} part last` : `${C.name} part first`}</button>${A >= 12 && C.k === "if" && ["first", "second", "third"].includes(L.k) ? tog("inv", "✨ Had I known…", "Formal: drop if and turn it round") : ""}</span>`;
+      tip = b.inv && C.k === "if" && ["first", "second", "third"].includes(L.k) ? "Formal style: leave out if and turn the first part round. Had I known (third), Were I to win (second), Should it rain (first)." : `${L.tip} ${C.tip}`;
     } else if (T.kind === "rel") {
       const rp = relOf(b, cast), x = b.s[0] || {}, objRel = !!(b.s[1] && b.s[1].who), person = isName(clean(x.w || ""), cast) || (api.isPerson && x.w && api.isPerson(x.w));
       body = wslot(b.s[0], 0) + (b.nd ? `<span class="jw">,</span>` : "") + clSlot(b.s[1], 1, objRel && b.drop && !b.nd ? "(that)" : rp, { whoNone: "— (it / they do it)" });
@@ -171,6 +187,13 @@
       body = clSlot(x, 0, "") + `<span class="jw">${!x.v ? "+" : useIng ? "+ -ing" : "+ to"}</span>` + clSlot(b.s[1] || {}, 1, "", { noWho: 1, noNeg: 1 });
       ctl = seg("f", TIMES, b.f || "present") + (k2 === "both" ? seg("vp", [["to", "+ to"], ["ing", "+ -ing"]], b.vp || "to") : "");
       tip = x.v ? (k2 === "ing" ? `${clean(x.v).toLowerCase()} is followed by -ing (I enjoy reading).` : k2 === "both" ? `${clean(x.v).toLowerCase()} can take -ing or to: both are right.` : `${clean(x.v).toLowerCase()} is followed by to + the base verb (I want to read).`) : T.tip;
+    } else if (T.kind === "part") {
+      body = clSlot(b.s[0] || {}, 0, b.pt === "having" ? "having +" : "-ing", { noWho: 1, noNeg: 1 }) + `<span class="jw">,</span>` + clSlot(b.s[1] || {}, 1, "");
+      ctl = seg("pt", [["having", "Having done… (first)"], ["ing", "Walking… (same time)"]], b.pt || "having") + seg("f", TIMES, b.f || "past");
+    } else if (T.kind === "sub") {
+      const SV = [["suggest", "suggest"], ["insist", "insist"], ["recommend", "recommend"], ["demand", "demand"], ["important", "it is important"]];
+      body = (b.sv === "important" ? "" : whoSel(k, 0, { who: b.w0 || "i" }, cast, "", `data-jw0="${k}"`)) + `<span class="jw">${esc((SV.find(x => x[0] === (b.sv || "suggest")) || SV[0])[1])} that</span>` + clSlot(b.s[0] || {}, 0, "");
+      ctl = seg("sv", SV, b.sv || "suggest") + seg("f", [["past", "⬅️ past"], ["present", "🔄 now"]], b.f || "present");
     } else if (T.kind === "so") {
       body = whoSel(k, 0, { who: b.who0 || "it" }, cast, "", `data-jwho0="${k}"`) + `<span class="jw">${b.su === "such" ? "… such a" : "… so"}</span>` + wslot(b.s[0], 0)
         + (b.su === "such" ? `<input data-jtxt="${k}|noun" value="${esc(b.noun || "")}" placeholder="day, dog…" aria-label="Which thing?" style="width:7em;font:700 .88rem var(--f-body,system-ui);border:1.5px solid #ddd6fe;border-radius:8px;padding:3px 6px">` : "")
@@ -186,7 +209,7 @@
   function menu(anchor, onPick) {
     addCss(); document.querySelectorAll(".jmenu").forEach(m => m.remove());
     const A = age(), m = document.createElement("div"); m.className = "jmenu"; m.setAttribute("role", "menu");
-    m.innerHTML = Object.entries(TYPES).filter(([, T]) => T.age <= A).map(([k, T]) => `<button type="button" role="menuitem" data-jpick="${k}">${T.i} ${esc(T.name)}<small>${esc({ cond: "If it rains, we will stay home.", list: "milk, eggs and bread", rel: "the girl who won the race", vv: "I enjoy reading · I want to read", so: "It was so cold that we stayed home.", wish: "I wish I had a dog." }[k] || `${T.parts[0]} this ${T.parts[1]} that`)}</small></button>`).join("");
+    m.innerHTML = Object.entries(TYPES).filter(([, T]) => T.age <= A).map(([k, T]) => `<button type="button" role="menuitem" data-jpick="${k}">${T.i} ${esc(T.name)}<small>${esc({ cond: "If it rains, we will stay home.", list: "milk, eggs and bread", rel: "the girl who won the race", part: "Having finished her homework, she went out.", sub: "I suggest that she be on time.", vv: "I enjoy reading · I want to read", so: "It was so cold that we stayed home.", wish: "I wish I had a dog." }[k] || `${T.parts[0]} this ${T.parts[1]} that`)}</small></button>`).join("");
     document.body.appendChild(m); const r = anchor.getBoundingClientRect(); m.style.left = Math.max(8, r.left + scrollX) + "px"; m.style.top = (r.bottom + scrollY + 4) + "px";
     const off = e => { if (!m.contains(e.target) && e.target !== anchor) { m.remove(); document.removeEventListener("click", off, true); } };
     setTimeout(() => document.addEventListener("click", off, true));

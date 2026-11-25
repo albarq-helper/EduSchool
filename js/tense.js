@@ -162,6 +162,8 @@
       : { k: "neg-aux", name: "🚫 not goes after the helper verb", rule: "Put not after the helper verb (is, was, has, will, can…): She is playing → She isn't playing.", ar: "‏نضع not بعد الفعل المساعد: She isn't playing." });
     if (!o.q && !o.neg && !x.md && t.k === "present" && one(p) && !(o.shape && o.shape.k && o.shape.k !== "verb")) out.push({ k: "s3", name: "➕ he / she / it + s", rule: "In the present simple, he, she, it and one person or thing take -s: I play, she plays.", ar: "‏في المضارع البسيط نضيف s مع he / she / it والمفرد: she plays." });
     if (t.k === "usedto" && !o.imp && !o.pas) out.push({ k: "usedto", name: "🕰️ used to: it happened then, not now", rule: "used to + base verb = something that happened again and again in the past, but not now: I used to cry. Not and asking: didn't use to, did you use to?", ar: "‏used to + الفعل في أصله = عادة في الماضي انتهت الآن. وفي النفي والسؤال: didn't use to / did you use to?" });
+    if (o.sty === "inv") return [{ k: "inversion", name: "✨ Inversion: Never have I…", rule: "For strong emphasis, start with never, rarely, seldom, hardly ever or little, then put the helper verb before who, like a question: Rarely does she cry. Never have I seen such a storm.", ar: "‏للتأكيد القوي نبدأ بـ never / rarely / seldom ثم نقدّم الفعل المساعد على الفاعل كالسؤال: Never have I seen…" }];
+    if (o.sty === "cleft") return [{ k: "cleft", name: "✨ Cleft: It was Rover who…", rule: "To point at who did it, use It is / It was + the person + who: It was Rover who ate the cake (not Mia).", ar: "‏لإبراز الفاعل نستخدم It was + الشخص + who: It was Rover who ate the cake." }];
     if (o.imp) return [{ k: "imp", name: "👉 Telling someone to: just the base verb", rule: "To tell someone to do something, start with the base verb and leave out who: Swim! Sit down. Not: Don't swim!", ar: "‏للأمر نبدأ بالفعل في أصله بدون فاعل: Swim! وللنهي: Don't swim!" }];
     if (o.pas) out.push({ k: "passive", name: "🔄 Passive: the thing comes first", rule: "Put the thing that something happens to first, then be + past participle, then by + who did it: Rover ate the cake → The cake was eaten by Rover.", ar: "‏المبني للمجهول: نبدأ بالشيء الذي وقع عليه الفعل، ثم be + التصريف الثالث، ثم by + الفاعل: The cake was eaten by Rover." });
     if (o.tag && !o.q) out.push({ k: "tag", name: "🏷️ Question tags: yes-sentence, no-tag", rule: "A short question at the end, to check: a telling sentence takes a not-tag (She swims, doesn't she?), a not-sentence takes a yes-tag (She doesn't swim, does she?).", ar: "‏سؤال قصير في آخر الجملة للتأكد: الجملة المثبتة يأتي بعدها سؤال منفي، والمنفية يأتي بعدها سؤال مثبت." });
@@ -173,6 +175,12 @@
     if (o && o.shape && o.shape.k === "thing") return shapePhrase(o);
     const F = forms(word), t = T(o.tense) || T("past"), p = o.person || "she", base = F.base.split(" ")[0];
     if (o.imp) return impPhrase(F, o);
+    if (o.sty === "inv" && !o.q && !o.pas) { const adv = o.invA || "rarely";   // ✨ Rarely does she swim. · Never have I seen…
+      const qq = phrase(word, { ...o, sty: "", q: true, neg: false, tag: false, when: MID.has((o.when || "").toLowerCase()) ? "" : o.when }).replace(/\?$/, "");
+      return cap1(adv) + " " + qq.charAt(0).toLowerCase() + qq.slice(1) + "."; }
+    if (o.sty === "cleft" && !o.q && !o.pas) { const st = phrase(word, { ...o, sty: "", tag: false }), who = subjOf(p), rest = st.slice(who.length).trim();   // ✨ It was Rover who ate the cake.
+      const it = t.z === "past" ? "It was" : t.z === "future" ? "It will be" : "It is", x = PRON.find(r => r.sub === who.toLowerCase() || (r.k === "i" && who === "I"));
+      return `${it} ${x ? (x.k === "i" ? "I" : x.sub) : who} who ${rest}.`; }
     if (o.pas && o.pas.obj) return pasPhrase(F, t, p, o);
     const X = vpOf(F, t, p, o);
     const vp = o.neg ? (X.md && X.md.k === "sure" ? X.vp : [NEG[X.aux] || X.aux + " not", X.rest].filter(Boolean).join(" ")) : X.vp;
@@ -191,6 +199,7 @@
     const out = (o.q ? [front, who2, verb, ...extra, mid ? "" : w] : [who, verb, ...extra, mid ? "" : w]).filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
     return out.charAt(0).toUpperCase() + out.slice(1) + (o.q ? "?" : o.tag ? tagOf(F, t, p, o) : "");
   }
+  const cap1 = x => x.charAt(0).toUpperCase() + x.slice(1);
   // 🏷️ the tag: "…, doesn't she?" / "…, does she?" / "…, aren't I?"
   function tagOf(F, t, p, o) {
     const pr = o.tagPr || (PRON.some(r => r.k === p) ? p : ""), sub = pr === "i" ? "I" : (PRON.find(r => r.k === pr) || {}).sub;
@@ -391,12 +400,13 @@
     let full = false; try { full = localStorage.getItem("tenseFull") === "1"; } catch (x) {}
     const F = forms(o.word), st = { full, k: o.tense || "past", p: o.person || ((o.cast || []).find(c => c && c.name) ? "c:" + (o.cast || []).find(c => c && c.name).name : "she"), d: depth(), when: o.when || "", dt: o.dt || null, dOpen: false, sh: o.shape && o.shape.k ? { ...o.shape } : { k: "verb" }, fam: null, dk: (o.dt && o.dt.kind) || "date" };
     const cast = (o.cast || []).filter(c => c && c.name);
-    st.neg = !!o.neg; st.q = !!o.q; st.md = o.modal || ""; st.gc = ""; st.imp = !!o.imp; st.tag = !!o.tag; st.pas = o.pas ? { on: true, ...o.pas } : { on: false, obj: "", many: false, by: true };
+    st.neg = !!o.neg; st.q = !!o.q; st.md = o.modal || ""; st.gc = ""; st.imp = !!o.imp; st.tag = !!o.tag; st.sty = o.sty || ""; st.invA = o.invA || "rarely"; st.pas = o.pas ? { on: true, ...o.pas } : { on: false, obj: "", many: false, by: true };
     // who the tag is about: "she" for Rover the girl, "they" for many, nothing when we can't know
     const tagPrOf = p => { if (PRON.some(r => r.k === p)) return p; const n = String(p); if (/^c:/.test(n)) { const c = cast.find(x => "c:" + x.name === n); return c ? prOf(c) : ""; }
       if (/^n2:/.test(n)) return "they"; if (/(son|father|brother|grandfather|uncle)$/i.test(n)) return "he"; if (/(daughter|mother|sister|grandmother|aunt)$/i.test(n)) return "she"; return ""; };
     const POf = shp => ({ tense: st.k, person: st.p, when: st.when, partners: o.partners, shape: shp, neg: st.neg, q: st.q && !st.imp, modal: shp || st.imp ? "" : st.md, imp: st.imp,
-      tag: st.tag && !st.q && !st.imp && st.md !== "sure", tagPr: tagPrOf(st.p), pas: st.pas.on && st.pas.obj.trim() && !shp && !st.imp ? { obj: st.pas.obj.trim(), many: st.pas.many, by: st.pas.by } : null });
+      tag: st.tag && !st.q && !st.imp && st.md !== "sure", tagPr: tagPrOf(st.p), pas: st.pas.on && st.pas.obj.trim() && !shp && !st.imp ? { obj: st.pas.obj.trim(), many: st.pas.many, by: st.pas.by } : null,
+      sty: st.full && !shp && !st.imp && !st.q ? st.sty : "", invA: st.invA });
     st.wt = cast.length ? "char" : "pron"; st.wc = cast[0] ? cast[0].name : ""; st.ws = "self"; st.own = "name"; st.whoOpen = false;
     function whoPanel() {
       if (st.sh.k === "thing") return whoseBar();
@@ -466,6 +476,8 @@
           return `<button type="button" data-sm="${k}" aria-pressed="${on}">${l}</button>`; }).join("")}
           ${canTag || canP ? `<span class="sep"></span>` : ""}${canTag ? `<button type="button" data-tag="1" aria-pressed="${st.tag}" title="Add a short question at the end">🏷️ …, isn't it?</button>` : ""}${canP ? `<button type="button" data-pas="1" aria-pressed="${st.pas.on}" title="Start with the thing it happens to">🔄 the thing first</button>` : ""}
           ${shp || st.imp ? "" : `<span class="sep"></span>${MODALS.map(m => `<button type="button" class="md" data-md="${m.k}" aria-pressed="${st.md === m.k}" title="${esc(m.what)}">${m.ico} ${esc(m.name)}</button>`).join("")}`}</div>
+        ${st.full && !shp && !st.imp && !st.q ? `<div class="tm-sayit"><span class="lab">✨ Style</span><button type="button" data-sty="" aria-pressed="${!st.sty}">plain</button><button type="button" data-sty="inv" aria-pressed="${st.sty === "inv"}">Rarely does…</button><button type="button" data-sty="cleft" aria-pressed="${st.sty === "cleft"}">It was … who</button>
+          ${st.sty === "inv" ? ["never", "rarely", "seldom", "hardly ever", "little"].map(a => `<button type="button" class="md" data-inva="${a}" aria-pressed="${st.invA === a}">${a}</button>`).join("") : ""}</div>` : ""}
         ${canP && st.pas.on ? `<div class="tm-sayit tm-pas"><span class="lab">What?</span><input type="text" maxlength="40" data-pobj value="${esc(st.pas.obj)}" placeholder="e.g. the cake, my homework" aria-label="What did it happen to?" style="border:1.5px solid #c7d2fe;border-radius:999px;padding:3px 10px;font:inherit;min-width:12em">
           <button type="button" data-pmany="0" aria-pressed="${!st.pas.many}">👤 one</button><button type="button" data-pmany="1" aria-pressed="${st.pas.many}">👥 many</button><button type="button" data-pby="1" aria-pressed="${st.pas.by}">by ${esc(subjOf(st.p).toLowerCase() === "i" ? "me" : (PRON.find(r => r.sub === subjOf(st.p).toLowerCase()) || {}).obj || subjOf(st.p))}</button></div>` : ""}
         ${GC.length ? `<div class="tm-gcs">${GC.map(c => `<button type="button" class="tm-gc" data-gc="${c.k}" aria-expanded="${st.gc === c.k}">🧩 ${esc(c.name)}</button>`).join("")}</div>${gOpen ? `<div class="tm-gr">${esc(gOpen.rule)}<span class="ar" dir="rtl" lang="ar">${esc(gOpen.ar)}</span></div>` : ""}` : ""}`;
@@ -484,6 +496,8 @@
       const sm = e.target.closest("[data-sm]"); if (sm) { const v = sm.dataset.sm;
         if (v === "i") { st.imp = true; st.neg = false; st.q = false; } else if (st.imp && v === "n") { st.neg = !st.neg; } else { st.imp = false; st.neg = v === "n" || v === "nq"; st.q = v === "q" || v === "nq"; }
         st.gc = ""; draw(true); return; }
+      const sy = e.target.closest("[data-sty]"); if (sy) { st.sty = sy.dataset.sty; st.gc = st.sty === "inv" ? "inversion" : st.sty === "cleft" ? "cleft" : ""; draw(true); return; }
+      const ia = e.target.closest("[data-inva]"); if (ia) { st.invA = ia.dataset.inva; draw(true); return; }
       if (e.target.closest("[data-tag]")) { st.tag = !st.tag; st.gc = st.tag ? "tag" : ""; draw(true); return; }
       if (e.target.closest("[data-pas]")) { st.pas.on = !st.pas.on; if (st.pas.on && !st.pas.obj) st.pas.obj = "it"; st.gc = st.pas.on ? "passive" : ""; draw(true); return; }
       const pm = e.target.closest("[data-pmany]"); if (pm) { st.pas.many = pm.dataset.pmany === "1"; draw(false); return; }
@@ -521,7 +535,7 @@
           const PO = POf(shp), ph = thing ? thingPhrase(st.sh) : phrase(o.word, PO);
           o.onPick({ tense: thing ? null : st.k, person: st.p, who: subjOf(st.p), when: thing ? "" : st.when, dt: thing ? null : st.dt,
           form: thing ? (st.sh.many ? PL(st.sh.w) : st.sh.w) : PO.imp || PO.pas ? ph : (() => { const X = Tense_vp(F, T(st.k), st.p, PO); return st.neg ? [NEG[X.aux] || X.aux + " not", X.rest].filter(Boolean).join(" ") : X.vp; })(),
-          phrase: ph, shape: shp, neg: thing ? false : st.neg, q: thing ? false : PO.q, modal: thing ? "" : PO.modal, imp: thing ? false : PO.imp, tag: thing ? false : PO.tag, tagPr: PO.tagPr, pas: thing ? null : PO.pas,
+          phrase: ph, shape: shp, neg: thing ? false : st.neg, q: thing ? false : PO.q, modal: thing ? "" : PO.modal, imp: thing ? false : PO.imp, tag: thing ? false : PO.tag, tagPr: PO.tagPr, pas: thing ? null : PO.pas, sty: thing ? "" : PO.sty, invA: PO.invA,
           grammar: thing ? [] : chipsOf(F, T(st.k), st.p, PO).map(c => c.k) }); } };
     el.oninput = e => { if (e.target.matches && e.target.matches("[data-pobj]")) { st.pas.obj = e.target.value; clearTimeout(st.pt); st.pt = setTimeout(() => { const pos = e.target.selectionStart; draw(false); const i2 = el.querySelector("[data-pobj]"); if (i2) { i2.focus(); try { i2.setSelectionRange(pos, pos); } catch (x) {} } }, 500); } };
     el.onchange = e => { const x = e.target, keep = st.dt && st.dt.kind === st.dk ? st.dt : {}, set = v => { st.dt = { kind: st.dk, ...keep, ...v }; draw(false); };
