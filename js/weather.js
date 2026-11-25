@@ -175,7 +175,18 @@
       if (r.torch || r.laser) { if (t - (ptr.moved ? ptr.moved - t0 : -1e9) > 2500 || !ptr.moved) { ptr.x = W() / 2 + Math.sin(t / 900) * W() * .32; ptr.y = H() * .45 + Math.sin(t / 650) * H() * .22; } }
       if (dark) { const T = r.torch, fl = T.flicker ? 1 + Math.sin(t / 60) * .04 + Math.sin(t / 23) * .03 : 1, R0 = T.r * fl, x = ptr.x.toFixed(0), y = ptr.y.toFixed(0), a = Math.max(.15, fade);
         dark.style.background = `radial-gradient(circle at ${x}px ${y}px, rgba(${T.c},${.07 * a}) 0, rgba(${T.c},${.03 * a}) ${R0 * .6}px, rgba(3,5,18,${.55 * a}) ${R0}px, rgba(3,5,18,${.94 * a}) ${R0 * 1.6}px)`;
-        if (!T.flicker) { ctx.save(); ctx.translate(ptr.x + R0 * .75, ptr.y + R0 * .75); ctx.rotate(0); ctx.font = "40px system-ui"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("🔦", 0, 0); ctx.restore(); }
+        if (!T.flicker) { // a torch held at the bottom of the screen, always pointing at the light, with its cone of light
+          const hx = W() - 64, hy = H() - 70, ang = Math.atan2(ptr.y - hy, ptr.x - hx), d = Math.max(60, Math.hypot(ptr.x - hx, ptr.y - hy));
+          ctx.save(); ctx.translate(hx, hy); ctx.rotate(ang);
+          const cg = ctx.createLinearGradient(16, 0, d, 0); cg.addColorStop(0, `rgba(${T.c},${.38 * a})`); cg.addColorStop(1, `rgba(${T.c},${.08 * a})`);
+          ctx.fillStyle = cg; ctx.beginPath(); ctx.moveTo(16, -13); ctx.lineTo(d, -R0 * .85); ctx.lineTo(d, R0 * .85); ctx.lineTo(16, 13); ctx.closePath(); ctx.fill();
+          const bg = ctx.createLinearGradient(0, -11, 0, 11); bg.addColorStop(0, "#6b7280"); bg.addColorStop(.35, "#d1d5db"); bg.addColorStop(1, "#1f2937");
+          ctx.fillStyle = bg; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(-78, -10, 72, 20, 6) : ctx.rect(-78, -10, 72, 20); ctx.fill();
+          ctx.fillStyle = "#111827"; ctx.fillRect(-50, -12, 12, 4);
+          const hg = ctx.createLinearGradient(0, -16, 0, 16); hg.addColorStop(0, "#9ca3af"); hg.addColorStop(.4, "#f3f4f6"); hg.addColorStop(1, "#374151");
+          ctx.fillStyle = hg; ctx.beginPath(); ctx.moveTo(-8, -11); ctx.lineTo(14, -16); ctx.lineTo(14, 16); ctx.lineTo(-8, 11); ctx.closePath(); ctx.fill();
+          ctx.fillStyle = `rgba(${T.c},1)`; ctx.shadowColor = `rgba(${T.c},1)`; ctx.shadowBlur = 18; ctx.beginPath(); ctx.ellipse(15, 0, 3.5, 15, 0, 0, 7); ctx.fill(); ctx.shadowBlur = 0;
+          ctx.restore(); }
         else { ctx.font = "34px system-ui"; ctx.textAlign = "center"; ctx.fillText("🕯️", ptr.x, ptr.y + 12); ctx.textAlign = "start"; } }
       if (r.laser) { const tx = ptr.x + (cat.x < ptr.x ? -46 : 46), dx = tx - cat.x, dy = ptr.y + 10 - cat.y; cat.x += dx * .045; cat.y += dy * .045; if (Math.abs(dx) > 4) cat.f = dx > 0 ? -1 : 1; const near = Math.hypot(dx, dy) < 50;
         ctx.save(); ctx.translate(cat.x, cat.y + (near ? Math.sin(t / 60) * 6 : 0)); ctx.scale(cat.f, 1); ctx.font = "52px system-ui"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(near ? "😼" : "🐈", 0, 0); ctx.restore();
