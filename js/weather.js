@@ -122,6 +122,7 @@
     const onMove = e => { const q = e.touches ? e.touches[0] : e; if (!q) return; ptr.x = q.clientX; ptr.y = q.clientY; ptr.moved = performance.now(); };
     if (r.torch || r.laser) { addEventListener("pointermove", onMove, { passive: true }); addEventListener("touchmove", onMove, { passive: true }); addEventListener("pointerdown", onMove, { passive: true }); }
     const dark = r.torch ? layer("rgba(3,5,18,.94)", 1) : null;
+    const oldCur = document.documentElement.style.cursor; if (r.torch || r.laser) document.documentElement.style.cursor = "none";
     const cat = { x: -60, y: H() * .8, f: 1 };
     let puddle = null;
     if (r.puddle) { puddle = document.createElement("div"); puddle.className = "wx-layer"; Object.assign(puddle.style, { top: "auto", height: "0", background: "linear-gradient(to bottom, rgba(90,160,230,.35), rgba(40,110,200,.55))", transition: "height 4s ease-in, opacity .8s" }); document.body.appendChild(puddle); layers.push(puddle); requestAnimationFrame(() => puddle.style.height = (r.puddle > 1 ? 22 : 9) + "vh"); }
@@ -173,11 +174,13 @@
       drops.forEach(d => { d.y += d.vy; d.rot += d.vr; if (d.y > H() + 40) { d.y = -40; d.x = rnd(0, W()); } ctx.save(); ctx.translate(d.x, d.y); ctx.rotate(d.rot); ctx.font = d.s + "px system-ui"; ctx.fillText(d.e, -d.s / 2, d.s / 2); ctx.restore(); });
       splashes.forEach((s, k) => { s.a -= .06; if (s.a <= 0) return splashes.splice(k, 1); ctx.strokeStyle = `rgba(110,150,210,${s.a})`; ctx.lineWidth = 1; ctx.beginPath(); ctx.ellipse(s.x, s.y, (1 - s.a) * 10 + 2, (1 - s.a) * 3 + 1, 0, 0, 7); ctx.stroke(); });
       if (r.torch || r.laser) { if (t - (ptr.moved ? ptr.moved - t0 : -1e9) > 2500 || !ptr.moved) { ptr.x = W() / 2 + Math.sin(t / 900) * W() * .32; ptr.y = H() * .45 + Math.sin(t / 650) * H() * .22; } }
-      if (dark) { const T = r.torch, fl = T.flicker ? 1 + Math.sin(t / 60) * .04 + Math.sin(t / 23) * .03 : 1, R0 = T.r * fl, x = ptr.x.toFixed(0), y = ptr.y.toFixed(0), a = Math.max(.15, fade);
+      if (dark) { const T = r.torch, fl = T.flicker ? 1 + Math.sin(t / 60) * .04 + Math.sin(t / 23) * .03 : 1, R0 = T.r * fl, a = Math.max(.15, fade);
+        // the mouse IS the torch: the light lands ahead of it, aimed toward the middle of the page (straight up when it is already in the middle)
+        let ang = -Math.PI / 2; if (!T.flicker) { const cx = W() / 2, cy = H() * .45; if (Math.hypot(cx - ptr.x, cy - ptr.y) > 140) ang = Math.atan2(cy - ptr.y, cx - ptr.x); }
+        const reach = T.flicker ? 0 : 190, sx = ptr.x + Math.cos(ang) * reach, sy = ptr.y + Math.sin(ang) * reach, x = sx.toFixed(0), y = sy.toFixed(0);
         dark.style.background = `radial-gradient(circle at ${x}px ${y}px, rgba(${T.c},${.07 * a}) 0, rgba(${T.c},${.03 * a}) ${R0 * .6}px, rgba(3,5,18,${.55 * a}) ${R0}px, rgba(3,5,18,${.94 * a}) ${R0 * 1.6}px)`;
         if (!T.flicker) { // a torch held at the bottom of the screen, always pointing at the light, with its cone of light
-          const hx = W() - 64, hy = H() - 70, ang = Math.atan2(ptr.y - hy, ptr.x - hx), d = Math.max(60, Math.hypot(ptr.x - hx, ptr.y - hy));
-          ctx.save(); ctx.translate(hx, hy); ctx.rotate(ang);
+          const d = reach; ctx.save(); ctx.translate(ptr.x, ptr.y); ctx.rotate(ang); ctx.translate(-16, 0);
           const cg = ctx.createLinearGradient(16, 0, d, 0); cg.addColorStop(0, `rgba(${T.c},${.38 * a})`); cg.addColorStop(1, `rgba(${T.c},${.08 * a})`);
           ctx.fillStyle = cg; ctx.beginPath(); ctx.moveTo(16, -13); ctx.lineTo(d, -R0 * .85); ctx.lineTo(d, R0 * .85); ctx.lineTo(16, 13); ctx.closePath(); ctx.fill();
           const bg = ctx.createLinearGradient(0, -11, 0, 11); bg.addColorStop(0, "#6b7280"); bg.addColorStop(.35, "#d1d5db"); bg.addColorStop(1, "#1f2937");
@@ -229,7 +232,7 @@
     chip.querySelector("[data-off]").onclick = () => { try { localStorage.setItem(OFF_KEY, "1"); } catch (e) {} stop(); };
     document.body.appendChild(chip);
     addEventListener("resize", size);
-    current = { stop() { if (ended) return; ended = true; cancelAnimationFrame(raf); sfx.stop(); moved.stop(); removeEventListener("resize", size); removeEventListener("pointermove", onMove); removeEventListener("touchmove", onMove); removeEventListener("pointerdown", onMove); cv.remove(); chip.remove(); layers.forEach(l => { l.style.opacity = 0; if (l === puddle) l.style.height = "0"; setTimeout(() => l.remove(), 900); }); } };
+    current = { stop() { if (ended) return; ended = true; cancelAnimationFrame(raf); sfx.stop(); moved.stop(); removeEventListener("resize", size); if (r.torch || r.laser) document.documentElement.style.cursor = oldCur; removeEventListener("pointermove", onMove); removeEventListener("touchmove", onMove); removeEventListener("pointerdown", onMove); cv.remove(); chip.remove(); layers.forEach(l => { l.style.opacity = 0; if (l === puddle) l.style.height = "0"; setTimeout(() => l.remove(), 900); }); } };
     raf = requestAnimationFrame(frame);
     return true;
   }
