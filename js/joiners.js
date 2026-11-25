@@ -17,15 +17,15 @@
     { k: "zero", i: "✅", name: "Always true", age: 8, f: ["present", "present"], ex: "If you heat ice, it melts.", tip: "Always true, like a science fact. Here \"if\" and \"when\" mean the same." },
     { k: "first", i: "🌦️", name: "Might happen", age: 8, f: ["present", "will"], ex: "If it rains, we will stay home.", tip: "It might really happen. After \"if\", use the present (not \"will\"); in the other part, use \"will\"." },
     { k: "second", i: "🦄", name: "Imaginary now", age: 10, f: ["past", "would"], ex: "If I had wings, I would fly.", tip: "Not real now, just imagined. Past after \"if\", \"would\" in the other part. With \"be\", say \"were\": If I were a bird…" },
-    { k: "third", i: "⏪", name: "Imaginary past", age: 12, f: ["pastperf", "wouldhave"], ex: "If I had studied, I would have passed.", tip: "It didn't happen, and it can't change now. \"had + done\" after \"if\", \"would have + done\" in the other part." },
-    { k: "mixed", i: "🔀", name: "Past → now", age: 14, f: ["pastperf", "would"], ex: "If I had slept, I wouldn't be tired now.", tip: "An imagined past with a result now." },
+    { k: "third", i: "⏪", name: "Imaginary past", age: 10, f: ["pastperf", "wouldhave"], ex: "If I had studied, I would have passed.", tip: "It didn't happen, and it can't change now. \"had + done\" after \"if\", \"would have + done\" in the other part." },
+    { k: "mixed", i: "🔀", name: "Past → now", age: 10, f: ["pastperf", "would"], ex: "If I had slept, I wouldn't be tired now.", tip: "An imagined past with a result now." },
   ];
   const CONJ = [
     { k: "if", name: "if", age: 8, tip: "If = maybe it happens." },
     { k: "when", name: "when", age: 8, real: 1, tip: "When = you are sure it will happen (When Dad comes home, we'll eat)." },
     { k: "unless", name: "unless", age: 10, tip: "Unless = if … not (Unless it rains = If it doesn't rain). Don't add another \"not\" after it." },
     { k: "as soon as", name: "as soon as", age: 10, real: 1, tip: "As soon as = right at the moment it happens." },
-    { k: "in case", name: "in case", age: 12, real: 1, tip: "In case = to be ready if it happens (Take a coat in case it rains)." },
+    { k: "in case", name: "in case", age: 10, real: 1, tip: "In case = to be ready if it happens (Take a coat in case it rains)." },
   ];
   const age = () => { try { const p = App.profile || {}; if (p.role === "teacher" || p.is_admin) return 99; const b = p.birth_date; if (!b) return 10;
     const d = new Date(b), n = new Date(); let a = n.getFullYear() - d.getFullYear(); if (n < new Date(n.getFullYear(), d.getMonth(), d.getDate())) a--; return a; } catch (e) { return 10; } };
@@ -92,7 +92,7 @@
     let body = "", ctl = "", tip = T.tip, warn = "";
     if (T.kind === "list") {
       body = (b.s || []).map((x, n) => (n ? `<span class="jw">${n === b.s.length - 1 ? esc(b.end || "and") : ","}</span>` : "") + wslot(x, n)).join("") + (b.s.length < 8 ? `<button type="button" class="jslot" data-jadd="${k}" title="One more">＋</button>` : "");
-      ctl = `<span class="jseg">${["and", "or"].map(e => `<button type="button" data-jend="${k}|${e}" aria-pressed="${(b.end || "and") === e}">… ${e} last</button>`).join("")}${A >= 12 ? `<button type="button" data-jox="${k}" aria-pressed="${!!b.ox}" title="A comma before and / or">Oxford comma</button>` : ""}</span>`;
+      ctl = `<span class="jseg">${["and", "or"].map(e => `<button type="button" data-jend="${k}|${e}" aria-pressed="${(b.end || "and") === e}">… ${e} last</button>`).join("")}${A >= 10 ? `<button type="button" data-jox="${k}" aria-pressed="${!!b.ox}" title="A comma before and / or">Oxford comma</button>` : ""}</span>`;
     } else if (T.kind === "cond") {
       const L = lvOf(b), C = CONJ.find(x => x.k === b.c) || CONJ[0];
       if (C.real && b.lv && !["zero", "first"].includes(b.lv)) warn = `"${C.name}" is for real things; for imagined ones use "if".`;
