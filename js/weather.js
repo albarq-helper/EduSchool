@@ -11,6 +11,9 @@
   add("gale", { e: "🌬️", name: "Gale", wind: 4, rain: 1 });
   add("wind,windy,blustery", { e: "💨", name: "Wind", wind: 3 });
   add("gust,gusty", { e: "💨", name: "Gust", wind: 2, gust: 1 });
+  // 👀 being watched: big eyes follow your finger; binoculars let you spy on the page
+  add("observe,observed,observes,observing,observation,observer,watch,watched,watching,stare,stared,staring,gaze,gazed,gazing,notice,noticed,glance,glanced", { e: "👀", name: "Watching you", eyes: 1, long: 1, dur: 10000 });
+  add("spy,spied,spying,binoculars,scan,scanned,survey,surveyed,lookout,peer,peered,peering", { e: "🔭", name: "Spy", bino: 1, long: 1, dur: 14000 });
   add("faraway,far away,far off,far-off,distant,distance,far,afar,vanish,vanished,disappear,disappeared", { e: "🛣️", name: "Far away", far: 1, dur: 7000 });
   add("sway,sways,swayed,swaying,swing,swinging,rocking,wobble,wobbly", { e: "🌴", name: "Sway", sway: 1 });
   add("breeze,breezy", { e: "🍃", name: "Breeze", wind: 1 });
@@ -124,8 +127,11 @@
     // 👆 where the finger or mouse is (the torch and laser follow it; until it moves, they sweep by themselves)
     const ptr = { x: W() / 2, y: H() / 2, moved: 0 };
     const onMove = e => { if (e.target && e.target.closest && e.target.closest(".wx-chip")) return; const q = e.touches ? e.touches[0] : e; if (!q) return; ptr.x = q.clientX; ptr.y = q.clientY; ptr.moved = performance.now(); };
-    if (r.torch || r.laser) { addEventListener("pointermove", onMove, { passive: true }); addEventListener("touchmove", onMove, { passive: true }); addEventListener("pointerdown", onMove, { passive: true }); }
+    const track = r.torch || r.laser || r.eyes || r.bino;
+    if (track) { addEventListener("pointermove", onMove, { passive: true }); addEventListener("touchmove", onMove, { passive: true }); addEventListener("pointerdown", onMove, { passive: true }); }
     const dark = r.torch ? layer("rgba(3,5,18,.94)", 1) : null;
+    const bino = !!r.bino;
+    const eye = { lid: 0, next: 1800 };
     // 🔦 the torch only moves when you move it: it leans a little left; tilt it with ⬅️ ➡️, make the beam longer or shorter with ⬆️ ⬇️ or the mouse wheel
     const beam = { len: Math.min(370, Math.max(W(), H()) * .55), tilt: -.45 }; // the default Ab picked: leaning left, a long beam
     const lenBy = d => { beam.len = Math.max(70, Math.min(Math.max(W(), H()) * .8, beam.len + d)); ptr.moved = ptr.moved || performance.now(); };
@@ -184,7 +190,22 @@
       if (r.wind && (r.rain || r.snow)) { ctx.strokeStyle = "rgba(255,255,255,.35)"; ctx.lineWidth = 2; for (let k = 0; k < r.wind * 2; k++) { const y = (k * 97 + t / 3) % H(), x = ((t * (1 + k % 3)) / 2 + k * 211) % (W() + 300) - 150; ctx.beginPath(); ctx.moveTo(x, y); ctx.quadraticCurveTo(x + 60, y - 12, x + 140, y); ctx.stroke(); } }
       drops.forEach(d => { d.y += d.vy; d.rot += d.vr; if (d.y > H() + 40) { d.y = -40; d.x = rnd(0, W()); } ctx.save(); ctx.translate(d.x, d.y); ctx.rotate(d.rot); ctx.font = d.s + "px system-ui"; ctx.fillText(d.e, -d.s / 2, d.s / 2); ctx.restore(); });
       splashes.forEach((s, k) => { s.a -= .06; if (s.a <= 0) return splashes.splice(k, 1); ctx.strokeStyle = `rgba(110,150,210,${s.a})`; ctx.lineWidth = 1; ctx.beginPath(); ctx.ellipse(s.x, s.y, (1 - s.a) * 10 + 2, (1 - s.a) * 3 + 1, 0, 0, 7); ctx.stroke(); });
-      if (r.torch || r.laser) { if (!ptr.moved) { ptr.x = W() / 2 + Math.sin(t / 900) * W() * .32; ptr.y = H() * .45 + Math.sin(t / 650) * H() * .22; } }
+      if (track) { if (!ptr.moved) { ptr.x = W() / 2 + Math.sin(t / 900) * W() * .32; ptr.y = H() * .45 + Math.sin(t / 650) * H() * .22; } }
+      if (bino) { const R0 = Math.min(W(), H()) * .2, x1 = ptr.x - R0 * .78, x2 = ptr.x + R0 * .78, y = ptr.y;
+        ctx.save(); ctx.fillStyle = `rgba(4,8,14,${.96 * fade})`; ctx.fillRect(0, 0, W(), H()); ctx.globalCompositeOperation = "destination-out"; ctx.fillStyle = "#000";
+        [x1, x2].forEach(x => { ctx.beginPath(); ctx.arc(x, y, R0, 0, 7); ctx.fill(); }); ctx.restore();
+        ctx.strokeStyle = `rgba(20,25,35,${.9 * fade})`; ctx.lineWidth = 10; [x1, x2].forEach(x => { ctx.beginPath(); ctx.arc(x, y, R0 + 4, 0, 7); ctx.stroke(); });
+        ctx.strokeStyle = `rgba(80,90,110,${.35 * fade})`; ctx.lineWidth = 1.5; [x1, x2].forEach(x => { ctx.beginPath(); ctx.moveTo(x - 12, y); ctx.lineTo(x + 12, y); ctx.moveTo(x, y - 12); ctx.lineTo(x, y + 12); ctx.stroke(); }); }
+      if (r.eyes) { const R0 = Math.min(W(), H()) * .13, rise = Math.min(1, life * 6, (1 - life) * 6), cy = H() + R0 * .9 - rise * R0 * 2.1;
+        if (t > eye.next) { eye.lid = 1; eye.next = t + rnd(1800, 3200); } eye.lid = Math.max(0, eye.lid - .08); const lidK = eye.lid > .5 ? (1 - eye.lid) * 2 : eye.lid * 2;
+        [W() / 2 - R0 * 1.15, W() / 2 + R0 * 1.15].forEach(cx => {
+          ctx.fillStyle = "#fff"; ctx.strokeStyle = "#1f2937"; ctx.lineWidth = 5; ctx.beginPath(); ctx.ellipse(cx, cy, R0, R0 * 1.15, 0, 0, 7); ctx.fill(); ctx.stroke();
+          const a = Math.atan2(ptr.y - cy, ptr.x - cx), d = Math.min(R0 * .5, Math.hypot(ptr.x - cx, ptr.y - cy) / 6), px = cx + Math.cos(a) * d, py = cy + Math.sin(a) * d * 1.1;
+          ctx.fillStyle = "#3b2a1a"; ctx.beginPath(); ctx.arc(px, py, R0 * .42, 0, 7); ctx.fill(); ctx.fillStyle = "#000"; ctx.beginPath(); ctx.arc(px, py, R0 * .22, 0, 7); ctx.fill();
+          ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(px - R0 * .12, py - R0 * .14, R0 * .08, 0, 7); ctx.fill();
+          if (lidK > 0) { ctx.save(); ctx.beginPath(); ctx.ellipse(cx, cy, R0, R0 * 1.15, 0, 0, 7); ctx.clip(); ctx.fillStyle = "#f2c9a0"; ctx.fillRect(cx - R0 - 4, cy - R0 * 1.2, R0 * 2 + 8, R0 * 2.35 * lidK); ctx.strokeStyle = "#1f2937"; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(cx - R0, cy - R0 * 1.2 + R0 * 2.35 * lidK); ctx.lineTo(cx + R0, cy - R0 * 1.2 + R0 * 2.35 * lidK); ctx.stroke(); ctx.restore();
+            ctx.strokeStyle = "#1f2937"; ctx.lineWidth = 5; ctx.beginPath(); ctx.ellipse(cx, cy, R0, R0 * 1.15, 0, 0, 7); ctx.stroke(); }
+          ctx.strokeStyle = "#1f2937"; ctx.lineWidth = 6; ctx.beginPath(); ctx.ellipse(cx, cy - R0 * 1.5, R0 * .8, R0 * .25, 0, Math.PI * 1.1, Math.PI * 1.9); ctx.stroke(); }); }
       if (dark) { const T = r.torch, fl = T.flicker ? 1 + Math.sin(t / 60) * .04 + Math.sin(t / 23) * .03 : 1, R0 = T.r * fl, a = Math.max(.15, fade);
         // the mouse IS the torch: the light lands ahead of it, aimed toward the middle of the page (straight up when it is already in the middle)
         const ang = -Math.PI / 2 + beam.tilt;
@@ -243,7 +264,7 @@
     if (r.torch && !r.torch.flicker) { const c = document.createElement("span"); c.style.display = "flex"; c.style.gap = "4px";
       [["↺", "Tilt left", () => tiltBy(-.2)], ["➖", "Shorter beam", () => lenBy(-40)], ["➕", "Longer beam", () => lenBy(40)], ["↻", "Tilt right", () => tiltBy(.2)]].forEach(([t, l, f]) => { const b = document.createElement("button"); b.type = "button"; b.textContent = t; b.title = l; b.setAttribute("aria-label", l); b.onpointerdown = e => { e.stopPropagation(); f(); }; c.appendChild(b); });
       chip.insertBefore(c, chip.querySelector("[data-x]")); }
-    if (r.torch || r.laser) chip.classList.add("top");
+    if (r.torch || r.laser || r.eyes || r.bino) chip.classList.add("top");
     chip.querySelector("[data-x]").onclick = () => stop();
     chip.querySelector("[data-off]").onclick = () => { try { localStorage.setItem(OFF_KEY, "1"); } catch (e) {} stop(); };
     document.body.appendChild(chip);
