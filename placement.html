@@ -1,0 +1,52 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Level quiz · Helper Academy</title><link rel="icon" href="assets/icons/brilliant.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<link rel="stylesheet" href="css/app.css">
+<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261125w"></script><script src="js/icons.js?v=20261125w"></script><script src="js/app.js?v=20261125w"></script>
+<style>
+.qz{background:var(--sheet);border:1.5px solid var(--rule);border-radius:16px;padding:16px;display:grid;gap:10px;max-width:640px}
+.qz .lv{font:800 .8rem var(--f-body);color:var(--muted)}.qz .q{font:700 1.2rem/1.45 var(--f-body)}
+.qz .op{display:grid;gap:6px}.qz .op button{all:unset;cursor:pointer;border:1.5px solid var(--rule);border-radius:12px;padding:8px 12px;font:700 1rem var(--f-body)}
+.qz .op button:hover{border-color:var(--accent)}.qz .op button.ok{background:#dcfce7;border-color:#22c55e}.qz .op button.no{background:#fee2e2;border-color:#ef4444}
+.prog{height:8px;border-radius:9px;background:#e2e8f0;overflow:hidden}.prog i{display:block;height:100%;background:var(--accent)}
+.big{font:800 3rem var(--f-display);color:#7c3aed}.lvrow{display:flex;gap:6px;flex-wrap:wrap}.lvrow span{border-radius:999px;padding:3px 10px;font:800 .85rem var(--f-body);background:#f1f5f9}.lvrow span.p{background:#dcfce7}.lvrow span.f{background:#fee2e2}
+</style>
+</head><body>
+<div class="wrap" style="max-width:820px">
+  <span class="eyebrow">Placement</span><h1>🎯 Level quiz</h1>
+  <p class="muted" style="max-width:70ch">A short quiz from A1 to C2. Each level has 5 questions; get 4 right and you go up to the next level. It stops when a level is too hard, so it takes 5 to 15 minutes. There's no rush and no score to be scared of: it only tells us where to start.</p>
+  <div id="out"><div class="empty">Loading…</div></div>
+</div>
+<script>
+const $=id=>document.getElementById(id),esc=App.esc,C=App.client;
+// [question, options, correct index]. Answer 0 is always right in the source; options are shuffled when shown.
+const Q={
+A1:[["She ___ a teacher.",["is","are","am"]],["I ___ two brothers.",["have","has","having"]],["There ___ a cat on the bed.",["is","are","be"]],["___ you like apples?",["Do","Does","Are"]],["This is ___ umbrella.",["an","a","the a"]]],
+A2:[["Yesterday we ___ to the park.",["went","go","goes"]],["She is ___ than her sister.",["taller","more tall","tallest"]],["I ___ TV when you called.",["was watching","watched now","am watching"]],["We are going ___ visit Grandma tomorrow.",["to","for","at"]],["You ___ wear a seatbelt in the car. It's the law.",["must","might","would"]]],
+B1:[["I ___ in this city since 2019.",["have lived","live","am living"]],["If it rains, we ___ at home.",["will stay","would stay","stayed"]],["The book ___ by a famous writer.",["was written","wrote","was writing"]],["He asked me where I ___.",["lived","do live","live?"]],["I'm used to ___ up early.",["getting","get","got"]]],
+B2:[["If I ___ more time, I would learn the piano.",["had","have","will have"]],["By the time we arrived, the film ___.",["had started","has started","starts"]],["She ___ have left already; her coat is gone.",["must","can't","should"]],["I wish I ___ that. I'm sorry.",["hadn't said","didn't say","wouldn't say"]],["The man ___ car was stolen called the police.",["whose","who","which"]]],
+C1:[["Not only ___ late, but he also forgot the tickets.",["was he","he was","did he was"]],["If she had studied, she ___ a doctor now.",["would be","would have been","will be"]],["___ the weather, the match went ahead.",["Despite","Although","Even"]],["It's high time we ___ home.",["went","go","will go"]],["The proposal ___ be discussed at length before any decision.",["is to","is being","has"]]],
+C2:[["Little ___ that his life was about to change.",["did he know","he knew","he did know"]],["Had I known, I ___ differently.",["would have acted","would act","had acted"]],["The results, ___ were disappointing, were published anyway.",["which","that","what"]],["She is ___ to be the finest pianist of her generation.",["said","saying","say"]],["Choose the most natural: 'The plan fell ___ at the last minute.'",["through","down","off"]]]};
+const LV=["A1","A2","B1","B2","C1","C2"];let S=null;
+const shuf=a=>a.map(v=>[Math.random(),v]).sort((x,y)=>x[0]-y[0]).map(x=>x[1]);
+function start(){S={li:0,qi:0,right:0,res:{},miss:[]};ask();}
+function ask(){const lv=LV[S.li],[q,ops]=Q[lv][S.qi],done=S.li*5+S.qi;
+  $("out").innerHTML=`<div class="qz"><div class="prog"><i style="width:${Math.round(100*done/30)}%"></i></div><span class="lv">Level ${lv} · question ${S.qi+1} of 5</span>
+   <div class="q">${esc(q).replace("___","<u>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</u>")}</div><div class="op">${shuf(ops.map((o,i)=>[o,i])).map(([o,i])=>`<button type="button" data-a="${i}">${esc(o)}</button>`).join("")}</div></div>`;}
+function answer(b){if(b.closest(".op").dataset.done)return;b.closest(".op").dataset.done=1;const ok=b.dataset.a==="0",lv=LV[S.li];
+  b.classList.add(ok?"ok":"no");if(!ok){b.closest(".op").querySelector('[data-a="0"]').classList.add("ok");S.miss.push([lv,...Q[lv][S.qi]]);}else S.right++;
+  setTimeout(()=>{S.qi++;if(S.qi<5)return ask();S.res[lv]=S.right;const pass=S.right>=4;S.right=0;S.qi=0;S.li++;if(pass&&S.li<LV.length)return ask();finish();},ok?500:1300);}
+async function finish(){const passed=LV.filter(l=>S.res[l]>=4),level=passed.length?passed[passed.length-1]:(S.res.A1>=2?"A1":"Pre-A1");
+  const {error}=await C.from("placement_results").insert({level,score:S.res});
+  $("out").innerHTML=`<div class="qz" style="text-align:center"><span class="lv">Your starting level</span><div class="big">${level}</div>
+   <div class="lvrow" style="justify-content:center">${LV.map(l=>S.res[l]==null?`<span>${l} —</span>`:`<span class="${S.res[l]>=4?"p":"f"}">${l} ${S.res[l]}/5</span>`).join("")}</div>
+   <p>${level==="C2"?"Amazing! You can do everything here. Keep writing to stay sharp.":`Next: the ${LV[Math.min(LV.indexOf(level)+1,5)]} points. Build stories with them in the Story builder and watch your level map grow.`}</p>
+   ${S.miss.length?`<details style="text-align:left"><summary><b>See the ones to learn (${S.miss.length})</b></summary>${S.miss.map(([l,q,o])=>`<p><small class="muted">${l}</small> ${esc(q.replace("___","<"+o[0]+">")).replace(/&lt;(.+?)&gt;/,"<b>$1</b>")}</p>`).join("")}</details>`:""}
+   <p class="muted">${error?"Not saved: "+esc(error.message):"Saved to your level map."}</p>
+   <p><a class="btn" href="levels.html">📊 My level map</a> <button class="btn ghost" type="button" data-again="1">Try again</button></p></div>`;}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-a]");if(b)return answer(b);if(e.target.closest("[data-again]")||e.target.closest("[data-go]"))start();});
+App.requireUser().then(async()=>{const {data}=await C.from("placement_results").select("level,created_at").eq("user_id",App.user.id).order("created_at",{ascending:false}).limit(1);
+  const last=(data||[])[0];$("out").innerHTML=`<div class="qz">${last?`<p>Your last result: <b>${esc(last.level)}</b> on ${new Date(last.created_at).toLocaleDateString()}.</p>`:""}<p><button class="btn" type="button" data-go="1">▶ Start the quiz</button></p></div>`;});
+</script>
+</body></html>

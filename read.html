@@ -1,0 +1,61 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Reading · Helper Academy</title><link rel="icon" href="assets/icons/brilliant.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<link rel="stylesheet" href="css/app.css">
+<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261125w"></script><script src="js/icons.js?v=20261125w"></script><script src="js/app.js?v=20261125w"></script><script src="js/speak.js?v=20261125w"></script>
+<style>
+.rhead h1{margin:0}.rhead p{color:var(--muted);max-width:70ch}
+.pick{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px;margin:10px 0}.pick button{all:unset;cursor:pointer;background:var(--sheet);border:1.5px solid var(--rule);border-radius:14px;padding:10px 12px;display:grid;gap:3px}
+.pick button:hover{border-color:var(--accent)}.pick b{font:800 1rem var(--f-display)}.pick small{color:var(--muted);font-weight:700}
+.text{background:var(--sheet);border:1.5px solid var(--rule);border-radius:18px;padding:16px 18px;font:600 1.18rem/1.75 var(--f-body);white-space:pre-wrap}
+.text .w{cursor:pointer;border-radius:5px}.text .w:hover{background:#fef9c3}.text .v{background:#e0e7ff;color:#3730a3;font-weight:800;padding:0 2px}
+.help{position:sticky;bottom:10px;background:#1e1b4b;color:#fff;border-radius:14px;padding:10px 14px;margin-top:10px;display:none;gap:4px}.help.on{display:grid}.help .ar{direction:rtl;font-family:var(--f-ar,inherit);color:#c7d2fe}
+.qz{background:var(--sheet);border:1.5px solid var(--rule);border-radius:16px;padding:12px 14px;margin-top:12px;display:grid;gap:8px}.qz .opts{display:flex;flex-wrap:wrap;gap:6px}
+.tools{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+</style>
+</head><body>
+<div class="wrap" style="max-width:900px">
+  <div class="rhead"><span class="eyebrow">Reading</span><h1>📖 Read</h1><p>Read your own stories and the unit texts. Tap any word for its meaning in English and Arabic, then answer 5 quick questions.</p></div>
+  <div id="out"><div class="empty">Loading…</div></div>
+</div>
+<script>
+const $=id=>document.getElementById(id),esc=App.esc,C=App.client;let TXT=[],CUR=null,VOC=new Map(),Q=null;
+const clean=w=>String(w||"").replace(/\s*\(.*\)\s*$/,"").trim();
+async function load(){const [{data:st},{data:tx}]=await Promise.all([C.from("stories").select("id,title,story_text,updated_at").eq("owner_id",App.user.id).neq("story_text","").order("updated_at",{ascending:false}).limit(50),
+    C.from("set_texts").select("id,title,body,unit,set_id,study_sets(title)").neq("body","").order("unit").limit(200)]);
+  TXT=[...(st||[]).map(s=>({id:"s"+s.id,title:s.title,body:s.story_text,from:"✍️ My story"})),...(tx||[]).map(t=>({id:"t"+t.id,title:t.title,body:t.body,from:`📚 ${(t.study_sets&&t.study_sets.title)||"Set"} · Unit ${t.unit}`}))];
+  drawPick();}
+function drawPick(){$("out").innerHTML=TXT.length?`<div class="pick">${TXT.map(t=>`<button type="button" data-open="${t.id}"><b>${esc(t.title)}</b><small>${esc(t.from)} · ${t.body.split(/\s+/).length} words</small></button>`).join("")}</div>`
+  :`<div class="empty">No texts yet. When a story is written for you, it appears here.</div>`;}
+async function open(id){CUR=TXT.find(t=>t.id===id);if(!CUR)return;
+  const toks=[...new Set((CUR.body.match(/[A-Za-z][A-Za-z'-]*/g)||[]).map(w=>w.toLowerCase()))].slice(0,400);
+  const names=[...new Set(toks.flatMap(w=>[w,w.charAt(0).toUpperCase()+w.slice(1)]))];
+  const {data}=await C.from("words").select("headword,meaning,translation,emoji").eq("lang","en").in("headword",names).limit(800);
+  VOC=new Map((data||[]).map(w=>[clean(w.headword).toLowerCase(),w]));
+  const body=esc(CUR.body).replace(/[A-Za-z][A-Za-z'-]*/g,w=>`<span class="w${VOC.has(w.toLowerCase())?" v":""}" data-w="${esc(w)}">${w}</span>`);
+  $("out").innerHTML=`<div class="tools"><button class="btn small ghost" type="button" data-back="1">◀ All texts</button><button class="btn small" type="button" data-hearall="1">🔊 Read it to me</button><button class="btn small" type="button" data-quiz="1">🎯 5 questions</button></div>
+    <h2 style="margin:6px 0">${esc(CUR.title)}</h2><div class="text">${body}</div><div class="help" id="help"></div><div id="qz"></div>`;}
+function quiz(){const vs=[...VOC.values()].filter(v=>v.meaning);if(vs.length<2){$("qz").innerHTML=`<div class="qz">This text has too few dictionary words for questions.</div>`;return;}
+  const sents=CUR.body.split(/(?<=[.!?])\s+/);const qs=[];
+  vs.sort(()=>Math.random()-.5).forEach(v=>{if(qs.length>=5)return;const h=clean(v.headword),re=new RegExp(`\\b${h.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")}\\b`,"i"),s=sents.find(x=>re.test(x));if(!s)return;
+    const others=vs.filter(x=>x!==v).sort(()=>Math.random()-.5).slice(0,3).map(x=>clean(x.headword));
+    qs.push(Math.random()<.5?{q:s.replace(re,"_____"),a:h,opts:[h,...others].sort(()=>Math.random()-.5),k:"fill"}:{q:`What does “${h}” mean?`,a:v.meaning,opts:[v.meaning,...vs.filter(x=>x!==v).sort(()=>Math.random()-.5).slice(0,2).map(x=>x.meaning)].sort(()=>Math.random()-.5),k:"mean"});});
+  Q={qs,n:0,ok:0,fb:null};drawQ();}
+function drawQ(){const box=$("qz");if(!Q||!Q.qs.length){box.innerHTML="";return;}
+  if(Q.n>=Q.qs.length){box.innerHTML=`<div class="qz"><b>${Q.ok===Q.qs.length?"🌟":"👍"} ${Q.ok} / ${Q.qs.length} right!</b><button class="btn small" type="button" data-quiz="1">🔁 Again</button></div>`;return;}
+  const q=Q.qs[Q.n];box.innerHTML=`<div class="qz"><b>${Q.n+1}/${Q.qs.length} · ${q.k==="fill"?"Which word fits?":""}</b><div>${esc(q.q)}</div>
+    ${Q.fb?`<p>${Q.fb.ok?"✅ Yes!":`❌ It's: <b>${esc(q.a)}</b>`}</p><button class="btn small" type="button" data-next="1">Next ▶</button>`:`<div class="opts">${q.opts.map((o,i)=>`<button class="btn small ghost" type="button" data-ans="${i}">${esc(o)}</button>`).join("")}</div>`}</div>`;}
+document.addEventListener("click",e=>{const t=e.target;let b;
+  if((b=t.closest("[data-open]")))return open(b.dataset.open);
+  if(t.closest("[data-back]"))return drawPick();
+  if(t.closest("[data-hearall]")){try{const u=new SpeechSynthesisUtterance(CUR.body);u.lang="en-US";u.rate=.9;speechSynthesis.cancel();speechSynthesis.speak(u);}catch(x){}return;}
+  if(t.closest("[data-quiz]"))return quiz();
+  if((b=t.closest("[data-ans]"))){const q=Q.qs[Q.n],ok=q.opts[+b.dataset.ans]===q.a;Q.fb={ok};if(ok)Q.ok++;return drawQ();}
+  if(t.closest("[data-next]")){Q.n++;Q.fb=null;return drawQ();}
+  if((b=t.closest("[data-w]"))){const w=b.dataset.w,v=VOC.get(w.toLowerCase()),h=$("help");
+    try{const u=new SpeechSynthesisUtterance(w);u.lang="en-US";speechSynthesis.cancel();speechSynthesis.speak(u);}catch(x){}
+    h.className="help on";h.innerHTML=v?`<b>${esc(v.emoji||"")} ${esc(clean(v.headword))}</b><span>${esc(v.meaning||"")}</span>${v.translation?`<span class="ar">${esc(v.translation)}</span>`:""}`:`<b>${esc(w)}</b><span>Not in our dictionary yet.</span>`;}});
+App.requireUser().then(load);
+</script>
+</body></html>

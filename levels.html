@@ -3,7 +3,7 @@
 <title>My English level · Helper Academy</title><link rel="icon" href="assets/icons/brilliant.png">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
 <link rel="stylesheet" href="css/app.css">
-<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261125s"></script><script src="js/icons.js?v=20261125s"></script><script src="js/app.js?v=20261125s"></script><script src="js/tense.js?v=20261125s"></script><script src="js/joiners.js?v=20261125s"></script><script src="js/talk.js?v=20261125s"></script><script src="js/grammarmap.js?v=20261125s"></script>
+<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261125w"></script><script src="js/icons.js?v=20261125w"></script><script src="js/app.js?v=20261125w"></script><script src="js/tense.js?v=20261125w"></script><script src="js/joiners.js?v=20261125w"></script><script src="js/talk.js?v=20261125w"></script><script src="js/grammarmap.js?v=20261125w"></script><script src="js/speak.js?v=20261125w"></script>
 <style>
 .lhead{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;justify-content:space-between;margin-bottom:12px}.lhead h1{margin:0}.lhead p{margin:4px 0 0;color:var(--muted);max-width:70ch}
 .who{display:flex;gap:6px;flex-wrap:wrap}.who button{border:1.5px solid var(--rule);background:var(--sheet);border-radius:999px;padding:6px 12px;font:800 .9rem var(--f-body);cursor:pointer}.who button[aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:#fff}
@@ -27,12 +27,13 @@
 </div>
 <dialog class="dlg" id="dlg"></dialog>
 <script>
-const $=id=>document.getElementById(id),esc=App.esc,C=App.client;let ME=null,KIDS=[],CUR=null,PTS=[],BY={},SET=null,CHK=[];
+const $=id=>document.getElementById(id),esc=App.esc,C=App.client;let ME=null,KIDS=[],CUR=null,PTS=[],BY={},SET=null,CHK=[],PL=null;
 const ST={none:"not yet",tried:"tried",met:"met",steady:"steady",mastered:"mastered"};
 async function loadFor(uid){
   const [{data:st},{data:ck},{data:se}]=await Promise.all([C.from("stories").select("id,title,blocks").eq("owner_id",uid),
     C.from("grammar_checks").select("id,sentence,ok,points,result,created_at").eq("user_id",uid).order("created_at",{ascending:false}).limit(200),
     C.from("ai_check_settings").select("*").eq("student_id",uid).maybeSingle()]);
+  const {data:pl}=await C.from("placement_results").select("level,score,created_at").eq("user_id",uid).order("created_at",{ascending:false}).limit(1);PL=(pl||[])[0]||null;
   CHK=ck||[];SET=se||{student_id:uid,check_on:false,daily_cap:10};
   const {data:ws}=await C.from("words").select("headword,tags").eq("lang","en").overlaps("tags",["Phrasal verb","Idiom"]).limit(2000);
   const ph=new Set(),id=new Set();(ws||[]).forEach(w=>{const h=String(w.headword).replace(/\s*\(.*\)$/,"").toLowerCase();if((w.tags||[]).includes("Phrasal verb"))ph.add(h);if((w.tags||[]).includes("Idiom"))id.add(h);});
@@ -43,12 +44,26 @@ function draw(){
     return `<div class="bar"><span>${lv} · ${used}/${ps.length}</span><span class="t" title="${good} steady or mastered"><i style="width:${ps.length?Math.round(100*used/ps.length):0}%"></i></span></div>`;}).join("");
   $("out").innerHTML=`<div class="sum"><span class="badge" title="Level reached: 80% of its points steady">${L||"—"}</span><div style="display:grid;gap:6px;flex:1"><b>${L?`Level ${L} reached`:"Keep building: your first level appears when 80% of the A1 points are steady."}</b><div class="bars">${bars}</div>
       <div class="key"><span><i style="background:#cbd5e1"></i>not yet</span><span><i style="background:#fbbf24"></i>tried</span><span><i style="background:#60a5fa"></i>met (3×)</span><span><i style="background:#22c55e"></i>steady (5× in 2 stories)</span><span><i style="background:#7c3aed"></i>mastered (10×)</span></div></div></div>
+    <div class="panel"><b>🧭 Four skills</b><span class="muted">${PL?`Level quiz: <b>${esc(PL.level)}</b> (${new Date(PL.created_at).toLocaleDateString()})`:"No level quiz yet: it shows where to start."}</span>
+      <div style="display:flex;gap:6px;flex-wrap:wrap"><a class="btn small" href="placement.html">🎯 Level quiz</a><a class="btn small ghost" href="read.html">📖 Reading</a><a class="btn small ghost" href="write.html">📝 Writing</a><a class="btn small ghost" href="songs.html">🎧 Listening</a><a class="btn small ghost" href="list.html">🎤 Speaking (tap 🎤 by any word)</a></div></div>
+    ${ME.admin&&CUR===ME.id?`<div class="panel"><b>🏷️ Word levels (AI, parent only)</b><span class="muted">Adds a CEFR tag (A1–C2) to dictionary words that don't have one, 120 words per click. Each click is one AI call.</span><div><button type="button" class="btn small" id="tagGo">Tag the next 120 words</button> <span id="tagMsg" class="muted"></span></div></div>`:""}
     <div class="panel"><b>✅ Try a sentence</b><span class="muted">Type your own sentence. ${canCheck?"The AI gives you a hint first, then the fix if you want it.":"Ask your parent to turn on AI Check for you."}</span>
       <textarea id="ts" maxlength="300" placeholder="e.g. Yesterday I have seen a big dog." ${canCheck?"":"disabled"}></textarea><div><button type="button" class="btn" id="tsGo" ${canCheck?"":"disabled"}>✅ Check</button> <span id="tsMsg" class="muted"></span></div><div id="tsOut"></div></div>
     ${ME.role==="teacher"&&CUR!==ME.id?`<div class="panel"><b>🔒 AI Check for this learner</b><label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="acOn" ${SET.check_on?"checked":""}> Let this learner use AI Check (costs a little each time)</label>
       <label style="display:flex;gap:8px;align-items:center">Up to <input type="number" id="acCap" min="0" max="50" value="${SET.daily_cap}" style="width:5em"> checks a day</label><div><button type="button" class="btn small" id="acSave">Save</button> <span id="acMsg" class="muted"></span></div></div>`:""}
     ${GrammarMap.LEVELS.map(lv=>`<h2 class="lv">${lv} <small>${{A1:"Starter",A2:"Elementary",B1:"Intermediate",B2:"Upper-intermediate",C1:"Advanced",C2:"Proficiency"}[lv]}</small></h2><div class="pts">${rows.filter(r=>r.p.level===lv).map(r=>`<button type="button" class="pt ${r.status}" data-pt="${esc(r.p.key)}"><span class="d"></span>${esc(r.p.name)}${r.uses?` <small>×${r.uses}</small>`:""}</button>`).join("")}</div>`).join("")}`;
-  if($("tsGo"))$("tsGo").onclick=check;if($("acSave"))$("acSave").onclick=saveSet;}
+  if($("tsGo"))$("tsGo").onclick=check;if($("acSave"))$("acSave").onclick=saveSet;if($("tagGo"))$("tagGo").onclick=tagWords;}
+async function tagWords(){const b=$("tagGo"),m=$("tagMsg");b.disabled=true;m.textContent="Finding words…";
+  try{const {data:ws}=await C.from("words").select("id,headword,tags").eq("lang","en").limit(3000);
+    const todo=(ws||[]).filter(w=>!(w.tags||[]).some(t=>/^CEFR: /.test(t))).slice(0,120);if(!todo.length){m.textContent="All words have a level.";return;}
+    m.textContent=`Asking the AI about ${todo.length} words…`;
+    const prompt=`Give the CEFR level (A1, A2, B1, B2, C1 or C2) of each English word or phrase below, as a learner would meet it (Cambridge / English Vocabulary Profile style). Reply with JSON only: an object mapping each item exactly as written to its level.\n\n${todo.map(w=>w.headword).join("\n")}`;
+    const r=await C.functions.invoke("ai",{body:{prompt,task:"cefr"}});if(r.error){let d={};try{d=await r.error.context.json();}catch(x){}m.textContent="Not tagged: "+(d.error||r.error.message);return;}const txt=(r.data&&(r.data.text||r.data.answer||r.data.content))||"";
+    let map={};try{map=JSON.parse(String(txt).replace(/^[^{]*/,"").replace(/[^}]*$/,""));}catch(x){m.textContent="The AI answer was not readable. Try again.";return;}
+    let n=0;for(const w of todo){const lv=String(map[w.headword]||"").toUpperCase();if(!/^(A1|A2|B1|B2|C1|C2)$/.test(lv))continue;
+      const {error}=await C.from("words").update({tags:[...(w.tags||[]),"CEFR: "+lv]}).eq("id",w.id);if(!error)n++;m.textContent=`Tagged ${n}…`;}
+    m.textContent=`Tagged ${n} of ${todo.length} words. ${(ws||[]).filter(w=>!(w.tags||[]).some(t=>/^CEFR: /.test(t))).length-n} left.`;}
+  finally{b.disabled=false;}}
 document.addEventListener("click",e=>{const b=e.target.closest("[data-pt]");if(b){const r=BY[b.dataset.pt];$("dlg").innerHTML=`<h3>${esc(r.p.name)} <small class="muted">${r.p.level} · ${ST[r.status]}</small></h3>
   <p>${esc(r.p.rule)}</p><p class="ar">${esc(r.p.rule_ar)}</p><p class="muted">🧱 Practise it in: <b>${esc(r.p.place)}</b>${r.uses?` · used ${r.uses}× in ${r.stories.size} ${r.stories.size===1?"story":"stories"}`:""}</p>
   ${r.ex.length?`<b>Your sentences</b>${r.ex.map(x=>`<div class="ex">${esc(x)}</div>`).join("")}`:`<p class="muted">Not used yet. Open the Story builder and try it with any word.</p>`}<p><a class="btn small" href="story.html">🧱 Open the Story builder</a> <button type="button" class="btn small ghost" onclick="this.closest('dialog').close()">Close</button></p>`;$("dlg").showModal();return;}
@@ -64,7 +79,7 @@ async function check(){const s=$("ts").value.trim();if(s.length<3)return;$("tsGo
 async function saveSet(){const row={student_id:CUR,check_on:$("acOn").checked,daily_cap:Math.max(0,Math.min(50,+$("acCap").value||0)),updated_at:new Date().toISOString()};
   const {error}=await C.from("ai_check_settings").upsert(row);$("acMsg").textContent=error?"Not saved: "+error.message:"Saved.";if(!error)SET=row;}
 function drawWho(){if(ME.role!=="teacher"){$("who").innerHTML="";return;}$("who").innerHTML=[[ME.id,"🧑 Me"],...KIDS.map(k=>[k.id,"🧒 "+k.name])].map(([id,l])=>`<button type="button" data-who="${id}" aria-pressed="${CUR===id}">${esc(l)}</button>`).join("");}
-App.requireUser().then(async()=>{ME={id:App.user.id,role:(App.profile||{}).role};const {data:gp}=await C.from("grammar_points").select("*").order("position");PTS=gp||[];
+App.requireUser().then(async()=>{ME={id:App.user.id,role:(App.profile||{}).role,admin:!!(App.profile||{}).is_admin};const {data:gp}=await C.from("grammar_points").select("*").order("position");PTS=gp||[];
   if(ME.role==="teacher"){const {data:cl}=await C.from("classes").select("id").eq("teacher_id",ME.id);const ids=(cl||[]).map(c=>c.id);
     if(ids.length){const {data:m}=await C.from("class_members").select("student_id, profiles(full_name)").in("class_id",ids);const seen=new Set();KIDS=(m||[]).filter(x=>!seen.has(x.student_id)&&seen.add(x.student_id)).map(x=>({id:x.student_id,name:(x.profiles&&x.profiles.full_name)||"Learner"}));}}
   CUR=KIDS[0]?KIDS[0].id:ME.id;drawWho();loadFor(CUR);});

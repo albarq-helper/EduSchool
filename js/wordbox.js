@@ -159,7 +159,7 @@
       el.innerHTML = `<div class="tm" role="group" aria-label="Sentence with ${esc(word)}">
         <div class="tm-say"${anim ? "" : ' style="animation:none"'}><span class="s">${esc(full)}</span></div>${rows}${chipsHtml}
         ${o.verb && o.onVerb ? `<p class="tm-tip" style="text-align:center">🔀 It comes from the doing word <b>${esc(o.verb)}</b>. <button type="button" class="tm-o" data-wverb="1" style="display:inline-grid"><b>Use ${esc(o.verb)}</b></button></p>` : ""}
-        <div class="tm-nav">${o.onPick ? `<button type="button" class="use" data-wb-use="1">Use "${esc(full)}"</button>` : ""}<button type="button" data-wb-hear="1">🔊 Hear</button></div></div>`;
+        <div class="tm-spk" aria-live="polite" style="text-align:center"></div><div class="tm-nav">${window.Speak && Speak.ok ? `<button type="button" data-wb-say="1">🎤 Say it</button>` : ""}${o.onPick ? `<button type="button" class="use" data-wb-use="1">Use "${esc(full)}"</button>` : ""}<button type="button" data-wb-hear="1">🔊 Hear</button></div></div>`;
     }
     el.onclick = e => {
       const g = (a) => e.target.closest(`[${a}]`);
@@ -176,6 +176,7 @@
       if ((x = g("data-sm2"))) { const m = x.dataset.sm2; st.neg = m === "n"; st.q = m === "q"; return draw(true); }
       if ((x = g("data-gc"))) { st.gc = st.gc === x.dataset.gc ? "" : x.dataset.gc; return draw(false); }
       if (g("data-wverb") && o.onVerb) return o.onVerb();
+      if (g("data-wb-say") && window.Speak) { Speak.check(phrase(word, st, { cast, partners: o.partners }), el.querySelector(".tm-spk")); return; }
       if (g("data-wb-hear")) { try { const u = new SpeechSynthesisUtterance(phrase(word, st, { cast, partners: o.partners })); u.lang = "en-US"; speechSynthesis.cancel(); speechSynthesis.speak(u); } catch (er) {} return; }
       if (g("data-wb-use") && o.onPick) { const s = { ...st }; delete s.gc; o.onPick({ phrase: phrase(word, st, { cast, partners: o.partners }), state: s, grammar: chips(word, st).map(c => c.k) }); }
     };

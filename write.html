@@ -1,0 +1,72 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Writing · Helper Academy</title><link rel="icon" href="assets/icons/brilliant.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<link rel="stylesheet" href="css/app.css">
+<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261125w"></script><script src="js/icons.js?v=20261125w"></script><script src="js/app.js?v=20261125w"></script>
+<style>
+.whead h1{margin:0}.whead p{color:var(--muted);max-width:70ch}
+.frames{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;margin:10px 0}.frames button{all:unset;cursor:pointer;background:var(--sheet);border:1.5px solid var(--rule);border-radius:14px;padding:10px 12px;display:grid;gap:3px}
+.frames button:hover{border-color:var(--accent)}.frames b{font:800 1rem var(--f-display)}.frames small{color:var(--muted);font-weight:700}
+.part{background:var(--sheet);border:1.5px solid var(--rule);border-radius:14px;padding:10px 12px;display:grid;gap:6px;margin:8px 0}.part label{font:800 .9rem var(--f-body)}
+.part .st{display:flex;flex-wrap:wrap;gap:5px}.part .st button{border:1.5px dashed #c4b5fd;background:#faf5ff;border-radius:999px;padding:3px 10px;font:700 .82rem var(--f-body);cursor:pointer;color:#5b21b6}
+.part textarea{font:600 1rem/1.5 var(--f-body);padding:8px 10px;border:1.5px solid var(--rule);border-radius:10px;min-height:64px}.part .hint{font-size:.85rem;color:#6d28d9}
+.chk{background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:14px;padding:10px 12px;display:grid;gap:4px}.chk span{font:700 .9rem var(--f-body)}
+.bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0}.res{font-size:.9rem}.hint2{background:#fef9c3;border-radius:10px;padding:6px 10px}.fix{background:#dcfce7;border-radius:10px;padding:6px 10px;font-weight:800}
+</style>
+</head><body>
+<div class="wrap" style="max-width:900px">
+  <div class="whead"><span class="eyebrow">Writing</span><h1>📝 Write</h1><p>Real things people write: an email, an invitation, a diary page, an opinion, a review, and IELTS tasks. Each one gives you the parts, sentence starters and a checklist. Your writing is saved with your stories.</p></div>
+  <div id="out"><div class="empty">Loading…</div></div>
+</div>
+<script>
+const $=id=>document.getElementById(id),esc=App.esc,C=App.client;let F=null,MINE=[];
+const FR=[
+ {k:"email",i:"📧",name:"Email to a friend",lv:"A2",parts:[["Greeting",["Dear …,","Hi …,"],"Start with Dear or Hi + the name, and a comma."],["Why you are writing",["I am writing to …","I wanted to tell you that …","Thank you for …"],"Say why you are writing in one sentence."],["Details",["Last weekend, I …","Next Friday, we are going to …","It was … because …"],"Give two or three details. Use the past for what happened and going to for plans."],["Ending",["I hope you are well.","Write back soon!","Can you …?"],"End with a wish or a question."],["Sign-off",["Love,","Best wishes,","See you soon,"],"Then your name on the next line."]],
+  checks:[["Starts with Dear or Hi",t=>/^\s*(dear|hi|hello)\b/i.test(t)],["Has a reason (to / because / thank you)",t=>/\b(to|because|thank)\b/i.test(t)],["Ends with a sign-off",t=>/(love|best wishes|see you|regards|yours),?\s*\n?\s*\S*\s*$/i.test(t.trim())],["40 words or more",t=>wc(t)>=40]]},
+ {k:"invite",i:"🎉",name:"Invitation",lv:"A2",parts:[["What",["You're invited to my …!","Please come to …"],"Say what the party or event is."],["When",["It is on … at … o'clock.","It starts at … and ends at …."],"ON + day or date, AT + time."],["Where",["It is at my house, …","We will meet at …"],"AT + a place (at my house), IN + a city or a room."],["What to bring",["Please bring …","Don't forget …"],"A short request."],["Reply",["Please tell me by … if you can come.","Hope to see you there!"],"Ask them to answer."]],
+  checks:[["Says when with on / at",t=>/\b(on|at)\b.*\b(o'clock|am|pm|monday|tuesday|wednesday|thursday|friday|saturday|sunday|\d)/i.test(t)],["Says where",t=>/\b(at|in)\b (my|the|our)/i.test(t)],["Asks for a reply",t=>/\b(tell me|reply|let me know|rsvp|hope to see)\b/i.test(t)]]},
+ {k:"diary",i:"📔",name:"Diary page",lv:"A2",parts:[["Start",["Dear Diary,","Today was …"],"Write the date, then Dear Diary."],["What happened",["This morning I …","After school, I …","Then …"],"Past simple: went, saw, played. Use then, after that, later."],["How you felt",["I felt … because …","It made me …"],"A feeling word + because."],["Tomorrow",["Tomorrow I am going to …","I hope …"],"A plan with going to."]],
+  checks:[["Uses the past (…ed, went, saw…)",t=>/\b\w+ed\b|\b(went|saw|was|were|had|ate|got|made|took)\b/i.test(t)],["Says a feeling with because",t=>/\bbecause\b/i.test(t)],["Has a plan (going to / will)",t=>/\b(going to|will)\b/i.test(t)]]},
+ {k:"opinion",i:"💭",name:"Opinion paragraph",lv:"B1",parts:[["Your opinion",["I think that …","In my opinion, …","I believe …"],"Say what you think in one clear sentence."],["Reason 1",["Firstly, …","One reason is that …"],"Give a reason with because."],["Example",["For example, …","For instance, …"],"A real example makes it strong."],["The other side",["However, some people think …","On the other hand, …"],"Show you know another view."],["Conclusion",["In conclusion, …","That is why I think …"],"Say your opinion again in new words."]],
+  checks:[["States an opinion",t=>/\b(i think|in my opinion|i believe)\b/i.test(t)],["Gives a reason (because)",t=>/\bbecause\b/i.test(t)],["Gives an example",t=>/\b(for example|for instance|such as)\b/i.test(t)],["Shows the other side",t=>/\b(however|on the other hand|although)\b/i.test(t)],["Has a conclusion",t=>/\b(in conclusion|to sum up|that is why)\b/i.test(t)],["80 words or more",t=>wc(t)>=80]]},
+ {k:"review",i:"⭐",name:"Book or film review",lv:"B1",parts:[["What it is",["… is a book by …","… is a film about …"],"Name it and who made it."],["What happens",["It is about …","At the start, …"],"Present simple to tell the story; don't give away the ending!"],["The best part",["The best part was … because …","I loved …"],"A superlative: the best, the funniest, the most exciting."],["Recommend",["I would recommend it to … because …","I wouldn't recommend it because …"],"would + verb; say who would like it."],["Stars",["I give it … stars out of five."],"Your score."]],
+  checks:[["Says what it is about",t=>/\b(is about|tells the story)\b/i.test(t)],["Uses the best / the most",t=>/\bthe (best|most|\w+est)\b/i.test(t)],["Recommends (would …)",t=>/\bwould(n't)? recommend\b/i.test(t)],["Gives stars",t=>/\bstars?\b/i.test(t)]]},
+ {k:"ielts1",i:"✉️",name:"IELTS letter (Task 1)",lv:"B2",parts:[["Opening",["Dear Sir or Madam,","Dear Mr …,","Dear …,"],"Formal: Sir or Madam / Mr + surname. Friendly: first name."],["Purpose",["I am writing to …","I am writing regarding …"],"Why you are writing, in the first line."],["Point 1",["Firstly, …"],"Cover the first bullet point of the task."],["Point 2",["In addition, …"],"Cover the second bullet point."],["Point 3",["Finally, I would like to …","Could you please …"],"Cover the third bullet point; a polite request fits here."],["Closing",["I look forward to hearing from you.","Yours faithfully,","Yours sincerely,"],"Yours faithfully (Sir or Madam) / Yours sincerely (Mr …) / Best wishes (friend)."]],
+  checks:[["Formal or friendly opening",t=>/^\s*dear\b/i.test(t)],["States the purpose",t=>/\bi am writing\b/i.test(t)],["Polite request (could you / would you)",t=>/\b(could|would) you\b/i.test(t)],["Right closing",t=>/\b(yours faithfully|yours sincerely|best wishes|kind regards)\b/i.test(t)],["150 words or more",t=>wc(t)>=150]]},
+ {k:"ielts2",i:"🎓",name:"IELTS essay (Task 2)",lv:"B2",parts:[["Introduction",["It is often said that …","Some people believe that …, while others …","This essay will argue that …"],"Say the topic in your own words, then your opinion."],["Body 1",["Firstly, …","The main reason is that …","For example, …"],"One main idea + reason + example."],["Body 2",["Secondly, …","On the other hand, …","Furthermore, …"],"A second idea, or the other view."],["Conclusion",["In conclusion, …","To sum up, I believe …"],"Your opinion again; no new ideas."]],
+  checks:[["Clear position",t=>/\b(i believe|i think|this essay will|in my view|in my opinion)\b/i.test(t)],["Linking words (firstly, furthermore, however)",t=>(t.match(/\b(firstly|secondly|furthermore|moreover|however|in addition|therefore|on the other hand)\b/gi)||[]).length>=3],["An example",t=>/\b(for example|for instance)\b/i.test(t)],["Conclusion",t=>/\b(in conclusion|to sum up)\b/i.test(t)],["250 words or more",t=>wc(t)>=250]]}];
+const wc=t=>(String(t).trim().match(/\S+/g)||[]).length;
+const full=()=>F.parts.map((p,i)=>($("p"+i)||{}).value||"").map(s=>s.trim()).filter(Boolean).join("\n\n");
+function drawPick(){$("out").innerHTML=`<div class="frames">${FR.map(f=>`<button type="button" data-f="${f.k}"><b>${f.i} ${esc(f.name)}</b><small>${f.lv} · ${f.parts.length} parts</small></button>`).join("")}</div>
+  ${MINE.length?`<h3>Your writing</h3><div class="frames">${MINE.map(s=>`<button type="button" data-mine="${s.id}"><b>${esc(s.title)}</b><small>${new Date(s.updated_at).toLocaleDateString()}</small></button>`).join("")}</div>`:""}`;}
+function drawFrame(vals){$("out").innerHTML=`<div class="bar"><button class="btn small ghost" type="button" data-back="1">◀ All</button><b>${F.i} ${esc(F.name)} · ${F.lv}</b><span id="wc" class="muted"></span></div>
+  <label class="muted" style="font-weight:800">Title <input id="ttl" maxlength="80" value="${esc((vals&&vals.title)||"")}" placeholder="${esc(F.name)}" style="font:700 1rem var(--f-body);border:1.5px solid var(--rule);border-radius:9px;padding:5px 8px"></label>
+  ${F.parts.map(([lab,st,hint],i)=>`<div class="part"><label for="p${i}">${i+1}. ${esc(lab)}</label><div class="st">${st.map(s=>`<button type="button" data-st="${i}|${esc(s)}">${esc(s)}</button>`).join("")}</div>
+    <textarea id="p${i}" data-part="${i}">${esc((vals&&vals.parts&&vals.parts[i])||"")}</textarea><span class="hint">💡 ${esc(hint)}</span><div><button class="btn small ghost" type="button" data-chk="${i}">✅ Check this part</button> <span class="res" id="r${i}"></span></div></div>`).join("")}
+  <div class="chk" id="cl"></div><div class="bar"><button class="btn" type="button" id="save">💾 Save</button><button class="btn ghost" type="button" data-hear="1">🔊 Read it to me</button><span id="msg" class="muted"></span></div>`;
+  $("save").onclick=save;tick();}
+function tick(){if(!F)return;const t=full();$("wc").textContent=`· ${wc(t)} words`;$("cl").innerHTML=`<b>✔️ Checklist</b>`+F.checks.map(([l,f])=>`<span>${f(t)?"✅":"⬜"} ${esc(l)}</span>`).join("");}
+async function save(){const parts=F.parts.map((p,i)=>$("p"+i).value),t=full();if(wc(t)<3){$("msg").textContent="Write something first.";return;}
+  const title=(F.i+" "+($("ttl").value.trim()||F.name)).slice(0,120),blocks=[{k:"t",t:`[${F.k}]`},...parts.map(x=>({k:"t",t:x.trim()})).filter(x=>x.t)];
+  const q=F.sid?C.from("stories").update({title,blocks,story_text:t}).eq("id",F.sid):C.from("stories").insert({title,blocks,story_text:t});
+  const {data,error}=await q.select("id").single();$("msg").textContent=error?"Not saved: "+error.message:"Saved with your stories.";if(!error)F.sid=data.id;}
+async function check(i){const txt=$("p"+i).value.trim(),out=$("r"+i);if(wc(txt)<2)return;out.textContent="Checking…";
+  const r=await C.functions.invoke("check",{body:{sentence:txt.slice(0,300)}});let d=r.data;if(r.error){try{d=await r.error.context.json();}catch(x){d={error:r.error.message};}}
+  if(!d||d.error){out.textContent=(d&&d.error)||"Not checked.";return;}
+  out.innerHTML=d.ok?`<span class="fix">🌟 Correct!</span>`:`<span class="hint2">💡 ${esc(d.hint||"Look again.")}</span> <button class="btn small ghost" type="button" data-fix="${i}">Show the fix</button><span hidden id="fx${i}" class="fix">✅ ${esc(d.fixed||"")}</span>`;}
+document.addEventListener("click",e=>{const t=e.target;let b;
+  if((b=t.closest("[data-f]"))){F={...FR.find(x=>x.k===b.dataset.f)};return drawFrame();}
+  if((b=t.closest("[data-mine]"))){const s=MINE.find(x=>x.id===b.dataset.mine),k=(((s.blocks||[])[0]||{}).t||"").replace(/[\[\]]/g,"");F={...(FR.find(x=>x.k===k)||FR[0]),sid:s.id};
+    return drawFrame({title:s.title.replace(/^\S+\s/,""),parts:(s.blocks||[]).slice(1).map(x=>x.t)});}
+  if(t.closest("[data-back]")){F=null;return init();}
+  if((b=t.closest("[data-st]"))){const [i,s]=[b.dataset.st.split("|")[0],b.dataset.st.slice(b.dataset.st.indexOf("|")+1)],ta=$("p"+i);ta.value=(ta.value.trim()?ta.value.trimEnd()+" ":"")+s;ta.focus();tick();return;}
+  if((b=t.closest("[data-chk]")))return check(+b.dataset.chk);
+  if((b=t.closest("[data-fix]"))){$("fx"+b.dataset.fix).hidden=false;b.remove();return;}
+  if(t.closest("[data-hear]")){try{const u=new SpeechSynthesisUtterance(full());u.lang="en-US";speechSynthesis.cancel();speechSynthesis.speak(u);}catch(x){}}});
+document.addEventListener("input",e=>{if(e.target.dataset.part!=null)tick();});
+async function init(){const {data}=await C.from("stories").select("id,title,blocks,updated_at").eq("owner_id",App.user.id).like("title","📝%").order("updated_at",{ascending:false}).limit(30);
+  MINE=(data||[]).filter(s=>/^\[\w+\]$/.test(((s.blocks||[])[0]||{}).t||""));drawPick();}
+App.requireUser().then(init);
+</script>
+</body></html>
