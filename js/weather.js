@@ -17,6 +17,7 @@
   // 🔍 a magnifying glass over the page: everything under it twice as big, and the word under it in large letters
   add("observe,observed,observes,observing,observation,observant,examine,examined,inspect,inspected,magnify,magnified,magnifying,magnifying glass,magnifier,study,studied,detail,details,detailed,closely,scrutinize", { e: "🔍", name: "Magnifier", mag: 2.2, long: 1, dur: 20000 });
   add("spy,spied,spying,binoculars,scan,scanned,survey,surveyed,lookout,peer,peered,peering", { e: "🔭", name: "Spy", bino: 1, long: 1, dur: 14000 });
+  add("separate,separated,separates,separating,separation,split,splits,splitting,divide,divided,dividing,apart,torn,tear apart,rip,ripped,halves,half", { e: "✂️", name: "Separated", split: 1, dur: 6500 });
   add("faraway,far away,far off,far-off,distant,distance,far,afar,vanish,vanished,disappear,disappeared", { e: "🛣️", name: "Far away", far: 1, dur: 7000 });
   add("sway,sways,swayed,swaying,swing,swinging,rocking,wobble,wobbly", { e: "🌴", name: "Sway", sway: 1 });
   add("breeze,breezy", { e: "🍃", name: "Breeze", wind: 1 });
@@ -85,6 +86,7 @@
     if (r.wind) s.push(noise(dur, 0.05 + r.wind * 0.04, "band", 300 + r.wind * 80, 900 + r.wind * 250, 2.5));
     if (r.snow && !r.wind) s.push(noise(dur, 0.02, "band", 6000, 7000, 1));
     if (r.sun && !r.heat) [0.4, 1.6, 3].forEach(t => chirp(t));
+    if (r.split) { s.push(noise(1.2, 0.16, "band", 1800, 4200, 3, 0.1)); s.push(noise(0.5, 0.08, "band", 300, 200, 1, dur - 1.1)); }
     if (r.far) { s.push(noise(2.6, 0.12, "band", 1400, 250, 1.5)); s.push(noise(2.4, 0.08, "band", 250, 1200, 1.5, dur - 2.6)); }
     if (r.sway) s.push(noise(dur, 0.06, "band", 350, 700, 2));
     if (r.glass && !r.trickles) s.push(noise(dur, 0.02, "lowpass", 400, 300, 1));
@@ -214,6 +216,8 @@
         const w = wordAt(x, y); if (w && w.length > 1) { lensWord.textContent = w; lensWord.style.display = "block"; lensWord.style.left = x + "px"; lensWord.style.top = Math.min(H() - 60, y + LR + 18) + "px"; } else lensWord.style.display = "none";
         ctx.save(); ctx.translate(x + (LR + 4) * .707, y + (LR + 4) * .707); ctx.rotate(Math.PI / 4); const hg = ctx.createLinearGradient(0, -9, 0, 9); hg.addColorStop(0, "#8b5a2b"); hg.addColorStop(.5, "#c08040"); hg.addColorStop(1, "#5c3a1a"); ctx.fillStyle = "#334155"; ctx.fillRect(0, -7, 18, 14); ctx.fillStyle = hg; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(16, -9, Math.max(60, LR * .9), 18, 9) : ctx.rect(16, -9, LR, 18); ctx.fill(); ctx.restore();
         ctx.strokeStyle = "rgba(255,255,255,.55)"; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(x, y, LR * .8, Math.PI * 1.1, Math.PI * 1.45); ctx.stroke(); }
+      if (r.split && life < .24) { const k = Math.min(1, life / .2), sy = k * (H() + 40) - 20; ctx.save(); ctx.translate(W() / 2 + Math.sin(t / 40) * 3, sy); ctx.rotate(Math.PI / 2); ctx.font = "56px system-ui"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("✂️", 0, 0); ctx.restore();
+        ctx.strokeStyle = "rgba(30,41,59,.7)"; ctx.lineWidth = 2; ctx.setLineDash([6, 5]); ctx.beginPath(); ctx.moveTo(W() / 2, 0); ctx.lineTo(W() / 2, sy); ctx.stroke(); ctx.setLineDash([]); }
       if (r.peep) { // a black wall with a hole; an eye on the other side peeks through, looks around, blinks, leaves; then the hole opens
         const hx = W() / 2, hy = H() * .45, R0 = Math.min(W(), H()) * .2, open = life > .8 ? Math.pow((life - .8) / .2, 2) : 0, HR = R0 * (1 + open * 6);
         const slide = life < .15 ? 1 - (life - .05) / .1 : life > .7 ? (life - .7) / .08 : 0, ex = hx + Math.max(0, Math.min(1, slide)) * R0 * 2.6;
@@ -330,6 +334,20 @@
       kids.forEach(el => { const top = el.getBoundingClientRect().top; el.style.transformOrigin = `50% ${hz - top}px`;
         ani(el, [{ transform: "scale(1)", opacity: 1, offset: 0 }, { transform: "scale(.04)", opacity: .7, offset: .42, easing: "ease-in" }, { transform: "scale(.04)", opacity: .7, offset: .62 }, { transform: "scale(1)", opacity: 1, offset: 1 }], { duration: dur, easing: "ease-in-out" }); });
       return { stop() { anims.forEach(a => { try { a.cancel(); } catch (e) {} }); kids.forEach(el => el.style.transformOrigin = ""); back.style.opacity = 0; setTimeout(() => back.remove(), 700); } };
+    }
+    if (r.split) { // scissors cut the page down the middle along a jagged tear, the halves slide apart, then join again
+      const vw = innerWidth, vh = innerHeight, zig = []; for (let i = 0; i <= 25; i++) zig.push([50 + (i % 2 ? 1.4 : -1.4) + (Math.random() - .5), i * 4]);
+      const polyL = "polygon(0 0," + zig.map(([x, y]) => x + "% " + y + "%").join(",") + ",0 100%)", polyR = "polygon(100% 0," + zig.map(([x, y]) => x + "% " + y + "%").join(",") + ",100% 100%)";
+      const kids = [...document.body.children].filter(el => !/^(SCRIPT|STYLE|CANVAS|DIALOG)$/.test(el.tagName) && !/(wx-|egg-)/.test(el.className || ""));
+      const gap = document.createElement("div"); gap.className = "wx-split"; Object.assign(gap.style, { position: "fixed", inset: 0, zIndex: 9987, pointerEvents: "none", background: "radial-gradient(ellipse at 50% 50%, #1e293b, #020617)" }); document.body.appendChild(gap);
+      const half = poly => { const h = document.createElement("div"); h.className = "wx-split"; Object.assign(h.style, { position: "fixed", inset: 0, zIndex: 9988, pointerEvents: "none", overflow: "hidden", clipPath: poly, webkitClipPath: poly, background: getComputedStyle(document.body).backgroundColor || "#fff", filter: "drop-shadow(0 0 10px #0008)" });
+        kids.forEach(el => { const b = el.getBoundingClientRect(); if (b.bottom < 0 || b.top > vh || !b.width) return; const c = el.cloneNode(true); c.setAttribute("aria-hidden", "true"); c.inert = true; Object.assign(c.style, { position: "absolute", left: b.left + "px", top: b.top + "px", width: b.width + "px", margin: 0 }); h.appendChild(c); });
+        document.body.appendChild(h); return h; };
+      const L = half(polyL), R = half(polyR), hidden = kids.map(el => [el, el.style.visibility]); kids.forEach(el => el.style.visibility = "hidden");
+      const away = Math.min(vw * .22, 220), o = { duration: dur, easing: "ease-in-out" };
+      ani(L, [{ transform: "none", offset: 0 }, { transform: "none", offset: .22 }, { transform: `translateX(${-away}px) rotate(-2deg)`, offset: .42 }, { transform: `translateX(${-away}px) rotate(-2deg)`, offset: .72 }, { transform: "none", offset: .9 }, { transform: "none", offset: 1 }], o);
+      ani(R, [{ transform: "none", offset: 0 }, { transform: "none", offset: .22 }, { transform: `translateX(${away}px) rotate(2deg)`, offset: .42 }, { transform: `translateX(${away}px) rotate(2deg)`, offset: .72 }, { transform: "none", offset: .9 }, { transform: "none", offset: 1 }], o);
+      return { stop() { anims.forEach(a => { try { a.cancel(); } catch (e) {} }); hidden.forEach(([el, v]) => el.style.visibility = v); document.querySelectorAll(".wx-split").forEach(x => x.remove()); } };
     }
     if (r.sway) { // the whole page sways from the bottom of the screen, like a tree; cards sway a little on their own too
       const kids = [...document.body.children].filter(el => !/^(SCRIPT|STYLE|CANVAS|DIALOG)$/.test(el.tagName) && !/(wx-|egg-)/.test(el.className || "") && getComputedStyle(el).position !== "fixed");
