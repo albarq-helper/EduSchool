@@ -12,7 +12,9 @@
   add("wind,windy,blustery", { e: "💨", name: "Wind", wind: 3 });
   add("gust,gusty", { e: "💨", name: "Gust", wind: 2, gust: 1 });
   // 👀 being watched: big eyes follow your finger; binoculars let you spy on the page
-  add("observe,observed,observes,observing,observation,observer,watch,watched,watching,stare,stared,staring,gaze,gazed,gazing,notice,noticed,glance,glanced", { e: "👀", name: "Watching you", eyes: 1, long: 1, dur: 10000 });
+  add("look,looks,looked,looking,peep,peeps,peeped,peeping,peek,peeks,peeked,peeking,watch,watched,watching,stare,stared,staring,gaze,gazed,gazing,glance,glanced,notice,noticed", { e: "👀", name: "Watching you", eyes: 1, long: 1, dur: 10000 });
+  // 🔍 a magnifying glass over the page: everything under it twice as big, and the word under it in large letters
+  add("observe,observed,observes,observing,observation,observant,examine,examined,inspect,inspected,magnify,magnified,magnifying,magnifying glass,magnifier,study,studied,detail,details,detailed,closely,scrutinize", { e: "🔍", name: "Magnifier", mag: 2.2, long: 1, dur: 20000 });
   add("spy,spied,spying,binoculars,scan,scanned,survey,surveyed,lookout,peer,peered,peering", { e: "🔭", name: "Spy", bino: 1, long: 1, dur: 14000 });
   add("faraway,far away,far off,far-off,distant,distance,far,afar,vanish,vanished,disappear,disappeared", { e: "🛣️", name: "Far away", far: 1, dur: 7000 });
   add("sway,sways,swayed,swaying,swing,swinging,rocking,wobble,wobbly", { e: "🌴", name: "Sway", sway: 1 });
@@ -127,11 +129,24 @@
     // 👆 where the finger or mouse is (the torch and laser follow it; until it moves, they sweep by themselves)
     const ptr = { x: W() / 2, y: H() / 2, moved: 0 };
     const onMove = e => { if (e.target && e.target.closest && e.target.closest(".wx-chip")) return; const q = e.touches ? e.touches[0] : e; if (!q) return; ptr.x = q.clientX; ptr.y = q.clientY; ptr.moved = performance.now(); };
-    const track = r.torch || r.laser || r.eyes || r.bino;
+    const track = r.torch || r.laser || r.eyes || r.bino || r.mag;
     if (track) { addEventListener("pointermove", onMove, { passive: true }); addEventListener("touchmove", onMove, { passive: true }); addEventListener("pointerdown", onMove, { passive: true }); }
     const dark = r.torch ? layer("rgba(3,5,18,.94)", 1) : null;
     const bino = !!r.bino;
     const eye = { lid: 0, next: 1800 };
+    let lens = null, lensIn = null, lensWord = null; const LR = Math.round(Math.min(W(), H()) * .19);
+    if (r.mag) {
+      lens = document.createElement("div"); lens.className = "wx-mag"; lens.setAttribute("aria-hidden", "true");
+      Object.assign(lens.style, { position: "fixed", width: LR * 2 + "px", height: LR * 2 + "px", borderRadius: "50%", overflow: "hidden", zIndex: "9992", pointerEvents: "none", border: "7px solid #334155", boxShadow: "0 8px 30px #0006, inset 0 0 18px #0003", background: getComputedStyle(document.body).backgroundColor || "#fff", left: "-999px", top: "-999px", opacity: 0, transition: "opacity .4s" });
+      lensIn = document.createElement("div"); Object.assign(lensIn.style, { position: "absolute", left: 0, top: 0, width: document.documentElement.clientWidth + "px", transformOrigin: "0 0" });
+      [...document.body.children].forEach(el => { if (/^(SCRIPT|STYLE|CANVAS|DIALOG)$/.test(el.tagName) || /(wx-|egg-)/.test(el.className || "")) return; const c = el.cloneNode(true); c.querySelectorAll("[id]").forEach(x => x.removeAttribute("id")); c.removeAttribute && c.removeAttribute("id"); lensIn.appendChild(c); });
+      lens.appendChild(lensIn); document.body.appendChild(lens); layers.push(lens); requestAnimationFrame(() => lens.style.opacity = 1);
+      lensWord = document.createElement("div"); lensWord.className = "wx-mag-word"; lensWord.setAttribute("aria-hidden", "true");
+      Object.assign(lensWord.style, { position: "fixed", zIndex: "9993", pointerEvents: "none", background: "#fff", color: "#1f2937", font: "800 34px var(--f-display,system-ui)", padding: "4px 16px", borderRadius: "14px", boxShadow: "0 6px 20px #0004", whiteSpace: "nowrap", transform: "translateX(-50%)", display: "none" });
+      document.body.appendChild(lensWord); layers.push(lensWord);
+    }
+    const wordAt = (x, y) => { try { let node, off; if (document.caretRangeFromPoint) { const rg = document.caretRangeFromPoint(x, y); if (!rg) return ""; node = rg.startContainer; off = rg.startOffset; } else if (document.caretPositionFromPoint) { const cp = document.caretPositionFromPoint(x, y); if (!cp) return ""; node = cp.offsetNode; off = cp.offset; } else return "";
+      if (!node || node.nodeType !== 3 || (node.parentElement && node.parentElement.closest(".wx-chip,.wx-mag,.wx-mag-word"))) return ""; const t = node.textContent; let a = off, b = off; const isW = c => /[\p{L}\p{N}'’-]/u.test(c); while (a > 0 && isW(t[a - 1])) a--; while (b < t.length && isW(t[b])) b++; return t.slice(a, b).replace(/^['’-]+|['’-]+$/g, ""); } catch (e) { return ""; } };
     // 🔦 the torch only moves when you move it: it leans a little left; tilt it with ⬅️ ➡️, make the beam longer or shorter with ⬆️ ⬇️ or the mouse wheel
     const beam = { len: Math.min(370, Math.max(W(), H()) * .55), tilt: -.45 }; // the default Ab picked: leaning left, a long beam
     const lenBy = d => { beam.len = Math.max(70, Math.min(Math.max(W(), H()) * .8, beam.len + d)); ptr.moved = ptr.moved || performance.now(); };
@@ -139,7 +154,7 @@
     const onKey = e => { if (!r.torch || r.torch.flicker) return; const k = { ArrowUp: () => lenBy(30), ArrowDown: () => lenBy(-30), ArrowLeft: () => tiltBy(-.15), ArrowRight: () => tiltBy(.15) }[e.key]; if (k) { e.preventDefault(); k(); } };
     const onWheel = e => { if (!r.torch || r.torch.flicker) return; e.preventDefault(); lenBy(-e.deltaY * .4); };
     if (r.torch && !r.torch.flicker) { addEventListener("keydown", onKey); addEventListener("wheel", onWheel, { passive: false }); }
-    const oldCur = document.documentElement.style.cursor; if (r.torch || r.laser) document.documentElement.style.cursor = "none";
+    const oldCur = document.documentElement.style.cursor; if (r.torch || r.laser || r.mag) document.documentElement.style.cursor = "none";
     const cat = { x: -60, y: H() * .8, f: 1 };
     let puddle = null;
     if (r.puddle) { puddle = document.createElement("div"); puddle.className = "wx-layer"; Object.assign(puddle.style, { top: "auto", height: "0", background: "linear-gradient(to bottom, rgba(90,160,230,.35), rgba(40,110,200,.55))", transition: "height 4s ease-in, opacity .8s" }); document.body.appendChild(puddle); layers.push(puddle); requestAnimationFrame(() => puddle.style.height = (r.puddle > 1 ? 22 : 9) + "vh"); }
@@ -191,6 +206,11 @@
       drops.forEach(d => { d.y += d.vy; d.rot += d.vr; if (d.y > H() + 40) { d.y = -40; d.x = rnd(0, W()); } ctx.save(); ctx.translate(d.x, d.y); ctx.rotate(d.rot); ctx.font = d.s + "px system-ui"; ctx.fillText(d.e, -d.s / 2, d.s / 2); ctx.restore(); });
       splashes.forEach((s, k) => { s.a -= .06; if (s.a <= 0) return splashes.splice(k, 1); ctx.strokeStyle = `rgba(110,150,210,${s.a})`; ctx.lineWidth = 1; ctx.beginPath(); ctx.ellipse(s.x, s.y, (1 - s.a) * 10 + 2, (1 - s.a) * 3 + 1, 0, 0, 7); ctx.stroke(); });
       if (track) { if (!ptr.moved) { ptr.x = W() / 2 + Math.sin(t / 900) * W() * .32; ptr.y = H() * .45 + Math.sin(t / 650) * H() * .22; } }
+      if (lens) { const Z = r.mag, x = ptr.x, y = ptr.y; lens.style.left = (x - LR - 7) + "px"; lens.style.top = (y - LR - 7) + "px";
+        lensIn.style.transform = `translate(${(-(x + scrollX) * Z + LR).toFixed(1)}px, ${(-(y + scrollY) * Z + LR).toFixed(1)}px) scale(${Z})`;
+        const w = wordAt(x, y); if (w && w.length > 1) { lensWord.textContent = w; lensWord.style.display = "block"; lensWord.style.left = x + "px"; lensWord.style.top = Math.min(H() - 60, y + LR + 18) + "px"; } else lensWord.style.display = "none";
+        ctx.save(); ctx.translate(x + (LR + 4) * .707, y + (LR + 4) * .707); ctx.rotate(Math.PI / 4); const hg = ctx.createLinearGradient(0, -9, 0, 9); hg.addColorStop(0, "#8b5a2b"); hg.addColorStop(.5, "#c08040"); hg.addColorStop(1, "#5c3a1a"); ctx.fillStyle = "#334155"; ctx.fillRect(0, -7, 18, 14); ctx.fillStyle = hg; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(16, -9, Math.max(60, LR * .9), 18, 9) : ctx.rect(16, -9, LR, 18); ctx.fill(); ctx.restore();
+        ctx.strokeStyle = "rgba(255,255,255,.55)"; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(x, y, LR * .8, Math.PI * 1.1, Math.PI * 1.45); ctx.stroke(); }
       if (bino) { const R0 = Math.min(W(), H()) * .2, x1 = ptr.x - R0 * .78, x2 = ptr.x + R0 * .78, y = ptr.y;
         ctx.save(); ctx.fillStyle = `rgba(4,8,14,${.96 * fade})`; ctx.fillRect(0, 0, W(), H()); ctx.globalCompositeOperation = "destination-out"; ctx.fillStyle = "#000";
         [x1, x2].forEach(x => { ctx.beginPath(); ctx.arc(x, y, R0, 0, 7); ctx.fill(); }); ctx.restore();
@@ -264,12 +284,12 @@
     if (r.torch && !r.torch.flicker) { const c = document.createElement("span"); c.style.display = "flex"; c.style.gap = "4px";
       [["↺", "Tilt left", () => tiltBy(-.2)], ["➖", "Shorter beam", () => lenBy(-40)], ["➕", "Longer beam", () => lenBy(40)], ["↻", "Tilt right", () => tiltBy(.2)]].forEach(([t, l, f]) => { const b = document.createElement("button"); b.type = "button"; b.textContent = t; b.title = l; b.setAttribute("aria-label", l); b.onpointerdown = e => { e.stopPropagation(); f(); }; c.appendChild(b); });
       chip.insertBefore(c, chip.querySelector("[data-x]")); }
-    if (r.torch || r.laser || r.eyes || r.bino) chip.classList.add("top");
+    if (r.torch || r.laser || r.eyes || r.bino || r.mag) chip.classList.add("top");
     chip.querySelector("[data-x]").onclick = () => stop();
     chip.querySelector("[data-off]").onclick = () => { try { localStorage.setItem(OFF_KEY, "1"); } catch (e) {} stop(); };
     document.body.appendChild(chip);
     addEventListener("resize", size);
-    current = { stop() { if (ended) return; ended = true; cancelAnimationFrame(raf); sfx.stop(); moved.stop(); removeEventListener("resize", size); if (r.torch || r.laser) document.documentElement.style.cursor = oldCur; removeEventListener("pointermove", onMove); removeEventListener("keydown", onKey); removeEventListener("wheel", onWheel); removeEventListener("touchmove", onMove); removeEventListener("pointerdown", onMove); cv.remove(); chip.remove(); layers.forEach(l => { l.style.opacity = 0; if (l === puddle) l.style.height = "0"; setTimeout(() => l.remove(), 900); }); } };
+    current = { stop() { if (ended) return; ended = true; cancelAnimationFrame(raf); sfx.stop(); moved.stop(); removeEventListener("resize", size); if (r.torch || r.laser || r.mag) document.documentElement.style.cursor = oldCur; removeEventListener("pointermove", onMove); removeEventListener("keydown", onKey); removeEventListener("wheel", onWheel); removeEventListener("touchmove", onMove); removeEventListener("pointerdown", onMove); cv.remove(); chip.remove(); layers.forEach(l => { l.style.opacity = 0; if (l === puddle) l.style.height = "0"; setTimeout(() => l.remove(), 900); }); } };
     raf = requestAnimationFrame(frame);
     return true;
   }
