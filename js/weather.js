@@ -134,12 +134,12 @@
     const dark = r.torch ? layer("rgba(3,5,18,.94)", 1) : null;
     const bino = !!r.bino;
     const eye = { lid: 0, next: 1800 };
-    let lens = null, lensIn = null, lensWord = null; const LR = Math.round(Math.min(W(), H()) * .19);
+    let lens = null, lensIn = null, lensWord = null; const pairs = []; const LR = Math.round(Math.min(W(), H()) * .19);
     if (r.mag) {
       lens = document.createElement("div"); lens.className = "wx-mag"; lens.setAttribute("aria-hidden", "true");
       Object.assign(lens.style, { position: "fixed", width: LR * 2 + "px", height: LR * 2 + "px", borderRadius: "50%", overflow: "hidden", zIndex: "9992", pointerEvents: "none", border: "7px solid #334155", boxShadow: "0 8px 30px #0006, inset 0 0 18px #0003", background: getComputedStyle(document.body).backgroundColor || "#fff", left: "-999px", top: "-999px", opacity: 0, transition: "opacity .4s" });
       lensIn = document.createElement("div"); Object.assign(lensIn.style, { position: "absolute", left: 0, top: 0, width: document.documentElement.clientWidth + "px", transformOrigin: "0 0" });
-      [...document.body.children].forEach(el => { if (/^(SCRIPT|STYLE|CANVAS|DIALOG)$/.test(el.tagName) || /(wx-|egg-)/.test(el.className || "")) return; const c = el.cloneNode(true); c.querySelectorAll("[id]").forEach(x => x.removeAttribute("id")); c.removeAttribute && c.removeAttribute("id"); lensIn.appendChild(c); });
+      [...document.body.children].forEach(el => { if (/^(SCRIPT|STYLE|CANVAS|DIALOG)$/.test(el.tagName) || /(wx-|egg-)/.test(el.className || "")) return; const c = el.cloneNode(true); c.setAttribute("aria-hidden", "true"); c.inert = true; lensIn.appendChild(c); pairs.push([el, c]); });
       lens.appendChild(lensIn); document.body.appendChild(lens); layers.push(lens); requestAnimationFrame(() => lens.style.opacity = 1);
       lensWord = document.createElement("div"); lensWord.className = "wx-mag-word"; lensWord.setAttribute("aria-hidden", "true");
       Object.assign(lensWord.style, { position: "fixed", zIndex: "9993", pointerEvents: "none", background: "#fff", color: "#1f2937", font: "800 34px var(--f-display,system-ui)", padding: "4px 16px", borderRadius: "14px", boxShadow: "0 6px 20px #0004", whiteSpace: "nowrap", transform: "translateX(-50%)", display: "none" });
@@ -207,7 +207,9 @@
       splashes.forEach((s, k) => { s.a -= .06; if (s.a <= 0) return splashes.splice(k, 1); ctx.strokeStyle = `rgba(110,150,210,${s.a})`; ctx.lineWidth = 1; ctx.beginPath(); ctx.ellipse(s.x, s.y, (1 - s.a) * 10 + 2, (1 - s.a) * 3 + 1, 0, 0, 7); ctx.stroke(); });
       if (track) { if (!ptr.moved) { ptr.x = W() / 2 + Math.sin(t / 900) * W() * .32; ptr.y = H() * .45 + Math.sin(t / 650) * H() * .22; } }
       if (lens) { const Z = r.mag, x = ptr.x, y = ptr.y; lens.style.left = (x - LR - 7) + "px"; lens.style.top = (y - LR - 7) + "px";
-        lensIn.style.transform = `translate(${(-(x + scrollX) * Z + LR).toFixed(1)}px, ${(-(y + scrollY) * Z + LR).toFixed(1)}px) scale(${Z})`;
+        // line up the copy with the part of the page under the pointer (works for sticky headers too)
+        let cx = x + scrollX, cy = y + scrollY; for (const [o, c] of pairs) { const b = o.getBoundingClientRect(); if (y >= b.top && y < b.bottom) { cx = c.offsetLeft + (x - b.left); cy = c.offsetTop + (y - b.top); break; } }
+        lensIn.style.transform = `translate(${(-cx * Z + LR).toFixed(1)}px, ${(-cy * Z + LR).toFixed(1)}px) scale(${Z})`;
         const w = wordAt(x, y); if (w && w.length > 1) { lensWord.textContent = w; lensWord.style.display = "block"; lensWord.style.left = x + "px"; lensWord.style.top = Math.min(H() - 60, y + LR + 18) + "px"; } else lensWord.style.display = "none";
         ctx.save(); ctx.translate(x + (LR + 4) * .707, y + (LR + 4) * .707); ctx.rotate(Math.PI / 4); const hg = ctx.createLinearGradient(0, -9, 0, 9); hg.addColorStop(0, "#8b5a2b"); hg.addColorStop(.5, "#c08040"); hg.addColorStop(1, "#5c3a1a"); ctx.fillStyle = "#334155"; ctx.fillRect(0, -7, 18, 14); ctx.fillStyle = hg; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(16, -9, Math.max(60, LR * .9), 18, 9) : ctx.rect(16, -9, LR, 18); ctx.fill(); ctx.restore();
         ctx.strokeStyle = "rgba(255,255,255,.55)"; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(x, y, LR * .8, Math.PI * 1.1, Math.PI * 1.45); ctx.stroke(); }
