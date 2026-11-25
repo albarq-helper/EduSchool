@@ -35,6 +35,13 @@
   add("night,midnight", { e: "🌙", name: "Night", night: 0.7, stars: 1 });
   add("dark", { e: "🌑", name: "Dark", night: 0.6 });
   add("shadowy,dim,gloomy", { e: "🌘", name: "Dim", night: 0.35 });
+  // 🔦 light you can play with: the page goes dark and the light follows your finger or mouse
+  add("beam,flashlight,torch,torchlight,spotlight,searchlight,headlight,headlights", { e: "🔦", name: "Torch", torch: { r: 110, c: "255,250,225" }, long: 1 });
+  add("candle,candlelight,lantern,lamplight,glow,glowing", { e: "🕯️", name: "Candle", torch: { r: 120, c: "255,190,110", flicker: 1 }, long: 1 });
+  add("laser,laser beam,laser pointer", { e: "🔴", name: "Laser", laser: 1, long: 1, night: .3 });
+  // ☀️ beams pouring in through a window
+  add("sunbeam,sunbeams,ray,rays,sunray,sunrays,shaft of light", { e: "🌤️", name: "Sunbeam", beams: { c: "255,235,170", from: .12 }, night: .72 });
+  add("moonbeam,moonbeams,moonlight,moonlit", { e: "🌙", name: "Moonbeam", beams: { c: "190,210,255", from: .82 }, night: .8, stars: 1 });
   add("bright", { e: "🔆", name: "Bright", bright: 1 });
   add("dazzling,blinding,glaring", { e: "✨", name: "Dazzling", bright: 2 });
   add("rainbow", { e: "🌈", name: "Rainbow", rain: 1, rainbow: 1 });
@@ -90,7 +97,7 @@
     const r = typeof word === "object" ? word : recipe(word);
     if (!r || (isOff() && !(opts && opts.force))) return false;
     stop();
-    const dur = (opts && opts.dur) || (r.vortex ? 6500 : 6000), t0 = performance.now();
+    const dur = (opts && opts.dur) || (r.long ? 14000 : r.vortex ? 6500 : 6000), t0 = performance.now();
     const cv = document.createElement("canvas"); cv.className = "wx-stage"; cv.setAttribute("aria-hidden", "true");
     const ctx = cv.getContext("2d"); document.body.appendChild(cv);
     const W = () => innerWidth, H = () => innerHeight, dpr = Math.min(2, devicePixelRatio || 1);
@@ -104,6 +111,12 @@
     if (r.heat) layer("rgba(255,120,40,.12)", 1);
     if (r.bright) layer(`radial-gradient(circle at 50% 40%, rgba(255,255,255,${.5 * r.bright}), rgba(255,250,220,${.25 * r.bright}))`, 1);
     if (r.glass) { const g = layer(`rgba(236,242,248,${.35 * r.glass})`, 1); g.style.transition = "opacity 2.5s"; g.style.backdropFilter = g.style.webkitBackdropFilter = `blur(${(r.glass * 5).toFixed(1)}px)`; }
+    // 👆 where the finger or mouse is (the torch and laser follow it; until it moves, they sweep by themselves)
+    const ptr = { x: W() / 2, y: H() / 2, moved: 0 };
+    const onMove = e => { const q = e.touches ? e.touches[0] : e; if (!q) return; ptr.x = q.clientX; ptr.y = q.clientY; ptr.moved = performance.now(); };
+    if (r.torch || r.laser) { addEventListener("pointermove", onMove, { passive: true }); addEventListener("touchmove", onMove, { passive: true }); addEventListener("pointerdown", onMove, { passive: true }); }
+    const dark = r.torch ? layer("rgba(3,5,18,.94)", 1) : null;
+    const cat = { x: -60, y: H() * .8, f: 1 };
     let puddle = null;
     if (r.puddle) { puddle = document.createElement("div"); puddle.className = "wx-layer"; Object.assign(puddle.style, { top: "auto", height: "0", background: "linear-gradient(to bottom, rgba(90,160,230,.35), rgba(40,110,200,.55))", transition: "height 4s ease-in, opacity .8s" }); document.body.appendChild(puddle); layers.push(puddle); requestAnimationFrame(() => puddle.style.height = (r.puddle > 1 ? 22 : 9) + "vh"); }
     // particles
@@ -125,6 +138,7 @@
     // 👕 soaked: water drips off the bottom edge of the cards on screen
     const edges = r.drip ? [...document.querySelectorAll(".card, .item, .panel, .say1, img.pic, .btn, h1, h2")].map(el => el.getBoundingClientRect()).filter(b => b.bottom > 0 && b.bottom < innerHeight && b.width > 30).slice(0, 30) : [];
     const dripping = [];
+    const motes = r.beams ? Array.from({ length: 80 }, () => ({ x: rnd(0, W()), y: rnd(0, H()), r: rnd(.6, 2.2), vy: rnd(.05, .3), ph: rnd(0, 6) })) : [];
     const stars = r.stars ? Array.from({ length: 90 }, () => ({ x: rnd(0, W()), y: rnd(0, H() * .7), r: rnd(.5, 1.8), ph: rnd(0, 6) })) : [];
     const flashes = r.flash ? Array.from({ length: r.flash }, (_, i) => 700 + i * rnd(1200, 1900)) : [];
     const sfx = soundFor(r, dur / 1000);
@@ -152,6 +166,21 @@
       if (r.wind && (r.rain || r.snow)) { ctx.strokeStyle = "rgba(255,255,255,.35)"; ctx.lineWidth = 2; for (let k = 0; k < r.wind * 2; k++) { const y = (k * 97 + t / 3) % H(), x = ((t * (1 + k % 3)) / 2 + k * 211) % (W() + 300) - 150; ctx.beginPath(); ctx.moveTo(x, y); ctx.quadraticCurveTo(x + 60, y - 12, x + 140, y); ctx.stroke(); } }
       drops.forEach(d => { d.y += d.vy; d.rot += d.vr; if (d.y > H() + 40) { d.y = -40; d.x = rnd(0, W()); } ctx.save(); ctx.translate(d.x, d.y); ctx.rotate(d.rot); ctx.font = d.s + "px system-ui"; ctx.fillText(d.e, -d.s / 2, d.s / 2); ctx.restore(); });
       splashes.forEach((s, k) => { s.a -= .06; if (s.a <= 0) return splashes.splice(k, 1); ctx.strokeStyle = `rgba(110,150,210,${s.a})`; ctx.lineWidth = 1; ctx.beginPath(); ctx.ellipse(s.x, s.y, (1 - s.a) * 10 + 2, (1 - s.a) * 3 + 1, 0, 0, 7); ctx.stroke(); });
+      if (r.torch || r.laser) { if (t - (ptr.moved ? ptr.moved - t0 : -1e9) > 2500 || !ptr.moved) { ptr.x = W() / 2 + Math.sin(t / 900) * W() * .32; ptr.y = H() * .45 + Math.sin(t / 650) * H() * .22; } }
+      if (dark) { const T = r.torch, fl = T.flicker ? 1 + Math.sin(t / 60) * .04 + Math.sin(t / 23) * .03 : 1, R0 = T.r * fl, x = ptr.x.toFixed(0), y = ptr.y.toFixed(0), a = Math.max(.15, fade);
+        dark.style.background = `radial-gradient(circle at ${x}px ${y}px, rgba(${T.c},${.07 * a}) 0, rgba(${T.c},${.03 * a}) ${R0 * .6}px, rgba(3,5,18,${.55 * a}) ${R0}px, rgba(3,5,18,${.94 * a}) ${R0 * 1.6}px)`;
+        if (!T.flicker) { ctx.save(); ctx.translate(ptr.x + R0 * .75, ptr.y + R0 * .75); ctx.rotate(0); ctx.font = "40px system-ui"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("🔦", 0, 0); ctx.restore(); }
+        else { ctx.font = "34px system-ui"; ctx.textAlign = "center"; ctx.fillText("🕯️", ptr.x, ptr.y + 12); ctx.textAlign = "start"; } }
+      if (r.laser) { const tx = ptr.x + (cat.x < ptr.x ? -46 : 46), dx = tx - cat.x, dy = ptr.y + 10 - cat.y; cat.x += dx * .045; cat.y += dy * .045; if (Math.abs(dx) > 4) cat.f = dx > 0 ? -1 : 1; const near = Math.hypot(dx, dy) < 50;
+        ctx.save(); ctx.translate(cat.x, cat.y + (near ? Math.sin(t / 60) * 6 : 0)); ctx.scale(cat.f, 1); ctx.font = "52px system-ui"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(near ? "😼" : "🐈", 0, 0); ctx.restore();
+        const g = ctx.createRadialGradient(ptr.x, ptr.y, 0, ptr.x, ptr.y, 20); g.addColorStop(0, "rgba(255,255,255,1)"); g.addColorStop(.25, "rgba(255,30,30,1)"); g.addColorStop(1, "rgba(255,0,0,0)"); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(ptr.x, ptr.y, 20, 0, 7); ctx.fill(); }
+      if (r.beams) { const B = r.beams, ox = W() * B.from, sway = Math.sin(t / 1400) * .05;
+        ctx.save(); ctx.globalCompositeOperation = "lighter";
+        for (let k = 0; k < 5; k++) { const ang = (B.from < .5 ? .55 : Math.PI - .55 - .45) + k * .11 + sway, len = Math.hypot(W(), H()) * 1.1, wd = .035 + (k % 2) * .02;
+          const g = ctx.createLinearGradient(ox, 0, ox + Math.cos(ang) * len, Math.sin(ang) * len); g.addColorStop(0, `rgba(${B.c},${.42 * fade})`); g.addColorStop(.7, `rgba(${B.c},${.1 * fade})`); g.addColorStop(1, `rgba(${B.c},0)`);
+          ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(ox, -10); ctx.lineTo(ox + Math.cos(ang - wd) * len, -10 + Math.sin(ang - wd) * len); ctx.lineTo(ox + Math.cos(ang + wd) * len, -10 + Math.sin(ang + wd) * len); ctx.closePath(); ctx.fill(); }
+        motes.forEach(m => { m.x += Math.sin(t / 900 + m.ph) * .25; m.y += m.vy; if (m.y > H()) m.y = -5; const tw = .45 + .55 * Math.sin(t / 250 + m.ph); ctx.fillStyle = `rgba(${B.c},${tw * .9 * fade})`; ctx.beginPath(); ctx.arc(m.x, m.y, m.r, 0, 7); ctx.fill(); });
+        ctx.restore(); ctx.font = "54px system-ui"; ctx.fillText("🪟", ox - 27, 44); }
       if (beads.length) beads.forEach(b => { if (t < b.born) return; if (b.r < b.max) b.r += .08; 
           if (b.run && b.r >= b.max) { b.vy = Math.min(b.vy + .04, 2.4); b.x += Math.sin(t / 180 + b.max) * .3; b.y += b.vy; b.trail.push([b.x, b.y]); if (b.trail.length > 90) b.trail.shift(); if (b.y > H() + 10) { b.y = rnd(-20, H() * .3); b.x = rnd(0, W()); b.r = 0; b.vy = 0; b.trail = []; b.born = t; } }
           if (b.trail.length > 1) { ctx.strokeStyle = "rgba(255,255,255,.35)"; ctx.lineWidth = b.r * .7; ctx.beginPath(); b.trail.forEach(([x, y], k) => k ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.stroke(); }
@@ -178,12 +207,12 @@
     }
     const chip = document.createElement("div");
     chip.className = "wx-chip"; chip.setAttribute("role", "status");
-    chip.innerHTML = `<span>${r.e} ${r.name}</span><button type="button" data-x>✕ Stop</button><button type="button" data-off>Turn effects off</button>`;
+    chip.innerHTML = `<span>${r.e} ${r.name}${r.torch || r.laser ? " · move your finger!" : ""}</span><button type="button" data-x>✕ Stop</button><button type="button" data-off>Turn effects off</button>`;
     chip.querySelector("[data-x]").onclick = () => stop();
     chip.querySelector("[data-off]").onclick = () => { try { localStorage.setItem(OFF_KEY, "1"); } catch (e) {} stop(); };
     document.body.appendChild(chip);
     addEventListener("resize", size);
-    current = { stop() { if (ended) return; ended = true; cancelAnimationFrame(raf); sfx.stop(); moved.stop(); removeEventListener("resize", size); cv.remove(); chip.remove(); layers.forEach(l => { l.style.opacity = 0; if (l === puddle) l.style.height = "0"; setTimeout(() => l.remove(), 900); }); } };
+    current = { stop() { if (ended) return; ended = true; cancelAnimationFrame(raf); sfx.stop(); moved.stop(); removeEventListener("resize", size); removeEventListener("pointermove", onMove); removeEventListener("touchmove", onMove); removeEventListener("pointerdown", onMove); cv.remove(); chip.remove(); layers.forEach(l => { l.style.opacity = 0; if (l === puddle) l.style.height = "0"; setTimeout(() => l.remove(), 900); }); } };
     raf = requestAnimationFrame(frame);
     return true;
   }
