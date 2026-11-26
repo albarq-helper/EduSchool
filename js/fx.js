@@ -111,6 +111,41 @@
         if (t < 2500) big(ctx, "Tap the big cats to honk them away!", W / 2, H * .12, 20, "#7c2d12"); } };
   });
 
+  // 👑 BESTOWED: a royal ceremony; the hero walks up the red carpet and kneels, tap the king to bestow the medal; fanfare, cheers and fireworks
+  Weather.add("bestow,bestowed,bestows,bestowing,award,awarded,awarding,honour,honor,honoured,honored,medal,medals,ceremony,knighted,decorated", { e: "👑", name: "Bestowed", dur: 30000, track: 1, capture: 1, top: 1 }, A => {
+    let given = 0, givenAt = 0, ready = 0, auto = 9000; const bits = [], fw = [];
+    const note = (f, d, at) => A.noise(d, .28, "band", f, f, 40, at);
+    const fanfare = at => [[523, .18], [659, .18], [784, .18], [1046, .6]].reduce((t0, [f, d]) => (note(f, d, t0), note(f * 1.5, d, t0), t0 + d), at);
+    fanfare(.3); A.setChip("watch the ceremony…");
+    const give = () => { if (given || !ready) return; given = 1; givenAt = performance.now(); A.setChip("🏅 medal bestowed!"); fanfare(.8); A.noise(2.2, .22, "band", 900, 1700, 1, .8); };
+    return { down() { give(); },
+      frame(t) { const { ctx } = A, W = A.W(), H = A.H(), S = Math.min(W, H) * .2, kx = W / 2, ky = H * .36, now = performance.now();
+        // throne room
+        const bg = ctx.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, "rgba(76,29,149,.96)"); bg.addColorStop(1, "rgba(30,27,75,.97)"); ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+        for (let i = 0; i < 4; i++) { const px = W * (.08 + i * .28 + (i > 1 ? .0 : 0)); if (Math.abs(px - kx) < S) continue; ctx.fillStyle = "rgba(226,232,240,.18)"; ctx.fillRect(px - 18, H * .05, 36, H * .8); }
+        [[.2, "#dc2626"], [.8, "#dc2626"]].forEach(([fx, c]) => { ctx.fillStyle = c; ctx.beginPath(); ctx.moveTo(W * fx - 26, H * .06); ctx.lineTo(W * fx + 26, H * .06); ctx.lineTo(W * fx + 26, H * .32); ctx.lineTo(W * fx, H * .27); ctx.lineTo(W * fx - 26, H * .32); ctx.fill(); em(ctx, "🦁", W * fx, H * .16, 26); });
+        ctx.fillStyle = "#b91c1c"; ctx.beginPath(); ctx.moveTo(kx - S * .5, ky + S * .55); ctx.lineTo(kx + S * .5, ky + S * .55); ctx.lineTo(kx + S * 1.6, H); ctx.lineTo(kx - S * 1.6, H); ctx.fill();
+        ctx.strokeStyle = "#facc15"; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(kx - S * .5, ky + S * .55); ctx.lineTo(kx - S * 1.6, H); ctx.moveTo(kx + S * .5, ky + S * .55); ctx.lineTo(kx + S * 1.6, H); ctx.stroke();
+        // throne + king
+        ctx.fillStyle = "#ca8a04"; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(kx - S * .55, ky - S * .85, S * 1.1, S * 1.45, 18) : ctx.rect(kx - S * .55, ky - S * .85, S * 1.1, S * 1.45); ctx.fill(); ctx.fillStyle = "#7f1d1d"; ctx.fillRect(kx - S * .4, ky - S * .65, S * .8, S * 1.05);
+        em(ctx, "🤴", kx, ky, S * .95); em(ctx, "👑", kx, ky - S * .55 + Math.sin(t / 400) * 2, S * .45);
+        // the hero walks up, kneels, then stands proudly
+        const walkK = Math.min(1, t / 2600), hx = kx + S * .02, hy = H + S * .3 - (H + S * .3 - (ky + S * 1.05)) * walkK, step = walkK < 1 ? Math.abs(Math.sin(t / 120)) * 6 : 0;
+        if (walkK >= 1 && !ready) { ready = 1; A.setChip("tap the king to bestow the medal 👑"); }
+        if (ready && !given && t > auto) give();
+        const standing = given && now - givenAt > 1700; em(ctx, walkK < 1 ? "🚶" : standing ? "🦸" : "🧎", hx, hy - step, S * (walkK < 1 ? .9 : .85), 0, walkK < 1 || standing ? 1 : -1);
+        // the medal: in the king's hand, then floats down onto the hero
+        const mk = given ? Math.min(1, (now - givenAt) / 1400) : 0, mx = kx + S * .35 + (hx - kx - S * .35) * mk, my = ky + S * .1 + (hy - S * .05 - ky - S * .1) * mk - Math.sin(mk * Math.PI) * S * .6;
+        if (!(standing && mk >= 1)) em(ctx, "🏅", mx, my, S * .4, Math.sin(t / 300) * .15); else em(ctx, "🏅", hx + S * .05, hy + S * .05, S * .3);
+        if (ready && !given) { ctx.strokeStyle = `rgba(250,204,21,${.5 + .5 * Math.sin(t / 200)})`; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(kx, ky, S * .75, 0, 7); ctx.stroke(); big(ctx, "Tap the king to bestow the medal!", W / 2, H * .9, 20, "#7c2d12"); }
+        // celebration
+        if (given && now - givenAt > 1400) { if (bits.length < 300 && Math.random() < .6) for (let k = 0; k < 6; k++) bits.push({ x: Math.random() * W, y: -10, vx: (Math.random() - .5) * 2, vy: Math.random() * 2 + 1, c: ["#facc15", "#f43f5e", "#22c55e", "#60a5fa", "#fff"][k % 5], a: 1 });
+          if (Math.random() < .05) { const fx = W * (.15 + Math.random() * .7), fy = H * (.1 + Math.random() * .3); A.noise(.4, .15, "band", 2200, 500, 1); for (let k = 0; k < 40; k++) { const a = k / 40 * 6.28, sp = 2 + Math.random() * 3; fw.push({ x: fx, y: fy, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, c: ["#facc15", "#f472b6", "#a5f3fc", "#bbf7d0"][Math.floor(Math.random() * 4)], a: 1 }); } }
+          big(ctx, "Bestowed! 🏅", W / 2, H * .88, 48, "#ca8a04"); bubble(ctx, "For your bravery!", kx + S * 1.1, ky - S * .5, 18); }
+        bits.forEach(p => { p.x += p.vx; p.y += p.vy; p.vy += .03; if (p.y > H) p.a = 0; ctx.fillStyle = p.c; ctx.globalAlpha = p.a; ctx.fillRect(p.x, p.y, 6, 4); }); for (let i = bits.length - 1; i >= 0; i--) if (bits[i].a <= 0) bits.splice(i, 1);
+        fw.forEach(p => { p.x += p.vx; p.y += p.vy; p.vy += .05; p.a -= .015; ctx.globalAlpha = Math.max(0, p.a); ctx.fillStyle = p.c; ctx.beginPath(); ctx.arc(p.x, p.y, 2.5, 0, 7); ctx.fill(); }); for (let i = fw.length - 1; i >= 0; i--) if (fw[i].a <= 0) fw.splice(i, 1); ctx.globalAlpha = 1; } };
+  });
+
   // 📦 RELOCATED: drag each thing to its new home (the dashed shadow); all moved = 🎉
   Weather.add("relocate,relocated,relocates,relocating,relocation,move house,moved house,rearrange,rearranged", { e: "📦", name: "Relocate", dur: 30000, track: 1, capture: 1, top: 1 }, A => {
     const W = A.W(), H = A.H(), S = Math.min(W, H) * .11, ITEMS = ["🪴", "📚", "🧸", "🛋️"], bits = [];
