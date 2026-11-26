@@ -342,14 +342,16 @@
 
   // 📚 PRECARIOUS: a wobbly stack of books on a cliff edge; move left and right to keep it balanced for 10 seconds
   Weather.add("precarious,precariously,teeter,teetered,teetering,unstable,unsteady,balance,balanced,balancing,topple,toppled", { e: "📚", name: "Precarious", dur: 40000, track: 1, capture: 1, top: 1 }, A => {
-    let ang = 0, vel = 0, held = 0, state = 0, endAt = 0, last = 0, tStart = 0; const GOAL = 10000, books = ["#ef4444", "#3b82f6", "#22c55e", "#f59e0b", "#a855f7", "#ec4899"];
-    A.setChip("move left & right to balance! ⚖️");
-    return { down() { if (state && performance.now() - endAt > 700) { ang = (Math.random() - .5) * .05; vel = 0; held = 0; state = 0; tStart = 0; A.setChip("move left & right to balance! ⚖️"); } },
+    let ang = 0, vel = 0, held = 0, state = 0, endAt = 0, last = 0, tStart = 0, keyPush = 0, push = 0; const GOAL = 10000, books = ["#ef4444", "#3b82f6", "#22c55e", "#f59e0b", "#a855f7", "#ec4899"];
+    const kd = e => { if (e.key === "ArrowLeft") { keyPush = -1; e.preventDefault(); } if (e.key === "ArrowRight") { keyPush = 1; e.preventDefault(); } }, ku = e => { if (e.key === "ArrowLeft" || e.key === "ArrowRight") keyPush = 0; };
+    addEventListener("keydown", kd); addEventListener("keyup", ku);
+    A.setChip("move the SAME way it leans ⚖️");
+    return { stop() { removeEventListener("keydown", kd); removeEventListener("keyup", ku); }, down() { if (state && performance.now() - endAt > 700) { ang = (Math.random() - .5) * .05; vel = 0; held = 0; state = 0; tStart = 0; A.setChip("move left & right to balance! ⚖️"); } },
       frame(t) { const { ctx } = A, W = A.W(), H = A.H(), dt = Math.min(40, t - (last || t)); last = t; if (!tStart) tStart = t; const bx = W * .55, by = H * .72, bw = Math.min(W, H) * .2, bh = 26;
         // the cliff
         ctx.fillStyle = "rgba(186,230,253,.92)"; ctx.fillRect(0, 0, W, H); ctx.fillStyle = "#78716c"; ctx.beginPath(); ctx.moveTo(0, by); ctx.lineTo(bx + 30, by); ctx.lineTo(bx + 60, H); ctx.lineTo(0, H); ctx.fill(); ctx.fillStyle = "#4d7c0f"; ctx.fillRect(0, by - 6, bx + 30, 8);
         ctx.fillStyle = "rgba(14,116,144,.5)"; ctx.fillRect(bx + 60, H * .93, W, H * .07);
-        if (state === 0) { const push = A.ptr.moved ? (A.ptr.x - W / 2) / (W / 2) : 0; if (location.hostname === "localhost") window.__wxAng = ang; const wind = Math.sin((t - tStart) / 700) * .0009 + Math.sin((t - tStart) / 1900) * .0007; vel += (ang * 4.4e-7 + wind * 1e-4 - push * 6e-7) * dt; vel *= .99; ang += vel * dt; held = t - tStart;
+        if (state === 0) { push = keyPush || (A.ptr.moved ? Math.max(-1, Math.min(1, (A.ptr.x - W / 2) / (W * .4))) : 0); if (location.hostname === "localhost") window.__wxAng = ang; const wind = Math.sin((t - tStart) / 700) * .0009 + Math.sin((t - tStart) / 1900) * .0007; vel += (ang * 4.4e-7 + wind * 1e-4 - push * 6e-7) * dt; vel *= .99; ang += vel * dt; held = t - tStart;
           if (Math.abs(ang) > .7) { state = 2; endAt = performance.now(); A.noise(.9, .3, "lowpass", 600, 150, 1); A.setChip("oops! tap to try again"); } else if (held > GOAL) { state = 1; endAt = performance.now(); [0, .2, .4].forEach(d => A.chirp(d)); A.setChip("✨ balanced! tap to play again"); } if (Math.random() < .03) A.noise(.12, .06, "band", 300, 200, 3); }
         const fallK = state === 2 ? Math.min(1, (performance.now() - endAt) / 900) : 0;
         ctx.save(); ctx.translate(bx, by); ctx.rotate(ang + Math.sign(ang) * fallK * 1.2); ctx.translate(Math.sign(ang) * fallK * 120, fallK * fallK * H * .3);
@@ -358,6 +360,13 @@
         ctx.fillStyle = "#e5e7eb"; ctx.fillRect(W / 2 - 110, H * .1, 220, 14); ctx.fillStyle = "#16a34a"; ctx.fillRect(W / 2 - 110, H * .1, 220 * Math.min(1, held / GOAL), 14);
         if (state === 0) big(ctx, `Keep it steady! ${Math.max(0, Math.ceil((GOAL - held) / 1000))}`, W / 2, H * .18, 24, Math.abs(ang) > .3 ? "#dc2626" : "#0f172a");
         if (state === 1) big(ctx, "Phew! Saved from a precarious spot ✨", W / 2, H * .3, 28, "#16a34a"); if (state === 2) big(ctx, "Oops! That was precarious 😬", W / 2, H * .3, 30, "#b91c1c");
+        // help: which way to move, and how hard you are pushing
+        if (state === 0) { const topY = by - books.length * bh - 70, dirn = Math.sign(ang), danger = Math.abs(ang) > .35;
+          if (Math.abs(ang) > .06) { const ax = bx + dirn * 70; big(ctx, dirn > 0 ? "➡️" : "⬅️", ax, topY, danger ? 54 : 40, "#0f172a"); big(ctx, dirn > 0 ? "move RIGHT!" : "move LEFT!", ax, topY + 40, danger ? 22 : 17, danger ? "#dc2626" : "#0f172a"); }
+          const pw = Math.min(W * .7, 420), px0 = W / 2 - pw / 2, py0 = H * .94; ctx.fillStyle = "rgba(255,255,255,.9)"; ctx.fillRect(px0, py0 - 10, pw, 20); ctx.fillStyle = "#94a3b8"; ctx.fillRect(W / 2 - 1, py0 - 14, 2, 28);
+          ctx.fillStyle = "#2563eb"; const pl = push * pw / 2; ctx.fillRect(Math.min(W / 2, W / 2 + pl), py0 - 6, Math.abs(pl), 12); em(ctx, "👆", W / 2 + pl, py0 - 22, 30);
+          ctx.font = "800 13px system-ui"; ctx.fillStyle = "#334155"; ctx.textAlign = "center"; ctx.fillText("◀ push left", px0 + 50, py0 + 26); ctx.fillText("push right ▶", px0 + pw - 50, py0 + 26); ctx.textAlign = "start";
+          if (t - tStart < 4000) big(ctx, "Move the mouse (or your finger, or ← →) the SAME way the books lean", W / 2, H * .26, 17, "#1e3a8a"); }
         ctx.strokeStyle = "rgba(15,23,42,.35)"; ctx.setLineDash([4, 6]); ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(bx, by - books.length * bh - 40); ctx.stroke(); ctx.setLineDash([]); } };
   });
 

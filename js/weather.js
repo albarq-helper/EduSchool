@@ -205,8 +205,8 @@
     // 🌀 the page itself moves
     const moved = movePage(r, dur, typeof word === "string" ? word : "");
     // 🧩 effects from js/fx.js: { frame(t, life, fade), down(x, y), move(x, y), up(x, y), stop() }
-    let plug = null; const kidsOf = () => [...document.body.children].filter(el => !/^(SCRIPT|STYLE|CANVAS|DIALOG)$/.test(el.tagName) && !/(wx-|egg-)/.test(el.className || ""));
-    if (r.fx && FX[r.fx]) { try { plug = FX[r.fx]({ ctx, W, H, dur, ptr, rnd, noise, boom, plink, chirp, ani: (el, kf, o) => { try { const a = el.animate(kf, o); return a; } catch (e) { return null; } }, kids: kidsOf, word: typeof word === "string" ? word : "", setChip: html => { const c = document.querySelector(".wx-chip [data-fx]"); if (c) c.innerHTML = html; }, reduce: reduce() }) || null; } catch (e) { plug = null; } }
+    let plug = null, chipText = ""; const kidsOf = () => [...document.body.children].filter(el => !/^(SCRIPT|STYLE|CANVAS|DIALOG)$/.test(el.tagName) && !/(wx-|egg-)/.test(el.className || ""));
+    if (r.fx && FX[r.fx]) { try { plug = FX[r.fx]({ ctx, W, H, dur, ptr, rnd, noise, boom, plink, chirp, ani: (el, kf, o) => { try { const a = el.animate(kf, o); return a; } catch (e) { return null; } }, kids: kidsOf, word: typeof word === "string" ? word : "", setChip: html => { chipText = html; const c = document.querySelector(".wx-chip [data-fx]"); if (c) c.innerHTML = html; }, reduce: reduce() }) || null; } catch (e) { plug = null; } }
     const pDown = e => { if (!plug || (e.target && e.target.closest && e.target.closest(".wx-chip"))) return; if (r.capture) { e.preventDefault(); e.stopPropagation(); } if (e.type === "pointerdown" && plug.down) plug.down(e.clientX, e.clientY); };
     const pMove = e => { if (plug && plug.move) plug.move(e.clientX, e.clientY); };
     const pUp = e => { if (!plug || (e.target && e.target.closest && e.target.closest(".wx-chip"))) return; if (r.capture) { e.preventDefault(); e.stopPropagation(); } if (e.type === "pointerup" && plug.up) plug.up(e.clientX, e.clientY); };
@@ -365,7 +365,7 @@
       [["↺", "Tilt left", () => tiltBy(-.2)], ["➖", "Shorter beam", () => lenBy(-40)], ["➕", "Longer beam", () => lenBy(40)], ["↻", "Tilt right", () => tiltBy(.2)]].forEach(([t, l, f]) => { const b = document.createElement("button"); b.type = "button"; b.textContent = t; b.title = l; b.setAttribute("aria-label", l); b.onpointerdown = e => { e.stopPropagation(); f(); }; c.appendChild(b); });
       chip.insertBefore(c, chip.querySelector("[data-x]")); }
     if (r.torch || r.laser || r.eyes || r.bino || r.mag || r.peep || r.rifle || r.top) chip.classList.add("top");
-    if (r.fx) { const fxs = document.createElement("b"); fxs.dataset.fx = "1"; fxs.style.padding = "0 4px"; chip.insertBefore(fxs, chip.querySelector("[data-x]")); }
+    if (r.fx) { const fxs = document.createElement("b"); fxs.dataset.fx = "1"; fxs.style.padding = "0 4px"; fxs.innerHTML = chipText; chip.insertBefore(fxs, chip.querySelector("[data-x]")); }
     if (r.rifle) { const sc = document.createElement("b"); sc.dataset.score = "1"; sc.textContent = "🎈 0"; sc.style.padding = "0 6px"; chip.insertBefore(sc, chip.querySelector("[data-x]")); }
     chip.querySelector("[data-x]").onclick = () => stop();
     chip.querySelector("[data-off]").onclick = () => { try { localStorage.setItem(OFF_KEY, "1"); } catch (e) {} stop(); };
