@@ -3,7 +3,7 @@
 <title>My English level · Helper Academy</title><link rel="icon" href="assets/icons/brilliant.png">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
 <link rel="stylesheet" href="css/app.css">
-<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261126d"></script><script src="js/icons.js?v=20261126d"></script><script src="js/app.js?v=20261126d"></script><script src="js/tense.js?v=20261126d"></script><script src="js/joiners.js?v=20261126d"></script><script src="js/talk.js?v=20261126d"></script><script src="js/grammarmap.js?v=20261126d"></script><script src="js/speak.js?v=20261126d"></script>
+<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261126e"></script><script src="js/icons.js?v=20261126e"></script><script src="js/app.js?v=20261126e"></script><script src="js/tense.js?v=20261126e"></script><script src="js/joiners.js?v=20261126e"></script><script src="js/talk.js?v=20261126e"></script><script src="js/grammarmap.js?v=20261126e"></script><script src="js/speak.js?v=20261126e"></script>
 <style>
 .lhead{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;justify-content:space-between;margin-bottom:12px}.lhead h1{margin:0}.lhead p{margin:4px 0 0;color:var(--muted);max-width:70ch}
 .who{display:flex;gap:6px;flex-wrap:wrap}.who button{border:1.5px solid var(--rule);background:var(--sheet);border-radius:999px;padding:6px 12px;font:800 .9rem var(--f-body);cursor:pointer}.who button[aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:#fff}
@@ -46,13 +46,43 @@ function draw(){
       <div class="key"><span><i style="background:#cbd5e1"></i>not yet</span><span><i style="background:#fbbf24"></i>tried</span><span><i style="background:#60a5fa"></i>met (3×)</span><span><i style="background:#22c55e"></i>steady (5× in 2 stories)</span><span><i style="background:#7c3aed"></i>mastered (10×)</span></div></div></div>
     <div class="panel"><b>🧭 Four skills</b><span class="muted">${PL?`Level quiz: <b>${esc(PL.level)}</b> (${new Date(PL.created_at).toLocaleDateString()})`:"No level quiz yet: it shows where to start."}</span>
       <div style="display:flex;gap:6px;flex-wrap:wrap"><a class="btn small" href="placement.html">🎯 Level quiz</a><a class="btn small ghost" href="read.html">📖 Reading</a><a class="btn small ghost" href="write.html">📝 Writing</a><a class="btn small ghost" href="songs.html">🎧 Listening</a><a class="btn small ghost" href="list.html">🎤 Speaking (tap 🎤 by any word)</a></div></div>
-    ${ME.role==="teacher"&&CUR===ME.id?`<div class="panel"><b>🏷️ Word levels (AI, parent only)</b><span class="muted">Adds a CEFR tag (A1–C2) to dictionary words that don't have one, 120 words per click. Each click is one AI call.</span><div><button type="button" class="btn small" id="tagGo">Tag the next 120 words</button> <span id="tagMsg" class="muted"></span></div></div>`:""}
+    ${ME.role==="teacher"&&CUR===ME.id?`<div class="panel"><b>🏷️ Word levels (AI, parent only)</b><span class="muted">Adds a CEFR tag (A1–C2) to dictionary words that don't have one, 120 words per click. Each click is one AI call.</span><div><button type="button" class="btn small" id="tagGo">Tag the next 120 words</button> <span id="tagMsg" class="muted"></span></div></div>
+    <div class="panel"><b>🧩 Real parts + 💡 memory tricks (AI, parent only)</b><span class="muted">For the harder words: the real word parts and what they meant (be + stow = "to place on"), then a fun trick to remember it. You check each one before it's saved; easy words are skipped. One AI call per click.</span><div><button type="button" class="btn small" id="trkGo">Make tricks for the next 40 words</button> <span id="trkMsg" class="muted"></span></div><div id="trkList"></div></div>`:""}
     <div class="panel"><b>✅ Try a sentence</b><span class="muted">Type your own sentence. ${canCheck?"The AI gives you a hint first, then the fix if you want it.":"Ask your parent to turn on AI Check for you."}</span>
       <textarea id="ts" maxlength="300" placeholder="e.g. Yesterday I have seen a big dog." ${canCheck?"":"disabled"}></textarea><div><button type="button" class="btn" id="tsGo" ${canCheck?"":"disabled"}>✅ Check</button> <span id="tsMsg" class="muted"></span></div><div id="tsOut"></div></div>
     ${ME.role==="teacher"&&CUR!==ME.id?`<div class="panel"><b>🔒 AI Check for this learner</b><label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="acOn" ${SET.check_on?"checked":""}> Let this learner use AI Check (costs a little each time)</label>
       <label style="display:flex;gap:8px;align-items:center">Up to <input type="number" id="acCap" min="0" max="50" value="${SET.daily_cap}" style="width:5em"> checks a day</label><div><button type="button" class="btn small" id="acSave">Save</button> <span id="acMsg" class="muted"></span></div></div>`:""}
     ${GrammarMap.LEVELS.map(lv=>`<h2 class="lv">${lv} <small>${{A1:"Starter",A2:"Elementary",B1:"Intermediate",B2:"Upper-intermediate",C1:"Advanced",C2:"Proficiency"}[lv]}</small></h2><div class="pts">${rows.filter(r=>r.p.level===lv).map(r=>`<button type="button" class="pt ${r.status}" data-pt="${esc(r.p.key)}"><span class="d"></span>${esc(r.p.name)}${r.uses?` <small>×${r.uses}</small>`:""}</button>`).join("")}</div>`).join("")}`;
-  if($("tsGo"))$("tsGo").onclick=check;if($("acSave"))$("acSave").onclick=saveSet;if($("tagGo"))$("tagGo").onclick=tagWords;}
+  if($("tsGo"))$("tsGo").onclick=check;if($("acSave"))$("acSave").onclick=saveSet;if($("tagGo"))$("tagGo").onclick=tagWords;if($("trkGo"))$("trkGo").onclick=makeTricks;}
+let TRKS=[];
+async function makeTricks(){const b=$("trkGo"),m=$("trkMsg");b.disabled=true;m.textContent="Finding words…";$("trkList").innerHTML="";
+  try{const {data:ws}=await C.from("words").select("id,headword,meaning").eq("lang","en").eq("memory_trick","").limit(3000);
+    const todo=(ws||[]).filter(w=>/^[A-Za-z][A-Za-z' -]{3,24}$/.test(w.headword)&&w.headword.split(" ").length<=2).sort((a,b)=>b.headword.length-a.headword.length).slice(0,40);
+    if(!todo.length){m.textContent="Every word has been done.";return;}
+    m.textContent=`Asking the AI about ${todo.length} words…`;
+    const prompt=`You help a 10-year-old (Grade 5, Arabic speaker) remember English words. For each word below give:
+- "parts": the REAL word parts from its true history (e.g. "be + stow", "pre + carious", "re + locate"). Only real etymology; if you are not sure, or the word has no useful parts, use "".
+- "origin": one or two short sentences a child understands: what each real part meant and how that became today's meaning. "" if parts is "".
+- "trick": a short, fun memory trick (a picture, a hidden smaller word, a sound-alike or a mini story) that makes the meaning stick. If the trick splits the word in a way that is NOT its real history, end it with "(Just a trick: the real parts are …)". Use "" for easy everyday words a 10-year-old already knows.
+Keep each field under 220 characters. Reply with JSON only: {"items":[{"headword":"…","parts":"…","origin":"…","trick":"…"}]}
+
+Words (with their meaning):
+${todo.map(w=>`${w.headword} — ${(w.meaning||"").slice(0,90)}`).join("\n")}`;
+    const r=await C.functions.invoke("ai",{body:{prompt,task:"tricks"}});if(r.error){let d={};try{d=await r.error.context.json();}catch(x){}m.textContent="Not made: "+(d.error||r.error.message);return;}
+    const txt=String((r.data&&(r.data.text||r.data.answer||r.data.content))||"");let out={};try{out=JSON.parse(txt.replace(/^[^{]*/,"").replace(/[^}]*$/,""));}catch(x){m.textContent="The AI answer was not readable. Try again.";return;}
+    const by=Object.fromEntries(todo.map(w=>[w.headword.toLowerCase(),w]));
+    TRKS=(out.items||[]).map(x=>({w:by[String(x.headword||"").toLowerCase()],parts:String(x.parts||""),origin:String(x.origin||""),trick:String(x.trick||"")})).filter(x=>x.w);
+    const easy=TRKS.filter(x=>!x.trick&&!x.parts),hard=TRKS.filter(x=>x.trick||x.parts);
+    if(easy.length)await C.rpc("set_word_tricks",{p:easy.map(x=>({id:x.w.id,parts:"",origin:"",trick:""}))});
+    m.textContent=`${hard.length} to check (${easy.length} easy words skipped). Fix anything, untick the ones you don't like, then save.`;TRKS=hard;
+    $("trkList").innerHTML=hard.map((x,k)=>`<div class="trow" style="border:1.5px solid var(--rule);border-radius:12px;padding:8px 10px;margin:6px 0;display:grid;gap:4px">
+      <label style="font-weight:800"><input type="checkbox" data-tk="${k}" checked> ${esc(x.w.headword)}</label>
+      <label class="muted">🧩 Real parts <input data-tp="${k}" value="${esc(x.parts)}" style="width:100%"></label>
+      <label class="muted">What they meant <textarea data-to="${k}" rows="2" style="width:100%">${esc(x.origin)}</textarea></label>
+      <label class="muted">💡 Memory trick <textarea data-tt="${k}" rows="2" style="width:100%">${esc(x.trick)}</textarea></label></div>`).join("")+(hard.length?`<button type="button" class="btn" id="trkSave">💾 Save the ticked ones</button>`:"");
+    if($("trkSave"))$("trkSave").onclick=async()=>{const rows=TRKS.map((x,k)=>({k,x})).filter(({k})=>document.querySelector(`[data-tk="${k}"]`).checked).map(({k,x})=>({id:x.w.id,parts:document.querySelector(`[data-tp="${k}"]`).value.trim(),origin:document.querySelector(`[data-to="${k}"]`).value.trim(),trick:document.querySelector(`[data-tt="${k}"]`).value.trim()}));
+      const {data:n,error}=await C.rpc("set_word_tricks",{p:rows});m.textContent=error?"Not saved: "+error.message:`Saved ${n} words. Unticked ones will come back next time.`;if(!error)$("trkList").innerHTML="";};}
+  finally{b.disabled=false;}}
 async function tagWords(){const b=$("tagGo"),m=$("tagMsg");b.disabled=true;m.textContent="Finding words…";
   try{const {data:ws}=await C.from("words").select("id,headword,tags").eq("lang","en").limit(3000);
     const todo=(ws||[]).filter(w=>!(w.tags||[]).some(t=>/^CEFR: /.test(t))).slice(0,120);if(!todo.length){m.textContent="All words have a level.";return;}

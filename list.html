@@ -137,7 +137,7 @@ input.ok,textarea.ok{border-color:var(--good)!important;background:var(--good-so
 .dp{display:grid;gap:2px;background:var(--paper);border-radius:10px;padding:6px 8px;font-size:.88rem}.dp.me{background:#fff7ed;border:1px solid #fdba74}.dp b{font-size:.95rem}.dp .ar,.dar{font-size:.88rem;color:var(--muted)}
 .dx{color:#9a3412}.dn{color:var(--muted);font-size:.82rem!important}.linkb{background:none;border:0;padding:0;font:inherit;font-weight:800;color:var(--accent);cursor:pointer}
 </style>
-<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261126d"></script><script src="js/icons.js?v=20261126d"></script><script src="js/app.js?v=20261126d"></script><script src="js/sets.js?v=20261126d"></script><script src="js/weather.js?v=20261126d"></script><script src="js/fx.js?v=20261126d"></script><script src="js/speak.js?v=20261126d"></script><script src="js/eggs.js?v=20261126d"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261126d"></script><script src="js/tense.js?v=20261126d"></script><script src="js/views.js?v=20261126d"></script>
+<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261126e"></script><script src="js/icons.js?v=20261126e"></script><script src="js/app.js?v=20261126e"></script><script src="js/sets.js?v=20261126e"></script><script src="js/weather.js?v=20261126e"></script><script src="js/fx.js?v=20261126e"></script><script src="js/speak.js?v=20261126e"></script><script src="js/eggs.js?v=20261126e"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261126e"></script><script src="js/tense.js?v=20261126e"></script><script src="js/views.js?v=20261126e"></script>
 </head><body>
 <div class="wrap" style="max-width:1180px">
   <div class="head2">
@@ -186,7 +186,10 @@ const UP=Sets.unitPicker($("unitMount"),()=>render());
 const METER_AT={};   // where each Feeling meter was left, so re-drawing keeps it
 const GP=Sets.groupPicker($("groupMount"),()=>render(),{view:"both",follow:true});
 Sets.loadCompanions().then(n=>{if(n)render();}).catch(()=>{});
-Sets.loadPartners(D).then(m=>{PARTNERS=m;if(m.size)render();}).catch(e=>console.warn("partners",e));   // whole-scale words for the Feeling meters
+Sets.loadPartners(D).then(m=>{PARTNERS=m;if(m.size)render();}).catch(e=>console.warn("partners",e));
+// 🧩 real word parts + 💡 memory tricks (from the dictionary)
+let TRK={};(async()=>{try{const ws=[...new Set(D.map(v=>v.w))];for(let k=0;k<ws.length;k+=150){const {data}=await App.client.from("words").select("headword,word_parts,origin_note,memory_trick").eq("lang","en").in("headword",ws.slice(k,k+150)).neq("memory_trick","");
+  (data||[]).forEach(x=>{if(x.word_parts||x.memory_trick!=="-")TRK[x.headword.toLowerCase()]=x;});}if(Object.keys(TRK).length)render();}catch(e){}})();   // whole-scale words for the Feeling meters
 let VIEW=store.get("view","detail"), SHOW=Object.assign({pic:true,syl:true,say:true,mean:true,ex:true,tr:true},store.get("show",{}));
 let ORDER=D.map((v,i)=>i), ST={};   // ST[i] = {cw, cm, typed, ok, mtyped, mrev, self}
 const S=i=>ST[i]||(ST[i]={});
@@ -233,6 +236,10 @@ const idiomHTML=(i,v)=>{if(!(v.lit||v.eq||v.author)||(S(i).cm&&!S(i).mrev))retur
   if(SHOW.tr&&v.eq)rows.push(`<div class="ir"><span class="il">🌍 We say</span><span class="ar" dir="rtl" lang="ar">${esc(v.eq)}</span></div>`);
   if(SHOW.tr&&v.ar)rows.push(`<div class="ir"><span class="il">💡 It means</span><span class="ar" dir="rtl" lang="ar">${esc(v.ar)}</span></div>`);
   return rows.length?`<div class="idiom">${rows.join("")}</div>`:"";};
+const trickHTML=(i,v)=>{const x=TRK[String(v.w).toLowerCase()];if(!x||!SHOW.mean||wordHidden(i)||(S(i).cm&&!S(i).mrev))return "";const rows=[];
+  if(x.word_parts)rows.push(`<div class="ir"><span class="il">🧩 Real parts</span><span><b>${esc(x.word_parts)}</b>${x.origin_note?` · ${esc(x.origin_note)}`:""}</span></div>`);
+  if(x.memory_trick&&x.memory_trick!=="-")rows.push(`<div class="ir"><span class="il">💡 Memory trick</span><span>${esc(x.memory_trick)}</span></div>`);
+  return rows.length?`<div class="idiom trick">${rows.join("")}</div>`:"";};
 const trHTML=(i,v)=>SHOW.tr&&v.ar&&!(v.lit||v.eq||v.author)&&!(S(i).cm&&!S(i).mrev)?`<div class="tr" dir="auto">${esc(v.ar)}</div>`:"";
 const wordHidden=i=>S(i).cw&&S(i).ok===undefined;
 function wordHTML(i,v){
@@ -365,7 +372,7 @@ function diffsHTML(v){const L=DIFFS.get(v.wid)||[];const tr=!!SHOW.tr;
 // ---- views ----
 function card(i,view){const v=D[i], hid=wordHidden(i);
   if(view==="detail")return `<article class="d" data-i="${i}">${SHOW.pic?picHTML(i,v):"<span></span>"}
-    <div class="body"><div class="w">${wordHTML(i,v)}</div>${hid?"":pillsHTML(v)}${sayHTML(v,i)}${spellHTML(i,v)}${meanHTML(i,v)}${idiomHTML(i,v)}${exHTML(i,v)}${trHTML(i,v)}${exploreHTML(i,v)}${coverBtns(i)}</div>
+    <div class="body"><div class="w">${wordHTML(i,v)}</div>${hid?"":pillsHTML(v)}${sayHTML(v,i)}${spellHTML(i,v)}${meanHTML(i,v)}${trickHTML(i,v)}${idiomHTML(i,v)}${exHTML(i,v)}${trHTML(i,v)}${exploreHTML(i,v)}${coverBtns(i)}</div>
     <div class="side">${unitTag(v)}${hearBtn(i,v)}</div></article>`;
   if(view==="grid")return `<article class="g" data-i="${i}">${picHTML(i,v)}<div class="w">${wordHTML(i,v)}${hearBtn(i,v)}</div>${hid?"":pillsHTML(v)}${sayHTML(v,i)}${spellHTML(i,v)}${meanHTML(i,v)}${idiomHTML(i,v)}${trHTML(i,v)}${exploreHTML(i,v)}${coverBtns(i)}</article>`;
   if(view==="blocks")return `<article class="b" data-i="${i}">${picHTML(i,v)}<div class="w bw" data-hear="${i}" role="button" tabindex="0" aria-label="Hear the word">${wordHTML(i,v)} ${icon("volume-2",15)}</div>${sayHTML(v,i)}${spellHTML(i,v)}${S(i).cm?meanHTML(i,v):""}${exploreHTML(i,v)}${coverBtns(i)}</article>`;
