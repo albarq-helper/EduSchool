@@ -64,7 +64,7 @@
     "don't be afraid of a shadow. it just means there's a light nearby": "sunbeam",
     "if you look for the light, you will often find it. but if you look for the dark, it is all you will ever see": "sunbeam" };
   Object.keys(SAY).forEach(k => R[k] = R[SAY[k]]);
-  const recipe = w => R[String(w || "").trim().toLowerCase().replace(/[’]/g, "'").replace(/[.!?]$/, "")] || null;
+  const recipe = w => { const k = String(w || "").trim().toLowerCase().replace(/[’]/g, "'").replace(/[.!?]$/, ""); return R[k] || R[k.replace(/\s*\([^)]*\)\s*$/, "")] || null; }; // "Impact (hit)" = impact
 
   // 🔊 sounds (synthesized, no files)
   let AC = null;
