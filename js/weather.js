@@ -6,7 +6,9 @@
   "use strict";
   // word → recipe. Numbers are strength 1–5 (taken from the meters where a meter exists).
   const R = {}, FX = {};
-  const add = (ws, r) => ws.split(",").forEach(w => R[w.trim()] = r);
+  // every word keeps ALL its effects (V), not only the last one (R); ALSO links related effects (beam → sunbeam, moonbeam, laser…)
+  const V = {}, ALSO = {};
+  const add = (ws, r) => ws.split(",").forEach(w => { w = w.trim(); R[w] = r; (V[w] = V[w] || []).includes(r) || V[w].push(r); });
   add("hurricane,tornado,cyclone,typhoon,twister", { e: "🌀", name: "Hurricane", wind: 5, vortex: 1, rain: 3 });
   add("gale", { e: "🌬️", name: "Gale", wind: 4, rain: 1 });
   add("wind,windy,blustery", { e: "💨", name: "Wind", wind: 3 });
@@ -64,7 +66,9 @@
     "don't be afraid of a shadow. it just means there's a light nearby": "sunbeam",
     "if you look for the light, you will often find it. but if you look for the dark, it is all you will ever see": "sunbeam" };
   Object.keys(SAY).forEach(k => R[k] = R[SAY[k]]);
-  const recipe = w => { const k = String(w || "").trim().toLowerCase().replace(/[’]/g, "'").replace(/[.!?]$/, ""); return R[k] || R[k.replace(/\s*\([^)]*\)\s*$/, "")] || null; }; // "Impact (hit)" = impact
+  const keyOf = w => { const k = String(w || "").trim().toLowerCase().replace(/[’]/g, "'").replace(/[.!?]$/, ""); return R[k] ? k : k.replace(/\s*\([^)]*\)\s*$/, ""); }; // "Impact (hit)" = impact
+  const recipe = w => R[keyOf(w)] || null;
+  const variants = w => { const k = keyOf(w), out = []; [...(V[k] || []), ...(ALSO[k] || []).flatMap(a => V[a] || [])].forEach(r => { if (!out.includes(r) && !out.some(o => o.name === r.name)) out.push(r); }); return out; };
 
   // 🔊 sounds (synthesized, no files)
   let AC = null;
@@ -113,7 +117,14 @@
 .wx-chip,.wx-chip *{cursor:auto;white-space:nowrap}.wx-chip{flex-wrap:wrap;justify-content:center;max-width:96vw}.wx-chip.top{bottom:auto;top:12px}.wx-chip button{cursor:pointer;border:0;border-radius:999px;padding:4px 10px;font:inherit;cursor:pointer;background:#F1F1F4}
 .wx-btn{border:0;background:none;cursor:pointer;font-size:.8em;padding:0 3px;vertical-align:middle;opacity:.85}
 .wx-btn:hover{opacity:1;transform:scale(1.15)}
-html.fx-off .wx-btn,html.fx-off .egg-btn{display:none!important}
+html.fx-off .wx-btn,html.fx-off .egg-btn,html.fx-off .wx-strip{display:none!important}
+.wx-picwrap{display:grid;gap:8px;align-content:start;min-width:0}
+.wx-strip{display:flex;flex-wrap:wrap;gap:5px;align-items:center;padding:7px;border-radius:14px;background:linear-gradient(135deg,#f5f3ff,#eef2ff);border:1px solid #e0e7ff}
+.wx-strip .wx-st{flex-basis:100%;font:800 10.5px system-ui;letter-spacing:.06em;text-transform:uppercase;color:#6d28d9;padding:0 2px}
+.wx-ex{display:inline-flex;align-items:center;gap:5px;border:1px solid #ddd6fe;background:#fff;border-radius:999px;padding:3px 9px 3px 5px;font:700 12px system-ui;color:#3730a3;cursor:pointer;box-shadow:0 1px 2px #6d28d91a;transition:transform .15s,box-shadow .15s,border-color .15s;max-width:100%}
+.wx-ex i{font-style:normal;font-size:15px;line-height:1;display:inline-flex}.wx-ex span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wx-ex:hover{transform:translateY(-1px);box-shadow:0 4px 10px #6d28d92e;border-color:#a78bfa}.wx-ex:active{transform:scale(.96)}
+@media print{.wx-strip{display:none}}
 .fx-mode{position:fixed;left:12px;bottom:12px;z-index:9994;border:1.5px solid #e2e8f0;border-radius:999px;background:#fff;box-shadow:0 4px 14px #0002;padding:6px 12px;font:700 13px system-ui;cursor:pointer;color:#334155}
 .fx-mode:hover{border-color:#a78bfa}@media print{.fx-mode{display:none}}`;
   document.head.appendChild(css);
@@ -478,6 +489,19 @@ html.fx-off .wx-btn,html.fx-off .egg-btn{display:none!important}
     done.add(w.toLowerCase()); lastAuto = Date.now();
     setTimeout(() => { if (el.isConnected) play(w); }, 700);
   }), { threshold: 1 }) : null;
+  // ✨ "See it" strip under the picture/video of a word card: one chip per example of the word
+  const escH = x => String(x).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  function strip(el, w) {
+    const card = el.closest("article[data-i]"); if (!card) return false; if (card.dataset.wxStrip === w) return true; if (card.dataset.wxStrip) return false;
+    const pic = card.querySelector(".vwrap, img.pic, .pic"); const vs = variants(w); if (!pic || !vs.length) return false;
+    card.dataset.wxStrip = w; const target = pic.closest(".vwrap") || pic;
+    let wrap = target.parentElement && target.parentElement.classList.contains("wx-picwrap") ? target.parentElement : null;
+    if (!wrap) { wrap = document.createElement("div"); wrap.className = "wx-picwrap"; target.replaceWith(wrap); wrap.appendChild(target); }
+    const box = document.createElement("div"); box.className = "wx-strip";
+    box.innerHTML = `<span class="wx-st">✨ See it${vs.length > 1 ? ` · ${vs.length} ways` : ""}</span>` + vs.map((r, k) => `<button type="button" class="wx-ex" data-k="${k}" title="Show “${escH(r.name)}” on the whole page"><i>${r.icon || escH(r.e)}</i><span>${escH(r.name)}</span></button>`).join("");
+    box.addEventListener("click", ev => { const b = ev.target.closest(".wx-ex"); if (!b) return; ev.preventDefault(); ev.stopPropagation(); ac(); play(vs[+b.dataset.k], { force: 1 }); });
+    wrap.appendChild(box); return true;
+  }
   function scan() {
     document.querySelectorAll(".syl[aria-label], .term, [data-wx]").forEach(el => {
       if (el.dataset.wxDone || el.closest(".wx-off")) return;
@@ -485,9 +509,10 @@ html.fx-off .wx-btn,html.fx-off .egg-btn{display:none!important}
       const w = String(el.dataset.wx || el.getAttribute("aria-label") || el.textContent || "").trim(), r = recipe(w);
       if (!r) return;
       el.dataset.wxWord = w;
+      if (strip(el, w)) { if (io) io.observe(el); return; }
       const btn = document.createElement("button");
       btn.type = "button"; btn.className = "wx-btn"; if (r.icon) btn.innerHTML = r.icon; else btn.textContent = r.e; // icon = our own drawing (never user text)
-      btn.title = `Make it ${r.name.toLowerCase()} on the page!`; btn.setAttribute("aria-label", `Show ${r.name} on the whole page`);
+      btn.title = `Make it ${r.name.toLowerCase()} on the page!` + (variants(w).length > 1 ? ` (${variants(w).length} ways: ${variants(w).map(v => v.name).join(", ")})` : ""); btn.setAttribute("aria-label", `Show ${r.name} on the whole page`);
       btn.addEventListener("click", ev => { ev.preventDefault(); ev.stopPropagation(); ac(); play(w, { force: 1 }); });
       (el.nextElementSibling && el.nextElementSibling.classList.contains("egg-btn") ? el.nextElementSibling : el).insertAdjacentElement("afterend", btn);
       if (io) io.observe(el);
@@ -501,5 +526,5 @@ html.fx-off .wx-btn,html.fx-off .egg-btn{display:none!important}
   addEventListener("keydown", e => { if (e.key === "Escape") stop(); });
   // js/fx.js adds effects: Weather.add("word,word", recipe, fxFunction)
   const addFx = (words, rec, fn) => { const name = rec.fx || (rec.fx = "fx" + Object.keys(FX).length); if (fn) FX[name] = fn; add(words, rec); };
-  window.Weather = { play, stop, recipe, R, FX, add: addFx, mode, setMode, rescan: () => { document.querySelectorAll("[data-wx-done]").forEach(el => { if (!el.dataset.wxWord) delete el.dataset.wxDone; }); scan(); } };
+  window.Weather = { play, stop, recipe, variants, R, FX, add: addFx, mode, setMode, also: (ws, keys) => ws.split(",").forEach(w => { w = w.trim(); ALSO[w] = [...new Set([...(ALSO[w] || []), ...keys.split(",").map(k => k.trim())])]; }), rescan: () => { document.querySelectorAll("[data-wx-done]").forEach(el => { if (!el.dataset.wxWord) delete el.dataset.wxDone; }); scan(); } };
 })();

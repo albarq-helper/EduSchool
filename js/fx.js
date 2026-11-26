@@ -11,8 +11,8 @@
   const shakeKids = (A, at, amp, ms) => A.kids().forEach(el => A.ani(el, [{ transform: "none" }, { transform: `translate(${-amp}px,${amp * .7}px)` }, { transform: `translate(${amp}px,${-amp * .6}px)` }, { transform: `translate(${-amp * .6}px,${amp * .4}px)` }, { transform: "none" }], { duration: ms || 320, delay: at }));
   const confetti = (list, x, y, n) => { for (let k = 0; k < n; k++) list.push({ x, y, vx: (Math.random() - .5) * 10, vy: -Math.random() * 9 - 2, c: ["#f43f5e", "#f59e0b", "#22c55e", "#3b82f6", "#a855f7", "#fde047"][k % 6], a: 1 }); };
   // 🧒 a full-body cartoon footballer: x,y = between the feet, S = height, dir 1 = facing right, ph = walk phase, kick 0..1 lifts the front leg
-  const footballer = (ctx, x, y, S, dir, ph, kick, mud) => { ctx.save(); ctx.translate(x, y); ctx.scale(dir, 1); ctx.lineCap = "round"; ctx.lineJoin = "round";
-    const O = "#1f2937", skin = "#e8b48a", kit = "#2563eb", kit2 = "#1e3a8a", hipY = -S * .46, th = S * .22, sh = S * .22, sw = Math.sin(ph) * .5;
+  const footballer = (ctx, x, y, S, dir, ph, kick, mud, kitA, kitB, skinC) => { ctx.save(); ctx.translate(x, y); ctx.scale(dir, 1); ctx.lineCap = "round"; ctx.lineJoin = "round";
+    const O = "#1f2937", skin = skinC || "#e8b48a", kit = kitA || "#2563eb", kit2 = kitB || "#1e3a8a", hipY = -S * .46, th = S * .22, sh = S * .22, sw = Math.sin(ph) * .5;
     const stroke2 = (w, c, pts) => { [[w + S * .03, O], [w, c]].forEach(([lw, col]) => { ctx.strokeStyle = col; ctx.lineWidth = lw; ctx.beginPath(); pts.forEach(([px, py], i) => i ? ctx.lineTo(px, py) : ctx.moveTo(px, py)); ctx.stroke(); }); };
     const leg = (a, bend, front) => { const kx = Math.sin(a) * th, ky = hipY + Math.cos(a) * th, fa = a - bend, fx = kx + Math.sin(fa) * sh, fy = ky + Math.cos(fa) * sh;
       stroke2(S * .075, skin, [[0, hipY], [kx, ky]]); stroke2(S * .07, kit2, [[kx, ky], [fx, fy]]);
@@ -604,7 +604,7 @@
   });
 
   // 🐁 SCAMPERING: little mice and squirrels scurry across the page in quick zigzags and run away from your finger
-  Weather.add("scamper,scampers,scampered,scampering,scurry,scurries,scurried,scurrying,dart,darted,darting,skitter,skittered,scuttle,scuttled", { e: "🐁", name: "Scamper", dur: 9000, track: 1 }, A => {
+  Weather.add("scamper,scampers,scampered,scampering,scurry,scurries,scurried,scurrying,dart,darted,darting,skitter,skittered,scuttle,scuttled", { e: "🐁", name: "Little animals", dur: 9000, track: 1 }, A => {
     const W = A.W(), H = A.H(), crit = Array.from({ length: 9 }, (_, i) => ({ e: ["🐁", "🐿️", "🦎", "🐁", "🐇"][i % 5], x: Math.random() < .5 ? -40 : W + 40, y: H * (.15 + Math.random() * .75), tx: Math.random() * W, ty: H * (.1 + Math.random() * .8), wait: i * 250, v: 6 + Math.random() * 5, f: 1 }));
     const tick = () => { if (A.ptr && Math.random() < .3) A.noise(.05, .05, "band", 5000, 6000, 4); }; const iv = setInterval(tick, 120);
     return { stop() { clearInterval(iv); },
@@ -633,6 +633,44 @@
         ctx.strokeStyle = "rgba(255,255,255,.6)"; ctx.lineWidth = 2; for (let k = 0; k < 10; k++) { const x = ((k * 173 + t / 4) % (W + 100)) - 50, y = wl + 18 + (k % 3) * 14; ctx.beginPath(); ctx.moveTo(x, y); ctx.quadraticCurveTo(x + 15, y - 5, x + 30, y); ctx.stroke(); }
         floaters.forEach((f, i) => { f.x += 1.8 + (i % 3) * .5; if (f.x > W + 60) f.x = -60; em(ctx, f.e, f.x, wl + 6 + Math.sin(t / 300 + i) * 5, f.s, Math.sin(t / 400 + i) * .2); }); } };
   });
+
+  // 🧒 SCAMPERING (children): the bell rings and kids scamper across the playground in quick little zigzags
+  Weather.add("scampering children,kids scampering,scamper kids", { e: "🧒", name: "Kids at play", dur: 9000, top: 1 }, A => {
+    const W = A.W(), H = A.H(), KITS = [["#ef4444", "#991b1b", "#f1c27d"], ["#22c55e", "#166534", "#8d5524"], ["#f59e0b", "#b45309", "#e0ac69"], ["#a855f7", "#6b21a8", "#c68642"], ["#0ea5e9", "#075985", "#f1c27d"]];
+    const kids = KITS.map((k, i) => ({ k, x: -60 - i * 90, y: H * (.62 + (i % 3) * .1), tx: W * (.15 + Math.random() * .7), ty: H * (.6 + Math.random() * .3), wait: i * 260, f: 1 }));
+    A.noise(.5, .2, "band", 2400, 2600, 20, .1); A.noise(.5, .2, "band", 2400, 2600, 20, .7);
+    return { frame(t, life) { const { ctx } = A, gy = H * .58;
+      const sky = ctx.createLinearGradient(0, 0, 0, gy); sky.addColorStop(0, "rgba(125,211,252,.95)"); sky.addColorStop(1, "rgba(224,242,254,.95)"); ctx.fillStyle = sky; ctx.fillRect(0, 0, W, gy); ctx.fillStyle = "rgba(134,239,172,.97)"; ctx.fillRect(0, gy, W, H - gy);
+      em(ctx, "🛝", W * .82, gy - 10, 110); em(ctx, "🌳", W * .1, gy - 60, 130); em(ctx, "🔔", W * .5, H * .2 + Math.sin(t / 60) * (t < 1400 ? 6 : 0), 40, t < 1400 ? Math.sin(t / 50) * .4 : 0);
+      kids.forEach(c => { if (t < c.wait) return; if (life > .82) { c.tx = c.x < W / 2 ? -100 : W + 100; }
+        const dx = c.tx - c.x, dy = c.ty - c.y, d = Math.hypot(dx, dy); if (d < 14 && life <= .82) { c.tx = W * (.08 + Math.random() * .84); c.ty = H * (.62 + Math.random() * .3); }
+        else { const sp = 7.5; c.x += dx / d * Math.min(sp, d) + Math.sin(t / 45 + c.wait) * 2.2; c.y += dy / d * Math.min(sp, d) * .6; if (Math.abs(dx) > 2) c.f = dx > 0 ? 1 : -1; }
+        footballer(ctx, c.x, c.y - Math.abs(Math.sin(t / 55 + c.wait)) * 8, H * .2, c.f, t / 45 + c.wait, 0, 0, c.k[0], c.k[1], c.k[2]); });
+      big(ctx, "Kids scampering to the playground!", W / 2, H * .3, 24, "#0c4a6e"); } };
+  });
+
+  // 🔗 the same word, different examples: shown together in the ✨ See it strip under the picture
+  if (Weather.also) {
+    Weather.also("beam,beams,beamed,beaming", "sunbeam,moonbeam,laser");
+    Weather.also("sunbeam,sunbeams,ray,rays", "beam,moonbeam");
+    Weather.also("scamper,scampers,scampered,scampering,scurry,scurried,scurrying,dart,darted", "scampering children");
+    Weather.also("peep,peeps,peeped,peeping,peek,peeked,peeking", "look");
+    Weather.also("glance,glanced,look,looked,looking,watch,watched,watching,stare,gaze", "peep,spy");
+    Weather.also("observe,observed,observing,observation,examine,inspect", "look,spy");
+    Weather.also("exhaustion,exhausted,tired,weary,fatigue,worn out", "lethargic,dozed");
+    Weather.also("lethargic,lethargy,sluggish,listless,lazy", "dozed,exhaustion");
+    Weather.also("doze,dozed,dozing,drowsy,sleepy,nap,napping", "lethargic");
+    Weather.also("serene,serenity,peaceful,tranquil", "calm");
+    Weather.also("heroic,hero,heroes,brave,bravery,courage,courageous", "rescue,bestowed");
+    Weather.also("bestow,bestowed,award,awarded,medal,honour,honor", "heroic");
+    Weather.also("rescue,rescued,rescuing,aid,aided,save,saved", "heroic");
+    Weather.also("faraway,far away,distant,distance,far", "spy");
+    Weather.also("curiosity,curious,intriguing,intrigued,mystery,mysterious", "observe,peep");
+    Weather.also("gleam,gleamed,gleaming,glint,glisten,shine,shiny,sparkle", "sunbeam");
+    Weather.also("precarious,unstable,unsteady,teetering", "sway");
+    Weather.also("separated,separate,split,apart,divided", "faraway");
+    Weather.also("ferocious,beast,beasts,predator,roar,roared", "stomp");
+  }
 
   Weather.rescan();
 })();
