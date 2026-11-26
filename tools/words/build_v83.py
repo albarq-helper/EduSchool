@@ -1,0 +1,140 @@
+# v83: 🌡️ healthy anger: firm, not cruel. The "one moment" meter becomes two-sided (too quiet ⇄ violent), an idea card, two Aristotle sayings.
+q = lambda s: "null" if s is None else "'" + str(s).replace("'", "''") + "'"
+A = lambda xs: "array[" + ",".join(q(x) for x in xs) + "]::text[]" if xs else "'{}'::text[]"
+OWNER = "(select p.id from public.profiles p join auth.users u on u.id = p.id where u.email = 'albarq2000@hotmail.com')"
+SET = "'00000000-0000-4000-8000-00000000d1ff'"
+WID = lambda hw: f"(select id from public.words where lang = 'en' and lower(headword) = lower({q(hw)}) order by (sense = '') desc limit 1)"
+OLD = "Calm → Violent (one moment)"
+MOM = "Too quiet ⇄ Violent (one moment)"
+ACT, IDI, PV, SAY, FEEL = "Action", "Idiom", "Phrasal verb", "Saying & thinking", "Feelings & moods"
+# the new quiet side, and the healthy middle
+W = [
+ ("Bottled up", "🍾", "Kept a strong feeling (like anger) inside and never said it. It does not go away; it builds up and can burst out later.",
+  "She [bottled up] her anger for weeks, then exploded over a pencil.", "كتم مشاعره", [PV, FEEL], -2),
+ ("Kept quiet", "🤐", "Said nothing, even though something was wrong and needed to be said.", "He [kept quiet] when his friend took his snack every day.", "سكت (لم يعترض)",
+  [IDI, SAY], -2),
+ ("Gave in", "🏳️", "Stopped saying no and let the other person have their way, even though it was not OK.", "He kept asking, so in the end she [gave in].", "استسلم / رضخ",
+  [PV], -1),
+ ("Stood up for", "🦸", "Said clearly, without being cruel, that something was not OK: for yourself or for someone else. This is the healthy middle.",
+  "Reem [stood up for] her little brother: 'Stop. Give it back to him.'", "دافع عن", [PV, SAY], 0),
+]
+SHIFT = {  # old level on "Calm → Violent" → new level (unchanged numbers; the middle stays at 0)
+ "Said firmly": 0, "Spoke sternly": 0, "Raised his voice": 1, "Spoke sharply": 1, "Snapped at": 2, "Barked": 2, "Told off": 2,
+ "Shouted": 3, "Yelled": 3, "Screamed": 4, "Lost his temper": 4, "Blew up": 4, "Lashed out": 5, "Hit": 5}
+out = ["""-- =====================================================================
+-- Helper Academy — v83: 🌡️ healthy anger: firm, not cruel
+--   * the "one moment" meter becomes two-sided: Too quiet ⇄ Violent (Bottled up, Kept quiet, Gave in · Stood up for, Said firmly · … · Lashed out)
+--   * ≠ card "Bottled up ≠ Stood up for ≠ Blew up", an idea card "Healthy anger: firm, not cruel" on the Characters page,
+--   * two sayings from Aristotle (Nicomachean Ethics, W. D. Ross translation, public domain) linked as advice.
+--   Built by tools/words/build_v83.py. Safe to re-run. Run AFTER v82.
+-- ====================================================================="""]
+out.append(f"update public.words set tags = array(select x from unnest(tags) x where x not like {q('📶 ' + OLD + '%')} and x not like {q('📶 ' + MOM + '%')}) where exists (select 1 from unnest(tags) x where x like {q('📶 ' + OLD + '%')} or x like {q('📶 ' + MOM + '%')});")
+for hw, lv in SHIFT.items():
+    out.append(f"update public.words set tags = (select array(select distinct x from unnest(tags || array[{q(f'📶 {MOM}: {lv}')}]) x order by x)) where id = {WID(hw)};")
+for hw, emo, m, ex, ar, tags, lv in W:
+    t = tags + [f"📶 {MOM}: {lv}"]
+    out.append(f"""insert into public.words (lang, headword, sense, meaning, example, translation, syllables, pronunciation, emoji, audio_url, author, tags, owner_id)
+select 'en', {q(hw)}, '', {q(m)}, {q(ex)}, {q(ar)}, '', '', {q(emo)}, '', '', {A(t)}, {OWNER} where not exists (select 1 from public.words w where w.lang = 'en' and lower(w.headword) = lower({q(hw)}));""")
+    out.append(f"update public.words set tags = (select array(select distinct x from unnest(tags || {A(t)}) x order by x)) where id = {WID(hw)};")
+    out.append(f"""insert into public.set_entries (id, set_id, position, kind, unit, also_units, word_id) select md5('temper-set:' || w.id)::uuid, {SET}, 820, 'term', 1, '{{}}', w.id
+from public.words w where w.id = {WID(hw)} and not exists (select 1 from public.set_entries e where e.set_id = {SET} and e.word_id = w.id) on conflict (id) do nothing;""")
+D = ("quiet-firm-explode", "Bottled up ≠ Stood up for ≠ Blew up",
+ "Anger is a signal that a line was crossed. Bottling it up lets people walk over you, and the anger builds until it bursts. Blowing up hurts people and makes the story about your shouting. Standing up for yourself, clearly and calmly, is the healthy middle.",
+ "الغضب إشارة إلى أن حدًّا قد تُجووز. كتمانه يجعل الناس يتجاوزونك ويتراكم حتى ينفجر، والانفجار يؤذي الآخرين ويجعل الحديث عن صراخك لا عمّا فعلوه. أما الدفاع عن نفسك بوضوح وهدوء فهو الوسط الصحي.",
+ "'No. Stop. If you take it again, I'll tell the teacher.' is standing up for yourself: not bottled up, not blown up.",
+ "Psychologists call keeping anger inside 'anger-in' and letting it out in attacks 'anger-out'; healthy 'anger control' sits between them (Spielberger, STAXI-2). Assertiveness training teaches the middle way (Alberti & Emmons, Your Perfect Right).",
+ [("Bottled up", "Too quiet: kept it inside; it builds up.", "كتمه في داخله"),
+  ("Stood up for", "The healthy middle: clear, firm, not cruel.", "الوسط الصحي: واضح وحازم بلا قسوة"),
+  ("Blew up", "Too much: exploded and hurt people.", "انفجر وآذى")])
+key, title, summ, summ_ar, ex, note, parts = D
+out.append(f"insert into public.word_differences (key, title, unit, min_age, summary, summary_ar, example, note, position) values ({q(key)},{q(title)},1,0,{q(summ)},{q(summ_ar)},{q(ex)},{q(note)},89) on conflict (key) do update set title=excluded.title, summary=excluded.summary, summary_ar=excluded.summary_ar, example=excluded.example, note=excluded.note, position=excluded.position;")
+for n, (hw, e, ar) in enumerate(parts):
+    out.append(f"insert into public.word_difference_parts (diff_key, word_id, explain, explain_ar, position) select {q(key)}, {WID(hw)}, {q(e)}, {q(ar)}, {n} on conflict (diff_key, word_id) do update set explain = excluded.explain, explain_ar = excluded.explain_ar, position = excluded.position;")
+    out.append(f"update public.words set tags = (select array(select distinct x from unnest(tags || array[{q('≠ ' + title)}]) x order by x)) where id = {WID(hw)};")
+
+ABOUT = """Anger is not bad. It is a signal that a line has been crossed: someone is unfair, pushing too far, or putting someone in danger. Having no anger at all is not healthy either.
+
+✅ Healthy and needed:
+• Feeling anger. Someone who never feels it, or always swallows it, gets walked over. Anger that is bottled up does not disappear; it builds up and can burst out later.
+• Being firm. Many people don't respect a line until it is said clearly, sometimes more than once. "Please stop" said softly three times is often ignored; a firm "Stop. I said no." is understood.
+• Raising your voice now and then: to stop a fight, warn of danger, or be heard over someone who keeps talking. A loud "Enough!" once is a boundary, not a bad personality.
+
+⛔ When it stops being healthy:
+• Raising your voice becomes the only way you get heard.
+• It is aimed at hurting, not at stopping something.
+• It happens often, over small things.
+• It turns physical. Hitting is never part of setting a boundary.
+
+💡 The strongest firmness is often calm. A low, steady "No. If you do that again, I'll leave." works better than a scream, because a scream lets the other person make the story about your tone ("you yelled at me!") instead of what they did.
+
+So the goal is not "no anger". It is: feel the anger, then choose the level that fits. Firm words first, a raised voice when needed, never the top of the ladder."""
+HELPS = "Name the line ('That's not OK'); say what you want ('Stop'); say what happens next ('or I'll leave / tell a teacher'). Breathe first. Say it once, firmly, then act. Being kind doesn't mean being a pushover."
+ACADEMIC = ("Emotion research sees anger as a signal of a wrong or a blocked goal that prepares us to act (Averill, 1982). Spielberger's STAXI-2 measures anger-in (suppression), "
+ "anger-out (attacking) and anger control; both chronic suppression and frequent outbursts are linked to poorer health and relationships. Assertiveness, standing up for yourself while "
+ "respecting others, is the healthy alternative to both passivity and aggression (Alberti & Emmons). Venting by shouting tends to increase anger rather than release it (Tavris, 1989). "
+ "Aristotle called the virtue 'good temper': the mean between irascibility and 'inirascibility', which he thought foolish and slavish (Nicomachean Ethics IV.5).")
+SRC = ["Averill, J. R. (1982). Anger and Aggression: An Essay on Emotion. Springer-Verlag.",
+ "Spielberger, C. D. (1999). STAXI-2: State-Trait Anger Expression Inventory-2. Psychological Assessment Resources.",
+ "Alberti, R. E., & Emmons, M. L. (2017). Your Perfect Right: Assertiveness and Equality in Your Life and Relationships (10th ed.). Impact Publishers.",
+ "Tavris, C. (1989). Anger: The Misunderstood Emotion (rev. ed.). Simon & Schuster.",
+ "Aristotle. Nicomachean Ethics, Book IV ch. 5 and Book II ch. 9 (W. D. Ross, Trans., 1908). Oxford: Clarendon Press."]
+out.append(f"""
+-- 💡 idea card on the Characters page
+insert into public.conditions as c (key, icon, name, kind, parent, cluster, min_age, aliases, about, helps, academic, sources, traits, academic_min_age, position) values
+ ('healthy_anger','🌡️','Healthy anger: firm, not cruel','idea',null,null,6,{A(['Good temper','Standing up for yourself','الغضب الصحي'])},{q(ABOUT)},{q(HELPS)},{q(ACADEMIC)},{A(SRC)},{A(['temper','assertive','boundaries','feelings'])},16,170)
+on conflict (key) do update set icon=excluded.icon, name=excluded.name, kind=excluded.kind, min_age=excluded.min_age, aliases=excluded.aliases, about=excluded.about, helps=excluded.helps,
+  academic=excluded.academic, sources=excluded.sources, traits=excluded.traits, academic_min_age=excluded.academic_min_age, position=excluded.position;
+delete from public.trait_links where src_key = 'healthy_anger' or dst_key = 'healthy_anger';
+insert into public.trait_links (src_type, src_key, src_level, dst_type, dst_key, dst_level, effect, strength, note) values
+ ('trait','temper','mid','condition','healthy_anger',null,'raises',3,null),
+ ('trait','assertive','mid','condition','healthy_anger',null,'raises',3,null),
+ ('trait','feelings','mid','condition','healthy_anger',null,'raises',2,null),
+ ('condition','healthy_anger',null,'trait','boundaries','mid','raises',2,'Saying the line clearly helps others respect it.');
+update public.traits set mid_text = 'Stays calm most of the time, and can be firm (even raise his voice once) when something must stop, without being cruel. Feels the anger, then chooses the level that fits.' where key = 'temper';
+""")
+# 📜 Aristotle (Ross 1908, public domain)
+Q = [
+ (2043, "Anyone can become angry; that is easy. But to be angry with the right person, to the right extent, at the right time, with the right motive, and in the right way, that is not easy.",
+  "Getting angry is easy. Getting angry well is the hard part: at the right person, as much as the thing deserves, at the right moment, for a good reason, and in a fair way. That is a skill you practise.",
+  "أيُّ أحدٍ يستطيع أن يغضب، فهذا سهل. أمّا أن تغضب من الشخص المناسب، وبالقدر المناسب، وفي الوقت المناسب، وللسبب المناسب، وبالطريقة المناسبة، فهذا ليس سهلًا.",
+  "Nicomachean Ethics II.9", "said", "verified", "https://www.ellopos.net/elpenor/greek-texts/ancient-greece/aristotle/nicomachean-ethics.asp?pg=32",
+  "Aristotle (384–322 BC), Nicomachean Ethics, Book II ch. 9 (1109a26–29). W. D. Ross's translation reads: 'any one can get angry—that is easy—or give or spend money; but to do this to the right person, to the right extent, at the right time, with the right motive, and in the right way, that is not for every one, nor is it easy'. The popular wording shortens it to anger.",
+  ["Saying", "⇄ Calm vs. angry: calm"]),
+ (2044, "Those who are not angry at the things they should be angry at are thought to be fools; to put up with being insulted, and to let your friends be insulted, is slavish.",
+  "Never getting angry is not a good thing either. If someone is hurting you or your friends and you never stand up to them, you are letting them walk over you. Feel the anger and use it to set a fair line.",
+  "مَن لا يغضب ممّا يستحق الغضب يُعدّ أحمق، واحتمال الإهانة لنفسك ولأصدقائك ذُلّ.",
+  "Nicomachean Ethics IV.5", "said", "verified", "https://www.ellopos.net/elpenor/greek-texts/ancient-greece/aristotle/nicomachean-ethics.asp?pg=67",
+  "Aristotle, Nicomachean Ethics, Book IV ch. 5 (1126a3–8), on 'good temper', the mean between irascibility and inirascibility. W. D. Ross: 'For those who are not angry at the things they should be angry at are thought to be fools … since he does not get angry, he is thought unlikely to defend himself; and to endure being insulted and put up with insult to one's friends is slavish.'",
+  ["Saying", "⇄ Brave vs. scared: brave"]),
+]
+rows = ",\n".join(f" ({k}, {q(h)}, {q(m)}, {q(t)}, 'Aristotle', {q(work)}, {q(role)}, {q(st)}, {q(src)}, {q(note)}, {A(tags)}, 15)" for k, h, m, t, work, role, st, src, note, tags in Q)
+out.append(f"""create temp table nq(k int, h text, m text, t text, who text, work text, role text, status text, src text, note text, tags text[], u int);
+insert into nq values
+{rows};
+insert into public.words (lang, headword, sense, meaning, example, translation, syllables, pronunciation, emoji, audio_url, author, tags, owner_id)
+select 'en', h, '', m, '', t, '', '', '💬', '', who || ' · ' || work, tags, {OWNER}
+from nq on conflict (lang, lower(headword), sense) do nothing;
+update public.words w set meaning = nq.m, translation = nq.t, author = nq.who || ' · ' || nq.work, tags = (select array(select distinct x from unnest(w.tags || nq.tags) x order by x))
+  from nq where w.lang = 'en' and w.sense = '' and lower(w.headword) = lower(nq.h);
+insert into public.set_entries (id, set_id, position, kind, unit, also_units, word_id)
+select ('00000000-0000-4000-8000-' || lpad(to_hex(nq.k), 8, '0') || '9007')::uuid, '00000000-0000-4000-8000-000000009007', nq.k, 'term', nq.u, '{{}}', w.id
+from nq join public.words w on w.lang = 'en' and w.sense = '' and lower(w.headword) = lower(nq.h)
+on conflict (id) do nothing;
+insert into public.people (name, kind) select distinct who, 'person' from nq on conflict do nothing;
+update public.people set born = '384 BC', died = '322 BC', nationality = 'Ancient Greece', known_for = 'Greek philosopher; wrote the Nicomachean Ethics on virtue and character', emoji = '🏛️' where name = 'Aristotle' and coalesce(born, '') = '';
+delete from public.quote_people l using nq, public.words w where w.lang = 'en' and lower(w.headword) = lower(nq.h) and l.word_id = w.id;
+insert into public.quote_people (word_id, person_id, role, status, work, source_url, note, checked_at)
+select w.id, p.id, nq.role, nq.status, nq.work, nq.src, nq.note, now()
+from nq join public.words w on w.lang = 'en' and w.sense = '' and lower(w.headword) = lower(nq.h)
+        join public.people p on lower(btrim(p.name)) = lower(nq.who)
+on conflict do nothing;
+insert into public.advice (target_type, target_key, word_id, position)
+select v.t, v.k, w.id, v.p from (values
+ ('condition','healthy_anger',2043,0), ('condition','healthy_anger',2044,1), ('trait','temper',2043,0), ('trait','temper',2044,1),
+ ('trait','assertive',2044,1), ('sign','yells_often',2043,0), ('sign','snaps_often',2043,0)
+) as v(t, k, n, p) join nq on nq.k = v.n join public.words w on w.lang = 'en' and w.sense = '' and lower(w.headword) = lower(nq.h)
+on conflict (target_type, target_key, word_id) do update set position = excluded.position;
+drop table nq;""")
+out.append(f"select (select count(*) from public.words where exists (select 1 from unnest(tags) t where t like {q('📶 ' + MOM + '%')})) as two_sided_meter, (select count(*) from public.words where exists (select 1 from unnest(tags) t where t like {q('📶 ' + OLD + '%')})) as old_meter_left, (select count(*) from public.conditions where key = 'healthy_anger') as idea, (select count(*) from public.advice a join public.set_entries e on e.word_id = a.word_id where e.set_id = '00000000-0000-4000-8000-000000009007' and e.position in (2043, 2044)) as advice;")
+open("supabase_v83_healthy_anger.sql", "w").write("\n".join(out) + "\n")
+print("ok")
