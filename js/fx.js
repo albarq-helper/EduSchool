@@ -3,7 +3,7 @@
 (function () {
   "use strict";
   if (!window.Weather || !Weather.add) return;
-  const em = (ctx, e, x, y, size, rot, sx) => { ctx.save(); ctx.translate(x, y); if (rot) ctx.rotate(rot); if (sx) ctx.scale(sx, 1); ctx.font = size + "px system-ui"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(e, 0, 0); ctx.restore(); };
+  const em = (ctx, e, x, y, size, rot, sx) => { ctx.save(); ctx.translate(x, y); if (rot) ctx.rotate(rot); if (sx) ctx.scale(sx, 1); ctx.font = size + "px system-ui"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillStyle = "#000"; ctx.fillText(e, 0, 0); ctx.restore(); };
   const bubble = (ctx, text, x, y, size) => { ctx.save(); ctx.font = `800 ${size}px system-ui`; const w = ctx.measureText(text).width + size * 1.2, h = size * 1.7; ctx.fillStyle = "#fff"; ctx.strokeStyle = "#1f2937"; ctx.lineWidth = 3;
     ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x - w / 2, y - h / 2, w, h, h / 2) : ctx.rect(x - w / 2, y - h / 2, w, h); ctx.fill(); ctx.stroke(); ctx.beginPath(); ctx.moveTo(x - 8, y + h / 2 - 1); ctx.lineTo(x, y + h / 2 + 12); ctx.lineTo(x + 8, y + h / 2 - 1); ctx.fill(); ctx.stroke();
     ctx.fillStyle = "#1f2937"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(text, x, y + 1); ctx.restore(); };
@@ -12,13 +12,42 @@
   const confetti = (list, x, y, n) => { for (let k = 0; k < n; k++) list.push({ x, y, vx: (Math.random() - .5) * 10, vy: -Math.random() * 9 - 2, c: ["#f43f5e", "#f59e0b", "#22c55e", "#3b82f6", "#a855f7", "#fde047"][k % 6], a: 1 }); };
   const drawBits = (ctx, list) => { for (let i = list.length - 1; i >= 0; i--) { const p = list[i]; p.x += p.vx; p.y += p.vy; p.vy += .3; p.a -= .014; if (p.a <= 0) { list.splice(i, 1); continue; } ctx.globalAlpha = p.a; ctx.fillStyle = p.c; ctx.fillRect(p.x, p.y, 7, 4); } ctx.globalAlpha = 1; };
 
-  // 🪢 WHIPPED: a whip lashes across the screen three times; CRACK, the page jolts
-  Weather.add("whip,whips,whipped,whipping,lash,lashed,crack of the whip", { e: "🪢", name: "Whip crack", dur: 4200 }, A => {
-    const hits = [500, 1700, 2900]; hits.forEach((ms, i) => { A.noise(.09, .55, "band", 4200, 2400, 3, ms / 1000); A.kids().forEach(el => A.ani(el, [{ transform: "none" }, { transform: `translateX(${i % 2 ? -14 : 14}px) skewX(${i % 2 ? 3 : -3}deg)` }, { transform: "none" }], { duration: 260, delay: ms })); });
-    return { frame(t) { const { ctx } = A, W = A.W(), H = A.H();
-      hits.forEach((ms, i) => { const d = t - ms + 420; if (d < 0 || d > 700) return; const k = Math.min(1, d / 420), y0 = H * (.3 + i * .2), dir = i % 2 ? -1 : 1, x0 = dir > 0 ? -20 : W + 20;
-        ctx.strokeStyle = "#5b3a1e"; ctx.lineCap = "round"; ctx.lineWidth = 6; ctx.beginPath(); ctx.moveTo(x0, y0 + 60); const pts = 30; for (let j = 1; j <= pts; j++) { const u = j / pts * k; ctx.lineTo(x0 + dir * u * W * .9, y0 + 60 - Math.sin(u * Math.PI) * 120 * (1 - k * .6) + Math.sin(u * 14 - d / 40) * 18 * (1 - u)); ctx.lineWidth = 6 - 4.5 * (j / pts); ctx.stroke(); ctx.beginPath(); ctx.moveTo(x0 + dir * u * W * .9, y0 + 60 - Math.sin(u * Math.PI) * 120 * (1 - k * .6) + Math.sin(u * 14 - d / 40) * 18 * (1 - u)); }
-        if (d > 400 && d < 650) { const cx = x0 + dir * k * W * .9, cy = y0 + 60 - Math.sin(k * Math.PI) * 120 * (1 - k * .6); ctx.strokeStyle = "#fde047"; ctx.lineWidth = 3; for (let s = 0; s < 10; s++) { const a = s * .63; ctx.beginPath(); ctx.moveTo(cx + Math.cos(a) * 10, cy + Math.sin(a) * 10); ctx.lineTo(cx + Math.cos(a) * 34, cy + Math.sin(a) * 34); ctx.stroke(); } big(ctx, "CRACK!", cx - dir * 40, cy - 46, 34, "#b91c1c"); } }); } };
+  // 🏇 WHIPPED: a horse race! 3-2-1-GO, tap (or Space) to crack the whip; every crack is a burst of speed, but cracks are limited
+  Weather.add("whip,whips,whipped,whipping,lash,lashed,horse race,horse racing,gallop,galloped,galloping,jockey", { e: "🏇", name: "Horse race", dur: 60000, track: 1, capture: 1, top: 1 }, A => {
+    const MAXW = 30; let R = null, ended = 0;
+    const start = t => { R = { t0: t, go: t + 3000, horses: [0, 1, 2, 3].map(i => ({ me: i === 2, x: 0, v: 0, boost: 0, lane: i, bob: Math.random() * 6, done: 0, place: 0, crack: -9999, base: i === 2 ? .052 : .072 + Math.random() * .012, surge: 0 })), whips: MAXW, finished: 0, result: "", resAt: 0 }; A.setChip(`🪢 × ${MAXW}`); };
+    const whip = () => { if (!R || R.result) { if (R && R.result && performance.now() - R.resAt > 800) start(R.now); return; } const t = R.now; if (t < R.go || R.whips <= 0) return; const me = R.horses[2]; if (me.done) return;
+      R.whips--; me.boost = Math.min(me.boost + .055, .16); me.crack = t; A.noise(.08, .5, "band", 4200, 2400, 3); A.setChip(R.whips ? `🪢 × ${R.whips}` : "no whips left!"); };
+    const onKey = e => { if (e.code === "Space" || e.key === " " || e.key === "Enter") { e.preventDefault(); whip(); } }; addEventListener("keydown", onKey);
+    let lastHoof = 0;
+    return { stop() { removeEventListener("keydown", onKey); }, down() { whip(); },
+      frame(t, life) { const { ctx } = A, W = A.W(), H = A.H(); if (!R) start(t); R.now = t; const dt = Math.min(50, t - (R.last || t)); R.last = t;
+        const top = H * .2, laneH = Math.min(90, H * .17), x0 = 50, fin = W - 70, len = fin - x0;
+        // the track
+        ctx.fillStyle = "rgba(34,120,50,.9)"; ctx.fillRect(0, top - 40, W, laneH * 4 + 80); ctx.fillStyle = "#b07a46"; ctx.fillRect(0, top, W, laneH * 4);
+        ctx.strokeStyle = "rgba(255,255,255,.8)"; ctx.lineWidth = 2; for (let i = 0; i <= 4; i++) { ctx.beginPath(); ctx.moveTo(0, top + i * laneH); ctx.lineTo(W, top + i * laneH); ctx.stroke(); }
+        const sq = laneH / 6; for (let r = 0; r < 24; r++) for (let c = 0; c < 2; c++) { ctx.fillStyle = (r + c) % 2 ? "#111" : "#fff"; ctx.fillRect(fin + c * sq, top + r * sq, sq, sq); }
+        ctx.fillStyle = "rgba(255,255,255,.9)"; ctx.fillRect(x0 - 3, top, 3, laneH * 4);
+        // crowd
+        for (let k = 0; k < Math.ceil(W / 34); k++) { const e = ["🙋", "🧑", "👧", "👦", "🙆", "👩"][k % 6]; em(ctx, e, 17 + k * 34, top - 22 + (R.result ? Math.abs(Math.sin(t / 120 + k)) * -8 : 0), 22); }
+        const racing = t >= R.go && !R.result;
+        R.horses.forEach(h => { if (racing && !h.done) {
+            if (!h.me) { if (Math.random() < .01) h.surge = .025 + Math.random() * .02; h.surge *= .985; }
+            h.boost *= Math.pow(.9985, dt); const sp = (h.base + h.boost + h.surge) * len / 1000; h.x = Math.min(len, h.x + sp * dt);
+            if (h.x >= len) { h.done = 1; h.place = ++R.finished; if (h.me) { R.result = h.place === 1 ? "win" : "lose"; R.resAt = performance.now(); if (h.place === 1) { [0, .2, .4, .6].forEach(d => A.chirp(d)); A.noise(1.6, .25, "band", 900, 1600, 1); } else A.noise(.6, .12, "lowpass", 400, 200, 1); A.setChip(h.place === 1 ? "🥇 you won!" : "tap to race again"); } } }
+          const y = top + h.lane * laneH + laneH * .55, x = x0 + h.x, gal = racing && !h.done ? Math.abs(Math.sin(t / 70 + h.bob)) * 7 : 0, S = laneH * .85;
+          if (h.me) { ctx.fillStyle = "rgba(250,204,21,.25)"; ctx.fillRect(0, top + h.lane * laneH, W, laneH); big(ctx, "YOU", Math.max(30, x - S * .9), y - S * .45, 15, "#a16207"); }
+          if (racing && !h.done && Math.random() < .4) { ctx.fillStyle = "rgba(160,120,80,.5)"; ctx.beginPath(); ctx.arc(x - S * .5 - Math.random() * 20, y + S * .3, 4 + Math.random() * 6, 0, 7); ctx.fill(); }
+          em(ctx, "🏇", x, y - gal, S, 0, -1);
+          if (h.me && t - h.crack < 260) { const k = (t - h.crack) / 260; ctx.strokeStyle = "#5b3a1e"; ctx.lineWidth = 3; ctx.lineCap = "round"; ctx.beginPath(); ctx.moveTo(x - S * .1, y - S * .35); ctx.quadraticCurveTo(x - S * .6, y - S * (1 - k * .6), x - S * (1.1 - k * .3), y - S * .1); ctx.stroke(); ctx.strokeStyle = "#fde047"; for (let s = 0; s < 6; s++) { const a = s; ctx.beginPath(); ctx.moveTo(x - S * .95 + Math.cos(a) * 6, y - S * .1 + Math.sin(a) * 6); ctx.lineTo(x - S * .95 + Math.cos(a) * 18, y - S * .1 + Math.sin(a) * 18); ctx.stroke(); } big(ctx, "CRACK!", x - S * .9, y - S * .75, 16, "#b91c1c"); }
+          if (h.done && h.place) big(ctx, ["", "🥇", "🥈", "🥉", "4th"][h.place], x + S * .7, y - S * .2, 24, "#1f2937"); });
+        // speed meter for my horse
+        const me = R.horses[2], meter = Math.min(1, (me.base + me.boost) / (.052 + .16)); ctx.fillStyle = "rgba(255,255,255,.9)"; ctx.fillRect(20, top + laneH * 4 + 50, 220, 16); ctx.fillStyle = meter > .7 ? "#dc2626" : meter > .4 ? "#f59e0b" : "#22c55e"; ctx.fillRect(20, top + laneH * 4 + 50, 220 * meter, 16); ctx.font = "800 13px system-ui"; ctx.fillStyle = "#1f2937"; ctx.textAlign = "left"; ctx.fillText("🏇 SPEED", 250, top + laneH * 4 + 63);
+        if (racing && t - lastHoof > 140) { lastHoof = t; A.noise(.05, .06, "lowpass", 300, 200, 1); }
+        // countdown and help
+        if (t < R.go) { const n = 3 - Math.floor((t - R.t0) / 1000); big(ctx, n > 0 ? String(n) : "GO!", W / 2, top + laneH * 2, 90, "#dc2626"); big(ctx, "Tap (or Space) to crack the whip 🪢 — faster taps, faster horse!", W / 2, top + laneH * 4 + 30 + 60, 16, "#1f2937"); }
+        else if (t < R.go + 700) big(ctx, "GO!", W / 2, top + laneH * 2, 90, "#16a34a");
+        if (R.result) { big(ctx, R.result === "win" ? "🥇 You won!" : "So close! Tap to race again", W / 2, top + laneH * 2, R.result === "win" ? 60 : 38, R.result === "win" ? "#15803d" : "#b45309"); if (R.result === "win") big(ctx, "Tap to race again", W / 2, top + laneH * 2 + 52, 20, "#1f2937"); } } };
   });
 
   // 🏀 TOSS: drag back and let go to throw; things fly, bounce off the walls and pile up
