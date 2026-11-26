@@ -105,7 +105,7 @@
         dust.forEach(d => { d.x -= 2; d.r += 1.2; d.a -= .012; ctx.fillStyle = `rgba(214,180,120,${Math.max(0, d.a)})`; ctx.beginPath(); ctx.arc(d.x, d.y, d.r, 0, 7); ctx.fill(); }); for (let i = dust.length - 1; i >= 0; i--) if (dust[i].a <= 0) dust.splice(i, 1);
         // the jeep with scared people
         ctx.save(); ctx.translate(cx, cy); ctx.rotate(rock); const faces = pressing ? ["😱", "😨"] : t - honkAt < 500 ? ["😤", "😬"] : ["😟", "😰"];
-        em(ctx, faces[0], -S * .25, -S * .55, S * .38); em(ctx, faces[1], S * .2, -S * .55, S * .38); em(ctx, "🚙", 0, 0, S * 1.9, 0, -1);
+        em(ctx, "🚙", 0, 0, S * 1.9, 0, -1); em(ctx, faces[0], -S * .22, -S * .32, S * .36); em(ctx, faces[1], S * .2, -S * .32, S * .36);
         if (t - honkAt < 400) big(ctx, "HONK! 📯", S * .9, -S * .9, 24, "#1d4ed8"); ctx.restore();
         if (escape && carX > W * .2) big(ctx, "Phew! Safe! 🎉", W / 2, H * .25, 50, "#15803d");
         if (t < 2500) big(ctx, "Tap the big cats to honk them away!", W / 2, H * .12, 20, "#7c2d12"); } };
