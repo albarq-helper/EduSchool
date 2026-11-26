@@ -713,12 +713,10 @@
     Weather.also("glance,glanced,look,looked,looking,watch,watched,watching,stare,gaze", "peep,spy");
     Weather.also("observe,observed,observing,observation,examine,inspect", "look,spy");
     Weather.also("exhaustion,exhausted,tired,weary,fatigue,worn out", "lethargic,dozed");
-    Weather.also("lethargic,lethargy,sluggish,listless,lazy", "dozed,exhaustion");
     Weather.also("doze,dozed,dozing,drowsy,sleepy,nap,napping", "lethargic");
     Weather.also("serene,serenity,peaceful,tranquil", "calm");
     Weather.also("heroic,hero,heroes,brave,bravery,courage,courageous", "rescue,bestowed");
     Weather.also("bestow,bestowed,award,awarded,medal,honour,honor", "heroic");
-    Weather.also("rescue,rescued,rescuing,aid,aided,save,saved", "heroic");
     Weather.also("faraway,far away,distant,distance,far", "spy");
     Weather.also("curiosity,curious,intriguing,intrigued,mystery,mysterious", "observe,peep");
     Weather.also("gleam,gleamed,gleaming,glint,glisten,shine,shiny,sparkle", "sunbeam");
