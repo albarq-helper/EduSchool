@@ -649,9 +649,64 @@
       big(ctx, "Kids scampering to the playground!", W / 2, H * .3, 24, "#0c4a6e"); } };
   });
 
+  // 🌪️ HURRICANE: the sky goes black, the clouds spin, a funnel comes down and SUCKS THE PAGE IN: cards, pictures and titles spiral into it; then it lifts and everything drops back
+  Weather.add("hurricane,hurricanes,tornado,tornadoes,cyclone,cyclones,typhoon,twister,whirlwind,vortex", { e: "🌪️", name: "Storm swallows the page", dur: 10000, top: 1 }, A => {
+    const W = A.W(), H = A.H(), FX = W * .5, BASE = H * .9, ABS = 3000, ABS_END = 6000, BACK = 7600, END = 9400, debris = [];
+    A.noise(10, .25, "band", 300, 900, 1); A.noise(4, .3, "lowpass", 180, 80, 1, 2.6); [1.2, 4.2].forEach(d => A.boom(d));
+    // the page pieces: cards and other top-level blocks that are on screen (no piece inside another piece)
+    const sel = [...document.querySelectorAll("article, .card, .panel, section, h1, h2, h3, header, nav, p, li, img, .btn, button, .tag, label, table, form")].filter(el => !el.closest(".wx-chip,.wx-stage,.wx-layer,.fx-mode") && (() => { const b = el.getBoundingClientRect(); return b.bottom > 0 && b.top < H && b.width > 10 && b.height > 6 && b.width < W * .98; })());
+    const pieces = sel.filter(el => !sel.some(o => o !== el && o.contains(el))).slice(0, 60);
+    pieces.forEach((el, i) => { const b = el.getBoundingClientRect(), cx = b.left + b.width / 2, cy = b.top + b.height / 2, r0 = Math.hypot(cx - FX, cy - BASE), a0 = Math.atan2(cy - BASE, cx - FX), delay = Math.min(1200, r0 * 1.2) + (i % 5) * 60, total = 10000;
+      const kf = [{ transform: "none", opacity: 1, offset: 0 }, { transform: "none", opacity: 1, offset: (ABS + delay) / total }];
+      for (let k = 1; k <= 8; k++) { const u = k / 8, r = r0 * (1 - u) * (1 - u * .2), a = a0 + u * 7, up = u * H * .55, x = FX + Math.cos(a) * r * (1 - u * .5) - cx, y = BASE - up + Math.sin(a) * r * .35 * (1 - u) - cy;
+        kf.push({ transform: `translate(${x.toFixed(0)}px, ${y.toFixed(0)}px) rotate(${(u * 720 * (i % 2 ? 1 : -1)).toFixed(0)}deg) scale(${(1 - u * .9).toFixed(2)})`, opacity: u > .85 ? (1 - (u - .85) / .15) : 1, offset: Math.min(.99, (ABS + delay + u * (ABS_END - ABS - 400)) / total) }); }
+      kf.push({ transform: `translate(${(FX - cx).toFixed(0)}px, ${(BASE - H * .55 - cy).toFixed(0)}px) scale(.1)`, opacity: 0, offset: BACK / total });
+      kf.push({ transform: `translate(0px, -${(H * .4).toFixed(0)}px) rotate(${i % 2 ? 8 : -8}deg)`, opacity: 1, offset: (BACK + 500 + (i % 6) * 60) / total });
+      kf.push({ transform: "translateY(10px)", opacity: 1, offset: (END - 300) / total }); kf.push({ transform: "none", opacity: 1, offset: 1 });
+      kf.sort((p, q) => p.offset - q.offset); for (let k = 1; k < kf.length; k++) if (kf[k].offset <= kf[k - 1].offset) kf[k].offset = Math.min(1, kf[k - 1].offset + .001);
+      A.ani(el, kf, { duration: total, easing: "linear" }); });
+    return { frame(t) { const { ctx } = A;
+      const dark = Math.min(1, t / 1500) * (t > BACK ? Math.max(0, 1 - (t - BACK) / 1500) : 1);
+      ctx.fillStyle = `rgba(30,34,44,${(t > ABS && t < BACK ? .5 : .78) * dark})`; ctx.fillRect(0, 0, W, H);
+      // spinning cloud disc
+      for (let k = 0; k < 14; k++) { const a = t / 700 + k * .45, r = W * (.15 + (k % 5) * .1); ctx.fillStyle = `rgba(${70 + k * 4},${74 + k * 4},${86 + k * 4},${.55 * dark})`; ctx.beginPath(); ctx.ellipse(FX + Math.cos(a) * r * .9, H * .08 + Math.sin(a) * 30, 90, 36, a, 0, 7); ctx.fill(); }
+      // rain streaks
+      ctx.strokeStyle = `rgba(200,210,230,${.35 * dark})`; ctx.lineWidth = 1.5; for (let k = 0; k < 90; k++) { const x = (k * 97 + t * .9) % (W + 200) - 100, y = (k * 53 + t * 1.4) % H; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - 18, y + 26); ctx.stroke(); }
+      // the funnel: drops down, spins, then lifts away
+      const drop = t < 1500 ? 0 : t < ABS ? (t - 1500) / (ABS - 1500) : t < BACK ? 1 : Math.max(0, 1 - (t - BACK) / 900), sway = Math.sin(t / 600) * 30;
+      if (drop > 0) { const topY = H * .1, botY = topY + (BASE - topY) * drop; for (let y = topY; y < botY; y += 6) { const u = (y - topY) / (BASE - topY), w = (1 - u) * W * .2 + 18, x = FX + sway * u + Math.sin(y / 30 - t / 90) * 12 * u, sh = 60 + Math.sin(y / 14 - t / 60) * 30;
+          ctx.fillStyle = `rgba(${sh},${sh + 4},${sh + 14},${.85 * dark})`; ctx.beginPath(); ctx.ellipse(x, y, w, 7, 0, 0, 7); ctx.fill(); }
+        // debris spiralling in the funnel
+        if (t > 1800 && t < BACK && debris.length < 40 && Math.random() < .3) debris.push({ e: ["🍃", "📄", "🍂", "🪵", "📰", "🧢"][Math.floor(Math.random() * 6)], u: 1, a: Math.random() * 7 });
+        debris.forEach(d => { d.u -= .006; d.a += .18; const y = topY + (BASE - topY) * d.u * drop, w = (1 - d.u) * W * .2 + 30; em(ctx, d.e, FX + sway * d.u + Math.cos(d.a) * w, y, 22, d.a); }); for (let i = debris.length - 1; i >= 0; i--) if (debris[i].u <= 0) debris.splice(i, 1);
+        ctx.fillStyle = `rgba(120,113,108,${.5 * dark})`; for (let k = 0; k < 6; k++) { ctx.beginPath(); ctx.arc(FX + sway + Math.cos(t / 200 + k) * 50, BASE + Math.sin(t / 150 + k) * 8, 20 + k * 3, 0, 7); ctx.fill(); } }
+      if (t > ABS && t < BACK) big(ctx, "The storm is swallowing the page! 🌪️", W / 2, H * .22, 24, "#1e293b");
+      if (t > BACK + 400 && t < END) big(ctx, "Phew… it passed!", W / 2, H * .22, 28, "#1e3a8a"); } };
+  });
+
+  // 💡 SWINGING LAMP: a ceiling lamp on a cord swings left-right and back-forward; its cone of light sweeps across the dark page; tap to push it
+  Weather.add("ceiling lamp,swinging lamp,hanging lamp,pendulum,lamp", { e: "💡", name: "Swinging lamp", dur: 16000, capture: 1, top: 1 }, A => {
+    let ampX = .55, ampZ = .45, last = 0; A.setChip("tap to push the lamp 💡"); A.noise(16, .03, "band", 120, 120, 4);
+    return { down(x) { const W = A.W(); ampX = Math.min(.9, ampX + .25); ampZ = Math.min(.8, ampZ + .1); A.noise(.15, .12, "band", 900, 500, 3); },
+      frame(t) { const { ctx } = A, W = A.W(), H = A.H(), dt = Math.min(40, t - (last || t)); last = t; ampX = Math.max(.25, ampX * Math.pow(.99995, dt)); ampZ = Math.max(.2, ampZ * Math.pow(.99995, dt));
+        const sw = Math.sin(t / 900) * ampX, z = Math.cos(t / 1300) * ampZ, L = H * .38 * (1 + z * .15), px = W / 2, py = 0, lx = px + Math.sin(sw) * L, ly = py + Math.cos(sw) * L, sc = 1 + z * .35;
+        // dark room, then cut the light cone out of the dark
+        ctx.save(); ctx.fillStyle = "rgba(5,7,16,.9)"; ctx.fillRect(0, 0, W, H); ctx.globalCompositeOperation = "destination-out";
+        const ang = sw, reach = H * 1.1, spread = .42 + z * .1, ex = lx + Math.sin(ang) * reach, ey = ly + Math.cos(ang) * reach, nx = Math.cos(ang), ny = -Math.sin(ang), half = Math.tan(spread) * reach;
+        const g = ctx.createLinearGradient(lx, ly, ex, ey); g.addColorStop(0, "rgba(0,0,0,.95)"); g.addColorStop(.7, "rgba(0,0,0,.75)"); g.addColorStop(1, "rgba(0,0,0,.4)"); ctx.fillStyle = g;
+        ctx.beginPath(); ctx.moveTo(lx - nx * 18 * sc, ly - ny * 18 * sc); ctx.lineTo(ex - nx * half, ey - ny * half); ctx.lineTo(ex + nx * half, ey + ny * half); ctx.lineTo(lx + nx * 18 * sc, ly + ny * 18 * sc); ctx.closePath(); ctx.fill();
+        const fy = Math.min(H * .92, ly + H * .55), fx = lx + Math.tan(ang) * (fy - ly), pool = ctx.createRadialGradient(fx, fy, 10, fx, fy, 180 * sc); pool.addColorStop(0, "rgba(0,0,0,1)"); pool.addColorStop(1, "rgba(0,0,0,0)"); ctx.fillStyle = pool; ctx.beginPath(); ctx.ellipse(fx, fy, 190 * sc, 70 * sc, 0, 0, 7); ctx.fill(); ctx.restore();
+        ctx.save(); ctx.globalCompositeOperation = "lighter"; const tint = ctx.createLinearGradient(lx, ly, ex, ey); tint.addColorStop(0, "rgba(255,220,140,.35)"); tint.addColorStop(1, "rgba(255,220,140,0)"); ctx.fillStyle = tint; ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(ex - nx * half, ey - ny * half); ctx.lineTo(ex + nx * half, ey + ny * half); ctx.closePath(); ctx.fill(); ctx.restore();
+        // cord, shade and bulb (closer = bigger)
+        ctx.strokeStyle = "#cbd5e1"; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(lx, ly - 22 * sc); ctx.stroke(); ctx.fillStyle = "#94a3b8"; ctx.fillRect(px - 20, 0, 40, 8);
+        ctx.save(); ctx.translate(lx, ly); ctx.rotate(-sw); ctx.scale(sc, sc); ctx.fillStyle = "#1e3a8a"; ctx.beginPath(); ctx.moveTo(-14, -24); ctx.lineTo(14, -24); ctx.lineTo(34, 4); ctx.lineTo(-34, 4); ctx.closePath(); ctx.fill(); ctx.strokeStyle = "#93c5fd"; ctx.lineWidth = 2; ctx.stroke();
+        const bulb = ctx.createRadialGradient(0, 6, 1, 0, 6, 26); bulb.addColorStop(0, "#fffbeb"); bulb.addColorStop(.4, "#fde68a"); bulb.addColorStop(1, "rgba(253,230,138,0)"); ctx.fillStyle = bulb; ctx.beginPath(); ctx.arc(0, 6, 26, 0, 7); ctx.fill(); ctx.restore();
+        if (t < 3500) big(ctx, "A beam of light from a swinging lamp", W / 2, H * .9, 20, "#78350f"); } };
+  });
+
   // 🔗 the same word, different examples: shown together in the ✨ See it strip under the picture
   if (Weather.also) {
-    Weather.also("beam,beams,beamed,beaming", "sunbeam,moonbeam,laser");
+    Weather.also("beam,beams,beamed,beaming", "swinging lamp,sunbeam,moonbeam,laser");
     Weather.also("sunbeam,sunbeams,ray,rays", "beam,moonbeam");
     Weather.also("scamper,scampers,scampered,scampering,scurry,scurried,scurrying,dart,darted", "scampering children");
     Weather.also("peep,peeps,peeped,peeping,peek,peeked,peeking", "look");

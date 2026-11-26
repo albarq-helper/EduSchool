@@ -68,7 +68,7 @@
   Object.keys(SAY).forEach(k => R[k] = R[SAY[k]]);
   const keyOf = w => { const k = String(w || "").trim().toLowerCase().replace(/[’]/g, "'").replace(/[.!?]$/, ""); return R[k] ? k : k.replace(/\s*\([^)]*\)\s*$/, ""); }; // "Impact (hit)" = impact
   const recipe = w => R[keyOf(w)] || null;
-  const variants = w => { const k = keyOf(w), out = []; [...(V[k] || []), ...(ALSO[k] || []).flatMap(a => V[a] || [])].forEach(r => { if (!out.includes(r) && !out.some(o => o.name === r.name)) out.push(r); }); return out; };
+  const variants = w => { const k = keyOf(w), out = []; [...(R[k] ? [R[k]] : []), ...(V[k] || []), ...(ALSO[k] || []).flatMap(a => V[a] || [])].forEach(r => { if (!out.includes(r) && !out.some(o => o.name === r.name)) out.push(r); }); return out; };
 
   // 🔊 sounds (synthesized, no files)
   let AC = null;
