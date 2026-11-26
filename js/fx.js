@@ -705,7 +705,61 @@
   });
 
   // 🔗 the same word, different examples: shown together in the ✨ See it strip under the picture
+  // 💙 FEEL BLUE: first the joke (is he really blue?), then the real meaning: a sad boy under his own little rain cloud while the page loses its colour.
+  //   Tap to help: a friend comes, gives a hug, and the cloud goes away; the colour and the sun come back.
+  Weather.add("feel blue,feeling blue,feels blue,felt blue,down in the dumps,sad,sadness,sadly,unhappy,miserable,downcast,glum,heartbroken,cheer up,cheered up", { e: "💙", name: "Feel blue", dur: 30000, capture: 1, top: 1 }, A => {
+    const kids = A.kids(), old = kids.map(el => [el.style.filter, el.style.transition]);
+    const tint = f => kids.forEach(el => { el.style.transition = "filter 1.4s ease"; el.style.filter = f; });
+    const JOKE = 3800; let step = 0, stepAt = 0, sadAt = 0, rain = null, tears = [], drops = [], bits = [];
+    tint("sepia(1) hue-rotate(180deg) saturate(3)"); A.setChip("is he really blue? 🤔");
+    const help = now => { if (now < JOKE || step >= 3) return; step++; stepAt = now;
+      if (step === 1) { A.plink(0); A.setChip("tap: give a hug 🤗"); }
+      if (step === 2) { A.plink(0); A.plink(.15); A.setChip("tap: send the cloud away ☀️"); }
+      if (step === 3) { try { rain && rain.stop && rain.stop(); } catch (e) {} tint("none"); [0, .2, .4, .6].forEach(d => A.chirp(d)); A.setChip("cheered up! 😊"); } };
+    return { stop() { try { rain && rain.stop && rain.stop(); } catch (e) {} kids.forEach((el, i) => { el.style.filter = old[i][0]; setTimeout(() => { el.style.transition = old[i][1]; }, 1500); }); },
+      down() { help(performance.now() - A.t0); },
+      frame(t, life, fade) { if (!A.t0) A.t0 = performance.now() - t; const { ctx } = A, W = A.W(), H = A.H(), gy = H * .8, S = Math.min(W * .3, H * .38), bx = W * .42;
+        // auto mode: if nobody taps, the friend still comes
+        if (t > JOKE + 6000 && step === 0) help(t); if (step && step < 3 && t - stepAt > 4500) help(t);
+        if (t < JOKE) { // 🤔 the joke: a boy who is literally blue
+          ctx.fillStyle = "rgba(219,234,254,.9)"; ctx.fillRect(0, 0, W, H);
+          big(ctx, "“I feel blue.”", W / 2, H * .16, Math.min(40, W / 14), "#1d4ed8");
+          footballer(ctx, bx + S * .25, gy, S, 1, 0, 0, 0, "#1d4ed8", "#1e3a8a", "#60a5fa");
+          bubble(ctx, "Huh? I'm not THAT blue! 😅", bx + S * .25, gy - S * 1.35, 16);
+          if (t > 1800) { big(ctx, "❌ Not the colour!", W / 2, H * .3, 26, "#dc2626"); }
+          return; }
+        if (!sadAt) { sadAt = t; tint(step < 3 ? "grayscale(.85) brightness(.9) sepia(.25) hue-rotate(180deg)" : "none"); rain = A.noise(22, .035, "band", 2500, 3500, .6); A.setChip("tap to help him 🤝"); }
+        const happy = step >= 3 ? Math.min(1, (t - stepAt) / 1500) : 0;
+        // the room: grey-blue, then warm and bright
+        const g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, happy ? `rgba(253,230,138,${.55 + .3 * happy})` : "rgba(100,116,139,.82)"); g.addColorStop(1, happy ? "rgba(187,247,208,.9)" : "rgba(51,65,85,.88)"); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+        ctx.fillStyle = happy ? "#86efac" : "#475569"; ctx.fillRect(0, gy, W, H - gy);
+        if (happy) { em(ctx, "☀️", W * .82, H * .2 + (1 - happy) * 80, 90 * happy, t / 3000); ctx.globalAlpha = happy * .8; ["#ef4444", "#f97316", "#eab308", "#22c55e", "#3b82f6", "#8b5cf6"].forEach((c, i) => { ctx.strokeStyle = c; ctx.lineWidth = 10; ctx.beginPath(); ctx.arc(W / 2, gy, Math.min(W, H) * .55 - i * 10, Math.PI, 0); ctx.stroke(); }); ctx.globalAlpha = 1; }
+        // the boy: head down when sad; jumps when cheered up
+        const jump = happy ? Math.abs(Math.sin(t / 180)) * S * .15 : 0, droop = happy ? 0 : (step === 2 ? .15 : .3);
+        ctx.save(); ctx.translate(bx, gy - jump); ctx.rotate(droop * .25); footballer(ctx, 0, 0, S, 1, 0, 0, 0, happy ? "#f59e0b" : "#64748b", happy ? "#b45309" : "#334155"); ctx.restore();
+        const hx = bx + Math.sin(droop * .25) * S * .99, hy = gy - jump - Math.cos(droop * .25) * S * .99;
+        if (!happy) { ctx.fillStyle = "#e8b48a"; ctx.fillRect(hx + S * .04, hy - S * .045, S * .1, S * .07); ctx.strokeStyle = "#1f2937"; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(hx + S * .08, hy + S * .02, S * .035, Math.PI * 1.15, Math.PI * 1.85); ctx.stroke();
+          if (Math.random() < .05) tears.push({ x: hx + S * .1, y: hy - S * .01, v: 0 });
+        }
+        for (let i = tears.length - 1; i >= 0; i--) { const d = tears[i]; d.v += .15; d.y += d.v; ctx.fillStyle = "#60a5fa"; ctx.beginPath(); ctx.ellipse(d.x, d.y, 3, 5, 0, 0, 7); ctx.fill(); if (d.y > gy) tears.splice(i, 1); }
+        // his own little rain cloud: it shrinks with each kind thing, and floats away at the end
+        const cloudX = bx + (happy ? happy * W : 0), cloudY = gy - S * 1.32 - happy * 160, cs = S * (step === 0 ? .55 : step === 1 ? .45 : step === 2 ? .35 : .3);
+        if (happy < 1) { ctx.globalAlpha = 1 - happy; ctx.filter = "brightness(.55)"; em(ctx, "☁️", cloudX, cloudY, cs * 1.15); ctx.filter = "none"; if (!happy && Math.random() < .9) drops.push({ x: cloudX + (Math.random() - .5) * cs * 1.2, y: cloudY + cs * .4 }); ctx.globalAlpha = 1; }
+        ctx.strokeStyle = "rgba(191,219,254,.95)"; ctx.lineWidth = 3; for (let i = drops.length - 1; i >= 0; i--) { const d = drops[i]; d.y += 9; ctx.beginPath(); ctx.moveTo(d.x, d.y); ctx.lineTo(d.x - 1, d.y + 10); ctx.stroke(); if (d.y > gy - S * .1 || happy) drops.splice(i, 1); }
+        // the friend
+        if (step >= 1) { const k = Math.min(1, (t - (step === 1 ? stepAt : 0) + (step > 1 ? 9e9 : 0)) / 1400), fx = W + S * .4 - (W + S * .4 - (bx + S * .55)) * Math.min(1, k), hug = step >= 2;
+          footballer(ctx, hug ? bx + S * .4 : fx, gy - (happy ? Math.abs(Math.sin(t / 180 + 1)) * S * .15 : 0), S * .95, -1, k < 1 ? t / 70 : 0, 0, 0, "#ec4899", "#9d174d", "#c68642");
+          if (step === 1 && k >= 1) bubble(ctx, "Are you OK? I'm here. 💛", bx + S * .55, gy - S * 1.3, 15);
+          if (step === 2) { em(ctx, "🤗", bx + S * .2, gy - S * .75, S * .28); em(ctx, "💛", bx + S * .2, gy - S * 1.15 - ((t - stepAt) / 30 % 40), 24); bubble(ctx, "Want to talk about it?", bx + S * .65, gy - S * 1.32, 15); } }
+        if (happy && Math.random() < .3) confetti(bits, bx, gy - S, 2); drawBits(ctx, bits);
+        // what it means
+        big(ctx, happy ? "Cheered up! 😊" : "Feel blue = feel sad 😢", W / 2, Math.max(H * .12, 70), Math.min(34, W / 16), happy ? "#15803d" : "#1e3a8a");
+        ctx.font = "700 15px system-ui"; ctx.textAlign = "center"; ctx.fillStyle = happy ? "#14532d" : "#f1f5f9";
+        ctx.fillText(happy ? "When a friend feels blue, be there: ask, listen, and stay with them. 💛" : step ? "A friend noticed. Kind things make the cloud smaller." : "Everything looks grey, like his own little rain cloud. (In English, “blue” can also mean sad.)", W / 2, H * .93); ctx.textAlign = "start"; } };
+  });
+
   if (Weather.also) {
+    Weather.also("gloomy,gloom,depressing", "feel blue");
     Weather.also("beam,beams,beamed,beaming", "swinging lamp,sunbeam,moonbeam,laser");
     Weather.also("sunbeam,sunbeams,ray,rays", "beam,moonbeam");
     Weather.also("scamper,scampers,scampered,scampering,scurry,scurried,scurrying,dart,darted", "scampering children");
