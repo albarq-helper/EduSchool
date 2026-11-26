@@ -10,6 +10,28 @@
   const big = (ctx, text, x, y, size, color) => { ctx.save(); ctx.font = `900 ${size}px system-ui`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.lineWidth = size / 7; ctx.strokeStyle = "#fff"; ctx.strokeText(text, x, y); ctx.fillStyle = color || "#1f2937"; ctx.fillText(text, x, y); ctx.restore(); };
   const shakeKids = (A, at, amp, ms) => A.kids().forEach(el => A.ani(el, [{ transform: "none" }, { transform: `translate(${-amp}px,${amp * .7}px)` }, { transform: `translate(${amp}px,${-amp * .6}px)` }, { transform: `translate(${-amp * .6}px,${amp * .4}px)` }, { transform: "none" }], { duration: ms || 320, delay: at }));
   const confetti = (list, x, y, n) => { for (let k = 0; k < n; k++) list.push({ x, y, vx: (Math.random() - .5) * 10, vy: -Math.random() * 9 - 2, c: ["#f43f5e", "#f59e0b", "#22c55e", "#3b82f6", "#a855f7", "#fde047"][k % 6], a: 1 }); };
+  // 🧒 a full-body cartoon footballer: x,y = between the feet, S = height, dir 1 = facing right, ph = walk phase, kick 0..1 lifts the front leg
+  const footballer = (ctx, x, y, S, dir, ph, kick, mud) => { ctx.save(); ctx.translate(x, y); ctx.scale(dir, 1); ctx.lineCap = "round"; ctx.lineJoin = "round";
+    const O = "#1f2937", skin = "#e8b48a", kit = "#2563eb", kit2 = "#1e3a8a", hipY = -S * .46, th = S * .22, sh = S * .22, sw = Math.sin(ph) * .5;
+    const stroke2 = (w, c, pts) => { [[w + S * .03, O], [w, c]].forEach(([lw, col]) => { ctx.strokeStyle = col; ctx.lineWidth = lw; ctx.beginPath(); pts.forEach(([px, py], i) => i ? ctx.lineTo(px, py) : ctx.moveTo(px, py)); ctx.stroke(); }); };
+    const leg = (a, bend, front) => { const kx = Math.sin(a) * th, ky = hipY + Math.cos(a) * th, fa = a - bend, fx = kx + Math.sin(fa) * sh, fy = ky + Math.cos(fa) * sh;
+      stroke2(S * .075, skin, [[0, hipY], [kx, ky]]); stroke2(S * .07, kit2, [[kx, ky], [fx, fy]]);
+      ctx.fillStyle = mud ? "#5b3a1e" : "#111827"; ctx.strokeStyle = O; ctx.lineWidth = S * .015; ctx.beginPath(); ctx.ellipse(fx + S * .045, fy + S * .015, S * .085, S * .045, fa * .2, 0, 7); ctx.fill(); ctx.stroke();
+      if (mud) { ctx.fillStyle = "#6b4423"; ctx.beginPath(); ctx.arc(fx - S * .01, fy - S * .06, S * .03, 0, 7); ctx.arc(kx + S * .02, ky + S * .04, S * .022, 0, 7); ctx.fill(); } };
+    const back = -sw, frontA = kick ? -1.1 * kick + sw * (1 - kick) : sw;
+    leg(back, Math.max(0, -back) * .9 + .15, 0);
+    const arm = (a, front) => { const ex = Math.sin(a) * S * .16, ey = -S * .76 + Math.cos(a) * S * .17; stroke2(S * .07, front ? kit : kit2, [[0, -S * .78], [ex * .6, ey - S * .03]]); stroke2(S * .06, skin, [[ex * .6, ey - S * .03], [ex, ey + S * .12]]); };
+    arm(-sw * .9, 0);
+    ctx.fillStyle = kit2; ctx.strokeStyle = O; ctx.lineWidth = S * .015; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(-S * .14, hipY - S * .08, S * .28, S * .15, S * .03) : ctx.rect(-S * .14, hipY - S * .08, S * .28, S * .15); ctx.fill(); ctx.stroke();
+    leg(frontA, kick ? .2 : Math.max(0, -frontA) * .9 + .15, 1);
+    ctx.fillStyle = kit; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(-S * .15, -S * .86, S * .3, S * .36, S * .08) : ctx.rect(-S * .15, -S * .86, S * .3, S * .36); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = "#fff"; ctx.fillRect(-S * .15, -S * .69, S * .3, S * .03);
+    arm(sw * .9, 1);
+    ctx.fillStyle = skin; ctx.beginPath(); ctx.arc(S * .01, -S * .99, S * .14, 0, 7); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = "#3b2a1a"; ctx.beginPath(); ctx.arc(S * .0, -S * 1.03, S * .145, Math.PI * 1.0, Math.PI * 2.05); ctx.lineTo(S * .14, -S * 1.0); ctx.fill();
+    ctx.fillStyle = O; ctx.beginPath(); ctx.arc(S * .08, -S * .99, S * .018, 0, 7); ctx.fill(); ctx.lineWidth = S * .014; ctx.beginPath(); ctx.arc(S * .07, -S * .94, S * .04, .3, 1.5); ctx.stroke();
+    if (mud) { ctx.fillStyle = "rgba(107,68,35,.92)"; [[-.08, -.74, .035], [.07, -.6, .03], [-.04, -.44, .03], [.1, -.4, .025], [.06, -1.06, .022], [-.11, -.98, .02]].forEach(([a2, b2, r2]) => { ctx.beginPath(); ctx.arc(a2 * S, b2 * S, r2 * S, 0, 7); ctx.fill(); }); }
+    ctx.restore(); };
   const drawBits = (ctx, list) => { for (let i = list.length - 1; i >= 0; i--) { const p = list[i]; p.x += p.vx; p.y += p.vy; p.vy += .3; p.a -= .014; if (p.a <= 0) { list.splice(i, 1); continue; } ctx.globalAlpha = p.a; ctx.fillStyle = p.c; ctx.fillRect(p.x, p.y, 7, 4); } ctx.globalAlpha = 1; };
 
   // 🏇 WHIPPED: a horse race! 3-2-1-GO, tap (or Space) to crack the whip; every crack is a burst of speed, but cracks are limited
@@ -209,8 +231,10 @@
         splats.forEach(p => { if (p.al <= 0) return; ctx.globalAlpha = p.al; ctx.fillStyle = "#6b4423"; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 7); ctx.fill(); for (let k = 0; k < p.n; k++) { const a = p.seed + k * 1.3, d = p.r * (1.3 + (k % 3) * .4); ctx.beginPath(); ctx.arc(p.x + Math.cos(a) * d, p.y + Math.sin(a) * d, p.r * .3, 0, 7); ctx.fill(); } }); ctx.globalAlpha = 1;
         prints.forEach(p => { if (p.al > 0) sole(ctx, p.x, p.y, p.a, p.sd, p.al); });
         // the muddy kid
-        if (t < START) { const k = t / START; ball.y = H * .5 + Math.abs(Math.sin(t / 180)) * -60; em(ctx, "🧒", W * .15, H * .5, 90); em(ctx, "⚽", W * .15 + 60, ball.y + 40, 34, t / 200); ctx.fillStyle = "#6b4423"; [[-14, 10], [12, 22], [-4, 34], [18, -6]].forEach(([dx, dy]) => { ctx.beginPath(); ctx.arc(W * .15 + dx, H * .5 + dy, 6, 0, 7); ctx.fill(); }); big(ctx, "⚽ After football in the mud…", W / 2, H * .25, 26, "#5b3a1e"); }
-        else if (!walkEnd) { const u = (t - START) / WALK, [x, y, a] = at(u), bob = Math.abs(Math.sin(t / 140)) * 6; em(ctx, "🧒", x, y - 50 - bob, 70, 0, Math.cos(a) > 0 ? -1 : 1); em(ctx, "👟", x - 10, y - 8, 26, 0, Math.cos(a) > 0 ? -1 : 1); ctx.fillStyle = "#6b4423"; ctx.beginPath(); ctx.arc(x - 12, y - 6, 7, 0, 7); ctx.arc(x + 10, y - 3, 6, 0, 7); ctx.fill(); em(ctx, "⚽", x + 40, y - 20 - Math.abs(Math.sin(t / 160)) * 30, 28, t / 150); }
+        if (t < START) { const S = Math.min(W, H) * .3, kx = W * .2, ky = H * .72, cyc = (t % 700) / 700, kick = cyc < .25 ? Math.sin(cyc / .25 * Math.PI) : 0, by = ky - S * .2 - Math.abs(Math.sin(cyc * Math.PI)) * S * .9;
+          footballer(ctx, kx, ky, S, 1, 0, kick, 1); em(ctx, "⚽", kx + S * .28, by, S * .2, t / 150); if (kick > .5 && cyc < .15) A.plink(0); big(ctx, "⚽ After football in the mud…", W / 2, H * .22, 26, "#5b3a1e"); }
+        else if (!walkEnd) { const u = (t - START) / WALK, [x, y, a] = at(u), S = Math.min(W, H) * .24, dir = Math.cos(a) >= 0 ? 1 : -1;
+          footballer(ctx, x, y, S, dir, t / 110, 0, 1); em(ctx, "⚽", x + dir * S * .32, y - S * .07, S * .19, t / 90 * dir); }
         // the sponge follows the finger once the walking is done
         if (walkEnd && !done) { em(ctx, "🧽", A.ptr.x, A.ptr.y, 46, Math.sin(t / 80) * .25); if (t - walkEnd < 3000) big(ctx, "Rub with the sponge to clean it!", W / 2, H * .12, 22, "#1d4ed8"); }
         if (done) { big(ctx, "Sparkling clean! ✨", W / 2, H * .45, 48, "#0891b2"); for (let k = 0; k < 14; k++) { const a = k * .45 + t / 700, r = 90 + 30 * Math.sin(t / 300 + k); em(ctx, "✨", W / 2 + Math.cos(a) * r * 2, H * .45 + Math.sin(a) * r, 18); } } } };
