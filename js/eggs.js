@@ -188,6 +188,7 @@
     const el = e.target, w = el.dataset.eggWord, egg = find(w);
     io.unobserve(el);
     if (!egg || seen.has(letters(w)) || reduce() || Date.now() - lastAuto < 9000) return;
+    if (window.Weather && Weather.mode && Weather.mode() !== "auto") return; // eggs play by themselves only in ✨ Auto mode
     lastAuto = Date.now(); remember(letters(w));
     setTimeout(() => act(el, w, egg), 600);
   }), { threshold: 0.9 }) : null;

@@ -112,10 +112,17 @@
 .wx-chip{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:9995;display:flex;gap:6px;align-items:center;background:#fff;border-radius:999px;padding:6px 8px 6px 12px;box-shadow:0 4px 18px #0003;font:700 14px var(--f-display,system-ui);color:#333}
 .wx-chip,.wx-chip *{cursor:auto;white-space:nowrap}.wx-chip{flex-wrap:wrap;justify-content:center;max-width:96vw}.wx-chip.top{bottom:auto;top:12px}.wx-chip button{cursor:pointer;border:0;border-radius:999px;padding:4px 10px;font:inherit;cursor:pointer;background:#F1F1F4}
 .wx-btn{border:0;background:none;cursor:pointer;font-size:.8em;padding:0 3px;vertical-align:middle;opacity:.85}
-.wx-btn:hover{opacity:1;transform:scale(1.15)}`;
+.wx-btn:hover{opacity:1;transform:scale(1.15)}
+html.fx-off .wx-btn,html.fx-off .egg-btn{display:none!important}
+.fx-mode{position:fixed;left:12px;bottom:12px;z-index:9994;border:1.5px solid #e2e8f0;border-radius:999px;background:#fff;box-shadow:0 4px 14px #0002;padding:6px 12px;font:700 13px system-ui;cursor:pointer;color:#334155}
+.fx-mode:hover{border-color:#a78bfa}@media print{.fx-mode{display:none}}`;
   document.head.appendChild(css);
   const OFF_KEY = "wx-off";
-  const isOff = () => { try { return localStorage.getItem(OFF_KEY) === "1"; } catch (e) { return false; } };
+  // ✨ effects mode, shared with the hidden-word eggs: "tap" (default: only when you press a button), "auto" (play by themselves as you scroll), "off"
+  const MODE_KEY = "fx-mode", MODES = ["tap", "auto", "off"], LABEL = { tap: "👆 On tap", auto: "▶️ Auto", off: "🚫 Off" };
+  const mode = () => { try { const m = localStorage.getItem(MODE_KEY); if (MODES.includes(m)) return m; return localStorage.getItem(OFF_KEY) === "1" ? "off" : "tap"; } catch (e) { return "tap"; } };
+  const setMode = m => { try { localStorage.setItem(MODE_KEY, m); localStorage.removeItem(OFF_KEY); } catch (e) {} document.documentElement.classList.toggle("fx-off", m === "off"); const b = document.querySelector(".fx-mode"); if (b) b.textContent = "✨ Effects: " + LABEL[m]; };
+  const isOff = () => mode() !== "auto"; // things that play by themselves need "auto"
   const reduce = () => matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
   let current = null;
 
@@ -366,7 +373,7 @@
     }
     const chip = document.createElement("div");
     chip.className = "wx-chip"; chip.setAttribute("role", "status");
-    chip.innerHTML = `<span>${r.icon || r.e} ${r.name}</span><button type="button" data-x>✕ Stop</button><button type="button" data-off>Turn effects off</button>`;
+    chip.innerHTML = `<span>${r.icon || r.e} ${r.name}</span><button type="button" data-x>✕ Stop</button><button type="button" data-off>${mode() === "auto" ? "Stop auto-play" : "Close"}</button>`;
     if (r.torch && !r.torch.flicker) { const c = document.createElement("span"); c.style.display = "flex"; c.style.gap = "4px";
       [["↺", "Tilt left", () => tiltBy(-.2)], ["➖", "Shorter beam", () => lenBy(-40)], ["➕", "Longer beam", () => lenBy(40)], ["↻", "Tilt right", () => tiltBy(.2)]].forEach(([t, l, f]) => { const b = document.createElement("button"); b.type = "button"; b.textContent = t; b.title = l; b.setAttribute("aria-label", l); b.onpointerdown = e => { e.stopPropagation(); f(); }; c.appendChild(b); });
       chip.insertBefore(c, chip.querySelector("[data-x]")); }
@@ -374,7 +381,7 @@
     if (r.fx) { const fxs = document.createElement("b"); fxs.dataset.fx = "1"; fxs.style.padding = "0 4px"; fxs.innerHTML = chipText; chip.insertBefore(fxs, chip.querySelector("[data-x]")); }
     if (r.rifle) { const sc = document.createElement("b"); sc.dataset.score = "1"; sc.textContent = "🎈 0"; sc.style.padding = "0 6px"; chip.insertBefore(sc, chip.querySelector("[data-x]")); }
     chip.querySelector("[data-x]").onclick = () => stop();
-    chip.querySelector("[data-off]").onclick = () => { try { localStorage.setItem(OFF_KEY, "1"); } catch (e) {} stop(); };
+    chip.querySelector("[data-off]").onclick = () => { setMode("tap"); stop(); };
     document.body.appendChild(chip);
     addEventListener("resize", size);
     current = { stop() { if (ended) return; ended = true; if (plug && plug.stop) { try { plug.stop(); } catch (e) {} } ["pointerdown", "mousedown", "click", "touchstart"].forEach(ev => removeEventListener(ev, pDown, { capture: true })); removeEventListener("pointermove", pMove); ["pointerup", "mouseup", "touchend"].forEach(ev => removeEventListener(ev, pUp, { capture: true })); cancelAnimationFrame(raf); sfx.stop(); moved.stop(); removeEventListener("resize", size); if (r.torch || r.laser || r.mag || r.rifle || r.nocursor) document.documentElement.style.cursor = oldCur; removeEventListener("pointermove", onMove); if (r.rifle) ["pointerdown", "click", "mousedown", "touchstart"].forEach(ev => removeEventListener(ev, fire, { capture: true })); removeEventListener("keydown", onKey); removeEventListener("wheel", onWheel); removeEventListener("touchmove", onMove); removeEventListener("pointerdown", onMove); cv.remove(); chip.remove(); layers.forEach(l => { l.style.opacity = 0; if (l === puddle) l.style.height = "0"; setTimeout(() => l.remove(), 900); }); } };
@@ -481,16 +488,18 @@
       const btn = document.createElement("button");
       btn.type = "button"; btn.className = "wx-btn"; if (r.icon) btn.innerHTML = r.icon; else btn.textContent = r.e; // icon = our own drawing (never user text)
       btn.title = `Make it ${r.name.toLowerCase()} on the page!`; btn.setAttribute("aria-label", `Show ${r.name} on the whole page`);
-      btn.addEventListener("click", ev => { ev.preventDefault(); ev.stopPropagation(); ac(); try { localStorage.removeItem(OFF_KEY); } catch (e) {} play(w, { force: 1 }); });
+      btn.addEventListener("click", ev => { ev.preventDefault(); ev.stopPropagation(); ac(); play(w, { force: 1 }); });
       (el.nextElementSibling && el.nextElementSibling.classList.contains("egg-btn") ? el.nextElementSibling : el).insertAdjacentElement("afterend", btn);
       if (io) io.observe(el);
     });
   }
   const mo = new MutationObserver(ms => { if (ms.some(m => [...m.addedNodes].some(n => n.nodeType === 1 && !/wx-|egg-/.test(n.className || "")))) scan(); });
-  const start = () => { scan(); mo.observe(document.body, { childList: true, subtree: true }); };
+  const modeSwitch = () => { if (document.querySelector(".fx-mode") || !document.querySelector(".wx-btn, .egg-btn")) return; const b = document.createElement("button"); b.type = "button"; b.className = "fx-mode";
+    b.title = "On tap: effects play only when you press their button · Auto: they play by themselves as you scroll · Off: no effects"; b.onclick = () => { const m = MODES[(MODES.indexOf(mode()) + 1) % MODES.length]; setMode(m); if (m === "off") stop(); }; document.body.appendChild(b); setMode(mode()); };
+  const start = () => { scan(); setMode(mode()); modeSwitch(); mo.observe(document.body, { childList: true, subtree: true }); setInterval(modeSwitch, 2000); };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start); else start();
   addEventListener("keydown", e => { if (e.key === "Escape") stop(); });
   // js/fx.js adds effects: Weather.add("word,word", recipe, fxFunction)
   const addFx = (words, rec, fn) => { const name = rec.fx || (rec.fx = "fx" + Object.keys(FX).length); if (fn) FX[name] = fn; add(words, rec); };
-  window.Weather = { play, stop, recipe, R, FX, add: addFx, rescan: () => { document.querySelectorAll("[data-wx-done]").forEach(el => { if (!el.dataset.wxWord) delete el.dataset.wxDone; }); scan(); } };
+  window.Weather = { play, stop, recipe, R, FX, add: addFx, mode, setMode, rescan: () => { document.querySelectorAll("[data-wx-done]").forEach(el => { if (!el.dataset.wxWord) delete el.dataset.wxDone; }); scan(); } };
 })();
