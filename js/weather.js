@@ -124,7 +124,7 @@ html.fx-off .wx-btn,html.fx-off .egg-btn,html.fx-off .wx-strip{display:none!impo
 .wx-ex{display:inline-flex;align-items:center;gap:5px;border:1px solid #ddd6fe;background:#fff;border-radius:999px;padding:3px 9px 3px 5px;font:700 12px system-ui;color:#3730a3;cursor:pointer;box-shadow:0 1px 2px #6d28d91a;transition:transform .15s,box-shadow .15s,border-color .15s;max-width:100%}
 .wx-ex i{font-style:normal;font-size:15px;line-height:1;display:inline-flex}.wx-ex span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .wx-ex:hover{transform:translateY(-1px);box-shadow:0 4px 10px #6d28d92e;border-color:#a78bfa}.wx-ex:active{transform:scale(.96)}
-.wx-strip{min-width:0;max-width:100%;box-sizing:border-box}.wx-ex{min-width:0}.wx-ex span{min-width:0}.wx-strip .wx-st{white-space:normal;line-height:1.25}
+article.d .wx-picwrap{width:min-content;max-width:100%}.wx-strip{min-width:0;max-width:100%;box-sizing:border-box}.wx-ex{min-width:0}.wx-ex span{min-width:0}.wx-strip .wx-st{white-space:normal;line-height:1.25}
 @media (max-width:720px){.wx-strip{padding:5px;gap:4px}.wx-ex span{display:none}.wx-ex{padding:4px 6px}.wx-ex i{font-size:17px}.wx-strip .wx-st{font-size:9px;letter-spacing:.03em}}
 @media print{.wx-strip{display:none}}
 .fx-mode{position:fixed;left:12px;bottom:12px;z-index:9994;border:1.5px solid #e2e8f0;border-radius:999px;background:#fff;box-shadow:0 4px 14px #0002;padding:6px 12px;font:700 13px system-ui;cursor:pointer;color:#334155}
