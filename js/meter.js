@@ -51,6 +51,7 @@
 .mtr-w button{font:800 .8rem var(--f-body,system-ui);border-radius:999px;border:1.5px solid var(--accent,#2347c5);background:#fff;color:var(--accent,#2347c5);padding:4px 10px;cursor:pointer}
 .mtr-w button.add{background:var(--accent,#2347c5);color:#fff}
 .mtr-track{position:relative;padding:6px 0 2px}
+.mtr-fxrow{display:flex;justify-content:center;margin-top:6px}.mtr-fx{border:1.5px solid #e2e8f0;border-radius:999px;background:#fff;padding:4px 12px;font:700 13px system-ui;cursor:pointer;color:#334155}.mtr-fx[aria-pressed=true]{border-color:#a78bfa;background:#f5f3ff;color:#5b21b6}
 .mtr-track input[type=range]{width:100%;-webkit-appearance:none;appearance:none;height:16px;border-radius:99px;outline:none;cursor:pointer;background:var(--grad)}
 .mtr-track input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:38px;height:38px;border-radius:50%;background:#fff;border:4px solid #1f2937;box-shadow:0 3px 8px rgba(0,0,0,.25);cursor:grab}
 .mtr-track input[type=range]::-moz-range-thumb{width:32px;height:32px;border-radius:50%;background:#fff;border:4px solid #1f2937;cursor:grab}
@@ -128,7 +129,8 @@
       <div class="mtr-top"><div class="mtr-face" aria-hidden="true"></div><div><div class="mtr-lv"></div><div class="mtr-words"></div></div></div>
       <div class="mtr-track" style="--grad:${grad}"><input type="range" min="0" max="${L.length - 1}" step="1" value="${k}" aria-label="Strength">
         <div class="mtr-ticks">${L.map((l, j) => `<button type="button" data-j="${j}" title="${esc(l.items.map(i => clean(D[i] && D[i].w)).join(", "))}">${l.rank > 0 ? "+" : ""}${l.rank}</button>`).join("")}</div></div>
-      <div class="mtr-nav"><button type="button" data-step="-1">◀ ${esc(o.left ? "more " + o.left : "less")}</button><span class="mid"></span><button type="button" data-step="1">${esc(o.right ? "more " + o.right : "more")} ▶</button></div></div>`);
+      <div class="mtr-nav"><button type="button" data-step="-1">◀ ${esc(o.left ? "more " + o.left : "less")}</button><span class="mid"></span><button type="button" data-step="1">${esc(o.right ? "more " + o.right : "more")} ▶</button></div>
+      <div class="mtr-fxrow"><button type="button" class="mtr-fx" data-mfx aria-pressed="true"></button></div></div>`);
     $(el).empty().append($m);
     const N = L.length, PI = Math.PI, P = (r, a) => [+(r * Math.cos(a)).toFixed(1), +(r * Math.sin(a)).toFixed(1)];
     const segA = j => [PI + j * PI / N, PI + (j + 1) * PI / N];
@@ -189,7 +191,16 @@
       $m.find(".mtr-ticks button").removeClass("on").eq(k).addClass("on"); paint(animate);
       $m.find('[data-step="-1"]').prop("disabled", k === 0); $m.find('[data-step="1"]').prop("disabled", k === L.length - 1);
       o.onLevel && o.onLevel(l.rank);
+      if (animate) playLevel(l);
     }
+    // ✨ effects as you move: the first word on the new level that has an effect plays it (waits until a drag stops)
+    const FXK = "meter-fx", fxOn = () => { try { return localStorage.getItem(FXK) !== "0"; } catch (e) { return true; } };
+    const fxBtn = () => { const $b = $m.find("[data-mfx]"), off = !window.Weather || (Weather.mode && Weather.mode() === "off"); $b.closest(".mtr-fxrow").toggle(!!window.Weather); $b.attr("aria-pressed", String(fxOn() && !off)).text(off ? "✨ Effects are off (corner switch)" : fxOn() ? "✨ Effects as I move: On" : "✨ Effects as I move: Off"); };
+    let fxTimer = 0;
+    function playLevel(l) { if (!window.Weather || !fxOn() || (Weather.mode && Weather.mode() === "off")) return; clearTimeout(fxTimer);
+      fxTimer = setTimeout(() => { const w = l.items.map(i => D[i] && D[i].w).find(w => w && Weather.recipe(w)); if (w) Weather.play(w, { force: 1 }); else Weather.stop(); }, 380); }
+    $m.on("click", "[data-mfx]", function () { if (Weather.mode && Weather.mode() === "off") return; try { localStorage.setItem(FXK, fxOn() ? "0" : "1"); } catch (e) {} if (!fxOn()) Weather.stop(); fxBtn(); });
+    setTimeout(fxBtn, 0);
     $range.on("input", function () { show(+this.value, true); });
     $m.on("click", "[data-j]", function () { show(+$(this).data("j"), true); });
     $m.on("click", "[data-step]", function () { show(k + +$(this).data("step"), true); });
