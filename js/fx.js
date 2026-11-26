@@ -240,6 +240,44 @@
         if (done) { big(ctx, "Sparkling clean! ✨", W / 2, H * .45, 48, "#0891b2"); for (let k = 0; k < 14; k++) { const a = k * .45 + t / 700, r = 90 + 30 * Math.sin(t / 300 + k); em(ctx, "✨", W / 2 + Math.cos(a) * r * 2, H * .45 + Math.sin(a) * r, 18); } } } };
   });
 
+  // 🔌 CONNECT: glowing lines link the cards on the page like a network; then drag each coloured plug to its socket; all connected = the bulb lights up
+  Weather.add("connect,connects,connected,connecting,connection,connections,link,links,linked,linking,attach,attached,plug,plugged,network,wire,wires,wired,circuit", { e: "🔌", name: "Connect", dur: 40000, track: 1, capture: 1, top: 1 }, A => {
+    const W = A.W(), H = A.H(), COL = [["#ef4444", "red"], ["#22c55e", "green"], ["#3b82f6", "blue"], ["#f59e0b", "yellow"]], NET = 2600;
+    const nodes = [...document.querySelectorAll(".card, img, h1, h2, .btn, .panel, .tag")].map(el => el.getBoundingClientRect()).filter(b => b.bottom > 0 && b.top < innerHeight && b.width > 20).slice(0, 14).map(b => ({ x: b.left + b.width / 2, y: b.top + Math.min(b.height / 2, 30) }));
+    const links = []; nodes.forEach((n, i) => { const near = nodes.map((m, j) => [j, Math.hypot(m.x - n.x, m.y - n.y)]).filter(([j]) => j !== i).sort((a, b) => a[1] - b[1]).slice(0, 2); near.forEach(([j]) => { if (!links.some(l => (l[0] === j && l[1] === i))) links.push([i, j]); }); });
+    const order = [0, 1, 2, 3].sort(() => Math.random() - .5), lx = W * .18, rx = W * .82, ys = k => H * (.3 + k * .14);
+    const plugs = COL.map((c, k) => ({ k, x: lx, y: ys(k), done: 0 })), sockets = COL.map((c, k) => ({ k, x: rx, y: ys(order.indexOf(k)) }));
+    let drag = null, made = 0, lit = 0; const sparks = [];
+    return { down(x, y) { if (Date.now() < 0) return; const p = plugs.find(q => !q.done && Math.hypot(q.x - x, q.y - y) < 34); if (p) { drag = p; A.plink(0); } },
+      move(x, y) { },
+      up(x, y) { if (!drag) return; const s0 = sockets.find(q => Math.hypot(q.x - x, q.y - y) < 40); if (s0 && s0.k === drag.k) { drag.done = 1; made++; A.noise(.15, .3, "band", 3000, 1500, 3); for (let k = 0; k < 18; k++) sparks.push({ x: s0.x, y: s0.y, vx: (Math.random() - .5) * 8, vy: (Math.random() - .5) * 8, a: 1 }); A.setChip(made < 4 ? `🔌 ${made} / 4 connected` : "💡 all connected!"); if (made === 4) { lit = performance.now(); [0, .2, .4].forEach(d => A.chirp(d)); } }
+        else if (s0) { A.noise(.2, .15, "lowpass", 300, 150, 1); } drag = null; },
+      frame(t) { const { ctx } = A;
+        // 1) the page becomes a network
+        const netK = Math.min(1, t / 1400), fadeNet = t > NET ? Math.max(0, 1 - (t - NET) / 700) : 1;
+        if (fadeNet > 0) { ctx.save(); ctx.globalAlpha = fadeNet; ctx.lineWidth = 2.5; links.forEach(([i, j], n) => { const a = nodes[i], b = nodes[j], k = Math.min(1, Math.max(0, netK * 1.6 - n * .05)); if (!k) return; const ex = a.x + (b.x - a.x) * k, ey = a.y + (b.y - a.y) * k;
+            ctx.strokeStyle = "rgba(56,189,248,.85)"; ctx.shadowColor = "#38bdf8"; ctx.shadowBlur = 10; ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(ex, ey); ctx.stroke(); ctx.shadowBlur = 0;
+            if (k >= 1) { const u = ((t / 900) + n * .37) % 1; ctx.fillStyle = "#fde047"; ctx.beginPath(); ctx.arc(a.x + (b.x - a.x) * u, a.y + (b.y - a.y) * u, 3.5, 0, 7); ctx.fill(); } });
+          nodes.forEach(n => { ctx.fillStyle = "#0ea5e9"; ctx.beginPath(); ctx.arc(n.x, n.y, 6 * netK, 0, 7); ctx.fill(); ctx.strokeStyle = "#fff"; ctx.lineWidth = 2; ctx.stroke(); }); ctx.restore(); }
+        if (t < NET) { if (t < 300) A.setChip("connecting…"); return; }
+        if (t < NET + 100) A.setChip("drag each plug to its colour 🔌");
+        // 2) the wire game
+        const g = Math.min(1, (t - NET) / 500); ctx.globalAlpha = g; ctx.fillStyle = "rgba(15,23,42,.88)"; ctx.fillRect(0, 0, W, H); ctx.globalAlpha = 1;
+        ctx.fillStyle = "#334155"; ctx.fillRect(lx - 40, ys(0) - 50, 50, ys(3) - ys(0) + 100); ctx.fillRect(rx - 10, ys(0) - 50, 50, ys(3) - ys(0) + 100);
+        sockets.forEach(q => { ctx.fillStyle = "#0f172a"; ctx.beginPath(); ctx.arc(q.x, q.y, 20, 0, 7); ctx.fill(); ctx.strokeStyle = COL[q.k][0]; ctx.lineWidth = 6; ctx.stroke(); ctx.fillStyle = "#475569"; ctx.fillRect(q.x - 6, q.y - 9, 4, 18); ctx.fillRect(q.x + 3, q.y - 9, 4, 18); });
+        plugs.forEach(p => { const end = p.done ? sockets.find(q => q.k === p.k) : drag === p ? { x: A.ptr.x, y: A.ptr.y } : null;
+          if (end) { ctx.strokeStyle = COL[p.k][0]; ctx.lineWidth = 9; ctx.lineCap = "round"; ctx.beginPath(); ctx.moveTo(p.x, p.y); const mx = (p.x + end.x) / 2; ctx.bezierCurveTo(mx, p.y + 60, mx, end.y + 60, end.x, end.y); ctx.stroke();
+            if (p.done) { const u = (t / 700 + p.k * .25) % 1, bx = Math.pow(1 - u, 3) * p.x + 3 * Math.pow(1 - u, 2) * u * mx + 3 * (1 - u) * u * u * mx + u * u * u * end.x, by = Math.pow(1 - u, 3) * p.y + 3 * Math.pow(1 - u, 2) * u * (p.y + 60) + 3 * (1 - u) * u * u * (end.y + 60) + u * u * u * end.y; ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(bx, by, 4, 0, 7); ctx.fill(); } }
+          const hx = end && !p.done ? end.x : p.x, hy = end && !p.done ? end.y : p.y; ctx.fillStyle = COL[p.k][0]; ctx.strokeStyle = "#fff"; ctx.lineWidth = 3; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(hx - 18, hy - 14, 36, 28, 8) : ctx.rect(hx - 18, hy - 14, 36, 28); ctx.fill(); ctx.stroke();
+          if (!p.done && !drag && Math.floor(t / 400) % 2) { ctx.strokeStyle = "rgba(255,255,255,.6)"; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(p.x, p.y, 28, 0, 7); ctx.stroke(); } });
+        sparks.forEach(sp => { sp.x += sp.vx; sp.y += sp.vy; sp.a -= .04; ctx.fillStyle = `rgba(253,224,71,${Math.max(0, sp.a)})`; ctx.beginPath(); ctx.arc(sp.x, sp.y, 3, 0, 7); ctx.fill(); }); for (let i = sparks.length - 1; i >= 0; i--) if (sparks[i].a <= 0) sparks.splice(i, 1);
+        // the bulb
+        const on = lit ? Math.min(1, (performance.now() - lit) / 400) : 0, bx = W / 2, by = H * .8;
+        if (on) { const gl = ctx.createRadialGradient(bx, by, 10, bx, by, 160); gl.addColorStop(0, `rgba(253,224,71,${.8 * on})`); gl.addColorStop(1, "rgba(253,224,71,0)"); ctx.fillStyle = gl; ctx.beginPath(); ctx.arc(bx, by, 160, 0, 7); ctx.fill(); }
+        ctx.save(); ctx.globalAlpha = on ? 1 : .45; em(ctx, "💡", bx, by, 70); ctx.restore();
+        if (on) big(ctx, "Connected! ⚡", W / 2, H * .17, 46, "#ca8a04"); else big(ctx, "Drag each plug to the socket of the same colour", W / 2, H * .17, 18, "#1e293b"); } };
+  });
+
   // 📦 RELOCATED: drag each thing to its new home (the dashed shadow); all moved = 🎉
   Weather.add("relocate,relocated,relocates,relocating,relocation,move house,moved house,rearrange,rearranged", { e: "📦", name: "Relocate", dur: 30000, track: 1, capture: 1, top: 1 }, A => {
     const W = A.W(), H = A.H(), S = Math.min(W, H) * .11, ITEMS = ["🪴", "📚", "🧸", "🛋️"], bits = [];
