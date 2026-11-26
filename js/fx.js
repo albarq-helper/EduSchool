@@ -66,23 +66,49 @@
           em(ctx, grab.e, h.x, h.y, 44); } else em(ctx, "✋", A.ptr.x, A.ptr.y, 40); } };
   });
 
-  // 🦁 BEAST: the screen cracks from the middle, shatters, and a curious animal pushes its head through, roars, then looks around
-  Weather.add("beast,beasts,beastly,monster,monsters,creature,creatures,wild animal,ferocious,roar,roared,roaring", { e: "🦁", name: "Beast", dur: 8000, top: 1 }, A => {
-    const who = ["🦁", "🐻", "🐯", "🦍", "🐺"][Math.floor(Math.random() * 5)], cracks = [], shards = [];
-    for (let i = 0; i < 14; i++) { const a = i / 14 * Math.PI * 2 + Math.random() * .3, pts = [[0, 0]]; let rr = 0; while (rr < 1.2) { rr += .08 + Math.random() * .1; pts.push([Math.cos(a + (Math.random() - .5) * .35) * rr, Math.sin(a + (Math.random() - .5) * .35) * rr]); } cracks.push(pts); }
-    [500, 1100, 1700].forEach((ms, i) => { A.noise(.25, .35 + i * .1, "band", 3000, 1200, 2, ms / 1000); shakeKids(A, ms, 4 + i * 3); });
-    A.noise(.4, .5, "band", 2500, 800, 1, 2.3); shakeKids(A, 2300, 14, 500);
-    setTimeout(() => { try { A.boom(0); A.noise(1.6, .45, "lowpass", 220, 90, 1); } catch (e) {} }, 2900);
-    return { frame(t, life) { const { ctx } = A, W = A.W(), H = A.H(), cx = W / 2, cy = H / 2, S = Math.max(W, H) * .5;
-      const crackK = t < 500 ? 0 : t < 2300 ? Math.min(1, (t - 500) / 1800) : 1;
-      if (t > 2300 && !shards.length) for (let i = 0; i < 40; i++) { const a = Math.random() * 7, r0 = Math.random() * S * .35; shards.push({ x: cx + Math.cos(a) * r0, y: cy + Math.sin(a) * r0, vx: Math.cos(a) * (3 + Math.random() * 6), vy: Math.sin(a) * (3 + Math.random() * 6) - 3, s: 10 + Math.random() * 26, rot: Math.random() * 6, vr: (Math.random() - .5) * .3 }); }
-      if (crackK) { ctx.strokeStyle = "rgba(255,255,255,.95)"; ctx.shadowColor = "#000"; ctx.shadowBlur = 3; ctx.lineWidth = 2.5; cracks.forEach(pts => { const m = Math.max(2, Math.floor(pts.length * crackK)); ctx.beginPath(); pts.slice(0, m).forEach(([x, y], j) => j ? ctx.lineTo(cx + x * S, cy + y * S) : ctx.moveTo(cx + x * S, cy + y * S)); ctx.stroke(); }); ctx.shadowBlur = 0;
-        for (let ring = 1; ring <= 3; ring++) { if (crackK < ring / 3) break; ctx.beginPath(); for (let i = 0; i <= 14; i++) { const p = cracks[i % 14], q = p[Math.min(p.length - 1, ring * 3)]; i ? ctx.lineTo(cx + q[0] * S, cy + q[1] * S) : ctx.moveTo(cx + q[0] * S, cy + q[1] * S); } ctx.stroke(); } }
-      const hole = t > 2300 ? Math.min(1, (t - 2300) / 300) * S * .42 : 0;
-      if (hole) { ctx.fillStyle = "#0b0b0b"; ctx.beginPath(); for (let i = 0; i < 16; i++) { const a = i / 16 * Math.PI * 2, rr = hole * (.8 + (i % 2) * .25); i ? ctx.lineTo(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr) : ctx.moveTo(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr); } ctx.closePath(); ctx.fill();
-        const pop = Math.min(1, (t - 2450) / 350), look = t > 3600 ? Math.sin((t - 3600) / 450) * .28 : 0, sz = hole * 1.7 * Math.max(0, pop) * (t > 2900 && t < 3500 ? 1.08 + Math.sin(t / 30) * .03 : 1);
-        if (pop > 0) { em(ctx, who, cx + Math.sin(look) * 20, cy + 10, sz, look); if (t > 2900 && t < 3600) big(ctx, "ROAR!", cx, cy - hole - 30, 54, "#b45309"); if (t > 3800 && life < .9) bubble(ctx, "Hmm? 🤔", cx + hole * .9, cy - hole * .75, 22); } }
-      shards.forEach(sh => { sh.vy += .4; sh.x += sh.vx; sh.y += sh.vy; sh.rot += sh.vr; ctx.save(); ctx.translate(sh.x, sh.y); ctx.rotate(sh.rot); ctx.fillStyle = "rgba(200,230,255,.55)"; ctx.strokeStyle = "rgba(255,255,255,.9)"; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(-sh.s / 2, -sh.s / 3); ctx.lineTo(sh.s / 2, -sh.s / 2); ctx.lineTo(sh.s / 4, sh.s / 2); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.restore(); }); } };
+  // 🦁 BEAST: a jeep is stuck on safari and big cats close in from both sides; tap each one to HONK and scare it off; hold out and the jeep escapes
+  Weather.add("beast,beasts,beastly,monster,monsters,creature,creatures,wild animal,wild animals,ferocious,roar,roared,roaring,safari,predator,predators", { e: "🦁", name: "Safari", dur: 40000, track: 1, capture: 1, top: 1 }, A => {
+    const cats = [], dust = []; let shooed = 0, rock = 0, lastSpawn = 0, escape = 0, carX = 0, roarAt = -9999, honkAt = -9999, END = 20000;
+    A.setChip("tap the lions to honk! 📯"); A.noise(1.2, .35, "lowpass", 220, 90, 1, .4);
+    const roar = () => { A.noise(1.1, .45, "lowpass", 240, 80, 1); };
+    const honk = () => { A.noise(.16, .35, "band", 420, 440, 12); A.noise(.16, .35, "band", 340, 350, 12, .2); };
+    return { down(x, y) { const S = Math.min(A.W(), A.H()) * .16; const c = cats.filter(c => !c.flee).sort((a, b) => Math.hypot(a.x - x, a.y - y) - Math.hypot(b.x - x, b.y - y))[0];
+        honk(); honkAt = performance.now(); if (c && Math.hypot(c.x - x, c.y - y) < S * .9) { c.flee = 1; c.dir = c.x < A.W() / 2 ? -1 : 1; shooed++; A.setChip(`scared off ${shooed} 📯`); } },
+      frame(t, life) { const { ctx } = A, W = A.W(), H = A.H(), S = Math.min(W, H) * .16, cy = H * .6, cx = W / 2 + carX;
+        // the savanna
+        const sky = ctx.createLinearGradient(0, 0, 0, H * .5); sky.addColorStop(0, "rgba(253,186,116,.95)"); sky.addColorStop(1, "rgba(254,240,138,.95)"); ctx.fillStyle = sky; ctx.fillRect(0, 0, W, H * .5);
+        ctx.fillStyle = "rgba(249,115,22,.9)"; ctx.beginPath(); ctx.arc(W * .8, H * .32, Math.min(W, H) * .1, 0, 7); ctx.fill();
+        const gr = ctx.createLinearGradient(0, H * .45, 0, H); gr.addColorStop(0, "rgba(202,160,70,.97)"); gr.addColorStop(1, "rgba(161,118,40,.97)"); ctx.fillStyle = gr; ctx.fillRect(0, H * .45, W, H * .55);
+        [[.12, .44, 1], [.35, .46, .7], [.9, .45, .9]].forEach(([fx, fy, k]) => em(ctx, "🌳", W * fx, H * fy - S * .4 * k, S * 1.3 * k));
+        ctx.strokeStyle = "rgba(120,80,20,.5)"; ctx.lineWidth = 2; for (let g = 0; g < 40; g++) { const gx = (g * 97) % W, gy = H * .5 + (g * 53) % (H * .48); ctx.beginPath(); ctx.moveTo(gx, gy); ctx.lineTo(gx - 3, gy - 9); ctx.moveTo(gx + 3, gy); ctx.lineTo(gx + 5, gy - 8); ctx.stroke(); }
+        // big cats
+        if (!escape && t < END && t - lastSpawn > Math.max(700, 1500 - t / 20)) { lastSpawn = t; const side = Math.random() < .5 ? -1 : 1; cats.push({ e: ["🦁", "🦁", "🐅", "🐆"][Math.floor(Math.random() * 4)], x: side < 0 ? -S : W + S, y: cy + (Math.random() - .3) * S * 1.6, side, v: .7 + Math.random() * .9 + t / 25000, flee: 0, near: 0 }); roar(); roarAt = t; }
+        let pressing = 0;
+        cats.forEach(c => { if (c.flee) { c.x += c.dir * 9; c.y -= .5; } else { const tx = cx - c.side * S * 1.05, dx = tx - c.x; if (Math.abs(dx) > 6) c.x += Math.sign(dx) * c.v * 2; else { c.near++; pressing++; } c.y += (cy + S * .05 - c.y) * .01; }
+          const face = c.flee ? -c.dir : (c.x < cx ? -1 : 1), step = c.flee || Math.abs(cx - c.side * S * 1.05 - c.x) > 6 ? Math.abs(Math.sin(t / 90 + c.x)) * 5 : 0, pounce = c.near && Math.floor((t + c.x) / 500) % 2 ? -S * .25 : 0;
+          if (c.e === "🦁") { // a lion: drawn body, legs and tufted tail, with the lion face at the front
+            const bx = c.x, by = c.y - step + pounce, f = face, L = S * .55, ph = t / 90 + c.x, moving = step > 0 || c.flee;
+            ctx.save(); ctx.translate(bx, by); ctx.scale(-f, 1);
+            ctx.strokeStyle = "#a16207"; ctx.lineWidth = S * .09; ctx.lineCap = "round"; [[-.45, 0], [-.25, 1.5], [.2, 3], [.4, 4.5]].forEach(([lx, p0]) => { const sw = moving ? Math.sin(ph + p0) * S * .12 : 0; ctx.beginPath(); ctx.moveTo(lx * L * 1.6 - L * .55, S * .12); ctx.lineTo(lx * L * 1.6 - L * .55 + sw, S * .48); ctx.stroke(); });
+            ctx.lineWidth = S * .05; ctx.beginPath(); ctx.moveTo(-L * 1.45, -S * .02); ctx.quadraticCurveTo(-L * 1.95, -S * .1 + Math.sin(ph) * 8, -L * 1.85, -S * .38); ctx.stroke(); ctx.fillStyle = "#7c2d12"; ctx.beginPath(); ctx.arc(-L * 1.85, -S * .4, S * .07, 0, 7); ctx.fill();
+            ctx.fillStyle = "#d9a441"; ctx.beginPath(); ctx.ellipse(-L * .55, S * .05, L * .95, S * .24, 0, 0, 7); ctx.fill(); ctx.restore();
+            em(ctx, "🦁", bx + f * -L * .15 * 0 + (-f) * L * .35 * -1 * 0, by - S * .12, S * .78, 0, f); }
+          else em(ctx, c.e, c.x, c.y - step + pounce, S * 1.05, 0, face);
+          if (c.near && Math.floor((t + c.x) / 900) % 3 === 0) big(ctx, "ROAR!", c.x, c.y - S * .8, 22, "#b45309");
+          if (c.flee && c.fleeT == null) c.fleeT = t; if (c.flee && t - c.fleeT < 600) bubble(ctx, "eek!", c.x, c.y - S * .75, 16); });
+        for (let i = cats.length - 1; i >= 0; i--) if (cats[i].x < -S * 2 || cats[i].x > W + S * 2) cats.splice(i, 1);
+        if (pressing && Math.random() < .03) { roar(); roarAt = t; }
+        rock = pressing ? Math.sin(t / 45) * .05 : rock * .9;
+        // escape: after END with no cat touching the car, drive away
+        if (!escape && t > END && !cats.some(c => !c.flee)) { escape = t; A.setChip("Phew! Safe! 🎉"); A.noise(2.5, .2, "lowpass", 300, 500, 1); }
+        if (escape) { carX += Math.min(14, (t - escape) / 80); if (Math.random() < .9) dust.push({ x: cx - S * .9, y: cy + S * .3, r: 8, a: .8 }); }
+        dust.forEach(d => { d.x -= 2; d.r += 1.2; d.a -= .012; ctx.fillStyle = `rgba(214,180,120,${Math.max(0, d.a)})`; ctx.beginPath(); ctx.arc(d.x, d.y, d.r, 0, 7); ctx.fill(); }); for (let i = dust.length - 1; i >= 0; i--) if (dust[i].a <= 0) dust.splice(i, 1);
+        // the jeep with scared people
+        ctx.save(); ctx.translate(cx, cy); ctx.rotate(rock); const faces = pressing ? ["😱", "😨"] : t - honkAt < 500 ? ["😤", "😬"] : ["😟", "😰"];
+        em(ctx, faces[0], -S * .25, -S * .55, S * .38); em(ctx, faces[1], S * .2, -S * .55, S * .38); em(ctx, "🚙", 0, 0, S * 1.9, 0, -1);
+        if (t - honkAt < 400) big(ctx, "HONK! 📯", S * .9, -S * .9, 24, "#1d4ed8"); ctx.restore();
+        if (escape && carX > W * .2) big(ctx, "Phew! Safe! 🎉", W / 2, H * .25, 50, "#15803d");
+        if (t < 2500) big(ctx, "Tap the big cats to honk them away!", W / 2, H * .12, 20, "#7c2d12"); } };
   });
 
   // 📦 RELOCATED: drag each thing to its new home (the dashed shadow); all moved = 🎉
