@@ -187,6 +187,35 @@
           ctx.fillStyle = "#1f2937"; ctx.textAlign = "center"; lines.forEach((l, i) => ctx.fillText(l, W / 2, H * .36 + 22 + i * 20)); ctx.textAlign = "start"; } } };
   });
 
+  // 👟 FILTHY: a kid comes in from football in the mud and walks muddy shoe prints all over the screen; then scrub them away with a sponge
+  Weather.add("filthy,filth,dirty,dirt,muddy,mud,grimy,grime,grubby,messy,mess,stained,smudged,soiled,mucky,squelch,squelched", { e: "👟", name: "Muddy shoes", dur: 45000, track: 1, capture: 1, top: 1 }, A => {
+    const W = A.W(), H = A.H(), prints = [], splats = [], path = []; let rub = 0, total = 0, done = 0, walkEnd = 0, ball = { x: 0, y: 0, vy: 0 };
+    // a wobbly walk across the screen: in on the left, around the middle, out on the right
+    for (let k = 0; k <= 60; k++) { const u = k / 60; path.push([-60 + u * (W + 120), H * (.58 + .2 * Math.sin(u * Math.PI * 2.2) + .06 * Math.sin(u * 9))]); }
+    const at = u => { const f = Math.min(path.length - 1.001, u * (path.length - 1)), i = Math.floor(f), k = f - i; return [path[i][0] + (path[i + 1][0] - path[i][0]) * k, path[i][1] + (path[i + 1][1] - path[i][1]) * k, Math.atan2(path[i + 1][1] - path[i][1], path[i + 1][0] - path[i][0])]; };
+    const WALK = 7500, START = 1800; let nextStep = 0, side = 1;
+    const sole = (ctx, x, y, a, sd, alpha) => { ctx.save(); ctx.translate(x, y); ctx.rotate(a + Math.PI / 2); ctx.translate(sd * 9, 0); ctx.globalAlpha = alpha; ctx.fillStyle = "#5b3a1e";
+      ctx.beginPath(); ctx.ellipse(0, -9, 9, 13, 0, 0, 7); ctx.fill(); ctx.beginPath(); ctx.ellipse(0, 12, 7, 8, 0, 0, 7); ctx.fill(); ctx.fillStyle = "rgba(255,255,255,.25)"; for (let k = -3; k <= 3; k++) ctx.fillRect(-7, -9 + k * 4, 14, 1.5); ctx.restore(); };
+    A.setChip("⚽ after football in the mud…");
+    return { move(x, y) { if (!walkEnd) return; rub++; },
+      frame(t) { const { ctx } = A;
+        // walking: a step every ~280 ms leaves a print; mud splats now and then
+        if (t > START && !walkEnd) { const u = (t - START) / WALK; if (u >= 1) { walkEnd = t; total = prints.length; A.setChip(`🧽 scrub them away! ${total} prints`); }
+          else if (t > nextStep) { nextStep = t + 280; side = -side; const [x, y, a] = at(u); if (x > 14 && x < W - 14) prints.push({ x, y, a, sd: side, al: .85 }); A.noise(.12, .12, "lowpass", 500, 250, 2);
+            if (Math.random() < .35) splats.push({ x: x + (Math.random() - .5) * 90, y: y + (Math.random() - .5) * 90, r: 5 + Math.random() * 12, al: .8, n: 5 + Math.floor(Math.random() * 4), seed: Math.random() * 6 }); } }
+        // scrubbing: anything under the sponge fades
+        if (walkEnd) { const sx = A.ptr.x, sy = A.ptr.y; [...prints, ...splats].forEach(p => { if (Math.hypot(p.x - sx, p.y - sy) < 58 && p.al > 0) { p.al -= .2; if (p.al <= 0 && p.sd) { A.plink(0); } } });
+          const left = prints.filter(p => p.al > 0).length; if (!done) { A.setChip(left ? `🧽 ${left} prints left` : "✨ sparkling clean!"); if (!left) { done = t; [0, .2, .4].forEach(d => A.chirp(d)); } } }
+        splats.forEach(p => { if (p.al <= 0) return; ctx.globalAlpha = p.al; ctx.fillStyle = "#6b4423"; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 7); ctx.fill(); for (let k = 0; k < p.n; k++) { const a = p.seed + k * 1.3, d = p.r * (1.3 + (k % 3) * .4); ctx.beginPath(); ctx.arc(p.x + Math.cos(a) * d, p.y + Math.sin(a) * d, p.r * .3, 0, 7); ctx.fill(); } }); ctx.globalAlpha = 1;
+        prints.forEach(p => { if (p.al > 0) sole(ctx, p.x, p.y, p.a, p.sd, p.al); });
+        // the muddy kid
+        if (t < START) { const k = t / START; ball.y = H * .5 + Math.abs(Math.sin(t / 180)) * -60; em(ctx, "🧒", W * .15, H * .5, 90); em(ctx, "⚽", W * .15 + 60, ball.y + 40, 34, t / 200); ctx.fillStyle = "#6b4423"; [[-14, 10], [12, 22], [-4, 34], [18, -6]].forEach(([dx, dy]) => { ctx.beginPath(); ctx.arc(W * .15 + dx, H * .5 + dy, 6, 0, 7); ctx.fill(); }); big(ctx, "⚽ After football in the mud…", W / 2, H * .25, 26, "#5b3a1e"); }
+        else if (!walkEnd) { const u = (t - START) / WALK, [x, y, a] = at(u), bob = Math.abs(Math.sin(t / 140)) * 6; em(ctx, "🧒", x, y - 50 - bob, 70, 0, Math.cos(a) > 0 ? -1 : 1); em(ctx, "👟", x - 10, y - 8, 26, 0, Math.cos(a) > 0 ? -1 : 1); ctx.fillStyle = "#6b4423"; ctx.beginPath(); ctx.arc(x - 12, y - 6, 7, 0, 7); ctx.arc(x + 10, y - 3, 6, 0, 7); ctx.fill(); em(ctx, "⚽", x + 40, y - 20 - Math.abs(Math.sin(t / 160)) * 30, 28, t / 150); }
+        // the sponge follows the finger once the walking is done
+        if (walkEnd && !done) { em(ctx, "🧽", A.ptr.x, A.ptr.y, 46, Math.sin(t / 80) * .25); if (t - walkEnd < 3000) big(ctx, "Rub with the sponge to clean it!", W / 2, H * .12, 22, "#1d4ed8"); }
+        if (done) { big(ctx, "Sparkling clean! ✨", W / 2, H * .45, 48, "#0891b2"); for (let k = 0; k < 14; k++) { const a = k * .45 + t / 700, r = 90 + 30 * Math.sin(t / 300 + k); em(ctx, "✨", W / 2 + Math.cos(a) * r * 2, H * .45 + Math.sin(a) * r, 18); } } } };
+  });
+
   // 📦 RELOCATED: drag each thing to its new home (the dashed shadow); all moved = 🎉
   Weather.add("relocate,relocated,relocates,relocating,relocation,move house,moved house,rearrange,rearranged", { e: "📦", name: "Relocate", dur: 30000, track: 1, capture: 1, top: 1 }, A => {
     const W = A.W(), H = A.H(), S = Math.min(W, H) * .11, ITEMS = ["🪴", "📚", "🧸", "🛋️"], bits = [];
