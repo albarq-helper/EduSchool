@@ -278,15 +278,27 @@
         if (on) big(ctx, "Connected! ⚡", W / 2, H * .17, 46, "#ca8a04"); else big(ctx, "Drag each plug to the socket of the same colour", W / 2, H * .17, 18, "#1e293b"); } };
   });
 
-  // 🦥 LETHARGIC: everything goes slow and droopy; a sloth crawls by, the page yawns
-  Weather.add("lethargic,lethargy,sluggish,listless,lazy,languid,slow motion", { e: "🦥", name: "Lethargic", dur: 9000, top: 1 }, A => {
-    A.kids().forEach(el => A.ani(el, [{ transform: "none", filter: "none" }, { transform: "translateY(18px) rotate(-1deg) scaleY(.97)", filter: "saturate(.4) blur(.6px)", offset: .25 }, { transform: "translateY(30px) rotate(1deg) scaleY(.95)", filter: "saturate(.3) blur(1px)", offset: .6 }, { transform: "translateY(22px) rotate(-.5deg) scaleY(.96)", filter: "saturate(.35) blur(.8px)", offset: .85 }, { transform: "none", filter: "none" }], { duration: 9000, easing: "ease-in-out" }));
-    A.noise(2.2, .12, "lowpass", 500, 160, 1, 1.5); A.noise(2.2, .12, "lowpass", 500, 160, 1, 5.5);
-    return { frame(t) { const { ctx } = A, W = A.W(), H = A.H(), S = Math.min(W, H) * .22, x = -S + (W + 2 * S) * (t / 9000), y = H * .78 + Math.sin(t / 900) * 4;
-      ctx.strokeStyle = "#78350f"; ctx.lineWidth = 10; ctx.beginPath(); ctx.moveTo(0, H * .7); ctx.lineTo(W, H * .7); ctx.stroke();
-      em(ctx, "🦥", x, H * .7 + S * .28, S, Math.sin(t / 1200) * .05);
-      if ((t > 1500 && t < 3500) || (t > 5500 && t < 7500)) bubble(ctx, "yaaawn… 🥱", x + S * .2, H * .7 - S * .55, 20);
-      big(ctx, "s l o w . . .", W / 2, H * .2, 30, "#64748b"); } };
+  // 🪫 LETHARGIC: side by side, a kid full of energy vs. a lethargic kid (no energy, very slow, sleepy); tap to call him to play
+  Weather.add("lethargic,lethargy,sluggish,listless,languid,lazy,no energy", { e: "🪫", name: "Lethargic", dur: 16000, capture: 1, top: 1 }, A => {
+    let call = -9999; A.setChip("tap to call him to play ⚽");
+    return { down() { call = performance.now(); A.chirp(0); },
+      frame(t) { const { ctx } = A, W = A.W(), H = A.H(), half = W / 2, gy = H * .82, S = Math.min(half, H) * .45, now = performance.now(), called = now - call < 2600;
+        ctx.fillStyle = "rgba(220,252,231,.95)"; ctx.fillRect(0, 0, half, H); ctx.fillStyle = "rgba(226,232,240,.97)"; ctx.fillRect(half, 0, half, H); ctx.fillStyle = "#94a3b8"; ctx.fillRect(half - 2, H * .1, 4, H * .9);
+        ctx.fillStyle = "#86efac"; ctx.fillRect(0, gy, half, H - gy); ctx.fillStyle = "#cbd5e1"; ctx.fillRect(half, gy, half, H - gy);
+        big(ctx, "LETHARGIC = no energy · very slow · sleepy", W / 2, Math.max(H * .17, 96), Math.min(26, W / 30), "#1e293b");
+        // left: full of energy
+        big(ctx, "Full of energy ⚡ 100%", half / 2, Math.max(H * .26, 136), 20, "#15803d");
+        const run = (t / 1300) % 2, lx = half * (.2 + .6 * (run < 1 ? run : 2 - run)), ldir = run < 1 ? 1 : -1, jump = Math.abs(Math.sin(t / 160)) * S * .22;
+        footballer(ctx, lx, gy - jump, S, ldir, t / 60, 0, 0); em(ctx, "⚽", lx + ldir * S * .35, gy - S * .1 - Math.abs(Math.sin(t / 130)) * S * .5, S * .2, t / 80);
+        // right: lethargic, barely moving, head drooping, eyes half closed
+        big(ctx, "Lethargic 🪫 3%", half + half / 2, Math.max(H * .26, 136), 20, "#475569");
+        const rx = half + half * (.3 + .4 * ((t / 16000) % 1)), droop = called ? Math.max(0, .35 - (now - call) / 1200 * .35) + (now - call > 1500 ? .35 * Math.min(1, (now - call - 1500) / 800) : 0) : .35;
+        ctx.save(); ctx.translate(rx, gy); ctx.rotate(droop * .35); footballer(ctx, 0, 0, S * .97, 1, t / 900, 0, 0); ctx.restore();
+        const hx = rx + Math.sin(droop * .35) * S * .99, hy = gy - Math.cos(droop * .35) * S * .99; ctx.fillStyle = "#e8b48a"; ctx.fillRect(hx + S * .03, hy - S * .03, S * .1, S * .035); ctx.strokeStyle = "#1f2937"; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(hx + S * .04, hy + S * .005); ctx.lineTo(hx + S * .11, hy + S * .005); ctx.stroke();
+        ctx.fillStyle = "#fff"; ctx.strokeStyle = "#475569"; ctx.lineWidth = 2; const by2 = Math.max(H * .26, 136) + 22; ctx.fillRect(half + half * .78, by2, 46, 22); ctx.strokeRect(half + half * .78, by2, 46, 22); ctx.fillStyle = "#dc2626"; ctx.fillRect(half + half * .78 + 2, by2 + 2, 3, 18); ctx.fillStyle = "#475569"; ctx.fillRect(half + half * .78 + 46, by2 + 7, 4, 8);
+        if (!called) { const ph = (t / 5000) % 1; if (ph < .35) bubble(ctx, "🥱 yaaawn…", rx + S * .1, gy - S * 1.35, 16); else for (let k = 0; k < 3; k++) big(ctx, "z", rx + S * .25 + k * 14, gy - S * 1.15 - k * 16 - (t / 40 % 16), 14 + k * 5, "#64748b"); }
+        else { bubble(ctx, "Come on, let's play! ⚽", lx, gy - S * 1.35, 15); if (now - call > 700) bubble(ctx, "…maybe later… 😴", rx + S * .1, gy - S * 1.35, 15); }
+        ctx.font = "700 14px system-ui"; ctx.fillStyle = "#334155"; ctx.textAlign = "center"; ctx.fillText("Same kid, same game. One has energy, one is lethargic: tired, slow and sleepy.", W / 2, H * .95); ctx.textAlign = "start"; } };
   });
 
   // 🥧 AROMA: a pie follows your finger, wavy smell ribbons float from it, and a hungry dog follows the smell
@@ -432,6 +444,58 @@
         if (!openAt) em(ctx, "🎁", cx, cy, S, wob);
         else { const d = performance.now() - openAt, k = Math.min(1, d / 600); em(ctx, "📦", cx, cy + S * .15, S * .9); em(ctx, prize, cx, cy - k * S * .55, S * (.3 + .7 * k), Math.sin(d / 200) * .1); if (d > 500) big(ctx, "Surprise! Curiosity pays off 🎉", W / 2, H * .22, 26, "#4c1d95"); }
         drawBits(ctx, bits); if (!openAt) big(ctx, "What's inside? 🤔", W / 2, H * .22, 26, "#4c1d95"); } };
+  });
+
+  // 🏚️ DETERIORATING: a time-lapse of a house over 100 years; it fades, cracks, breaks and crumbles; then drag the time slider to travel back and forth
+  Weather.add("deteriorate,deteriorated,deteriorates,deteriorating,deterioration,decay,decayed,decaying,crumble,crumbled,crumbling,dilapidated,run-down,rundown,ruin,ruined,ruins,derelict,weathered,worn out,neglected,dereliction", { e: "🏚️", name: "Deteriorating", dur: 60000, track: 1, capture: 1, top: 1 }, A => {
+    let rs = 7; const rnd = () => (rs = (rs * 16807) % 2147483647) / 2147483647;
+    const cracks = Array.from({ length: 9 }, () => { const pts = [[rnd(), rnd() * .5]]; for (let k = 0; k < 7; k++) { const [x, y] = pts[pts.length - 1]; pts.push([x + (rnd() - .5) * .12, y + rnd() * .09]); } return { pts, at: .1 + rnd() * .6 }; });
+    const tiles = Array.from({ length: 48 }, (_, i) => ({ i, gone: .35 + rnd() * .6 })), peel = Array.from({ length: 12 }, () => ({ x: rnd(), y: rnd(), r: .03 + rnd() * .05, at: .15 + rnd() * .5 })), weeds = Array.from({ length: 26 }, () => ({ x: rnd(), h: .5 + rnd() * .5, at: rnd() * .6 })), planks = Array.from({ length: 12 }, () => ({ at: .35 + rnd() * .6, dir: rnd() < .5 ? -1 : 1 }));
+    const AUTO = 9000; let dec = 0, drag = 0, auto = 1, lastTick = 0;
+    const ease = x => Math.max(0, Math.min(1, x)), mix = (a, b, k) => a.map((v, i) => Math.round(v + (b[i] - v) * k)), rgb = c => `rgb(${c[0]},${c[1]},${c[2]})`;
+    const slider = () => { const W = A.W(), H = A.H(), w = Math.min(W * .8, 520); return { x0: W / 2 - w / 2, w, y: H * .93 }; };
+    const setFrom = x => { const sl = slider(); dec = ease((x - sl.x0) / sl.w); };
+    A.setChip("⏳ time is passing…");
+    return { down(x, y) { const sl = slider(); if (Math.abs(y - sl.y) < 40) { drag = 1; auto = 0; setFrom(x); } },
+      move(x) { if (drag) setFrom(x); }, up() { drag = 0; },
+      frame(t) { const { ctx } = A, W = A.W(), H = A.H(); if (auto) { dec = ease(t / AUTO); if (t > AUTO + 600) { auto = 0; A.setChip("drag the time slider ⏳"); } }
+        const year = Math.round(1925 + dec * 100); if (Math.floor(dec * 20) !== lastTick) { lastTick = Math.floor(dec * 20); A.noise(.05, .03, "band", 3000, 3000, 6); if (dec > .5 && Math.random() < .5) A.noise(.2, .08, "lowpass", 500, 200, 1); }
+        // time-lapse sky: days fly by while it plays
+        const day = auto ? (Math.sin(t / 260) + 1) / 2 : .85, sky = mix([20, 24, 60], [125, 190, 240], day); ctx.fillStyle = rgb(sky); ctx.fillRect(0, 0, W, H);
+        if (auto) { const a = (t / 260) % (Math.PI * 2); em(ctx, Math.sin(t / 260) > 0 ? "☀️" : "🌙", W / 2 + Math.cos(a) * W * .45, H * .45 - Math.abs(Math.sin(a)) * H * .35, 34); }
+        const gy = H * .78, gr = mix([74, 160, 70], [120, 110, 60], dec); ctx.fillStyle = rgb(gr); ctx.fillRect(0, gy, W, H - gy);
+        // the house
+        const S = Math.min(W, H) * .5, hx = W / 2 - S * .55, hw = S * 1.1, hh = S * .62, hy = gy - hh;
+        const wall = mix([253, 230, 138], [140, 128, 110], dec), roof = mix([220, 38, 38], [87, 63, 55], dec), sag = ease((dec - .88) / .12);
+        ctx.fillStyle = rgb(wall); ctx.fillRect(hx, hy, hw, hh); ctx.strokeStyle = "#1f2937"; ctx.lineWidth = 3; ctx.strokeRect(hx, hy, hw, hh);
+        peel.forEach(p => { const k = ease((dec - p.at) / .25); if (!k) return; ctx.fillStyle = `rgba(214,204,186,${.9 * k})`; ctx.beginPath(); ctx.ellipse(hx + p.x * hw, hy + p.y * hh, p.r * hw * k, p.r * hw * .6 * k, p.x * 3, 0, 7); ctx.fill(); });
+        // windows: shiny → cracked → smashed; a shutter comes loose
+        [[.12, .18], [.66, .18]].forEach(([fx, fy], wi) => { const x = hx + fx * hw, y = hy + fy * hh, ww = hw * .22, wh = hh * .3; ctx.fillStyle = dec < .6 ? rgb(mix([147, 197, 253], [100, 116, 139], dec / .6)) : "#1e293b"; ctx.fillRect(x, y, ww, wh); ctx.strokeStyle = "#7c2d12"; ctx.lineWidth = 4; ctx.strokeRect(x, y, ww, wh); ctx.beginPath(); ctx.moveTo(x + ww / 2, y); ctx.lineTo(x + ww / 2, y + wh); ctx.moveTo(x, y + wh / 2); ctx.lineTo(x + ww, y + wh / 2); ctx.stroke();
+          if (dec > .3 && dec <= .6) { ctx.strokeStyle = "rgba(255,255,255,.9)"; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(x + ww * .3, y + wh * .3); ctx.lineTo(x + ww * .1, y + wh * .1); ctx.moveTo(x + ww * .3, y + wh * .3); ctx.lineTo(x + ww * .45, y + wh * .05); ctx.moveTo(x + ww * .3, y + wh * .3); ctx.lineTo(x + ww * .15, y + wh * .5); ctx.stroke(); }
+          if (dec > .6) { ctx.fillStyle = "rgba(203,213,225,.8)"; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + ww * .4, y); ctx.lineTo(x + ww * .15, y + wh * .35); ctx.lineTo(x, y + wh * .5); ctx.fill(); }
+          const sh = ease((dec - .45) / .3) * (wi ? 1 : 0); ctx.save(); ctx.translate(x + ww + 2, y); ctx.rotate(sh * .9); ctx.fillStyle = rgb(mix([22, 101, 52], [80, 80, 60], dec)); ctx.fillRect(0, 0, ww * .35, wh); ctx.restore(); });
+        // door
+        const door = ease((dec - .65) / .3); ctx.save(); ctx.translate(hx + hw * .42, gy); ctx.rotate(-door * .18); ctx.fillStyle = rgb(mix([120, 53, 15], [90, 80, 70], dec)); ctx.fillRect(0, -hh * .5, hw * .16, hh * .5); ctx.strokeStyle = "#1f2937"; ctx.lineWidth = 2; ctx.strokeRect(0, -hh * .5, hw * .16, hh * .5); ctx.fillStyle = "#facc15"; ctx.beginPath(); ctx.arc(hw * .13, -hh * .25, 3, 0, 7); ctx.fill(); ctx.restore();
+        // cracks spread
+        ctx.strokeStyle = "rgba(41,37,36,.85)"; ctx.lineWidth = 2; cracks.forEach(c => { const k = ease((dec - c.at) / .3); if (!k) return; const n = Math.max(2, Math.floor(c.pts.length * k)); ctx.beginPath(); c.pts.slice(0, n).forEach(([px, py], i) => { const X = hx + px * hw, Y = hy + py * hh; i ? ctx.lineTo(X, Y) : ctx.moveTo(X, Y); }); ctx.stroke(); });
+        // ivy creeps up
+        const ivy = ease((dec - .35) / .5); if (ivy) { ctx.strokeStyle = "#166534"; ctx.lineWidth = 3; [[hx + 6, 1], [hx + hw - 6, -1]].forEach(([vx, dirv]) => { ctx.beginPath(); ctx.moveTo(vx, gy); for (let k = 0; k <= 20 * ivy; k++) ctx.lineTo(vx + Math.sin(k * .9) * 10 * dirv + k * 2 * dirv, gy - k * hh / 20); ctx.stroke(); for (let k = 2; k <= 20 * ivy; k += 2) em(ctx, "🍃", vx + Math.sin(k * .9) * 10 * dirv + k * 2 * dirv, gy - k * hh / 20, 14); }); }
+        // roof: tiles fall away, chimney leans, roof sags at the end
+        const rx0 = hx - S * .08, rx1 = hx + hw + S * .08, apex = hy - S * .4 + sag * S * .22;
+        ctx.fillStyle = rgb(roof); ctx.beginPath(); ctx.moveTo(rx0, hy); ctx.lineTo(W / 2, apex); ctx.lineTo(rx1, hy); ctx.closePath(); ctx.fill(); ctx.strokeStyle = "#1f2937"; ctx.lineWidth = 3; ctx.stroke();
+        ctx.fillStyle = "rgba(15,23,42,.85)"; tiles.forEach(tl => { if (dec < tl.gone) return; const row = Math.floor(tl.i / 8), col = tl.i % 8, ty = hy - (row + .5) * (hy - apex) / 6, half = (rx1 - rx0) / 2 * (1 - (row + .5) / 6), tx = W / 2 - half + (col + .5) * (2 * half / 8); ctx.fillRect(tx - 6, ty - 5, 12, 9); });
+        const lean = ease((dec - .7) / .25); ctx.save(); ctx.translate(W / 2 + S * .25, hy - S * .2 + sag * S * .1); ctx.rotate(lean * .3); ctx.fillStyle = rgb(mix([185, 28, 28], [100, 90, 85], dec)); ctx.fillRect(-12, -S * .2, 24, S * .2); ctx.strokeStyle = "#1f2937"; ctx.strokeRect(-12, -S * .2, 24, S * .2);
+        if (dec < .6) for (let k = 0; k < 3; k++) { ctx.fillStyle = `rgba(203,213,225,${.6 - k * .15})`; ctx.beginPath(); ctx.arc(Math.sin(t / 300 + k) * 6, -S * .24 - k * 14 - (t / 30 % 14), 7 + k * 3, 0, 7); ctx.fill(); } ctx.restore();
+        // fence planks fall; weeds grow
+        for (let k = 0; k < planks.length; k++) { const fx = hx + hw + S * .12 + k * 12, fk = ease((dec - planks[k].at) / .15); if (fx > W - 10) break; ctx.save(); ctx.translate(fx, gy); ctx.rotate(planks[k].dir * fk * 1.45); ctx.fillStyle = rgb(mix([250, 250, 250], [120, 110, 95], dec)); ctx.fillRect(-4, -S * .2, 8, S * .2); ctx.restore(); }
+        weeds.forEach(wd => { const k = ease((dec - wd.at) / .35); if (!k) return; const x = wd.x * W; ctx.strokeStyle = "#3f6212"; ctx.lineWidth = 2; for (let b = -1; b <= 1; b++) { ctx.beginPath(); ctx.moveTo(x, gy + 4); ctx.quadraticCurveTo(x + b * 6, gy - 20 * k * wd.h, x + b * 12, gy - 38 * k * wd.h); ctx.stroke(); } });
+        if (dec > .85) { const rx = hx + hw * (.2 + .6 * ((t / 4000) % 1)); em(ctx, "🐀", rx, gy - 8, 26, 0, -1); }
+        // year + slider
+        big(ctx, String(year), W / 2, H * .17, 54, dec > .7 ? "#7c2d12" : "#1e3a8a"); big(ctx, dec < .05 ? "brand new" : dec > .95 ? "100 years later… deteriorated!" : `${year - 1925} years later…`, W / 2, H * .17 + 42, 20, "#334155");
+        const sl = slider(); ctx.fillStyle = "rgba(255,255,255,.9)"; ctx.fillRect(sl.x0, sl.y - 7, sl.w, 14); ctx.fillStyle = "#b45309"; ctx.fillRect(sl.x0, sl.y - 7, sl.w * dec, 14); ctx.strokeStyle = "#1f2937"; ctx.lineWidth = 2; ctx.strokeRect(sl.x0, sl.y - 7, sl.w, 14);
+        ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(sl.x0 + sl.w * dec, sl.y, 14, 0, 7); ctx.fill(); ctx.stroke(); em(ctx, "⏳", sl.x0 + sl.w * dec, sl.y, 16);
+        ctx.font = "800 13px system-ui"; ctx.fillStyle = "#1f2937"; ctx.textAlign = "left"; ctx.fillText("1925", sl.x0, sl.y - 14); ctx.textAlign = "right"; ctx.fillText("2025", sl.x0 + sl.w, sl.y - 14); ctx.textAlign = "start";
+        if (!auto && t < AUTO + 4500) big(ctx, "Drag ⏳ to travel in time", W / 2, sl.y - 36, 18, "#1e3a8a"); } };
   });
 
   // 📦 RELOCATED: drag each thing to its new home (the dashed shadow); all moved = 🎉
