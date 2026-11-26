@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" role="img" aria-label="A rifle: a gun with a long barrel">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fef3c7"/><stop offset="1" stop-color="#fde68a"/></linearGradient>
+    <linearGradient id="wood" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b7794a"/><stop offset="1" stop-color="#7c4a24"/></linearGradient>
+    <linearGradient id="steel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6b7280"/><stop offset=".45" stop-color="#374151"/><stop offset="1" stop-color="#111827"/></linearGradient>
+  </defs>
+  <rect width="400" height="400" rx="36" fill="url(#bg)"/>
+  <g transform="translate(200 205) rotate(-18) translate(-190 -30)">
+    <!-- wooden stock -->
+    <path d="M6 22 Q2 30 6 58 L64 66 Q80 52 96 46 L130 40 L132 22 Z" fill="url(#wood)" stroke="#5c3a1a" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M20 34 Q50 30 90 34" fill="none" stroke="#d6a274" stroke-width="3" stroke-linecap="round" opacity=".7"/>
+    <!-- trigger guard and trigger -->
+    <path d="M134 44 Q140 70 162 62 L164 44" fill="none" stroke="#1f2937" stroke-width="5" stroke-linecap="round"/>
+    <path d="M148 44 L146 58" stroke="#1f2937" stroke-width="4" stroke-linecap="round"/>
+    <!-- body (receiver) -->
+    <rect x="126" y="18" width="86" height="28" rx="6" fill="url(#steel)" stroke="#0b0f17" stroke-width="2.5"/>
+    <!-- bolt handle -->
+    <path d="M182 46 L190 60" stroke="#111827" stroke-width="6" stroke-linecap="round"/><circle cx="191" cy="62" r="5" fill="#111827"/>
+    <!-- wooden fore-end -->
+    <path d="M210 24 L292 26 Q300 32 292 40 L210 42 Z" fill="url(#wood)" stroke="#5c3a1a" stroke-width="2.5"/>
+    <!-- long barrel -->
+    <rect x="210" y="22" width="172" height="9" rx="3" fill="url(#steel)" stroke="#0b0f17" stroke-width="2"/>
+    <rect x="372" y="18" width="8" height="17" rx="2" fill="#111827"/>
+    <!-- scope -->
+    <rect x="136" y="0" width="76" height="14" rx="7" fill="url(#steel)" stroke="#0b0f17" stroke-width="2"/>
+    <rect x="128" y="-2" width="12" height="18" rx="4" fill="#111827"/><rect x="208" y="-3" width="14" height="20" rx="4" fill="#111827"/>
+    <rect x="150" y="12" width="8" height="8" fill="#111827"/><rect x="190" y="12" width="8" height="8" fill="#111827"/>
+    <circle cx="219" cy="7" r="5" fill="#60a5fa" opacity=".8"/>
+    <!-- sling -->
+    <path d="M60 64 Q150 110 250 42" fill="none" stroke="#92400e" stroke-width="5" stroke-linecap="round" opacity=".85"/>
+  </g>
+</svg>

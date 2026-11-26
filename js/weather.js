@@ -18,7 +18,7 @@
   add("observe,observed,observes,observing,observation,observant,examine,examined,inspect,inspected,magnify,magnified,magnifying,magnifying glass,magnifier,study,studied,detail,details,detailed,closely,scrutinize", { e: "🔍", name: "Magnifier", mag: 2.2, long: 1, dur: 20000 });
   add("spy,spied,spying,binoculars,scan,scanned,survey,surveyed,lookout,peer,peered,peering", { e: "🔭", name: "Spy", bino: 1, long: 1, dur: 14000 });
   add("separate,separated,separates,separating,separation,split,splits,splitting,divide,divided,dividing,apart,torn,tear apart,rip,ripped,halves,half", { e: "✂️", name: "Separated", split: 1, dur: 6500 });
-  add("rifle,rifles,gun,guns,shoot,shoots,shooting,bullet,bullets,aim,aimed,aiming,target,targets,marksman,sniper", { e: "<svg viewBox=\"0 0 64 18\" width=\"30\" height=\"9\" style=\"vertical-align:middle\" aria-hidden=\"true\"><path d=\"M2 8 L14 6 L16 14 L4 15 Z\" fill=\"#8b5a2b\"/><rect x=\"14\" y=\"6\" width=\"16\" height=\"5\" rx=\"1\" fill=\"#374151\"/><rect x=\"30\" y=\"7\" width=\"32\" height=\"2.4\" fill=\"#1f2937\"/><rect x=\"18\" y=\"2\" width=\"10\" height=\"3\" rx=\"1.5\" fill=\"#111827\"/><path d=\"M22 11 L24 15 L26 11\" fill=\"none\" stroke=\"#374151\" stroke-width=\"1.4\"/></svg>", name: "Rifle · target practice", rifle: 1, long: 1, dur: 20000 });
+  add("rifle,rifles,gun,guns,shoot,shoots,shooting,bullet,bullets,aim,aimed,aiming,target,targets,marksman,sniper", { e: "🎯", icon: "<svg viewBox=\"0 0 64 18\" width=\"30\" height=\"9\" style=\"vertical-align:middle\" aria-hidden=\"true\"><path d=\"M2 8 L14 6 L16 14 L4 15 Z\" fill=\"#8b5a2b\"/><rect x=\"14\" y=\"6\" width=\"16\" height=\"5\" rx=\"1\" fill=\"#374151\"/><rect x=\"30\" y=\"7\" width=\"32\" height=\"2.4\" fill=\"#1f2937\"/><rect x=\"18\" y=\"2\" width=\"10\" height=\"3\" rx=\"1.5\" fill=\"#111827\"/><path d=\"M22 11 L24 15 L26 11\" fill=\"none\" stroke=\"#374151\" stroke-width=\"1.4\"/></svg>", name: "Rifle · target practice", rifle: 1, long: 1, dur: 20000 });
   add("stomp,stomps,stomped,stomping,trample,trampled,trampling,thud,thump,thumped,clomp,clomped,giant footsteps", { e: "🦶", name: "Stomp", stomp: [600, 1500, 2400, 3300, 4200], dur: 6200 });
   add("faraway,far away,far off,far-off,distant,distance,far,afar,vanish,vanished,disappear,disappeared", { e: "🛣️", name: "Far away", far: 1, dur: 7000 });
   add("sway,sways,swayed,swaying,swing,swinging,rocking,wobble,wobbly", { e: "🌴", name: "Sway", sway: 1 });
@@ -366,7 +366,7 @@
     }
     const chip = document.createElement("div");
     chip.className = "wx-chip"; chip.setAttribute("role", "status");
-    chip.innerHTML = `<span>${r.e} ${r.name}</span><button type="button" data-x>✕ Stop</button><button type="button" data-off>Turn effects off</button>`;
+    chip.innerHTML = `<span>${r.icon || r.e} ${r.name}</span><button type="button" data-x>✕ Stop</button><button type="button" data-off>Turn effects off</button>`;
     if (r.torch && !r.torch.flicker) { const c = document.createElement("span"); c.style.display = "flex"; c.style.gap = "4px";
       [["↺", "Tilt left", () => tiltBy(-.2)], ["➖", "Shorter beam", () => lenBy(-40)], ["➕", "Longer beam", () => lenBy(40)], ["↻", "Tilt right", () => tiltBy(.2)]].forEach(([t, l, f]) => { const b = document.createElement("button"); b.type = "button"; b.textContent = t; b.title = l; b.setAttribute("aria-label", l); b.onpointerdown = e => { e.stopPropagation(); f(); }; c.appendChild(b); });
       chip.insertBefore(c, chip.querySelector("[data-x]")); }
@@ -479,7 +479,7 @@
       if (!r) return;
       el.dataset.wxWord = w;
       const btn = document.createElement("button");
-      btn.type = "button"; btn.className = "wx-btn"; btn.textContent = r.e;
+      btn.type = "button"; btn.className = "wx-btn"; if (r.icon) btn.innerHTML = r.icon; else btn.textContent = r.e; // icon = our own drawing (never user text)
       btn.title = `Make it ${r.name.toLowerCase()} on the page!`; btn.setAttribute("aria-label", `Show ${r.name} on the whole page`);
       btn.addEventListener("click", ev => { ev.preventDefault(); ev.stopPropagation(); ac(); try { localStorage.removeItem(OFF_KEY); } catch (e) {} play(w, { force: 1 }); });
       (el.nextElementSibling && el.nextElementSibling.classList.contains("egg-btn") ? el.nextElementSibling : el).insertAdjacentElement("afterend", btn);
