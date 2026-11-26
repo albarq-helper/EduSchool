@@ -247,7 +247,7 @@
     const links = []; nodes.forEach((n, i) => { const near = nodes.map((m, j) => [j, Math.hypot(m.x - n.x, m.y - n.y)]).filter(([j]) => j !== i).sort((a, b) => a[1] - b[1]).slice(0, 2); near.forEach(([j]) => { if (!links.some(l => (l[0] === j && l[1] === i))) links.push([i, j]); }); });
     const order = [0, 1, 2, 3].sort(() => Math.random() - .5), lx = W * .18, rx = W * .82, ys = k => H * (.3 + k * .14);
     const plugs = COL.map((c, k) => ({ k, x: lx, y: ys(k), done: 0 })), sockets = COL.map((c, k) => ({ k, x: rx, y: ys(order.indexOf(k)) }));
-    let drag = null, made = 0, lit = 0; const sparks = [];
+    let drag = null, made = 0, lit = 0, said = 0; const sparks = [];
     return { down(x, y) { if (Date.now() < 0) return; const p = plugs.find(q => !q.done && Math.hypot(q.x - x, q.y - y) < 34); if (p) { drag = p; A.plink(0); } },
       move(x, y) { },
       up(x, y) { if (!drag) return; const s0 = sockets.find(q => Math.hypot(q.x - x, q.y - y) < 40); if (s0 && s0.k === drag.k) { drag.done = 1; made++; A.noise(.15, .3, "band", 3000, 1500, 3); for (let k = 0; k < 18; k++) sparks.push({ x: s0.x, y: s0.y, vx: (Math.random() - .5) * 8, vy: (Math.random() - .5) * 8, a: 1 }); A.setChip(made < 4 ? `🔌 ${made} / 4 connected` : "💡 all connected!"); if (made === 4) { lit = performance.now(); [0, .2, .4].forEach(d => A.chirp(d)); } }
@@ -259,8 +259,8 @@
             ctx.strokeStyle = "rgba(56,189,248,.85)"; ctx.shadowColor = "#38bdf8"; ctx.shadowBlur = 10; ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(ex, ey); ctx.stroke(); ctx.shadowBlur = 0;
             if (k >= 1) { const u = ((t / 900) + n * .37) % 1; ctx.fillStyle = "#fde047"; ctx.beginPath(); ctx.arc(a.x + (b.x - a.x) * u, a.y + (b.y - a.y) * u, 3.5, 0, 7); ctx.fill(); } });
           nodes.forEach(n => { ctx.fillStyle = "#0ea5e9"; ctx.beginPath(); ctx.arc(n.x, n.y, 6 * netK, 0, 7); ctx.fill(); ctx.strokeStyle = "#fff"; ctx.lineWidth = 2; ctx.stroke(); }); ctx.restore(); }
-        if (t < NET) { if (t < 300) A.setChip("connecting…"); return; }
-        if (t < NET + 100) A.setChip("drag each plug to its colour 🔌");
+        if (t < NET) { if (!said) { said = 1; A.setChip("connecting…"); } return; }
+        if (said === 1) { said = 2; A.setChip("drag each plug to its colour 🔌"); }
         // 2) the wire game
         const g = Math.min(1, (t - NET) / 500); ctx.globalAlpha = g; ctx.fillStyle = "rgba(15,23,42,.88)"; ctx.fillRect(0, 0, W, H); ctx.globalAlpha = 1;
         ctx.fillStyle = "#334155"; ctx.fillRect(lx - 40, ys(0) - 50, 50, ys(3) - ys(0) + 100); ctx.fillRect(rx - 10, ys(0) - 50, 50, ys(3) - ys(0) + 100);
