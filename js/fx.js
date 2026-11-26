@@ -146,6 +146,47 @@
         fw.forEach(p => { p.x += p.vx; p.y += p.vy; p.vy += .05; p.a -= .015; ctx.globalAlpha = Math.max(0, p.a); ctx.fillStyle = p.c; ctx.beginPath(); ctx.arc(p.x, p.y, 2.5, 0, 7); ctx.fill(); }); for (let i = fw.length - 1; i >= 0; i--) if (fw[i].a <= 0) fw.splice(i, 1); ctx.globalAlpha = 1; } };
   });
 
+  // 🏃 EXHAUSTION: the legend of the first marathon; a runner goes from Marathon to Athens (42.195 km), getting more and more tired; tap to give water; he reaches Athens, cries "We won!" and collapses
+  Weather.add("exhaustion,exhausted,exhausting,exhaust,tired,tiredness,weary,weariness,worn out,fatigue,fatigued,marathon,marathons,out of breath,breathless", { e: "🏃", name: "Marathon", dur: 26000, track: 1, capture: 1, top: 1 }, A => {
+    const RUN = 14000; let x = 0, energy = 1, bonus = 0, cups = 3, last = 0, pant = 0, arrived = 0, drink = -9999; const sweat = [];
+    A.setChip("tap the runner to give water 💧 × 3");
+    return { down(px, py) { if (arrived || cups <= 0) return; cups--; bonus = Math.min(.35, bonus + .2); drink = performance.now(); A.plink(0); A.setChip(cups ? `💧 × ${cups} left` : "no water left!"); },
+      frame(t) { const { ctx } = A, W = A.W(), H = A.H(), S = Math.min(W, H) * .2, road = H * .72, dt = Math.min(50, t - (last || t)); last = t;
+        // Greece: sky, hills, olive trees, the road
+        const sky = ctx.createLinearGradient(0, 0, 0, road); sky.addColorStop(0, "rgba(125,190,240,.97)"); sky.addColorStop(1, "rgba(220,238,250,.97)"); ctx.fillStyle = sky; ctx.fillRect(0, 0, W, road);
+        ctx.fillStyle = "rgba(250,204,21,.9)"; ctx.beginPath(); ctx.arc(W * .15, H * .14, Math.min(W, H) * .06, 0, 7); ctx.fill();
+        ctx.fillStyle = "rgba(120,150,90,.95)"; ctx.beginPath(); ctx.moveTo(0, road); for (let k = 0; k <= 10; k++) ctx.lineTo(W * k / 10, road - H * (.08 + .07 * Math.abs(Math.sin(k * 1.7)))); ctx.lineTo(W, road); ctx.fill();
+        ctx.fillStyle = "rgba(214,190,140,.98)"; ctx.fillRect(0, road, W, H - road); ctx.fillStyle = "rgba(180,150,100,.9)"; ctx.fillRect(0, road + 6, W, 10);
+        for (let k = 0; k < 6; k++) em(ctx, "🫒", W * (.08 + k * .17), road - S * .2, S * .35);
+        em(ctx, "🪧", W * .06, road - S * .55, S * .55); big(ctx, "Marathon", W * .06 + 4, road - S * 1.0, 14, "#1f2937");
+        em(ctx, "🏛️", W - S * .65, road - S * .6, S * 1.25); big(ctx, "Athens", W - S * .65, road - S * 1.4, 18, "#1f2937");
+        // the run: slows as energy drains
+        const start = 1200, x0 = W * .1, x1 = W - S * 1.25;
+        if (t > start && !arrived) { bonus = Math.max(0, bonus - dt / 9000); energy = Math.max(.02, Math.min(1, 1 - Math.pow(x / (x1 - x0), 1.15) + bonus)); const sp = (.35 + .9 * energy) * (x1 - x0) / RUN * 1.25; x = Math.min(x1 - x0, x + sp * dt); if (x >= x1 - x0) { arrived = t; A.noise(.6, .2, "band", 700, 400, 1); }
+          if (t - pant > 260 + (1 - energy) * 520) { pant = t; A.noise(.18, .05 + (1 - energy) * .1, "band", 1400, 900, 2); }
+          if (energy < .7 && Math.random() < .15 + (1 - energy) * .3) sweat.push({ x: x0 + x, y: road - S * .95, vx: -1 - Math.random() * 2, vy: -2 - Math.random() * 2, a: 1 }); }
+        const km = Math.min(42.195, x / (x1 - x0) * 42.195);
+        // distance + energy
+        ctx.fillStyle = "rgba(255,255,255,.92)"; ctx.fillRect(16, H * .06 + 40, 230, 62); ctx.fillStyle = "#1f2937"; ctx.font = "800 16px system-ui"; ctx.textAlign = "left";
+        ctx.fillText(`🏃 ${km.toFixed(km >= 42 ? 3 : 1)} km  (${(km * .621371).toFixed(1)} mi)`, 26, H * .06 + 62); ctx.fillText("⚡", 26, H * .06 + 90);
+        ctx.fillStyle = "#e5e7eb"; ctx.fillRect(50, H * .06 + 78, 180, 14); ctx.fillStyle = energy > .5 ? "#22c55e" : energy > .2 ? "#f59e0b" : "#dc2626"; ctx.fillRect(50, H * .06 + 78, 180 * energy, 14);
+        // the runner
+        const rx = x0 + x, running = t > start && !arrived, ph = t / (70 + (1 - energy) * 120), bob = running ? Math.abs(Math.sin(ph)) * (10 * energy + 2) : 0, wob = running ? Math.sin(t / 300) * (1 - energy) * .25 : 0;
+        sweat.forEach(d => { d.x += d.vx; d.y += d.vy; d.vy += .25; d.a -= .03; ctx.fillStyle = `rgba(56,189,248,${Math.max(0, d.a)})`; ctx.beginPath(); ctx.ellipse(d.x, d.y, 2.5, 4, 0, 0, 7); ctx.fill(); }); for (let i = sweat.length - 1; i >= 0; i--) if (sweat[i].a <= 0) sweat.splice(i, 1);
+        if (!arrived || t - arrived < 1800) { em(ctx, "🏃", rx, road - S * .45 - bob, S, wob, -1);
+          const face = arrived ? "😮‍💨" : energy > .7 ? "😀" : energy > .45 ? "😅" : energy > .2 ? "🥵" : "😵‍💫", fx = rx + S * .35, fy = road - S * 1.25 - bob;
+          ctx.fillStyle = "#fff"; ctx.strokeStyle = "#cbd5e1"; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(fx, fy, S * .22, 0, 7); ctx.fill(); ctx.stroke(); ctx.beginPath(); ctx.arc(fx - S * .16, fy + S * .2, S * .05, 0, 7); ctx.fill(); ctx.stroke(); em(ctx, face, fx, fy, S * .3); }
+        else { const k = Math.min(1, (t - arrived - 1800) / 500); em(ctx, "🧍", rx + S * .3 * k, road - S * .45 + S * .15 * k, S, k * Math.PI / 2); em(ctx, "😵", rx + S * .55 * k + S * .05, road - S * (1.15 - .75 * k), S * .36); if (k >= 1) { ctx.fillStyle = "rgba(255,255,255,.8)"; ["z", "Z", "z"].forEach((z, i) => big(ctx, z, rx + S * .6 + i * 14, road - S * .9 - i * 16 - (t / 40 % 20), 16 + i * 4, "#475569")); } }
+        if (performance.now() - drink < 700) em(ctx, "💧", rx + S * .4, road - S * .9, S * .35);
+        if (arrived && t - arrived < 1800) bubble(ctx, "We won! 🏆", rx - S * .2, road - S * 1.6, 22);
+        if (t < start) big(ctx, "490 BC · Marathon → Athens", W / 2, H * .3, 26, "#1e3a8a");
+        // the story
+        if (arrived && t - arrived > 2400) { big(ctx, "EXHAUSTION", W / 2, H * .3, 52, "#b91c1c");
+          const lines = ["Legend: in 490 BC Pheidippides ran from Marathon to Athens", "to bring news of victory, then collapsed from exhaustion.", "Today a marathon is 42.195 km (26.2 miles).", "The first modern Olympic marathon was in Athens in 1896."];
+          ctx.font = "700 14px system-ui"; const w = Math.max(...lines.map(l => ctx.measureText(l).width)) + 28; ctx.fillStyle = "rgba(255,255,255,.95)"; ctx.fillRect(W / 2 - w / 2, H * .36, w, 92); ctx.strokeStyle = "#1e3a8a"; ctx.lineWidth = 2; ctx.strokeRect(W / 2 - w / 2, H * .36, w, 92);
+          ctx.fillStyle = "#1f2937"; ctx.textAlign = "center"; lines.forEach((l, i) => ctx.fillText(l, W / 2, H * .36 + 22 + i * 20)); ctx.textAlign = "start"; } } };
+  });
+
   // 📦 RELOCATED: drag each thing to its new home (the dashed shadow); all moved = 🎉
   Weather.add("relocate,relocated,relocates,relocating,relocation,move house,moved house,rearrange,rearranged", { e: "📦", name: "Relocate", dur: 30000, track: 1, capture: 1, top: 1 }, A => {
     const W = A.W(), H = A.H(), S = Math.min(W, H) * .11, ITEMS = ["🪴", "📚", "🧸", "🛋️"], bits = [];
