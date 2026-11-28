@@ -36,6 +36,7 @@
     })();
     return loaded;
   }
+  let FAM = new Map();
   const mine = () => MINE.slice();
   const hearLangs = () => MINE.filter(x => x.hear);
 
@@ -50,7 +51,23 @@
       const res = await Promise.all(parts.map(ch => C().from("word_translations").select("word_id,lang,term,meaning,example,romanization,audio_url").in("lang", want).in("word_id", ch).neq("term", "")));
       res.forEach(r => (r.data || []).forEach(x => { (TR.get(x.word_id) || TR.set(x.word_id, {}).get(x.word_id))[x.lang] = x; }));
     }
+    // 🧩 look-alikes: the foreign word that looks like an English word, with the family it belongs to
+    const CG = new Map(); FAM = new Map();
+    if (want.length && ids.length && C()) {
+      const parts = []; for (let k = 0; k < ids.length; k += 80) parts.push(ids.slice(k, k + 80));
+      try {
+        const res = await Promise.all(parts.map(ch => C().from("word_cognates").select("word_id,lang,term,en_word,kind,similarity,note,group_id,cognate_groups(key)").in("lang", want).in("word_id", ch)));
+        res.forEach(r => (r.data || []).forEach(x => {
+          (CG.get(x.word_id) || CG.set(x.word_id, []).get(x.word_id)).push(x);
+          if (x.group_id && x.kind === "cognate") {
+            const f = FAM.get(x.group_id) || FAM.set(x.group_id, { key: (x.cognate_groups || {}).key || "", en: new Set(), words: new Set() }).get(x.group_id);
+            f.en.add(x.en_word); f.words.add(x.lang + "|" + x.term);
+          }
+        }));
+      } catch (e) {}
+    }
     (items || []).forEach(v => {
+      v.cog = CG.get(v.wid || v.id) || [];
       const t = Object.assign({}, TR.get(v.wid || v.id) || {});
       if (!t.ar && v.ar && want.includes("ar")) t.ar = { term: v.ar, meaning: "", example: "", romanization: "", audio_url: "" };   // the old Arabic column, until every page moves over
       v.trs = t;
@@ -66,6 +83,18 @@
       out.push({ code: L.code, flag: L.flag, native: L.native_name, dir: L.dir, term: t.term, rom: t.romanization || "", hear: L.hear, meaning: t.meaning || "" });
     });
     return out;
+  }
+  // the look-alike lines for a word: [{code, flag, term, en, sim, kind, note, family}]
+  function cogLines(v, minSim) {
+    const out = [];
+    (v && v.cog || []).forEach(x => {
+      const L = MINE.find(m => m.code === x.lang && m.show); if (!L) return;
+      if (x.kind === "cognate" && x.similarity < (minSim == null ? 40 : minSim)) return;
+      const f = x.group_id && FAM.get(x.group_id);
+      const fam = f ? [...f.en].join(", ") + " · " + [...f.words].map(w => w.split("|")[1]).join(", ") : "";
+      out.push({ code: x.lang, flag: L.flag, term: x.term, en: x.en_word, sim: x.similarity, kind: x.kind, note: x.note || "", root: f ? f.key : "", family: fam, hear: L.hear });
+    });
+    return out.sort((a, b) => (a.kind === "false_friend") - (b.kind === "false_friend") || b.sim - a.sim);
   }
   // "خيالي: غريب وكأنه من الأحلام" → the word part is what is read aloud for a single word
   const head = t => { const m = String(t).match(/^([^:：]{1,40})[:：]\s*\S/); return m && m[1].trim().split(/\s+/).length <= 4 ? m[1].trim() : String(t); };
@@ -140,5 +169,5 @@
       [STATE[i], STATE[j]] = [STATE[j], STATE[i]]; draw(); persist();
     });
   }
-  window.Lang = { load, mine, hearLangs, attach, lines, say, picker, head, all: () => ALL.slice(), coverage: () => COV };
+  window.Lang = { load, mine, hearLangs, attach, lines, cogLines, say, picker, head, all: () => ALL.slice(), coverage: () => COV };
 })();
