@@ -22,10 +22,10 @@ update public.word_translations set root_key = null, root_en = null, root_sim = 
 update public.word_translations t
    set root_key = v.en, root_en = v.en, root_kind = 'false_friend', root_note = v.note
   from (values
-    ('es', 'sensible',   'sensitive',   'sensitive', 'es: means sensitive, not sensible'),
+    ('es', 'sensible',   'sensible',   'sensible', 'means sensitive, not sensible'),
     ('es', 'decepción',  'deception',   'deception', 'es: means disappointment, not deception'),
     ('es', 'comprensivo','comprehensive','comprehensive', 'es: means understanding, not comprehensive'),
-    ('it', 'sensibile',  'sensitive',   'sensitive', 'it: means sensitive, not sensible'),
+    ('it', 'sensibile',  'sensible',   'sensible', 'means sensitive, not sensible'),
     ('it', 'delusione',  'delusion',    'delusion', 'it: means disappointment, not delusion'),
     ('it', 'comprensivo','comprehensive','comprehensive', 'it: means understanding, not comprehensive')
   ) as v(lang, term, en, k, note)
