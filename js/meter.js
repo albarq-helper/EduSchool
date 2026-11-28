@@ -202,9 +202,12 @@
     let fxTimer = 0;
     let lastW = null, fxTok = 0;
     const fxLab = h => $m.find("[data-fxbox] .fxl").html(h);
+    // a phrase on a meter (hot temperature, heavy rain) plays the scene of the longest part of it that has one
+    const fxKey = w => { if (!w || !window.Weather) return null; if (Weather.recipe(w)) return w; const t = String(w).toLowerCase().replace(/[^\p{L}' ]/gu, " ").split(/\s+/).filter(Boolean);
+      for (let n = t.length - 1; n >= 1; n--) for (let a = 0; a + n <= t.length; a++) { const k = t.slice(a, a + n).join(" "); if (Weather.recipe(k)) return k; } return null; };
     function playLevel(l) { if (!window.Weather || !fxOn() || (Weather.mode && Weather.mode() === "off")) return; clearTimeout(fxTimer);
       fxTimer = setTimeout(async () => { const my = ++fxTok, box = $m.find("[data-fxbox]")[0], $full = $m.find("[data-fxfull]");
-        const w = l.items.map(i => D[i] && D[i].w).find(w => w && Weather.recipe(w)); Weather.stop();
+        const w = l.items.map(i => fxKey(D[i] && D[i].w)).find(Boolean); Weather.stop();
         if (!w) { lastW = null; $full.prop("hidden", true); fxLab("✨ No scene for these words"); return; }
         if (Weather.load) await Weather.load(); if (my !== fxTok) return;
         const r = Weather.recipe(w), how = Weather.behaviour ? Weather.behaviour(w) : "full"; lastW = w; $full.prop("hidden", false);
