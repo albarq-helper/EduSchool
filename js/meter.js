@@ -93,11 +93,18 @@
   // how a meter behaves: two-sided (−5 … +5), negative only (−5 … 0, 0 = the good end), or positive only (0 … +5)
   function tone(title, levels) { const rs = (levels || []).map(l => l.rank), min = Math.min(0, ...rs), max = Math.max(0, ...rs);
     const two = /⇄/.test(title || "") || (min < 0 && max > 0);
-    return { min, max, two, neg: !two && min < 0, neutral: NEUTRAL.has(String(title || "").toLowerCase()) }; }
+    const parts = String(title || "").replace(/^[^·]*·\s*/, "").split(/\s*(?:→|⇄)\s*/), COLD = /freez|cold|chill|shiver|icy|frost/i, HOT = /boil|hot|sweat|scorch|blaz|swelter/i,
+      temp = COLD.test(parts[0] || "") && HOT.test(parts[1] || ""), heat = !temp && HOT.test(parts[1] || "") && !/rain|snow|wind|storm|noise/i.test(String(title || ""));
+    return { min, max, two, neg: !two && min < 0, neutral: NEUTRAL.has(String(title || "").toLowerCase()), temp, heat }; }
+  // blue = cold, red = hot (temperature and body meters); yellow → red for blazing things
+  const TSTOPS = [[0, 212], [.25, 195], [.5, 52], [.75, 28], [1, 0]];
+  const tHue = t => { for (let i = 1; i < TSTOPS.length; i++) if (t <= TSTOPS[i][0]) { const [a, ha] = TSTOPS[i - 1], [b, hb] = TSTOPS[i]; return Math.round(ha + (hb - ha) * (t - a) / (b - a)); } return 0; };
+  const tOf = (r, T) => T.max === T.min ? 1 : (r - T.min) / (T.max - T.min);
   function color(r, T) { const t = T.max === T.min ? 1 : (r - T.min) / (T.max - T.min);
     if (T.neutral) return `hsl(210 70% ${93 - t * 16}%)`;
+    if (T.temp) return `hsl(${tHue(t)} 80% ${86 - Math.abs(t - .5) * 6}%)`; if (T.heat) return `hsl(${Math.round(55 - t * 55)} 85% 86%)`;
     return `hsl(${Math.round(t * 140)} 75% ${88 - Math.abs(t - .5) * 8}%)`; }
-  function gradient(T) { return T.neutral ? "linear-gradient(90deg,hsl(205 80% 82%),hsl(225 70% 55%))" : "linear-gradient(90deg,hsl(0 80% 55%),hsl(45 90% 58%),hsl(140 60% 42%))"; }
+  function gradient(T) { if (T.temp) return "linear-gradient(90deg,hsl(212 85% 58%),hsl(195 80% 68%),hsl(52 90% 62%),hsl(28 90% 55%),hsl(0 80% 50%))"; if (T.heat) return "linear-gradient(90deg,hsl(55 90% 62%),hsl(28 90% 55%),hsl(0 80% 50%))"; return T.neutral ? "linear-gradient(90deg,hsl(205 80% 82%),hsl(225 70% 55%))" : "linear-gradient(90deg,hsl(0 80% 55%),hsl(45 90% 58%),hsl(140 60% 42%))"; }
   // how meters look: 🌈 rainbow arc (young children), ⏱️ dial with a needle, 🎚️ slider. Chosen by age; the child can switch.
   function age() { const p = window.App && App.profile; if (!p || p.role === "teacher" || p.is_admin) return null;
     if (p.birth_date) { const b = new Date(p.birth_date), n = new Date(); let a = n.getFullYear() - b.getFullYear(); if (n.getMonth() < b.getMonth() || (n.getMonth() === b.getMonth() && n.getDate() < b.getDate())) a--; return a; }
@@ -138,7 +145,7 @@
     const N = L.length, PI = Math.PI, P = (r, a) => [+(r * Math.cos(a)).toFixed(1), +(r * Math.sin(a)).toFixed(1)];
     const segA = j => [PI + j * PI / N, PI + (j + 1) * PI / N];
     const arcD = (r1, r2, a1, a2) => { const [x1, y1] = P(r2, a1), [x2, y2] = P(r2, a2), [x3, y3] = P(r1, a2), [x4, y4] = P(r1, a1); return `M${x1},${y1}A${r2},${r2} 0 0 1 ${x2},${y2}L${x3},${y3}A${r1},${r1} 0 0 0 ${x4},${y4}Z`; };
-    const strong = r => { const t = T.max === T.min ? 1 : (r - T.min) / (T.max - T.min); return T.neutral ? `hsl(${205 + t * 20} 75% ${72 - t * 26}%)` : `hsl(${Math.round(t * 130)} 72% 52%)`; };
+    const strong = r => { const t = T.max === T.min ? 1 : (r - T.min) / (T.max - T.min); if (T.temp) return `hsl(${tHue(t)} 78% 52%)`; if (T.heat) return `hsl(${Math.round(55 - t * 55)} 85% 54%)`; return T.neutral ? `hsl(${205 + t * 20} 75% ${72 - t * 26}%)` : `hsl(${Math.round(t * 130)} 72% 52%)`; };
     const faceOf = l => faces[String(l.rank)] || (D[l.items[0]] && D[l.items[0]].emoji) || "🙂";
     const word1 = l => clean(D[l.items[0]] && D[l.items[0]].w);
     function gauge() {
@@ -227,6 +234,7 @@
     const me = { el: $m[0], restyle(s) { sty = s; $m.attr("data-sty", s); $m.find(".mtr-sty button").each(function () { this.setAttribute("aria-pressed", this.dataset.sty === s); }); gauge(); paint(false); } };
     MOUNTED.add(me);
     gauge(); show(k, false);
+    if (o.autoplay) setTimeout(() => { try { playLevel(L[k]); } catch (e) {} }, 250);
     return { show: r => { const j = L.findIndex(l => l.rank === r); if (j >= 0) show(j, true); } };
   }
   window.Meter = { tone, color, mount, style, setStyle, age, prefs };

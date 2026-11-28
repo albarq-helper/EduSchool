@@ -350,7 +350,7 @@
     sc.items.forEach((x, k) => { if (!byR.has(x.r)) byR.set(x.r, []); byR.get(x.r).push(k); });
     const start = o.start != null ? o.start : sc.items[0].r;
     Meter.mount(el, { title: sc.g, left: sc.left, right: sc.right, two: sc.two, words, levels: [...byR].map(([rank, items]) => ({ rank, items })), start,
-      onAdd: o.onAdd ? k => o.onAdd(sc.items[k]) : null, addLabel: o.addLabel, onSay: k => speak(sc.items[k].phrase), onLevel: o.onLevel });
+      onAdd: o.onAdd ? k => o.onAdd(sc.items[k]) : null, addLabel: o.addLabel, onSay: k => speak(sc.items[k].phrase), onLevel: o.onLevel, autoplay: true });
   }
   const PARTNER_KINDS = [["adjective", "🎨 Adjectives", "what kind?"], ["adverb", "⏩ Adverbs", "how?"], ["verb", "🏃 Verbs", "what happens?"], ["noun", "📦 Nouns", "what?"],
     ["preposition", "🔗 Little words", "at, for, with…"], ["idiom", "💬 Idioms & phrasal verbs", ""], ["saying", "📜 Famous sayings", ""]];
