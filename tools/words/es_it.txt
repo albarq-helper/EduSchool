@@ -1,0 +1,502 @@
+0|letárgico|letargico
+1|enfermizo|malaticcio
+2|vistazo|occhiata
+3|intragable|imbevibile
+4|insistió|ha insistito
+5|decapitar|decapitare
+6|aroma|aroma
+7|fantástico (imaginario)|fantastico (immaginario)
+8|fantástico|fantastico
+9|euforia|euforia
+10|bebida|bevanda
+11|impacto (golpe)|impatto (colpo)
+12|impacto|impatto
+13|tónico|tonico
+14|distante|distante
+15|concordia|concordia
+16|que causa adicción|che crea dipendenza
+17|región|regione
+18|exótico|esotico
+19|mezcla|miscela
+20|tradicional|tradizionale
+21|residir|risiedere
+22|mortal|mortale
+23|crucial|cruciale
+24|apodado|soprannominato
+25|húmedo|umido
+26|especie|specie
+27|apariencia|aspetto
+28|alérgico|allergico
+29|organismo|organismo
+30|ecológico|ecologico
+31|muda|muta
+32|entomólogo|entomologo
+33|crustáceo|crostaceo
+34|nocturno|notturno
+35|contable|contabile
+36|monótono|monotono
+37|publicado|pubblicato
+38|seudónimo|pseudonimo
+39|pensión|pensione
+40|rejuvenecido|ringiovanito
+41|ventanas de bisagras|finestre a battente
+42|techo de paja|tetto di paglia
+43|recostado|disteso
+44|perrera|canile
+45|sombrío|ombroso
+46|cosecha|raccolto
+47|correteando|scorrazzando
+48|destello|bagliore
+49|juncos|canne
+50|zapatos (palabra antigua)|scarpe (parola antica)
+51|escruta|scruta
+52|palomar|colombaia
+53|que fluye|che scorre
+54|se retiró|si ritirò
+55|echar un vistazo|sbirciare
+56|haz de luz|raggio
+57|debajo de|sotto
+58|sin descanso|senza sosta
+59|muriendo de hambre (sin comida)|affamato (senza cibo)
+60|muerto de hambre|affamato
+61|nervioso|nervoso
+62|feroz|feroce
+63|deliberadamente|deliberatamente
+64|brillante (muy luminoso)|brillante (molto luminoso)
+65|brillante|brillante
+66|crujió|frusciò
+67|suspiro|sospiro
+68|se balanceó|ondeggiò
+69|precario|precario
+70|lejano|lontano
+71|observado|osservato
+72|separado|separato
+73|simbolizaba|simboleggiava
+74|agachándose|chinandosi
+75|ramas|rami
+76|helecho|felce
+77|musgo|muschio
+78|vagabundo|vagabondo
+79|chochín|scricciolo
+80|adinerado|benestante
+81|mayoría|maggioranza
+82|simultáneamente|simultaneamente
+83|renombrado|rinomato
+84|deteriorándose|deteriorandosi
+85|fusil|fucile
+86|admirar|ammirare
+87|gigantesco|gigantesco
+88|fingió|finse
+89|alféizar|davanzale
+90|ráfaga|folata
+91|compañero|compagno
+92|único|unico
+93|pisoteó|calpestò
+94|que chocan|in contrasto
+95|apreciar|apprezzare
+96|ritmo|ritmo
+97|disculparse|scusarsi
+98|alondra|allodola
+99|fútil|futile
+100|dormitó|sonnecchiò
+101|valiente y enérgico|vivace e coraggioso
+102|compañía|compagnia
+103|azotado|frustato
+104|deprimido|depresso
+105|torturar|torturare
+106|devoto|devoto
+107|establo|stalla
+108|empatía|empatia
+109|dependiente|dipendente
+110|horrible|orribile
+111|inspirado|ispirato
+112|considerado|considerato
+113|constantemente|costantemente
+114|conferido|conferito
+115|coloquial|colloquiale
+116|desgastado por el tiempo|segnato dal tempo
+117|recinto|recinto
+118|ratificado|ratificato
+119|jefatura|capotribù
+120|insolencia|insolenza
+121|resentimiento|risentimento
+122|insubordinación|insubordinazione
+123|conmemorar|commemorare
+124|senador|senatore
+125|vertedero|discarica
+126|descomponerse|decomporsi
+127|estimar|stimare
+128|lanzar|lanciare
+129|bestia|bestia
+130|importante|importante
+131|conocido|noto
+132|clásicos|classici
+133|encantado|felicissimo
+134|trasladado|trasferito
+135|inacabado|incompiuto
+136|frustrado|frustrato
+137|agotamiento|esaurimento
+138|familiar|familiare
+139|molestar|infastidire
+140|heroico|eroico
+141|inteligente|intelligente
+142|asqueroso|lurido
+143|conectar|collegare
+144|ayudar|assistere
+145|sereno|sereno
+146|crear|creare
+147|fabuloso|favoloso
+148|rescatar|salvare
+149|peligroso|pericoloso
+150|lanzar|lanciare
+151|mirar|guardare
+152|error|errore
+153|egoísta|egoista
+154|afortunado|fortunato
+155|evidente|evidente
+156|enorme|enorme
+157|silencioso|silenzioso
+158|estrecho|stretto
+159|elegante|elegante
+160|permitir|permettere
+161|inusual|insolito
+162|comprar|acquistare
+163|intrigante|intrigante
+164|anhelar|bramare
+165|curiosidad|curiosità
+166|brebaje|miscuglio
+167|aparentemente|apparentemente
+168|departamento|dipartimento
+169|abreviatura|abbreviazione
+170|tener cuidado|fare attenzione
+171|buscar|cercare
+172|vigilar|tenere d'occhio
+173|un poco enfermo|poco bene
+174|repugnante|ripugnante
+175|detestable|detestabile
+176|enérgico|energico
+177|aburrido|noioso
+178|interesante|interessante
+179|fascinante|affascinante
+180|emocionante|emozionante
+181|genial|fantastico
+182|maravilloso|meraviglioso
+183|asqueroso|disgustoso
+184|sabroso|gustoso
+185|delicioso|delizioso
+186|exquisito|squisito
+187|mirar|guardare
+188|mirar fijamente|fissare
+189|perfume|profumo
+190|enfermo|malato
+191|exigió|pretese
+192|sano|sano
+193|cansado|stanco
+194|agotado|spossato
+195|espantoso|terribile
+196|exhausto|esausto
+197|devastado|devastato
+198|extasiado|estasiato
+199|con el corazón roto|col cuore spezzato
+200|esperar con ilusión|non vedere l'ora
+201|llevarse bien con|andare d'accordo con
+202|loco de contento|al settimo cielo
+203|en el séptimo cielo|al settimo cielo
+204|saltar de alegría|saltare di gioia
+205|con la moral por los suelos|giù di morale
+206|sentirse triste|sentirsi giù
+207|herido|ferito
+208|odioso|odioso
+209|hacer las paces|fare pace
+210|resentido|risentito
+211|celoso|geloso
+212|crítico|critico
+213|criticón|giudicante
+214|sarcástico|sarcastico
+215|vacío|vuoto
+216|divertido|divertito
+217|juguetón|giocoso
+218|realizado|appagato
+219|cariñoso|affettuoso
+220|cerca|vicino
+221|cercano|nei dintorni
+222|sensible|sensibile
+223|remoto|remoto
+224|decepcionado|deluso
+225|desilusionado|disilluso
+226|consternado|costernato
+227|regular|così così
+228|bueno|buono
+229|provocador|provocatorio
+230|común|comune
+231|decepción|delusione
+232|decepcionar|deludere
+233|decepción|delusione
+234|desdichado|infelice
+235|sombrío|cupo
+236|contento|contento
+237|alegre|allegro
+238|bebida|bevanda
+239|armonía|armonia
+240|zona|zona
+241|discutir|litigare
+242|aprobado|approvato
+243|efecto|effetto
+244|entusiasmo|entusiasmo
+245|perdonar|perdonare
+246|amable|gentile
+247|amabilidad|gentilezza
+248|atento|premuroso
+249|generoso|generoso
+250|compasión|compassione
+251|desagradable|scortese
+252|cruel|crudele
+253|venganza|vendetta
+254|codicioso|avido
+255|feliz|felice
+256|alegría|gioia
+257|alegre|gioioso
+258|conforme|appagato
+259|felicidad|felicità
+260|triste|triste
+261|llueve a cántaros|piove a dirotto
+262|muy de vez en cuando|ogni morte di papa
+263|menor|minore
+264|importante|importante
+265|esencial|essenziale
+266|raro|raro
+267|seco|asciutto
+268|húmedo|umido
+269|mojado|bagnato
+270|empapado|inzuppato
+271|mezcla|miscela
+272|morar|dimorare
+273|gastado|consumato
+274|moderno|moderno
+275|seguro|sicuro
+276|arriesgado|rischioso
+277|peligroso|pericoloso
+278|mortal|mortale
+279|darse prisa|sbrigarsi
+280|superar|riprendersi da
+281|ocupado como una abeja|laborioso come un'ape
+282|oscuro|buio
+283|tenue|fioco
+284|brillante|luminoso
+285|deslumbrante|abbagliante
+286|andar de puntillas|camminare in punta di piedi
+287|empeorando|peggiorando
+288|criatura|creatura
+289|científico|scienziato
+290|resplandor suave|bagliore soffuso
+291|agachado|accovacciato
+292|impreso|stampato
+293|medioambiental|ambientale
+294|mudar|perdere (pelle, foglie)
+295|contador|ragioniere
+296|correteando|scattando
+297|mejorando|migliorando
+298|sembrar|seminare
+299|diurno|diurno
+300|inseguro|insicuro
+301|constantemente|costantemente
+302|rendirse|arrendersi
+303|seguir|continuare
+304|continuar|proseguire
+305|abrumado|sopraffatto
+306|amenazado|minacciato
+307|dar por terminado el día|chiudere per oggi
+308|violado|violato
+309|motivado|motivato
+310|vacilante|esitante
+311|mariposas en el estómago|farfalle nello stomaco
+312|echarse atrás|tirarsi indietro
+313|muerto de miedo|paralizzato dalla paura
+314|sereno como una lechuga|calmo come una pasqua
+315|aterrado|terrorizzato
+316|preocupado|preoccupato
+317|ansioso|ansioso
+318|intranquilo|inquieto
+319|relajado|rilassato
+320|valiente|coraggioso
+321|caminar|camminare
+322|marchar|marciare
+323|se retiró|si ritirò
+324|zapatos|scarpe
+325|debajo|sotto
+326|encima|sopra
+327|asustado|spaventato
+328|quieto|fermo
+329|lleno|sazio
+330|tener un hambre canina|avere una fame da lupi
+331|con un poco de hambre|con un languorino
+332|hambriento|affamato
+333|voraz|vorace
+334|hambriento|affamato
+335|suave|gentile
+336|salvaje|selvaggio
+337|feroz|feroce
+338|petrificado|pietrificato
+339|valor|coraggio
+340|valiente|coraggioso
+341|miedo|paura
+342|asustado|impaurito
+343|cobarde|codardo
+344|asustado|spaventato
+345|tímido|timido
+346|abandonar|mollare
+347|intencionadamente|intenzionalmente
+348|accidentalmente|accidentalmente
+349|costar un ojo de la cara|costare un occhio della testa
+350|diminuto|minuscolo
+351|pequeño|piccolo
+352|grande|grande
+353|enorme|enorme
+354|desconocido|sconosciuto
+355|famoso|famoso
+356|pobre|povero
+357|rico|ricco
+358|adinerado|facoltoso
+359|delgado|sottile
+360|listo|intelligente
+361|unir|unire
+362|enlazar|collegare
+363|mientras tanto|nel frattempo
+364|mientras|mentre
+365|ramas|rami
+366|viajero|viaggiatore
+367|meció|dondolò
+368|dividido|diviso
+369|representado|rappresentato
+370|minoría|minoranza
+371|tranquilo|silenzioso
+372|ruidoso|forte
+373|retumbante|rimbombante
+374|ensordecedor|assordante
+375|tonto|sciocco
+376|adoración|adorazione
+377|adorar|adorare
+378|afecto|affetto
+379|molesto|infastidito
+380|preocuparse por|tenere a
+381|despreciar|disprezzare
+382|detestar|detestare
+383|devoción|devozione
+384|no gustar|non piacere
+385|aficionado|affezionato
+386|odiar|odiare
+387|gustar|piacere
+388|aborrecer|aborrire
+389|pasión|passione
+390|admirar|ammirare
+391|guardar rencor|provare risentimento
+392|ternura|tenerezza
+393|desaprobación|disapprovazione
+394|repulsión|ripugnanza
+395|aborrecimiento|odio profondo
+396|aversión|avversione
+397|brisa|brezza
+398|fingido|simulato
+399|grosería|maleducazione
+400|apreciar|custodire
+401|grosero|maleducato
+402|indiferente|indifferente
+403|vendaval|burrasca
+404|huracán|uragano
+405|amor|amore
+406|insultar|insultare
+407|sinceridad|sincerità
+408|educado|educato
+409|respetar|rispettare
+410|despertarse|svegliarsi
+411|acelerar|accelerare
+412|ayudar|aiutare
+413|salvar|salvare
+414|inútil|inutile
+415|compañero|compagno
+416|grupo|gruppo
+417|velocidad|velocità
+418|atormentar|tormentare
+419|golpear|colpire
+420|comprensivo|comprensivo
+421|fiel|fedele
+422|echó una siesta|fece un pisolino
+423|útil|utile
+424|despierto|sveglio
+425|culpar|incolpare
+426|amigo|amico
+427|amistad|amicizia
+428|leal|leale
+429|familia|famiglia
+430|padre o madre|genitore
+431|solitario|solo
+432|solo|da solo
+433|siempre|sempre
+434|animarse|tirarsi su
+435|calmarse|calmarsi
+436|tirar|buttare via
+437|enfadado|arrabbiato
+438|enfurecido|infuriato
+439|furioso|furioso
+440|hostil|ostile
+441|liberado|liberato
+442|furioso|furibondo
+443|lívido de rabia|livido di rabbia
+444|indignado|indignato
+445|harto|stufo
+446|ver rojo|vedere rosso
+447|provocado|provocato
+448|apacible|tranquillo
+449|aterrador|spaventoso
+450|pudrirse|marcire
+451|se mudó|si trasferì
+452|lanzar|lanciare
+453|considerado|considerato
+454|adivinar|indovinare
+455|honrar|onorare
+456|otorgado|conferito
+457|informal|informale
+458|basurero|discarica
+459|terminado|finito
+460|atrapar|afferrare
+461|formal|formale
+462|molesto|seccato
+463|irritado|irritato
+464|enfadado|arrabbiato
+465|seguro (apego)|sicuro (affettivamente)
+466|pegajoso|appiccicoso
+467|tranquilo|calmo
+468|ira|rabbia
+469|enojado|arrabbiato
+470|independiente|indipendente
+471|distante|distaccato
+472|agresivo|aggressivo
+473|limpiar|riordinare
+474|inventar|inventare
+475|unirse|partecipare
+476|cuidar|prendersi cura di
+477|irse de la lengua|lasciarsi sfuggire il segreto
+478|echar una mano|dare una mano
+479|soltar la sopa|vuotare il sacco
+480|irritar|irritare
+481|hacer|fare
+482|construir|costruire
+483|error|errore
+484|afortunado|fortunato
+485|claro|chiaro
+486|gracioso|aggraziato
+487|incompleto|incompleto
+488|desafortunado|sfortunato
+489|destruir|distruggere
+490|oculto|nascosto
+491|correcto|corretto
+492|torpe|goffo
+493|limpio|pulito
+494|sucio|sporco
+495|mugriento|lercio
+496|aparentemente|apparentemente
+497|permitir|permettere
+498|comprar|comprare
+499|desear|desiderare
+500|prohibir|vietare
+501|vender|vendere
