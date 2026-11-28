@@ -65,7 +65,7 @@ select{font:inherit;padding:8px 10px;border:1px solid var(--rule);border-radius:
 @media (prefers-reduced-motion:reduce){.ptr{transition:none}.mic.live{animation:none}}
 .rootbar{display:grid;gap:6px;margin:6px 0}.rootchk{display:flex;gap:8px;align-items:center;font-weight:700;cursor:pointer}.rootchk small{font-weight:500;color:var(--muted)}
 .mustbox{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:8px 10px;background:var(--accent-soft);border-radius:12px}.mustbox label{display:inline-flex;gap:5px;align-items:center;background:#fff;border:1.5px solid var(--rule);border-radius:999px;padding:3px 10px;font-weight:700;cursor:pointer}
-.seat.out{opacity:.22;filter:grayscale(1)}
+.seat.out{opacity:.62;filter:grayscale(1)}.seat.out .say{background:#e5e7eb;color:#4b5563;border-color:#9ca3af;font-weight:700}
 </style>
 <div class="wrap">
   <header>
@@ -116,8 +116,8 @@ function start(list){LANGS=Lang.mine().filter(L=>DATA.filter(v=>has(v,L.code)).l
   LEVEL=$("#levelSel").value;ROOTONLY=$("#rootOnly").checked;MUST=new Set([...document.querySelectorAll("#mustList input:checked")].map(x=>x.value));const base=list||shuffle(pool());QUEUE=base.slice(0,+$("#roundsSel").value);if(!QUEUE.length){$("#stage").innerHTML=`<div class="res">${ROOTONLY?"No words in this unit share a root with the languages you chose. Try another unit, or untick the root filter.":"No words with translations in this unit."}</div>`;return;}
   lastCode="";PLANS=QUEUE.map(i=>plan(DATA[i]));total=PLANS.reduce((a,p)=>a+p.filter(s=>s.m==="say").length,0);
   q=0;score=0;missed=[];ui();nextWord();}
-function clearSeats(){document.querySelectorAll(".seat").forEach(s=>{s.classList.remove("on","dim");s.querySelector(".say").textContent="";});}
-function nextWord(){if(q>=QUEUE.length)return finish();const v=DATA[QUEUE[q]];STEPS=PLANS[q];si=0;clearSeats();const inPlay=new Set(friends(v).map(L=>L.code));document.querySelectorAll(".seat").forEach(x=>x.classList.toggle("out",!inPlay.has(x.id.slice(2))));setScore();
+function clearSeats(){document.querySelectorAll(".seat").forEach(s=>{s.classList.remove("on","dim");if(!s.classList.contains("out"))s.querySelector(".say").textContent="";});}
+function nextWord(){if(q>=QUEUE.length)return finish();const v=DATA[QUEUE[q]];STEPS=PLANS[q];si=0;clearSeats();const inPlay=new Set(friends(v).map(L=>L.code));document.querySelectorAll(".seat").forEach(x=>{const c=x.id.slice(2),o=!inPlay.has(c);x.classList.toggle("out",o);const t=v.trs&&v.trs[c];x.querySelector(".say").textContent=o&&t&&t.term?t.term:"";});setScore();
   $("#cc").innerHTML=`${v.emoji?`<div class="em">${esc(v.emoji)}</div>`:""}<div class="w">${esc(clean(v.w))}</div><button class="hear" type="button" id="hearEn" aria-label="Hear the English word">🔊</button>`;
   $("#fb").textContent="";$("#fb").className="fb";try{Sets.speak(clean(v.w));}catch(e){}
   stepRun(true);}
