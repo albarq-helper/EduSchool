@@ -44,7 +44,7 @@
 .ans textarea{min-height:56px;flex:1 1 220px}
 .res{font-weight:700;font-size:.9rem}.res.ok{color:var(--good)}.res.no{color:var(--bad)}
 input.ok,textarea.ok{border-color:var(--good)!important;background:var(--good-soft)!important}input.no{border-color:var(--bad)!important;background:var(--bad-soft)!important}
-.mean{line-height:1.45}.ex{color:var(--muted);font-size:.93rem}.tr{font-family:var(--f-ar);font-size:1.12rem;align-self:flex-start;unicode-bidi:plaintext;text-align:start}
+.lgf{font-size:.95rem}.rom{color:var(--muted);font-style:italic}.lgh{border:0;background:var(--chip,#eee);border-radius:999px;cursor:pointer;font-size:.85rem;padding:1px 7px;margin-inline-start:4px;vertical-align:middle}.trs{display:flex;flex-direction:column;gap:2px}.mean{line-height:1.45}.ex{color:var(--muted);font-size:.93rem}.tr{font-family:var(--f-ar);font-size:1.12rem;align-self:flex-start;unicode-bidi:plaintext;text-align:start}
 .utag{font:700 .75rem var(--f-body);padding:3px 9px;border-radius:999px;background:var(--accent-soft);color:var(--accent);white-space:nowrap}
 /* Detail */
 .v-detail{display:flex;flex-direction:column;gap:12px}
@@ -137,7 +137,7 @@ input.ok,textarea.ok{border-color:var(--good)!important;background:var(--good-so
 .dp{display:grid;gap:2px;background:var(--paper);border-radius:10px;padding:6px 8px;font-size:.88rem}.dp.me{background:#fff7ed;border:1px solid #fdba74}.dp b{font-size:.95rem}.dp .ar,.dar{font-size:.88rem;color:var(--muted)}
 .dx{color:#9a3412}.dn{color:var(--muted);font-size:.82rem!important}.linkb{background:none;border:0;padding:0;font:inherit;font-weight:800;color:var(--accent);cursor:pointer}
 </style>
-<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261128b"></script><script src="js/icons.js?v=20261128b"></script><script src="js/app.js?v=20261128b"></script><script src="js/sets.js?v=20261128b"></script><script src="js/weather.js?v=20261128b"></script><script src="js/fx.js?v=20261128b"></script><script src="js/speak.js?v=20261128b"></script><script src="js/eggs.js?v=20261128b"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261128b"></script><script src="js/tense.js?v=20261128b"></script><script src="js/views.js?v=20261128b"></script>
+<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261128c"></script><script src="js/icons.js?v=20261128c"></script><script src="js/app.js?v=20261128c"></script><script src="js/sets.js?v=20261128c"></script><script src="js/lang.js?v=20261128c"></script><script src="js/weather.js?v=20261128c"></script><script src="js/fx.js?v=20261128c"></script><script src="js/speak.js?v=20261128c"></script><script src="js/eggs.js?v=20261128c"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261128c"></script><script src="js/tense.js?v=20261128c"></script><script src="js/views.js?v=20261128c"></script>
 </head><body>
 <div class="wrap" style="max-width:1180px">
   <div class="head2">
@@ -166,6 +166,7 @@ input.ok,textarea.ok{border-color:var(--good)!important;background:var(--good-so
       </div>
       <button class="btn small" id="shuffle" type="button"><i data-i="shuffle"></i>Shuffle</button>
     </div>
+    <div class="r"><div id="langMount" style="width:100%"></div></div>
     <div class="r muted" style="font-size:.88rem"><span>Tip: under each word, press <b>Cover word</b> to practise spelling it, or <b>Cover meaning</b> to practise explaining it.</span></div>
     <div class="r" id="practiceBar" hidden>
       <span class="score" id="score"></span>
@@ -186,6 +187,9 @@ const UP=Sets.unitPicker($("unitMount"),()=>render());
 const METER_AT={};   // where each Feeling meter was left, so re-drawing keeps it
 const GP=Sets.groupPicker($("groupMount"),()=>render(),{view:"both",follow:true});
 Sets.loadCompanions().then(n=>{if(n)render();}).catch(()=>{});
+// 🌍 languages: the student's own choice (which to show, which to hear); the translations come from word_translations
+const gotLang=()=>{const lb=document.querySelector('[data-t="tr"]');if(lb)lb.closest("label").hidden=!D.some(v=>v.ar||(v.trs&&Object.keys(v.trs).length));};
+if(window.Lang){Lang.load().then(()=>{Lang.picker($("langMount"),()=>Lang.attach(D).then(()=>{gotLang();render();}));return Lang.attach(D);}).then(()=>{gotLang();render();}).catch(e=>console.warn("lang",e));}
 Sets.loadPartners(D).then(m=>{PARTNERS=m;if(m.size)render();}).catch(e=>console.warn("partners",e));
 // 🧩 real word parts + 💡 memory tricks (from the dictionary)
 let TRK={};(async()=>{try{const ws=[...new Set(D.map(v=>v.w))];for(let k=0;k<ws.length;k+=150){const {data}=await App.client.from("words").select("headword,word_parts,origin_note,memory_trick").eq("lang","en").in("headword",ws.slice(k,k+150)).neq("memory_trick","");
@@ -240,7 +244,8 @@ const trickHTML=(i,v)=>{const x=TRK[String(v.w).toLowerCase()];if(!x||!SHOW.mean
   if(x.word_parts)rows.push(`<div class="ir"><span class="il">🧩 Real parts</span><span><b>${esc(x.word_parts)}</b>${x.origin_note?` · ${esc(x.origin_note)}`:""}</span></div>`);
   if(x.memory_trick&&x.memory_trick!=="-")rows.push(`<div class="ir"><span class="il">💡 Memory trick</span><span>${esc(x.memory_trick)}</span></div>`);
   return rows.length?`<div class="idiom trick">${rows.join("")}</div>`:"";};
-const trHTML=(i,v)=>SHOW.tr&&v.ar&&!(v.lit||v.eq||v.author)&&!(S(i).cm&&!S(i).mrev)?`<div class="tr" dir="auto">${esc(v.ar)}</div>`:"";
+const trLines=(i,v)=>{const L=window.Lang?Lang.lines(v):[];return L.map(l=>`<div class="tr" lang="${l.code}" dir="${l.dir}"><span class="lgf" aria-hidden="true">${l.flag}</span> ${esc(l.term)}${l.rom?` <small class="rom">${esc(l.rom)}</small>`:""}${l.hear?` <button type="button" class="lgh" data-hearlang="${l.code}|${i}" aria-label="Hear it in ${esc(l.native)}" title="Hear it in ${esc(l.native)}">🔊</button>`:""}</div>`).join("");};
+const trHTML=(i,v)=>{if(!SHOW.tr||v.lit||v.eq||v.author||(S(i).cm&&!S(i).mrev))return "";const x=trLines(i,v);return x||(v.ar?`<div class="tr" dir="auto">${esc(v.ar)}</div>`:"");};
 const wordHidden=i=>S(i).cw&&S(i).ok===undefined;
 function wordHTML(i,v){
   if(!wordHidden(i))return sylHTML(v);
@@ -377,14 +382,14 @@ function card(i,view){const v=D[i], hid=wordHidden(i);
   if(view==="grid")return `<article class="g" data-i="${i}">${picHTML(i,v)}<div class="w">${wordHTML(i,v)}${hearBtn(i,v)}</div>${hid?"":pillsHTML(v)}${sayHTML(v,i)}${spellHTML(i,v)}${meanHTML(i,v)}${idiomHTML(i,v)}${trHTML(i,v)}${exploreHTML(i,v)}${coverBtns(i)}</article>`;
   if(view==="blocks")return `<article class="b" data-i="${i}">${picHTML(i,v)}<div class="w bw" data-hear="${i}" role="button" tabindex="0" aria-label="Hear the word">${wordHTML(i,v)} ${icon("volume-2",15)}</div>${sayHTML(v,i)}${spellHTML(i,v)}${S(i).cm?meanHTML(i,v):""}${exploreHTML(i,v)}${coverBtns(i)}</article>`;
   return `<tr data-i="${i}">${SHOW.pic?`<td>${picHTML(i,v)}</td>`:""}<td><div class="w">${wordHTML(i,v)}</div>${sayHTML(v,i)}${spellHTML(i,v)}</td><td>${hearBtn(i,v)}</td>
-    <td>${meanHTML(i,v)}${idiomHTML(i,v)}${exploreHTML(i,v)}${coverBtns(i)}</td>${SHOW.tr&&D.some(x=>x.ar)?`<td class="tr" dir="auto">${S(i).cm&&!S(i).mrev?"":esc(v.ar)}</td>`:""}<td>${unitTag(v)}</td></tr>`;}
+    <td>${meanHTML(i,v)}${idiomHTML(i,v)}${exploreHTML(i,v)}${coverBtns(i)}</td>${SHOW.tr&&D.some(x=>x.ar||x.trs&&Object.keys(x.trs).length)?`<td class="trs">${S(i).cm&&!S(i).mrev?"":(trLines(i,v)||esc(v.ar))}</td>`:""}<td>${unitTag(v)}</td></tr>`;}
 function visible(){const q=$("q").value.trim().toLowerCase();
   return ORDER.filter(i=>{const v=D[i];return UP.match(v)&&GP.match(v)&&(!q||(v.w+" "+v.d+" "+v.ar+" "+(v.lit||"")+" "+(v.eq||"")).toLowerCase().includes(q));});}
 function render(){const L=visible();
   $("count").textContent=L.length+(L.length===1?" word":" words");
   if(!L.length){$("out").innerHTML='<div class="card empty-l">No words match.</div>';score();return;}
   if(VIEW==="wheel"||VIEW==="venn"){$("out").innerHTML='<div class="card" id="vwHost"></div>';Views[VIEW]($("vwHost"),{D,idx:L,units:U,unitsOn:UP.selected()});score();return;}
-  const view=M=>VIEW==="list"?`<div class="card v-list" style="padding:0"><div class="tablewrap"><table><thead><tr>${SHOW.pic?"<th></th>":""}<th>Word</th><th></th><th>Meaning</th>${SHOW.tr&&D.some(x=>x.ar)?`<th>${esc(window.TL_NAME||"Translation")}</th>`:""}<th>Unit</th></tr></thead><tbody>${M.map(i=>card(i,"list")).join("")}</tbody></table></div></div>`
+  const view=M=>VIEW==="list"?`<div class="card v-list" style="padding:0"><div class="tablewrap"><table><thead><tr>${SHOW.pic?"<th></th>":""}<th>Word</th><th></th><th>Meaning</th>${SHOW.tr&&D.some(x=>x.ar||x.trs&&Object.keys(x.trs).length)?`<th>${window.Lang&&Lang.mine().length>1?"Languages":esc(window.TL_NAME||"Translation")}</th>`:""}<th>Unit</th></tr></thead><tbody>${M.map(i=>card(i,"list")).join("")}</tbody></table></div></div>`
     :`<div class="v-${VIEW}">${M.map(i=>card(i,VIEW)).join("")}</div>`;
   // grouped by word type / theme / opposites (or one plain list)
   const secs=GP.sections(L),vo=GP.view();$("out").innerHTML=Sets.sectionsHTML(secs,view,vo);
@@ -411,7 +416,8 @@ $("out").addEventListener("click",e=>{const b=e.target.closest("[data-ex]");if(!
 $("out").addEventListener("click",e=>{const b=e.target.closest("[data-pw]");if(!b)return;showWord(+b.dataset.pw);});
 $("out").addEventListener("click",e=>{const b=e.target.closest("[data-pm]");if(!b)return;const [i,n]=b.dataset.pm.split("|").map(Number),el=$(`pm-${i}-${n}`);if(!el)return;
   el.hidden=!el.hidden;b.textContent=el.hidden?"🎚️ Open meter":"✕ Close meter";if(!el.hidden&&!el.dataset.on){el.dataset.on=1;const v=D[i],sc=Sets.partnerScales(PARTNERS.get(v.wid).own).filter(s=>s.items.length>1)[n];Sets.mountPartnerMeter(el,sc,{emoji:v.emoji});}});
-$("out").addEventListener("click",e=>{const b=e.target.closest("[data-hear],[data-check],[data-giveup],[data-again],[data-mshow],[data-self],[data-cw],[data-cm]");if(!b)return;
+$("out").addEventListener("click",e=>{const hl=e.target.closest("[data-hearlang]");if(hl){const [c,i]=hl.dataset.hearlang.split("|");Lang.say(D[+i],c);return;}
+  const b=e.target.closest("[data-hear],[data-check],[data-giveup],[data-again],[data-mshow],[data-self],[data-cw],[data-cm]");if(!b)return;
   if(b.dataset.hear!==undefined){hear(+b.dataset.hear);return;}
   if(b.dataset.cw!==undefined){const i=+b.dataset.cw,s=S(i);if(s.cw){delete s.cw;delete s.typed;delete s.ok;rerender(i);}else{s.cw=true;rerender(i,"[data-spell]");}return;}
   if(b.dataset.cm!==undefined){const i=+b.dataset.cm,s=S(i);if(s.cm){delete s.cm;delete s.mtyped;delete s.mrev;delete s.self;rerender(i);}else{s.cm=true;rerender(i,"[data-mean]");}return;}
