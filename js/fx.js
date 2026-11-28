@@ -1060,7 +1060,7 @@
       if (boxed) return { cx: 0, cy: 0, cw: W, ch: H, sx: 0, sy: 0, sw: W, sh: H };
       const cw = Math.min(W - 20, 660), ch = Math.min(H - 20, 480), cx = (W - cw) / 2, cy = (H - ch) / 2, th = 84;
       return { cx, cy, cw, ch, sx: cx, sy: cy, sw: cw, sh: ch - th, bx0: cx + 64, bx1: cx + cw - 64, by: cy + ch - 36 }; };
-    const thermo = () => ({ tx: lay.sx + lay.sw - 30, y0: lay.sy + 52, y1: lay.sy + lay.sh * .72 });
+    const thermo = () => ({ tx: lay.sx + lay.sw - 30, y0: lay.sy + (boxed ? 34 : 74), y1: lay.sy + lay.sh * .74 });
     const dOfX = x => -15 + 70 * clamp((x - lay.bx0) / (lay.bx1 - lay.bx0), 0, 1);
     const dOfY = y => { const T = thermo(); return -15 + 70 * clamp((T.y1 - y) / (T.y1 - T.y0), 0, 1); };
     const onBar = (x, y) => lay && !boxed && y > lay.by - 30 && y < lay.by + 30 && x > lay.bx0 - 18 && x < lay.bx1 + 18;
