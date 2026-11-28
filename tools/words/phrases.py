@@ -104,6 +104,6 @@ ID = """
 7|In the same boat|⛵|In the same difficult situation as others.|Sitting in the same boat.|We all forgot our homework, so we're [in the same boat].|في الموقف الصعب نفسه|في القارب نفسه|كلّنا في الهوا سوا|ga
 7|The ball is in your court|🎾|It is your turn to decide or act.|The ball is on your side of the court.|I said sorry; now [the ball is in your court].|القرار الآن لك|الكرة في ملعبك|الكرة في ملعبك|ga
 7|Like two peas in a pod|🫛|Very similar to each other.|Like two peas inside one pod.|The twins are [like two peas in a pod].|متشابهان جداً|مثل حبّتي بازلاء في قرن واحد|نسخة طبق الأصل|ga
-7|Spill the beans|🫘|To tell a secret.|To let the beans fall out.|Come on, [spill the beans]! What's the surprise?|يكشف السرّ|يسكب حبوب الفول|باح بالسرّ|ga;⇄ Clear vs. hidden: clear
+7|Spill the beans|🫘|To tell a secret.|To let the beans fall out.|Come on, [spill the beans]! What's the surprise?|يكشف السرّ|يسكب حبوب الفول|كب العشاء|ga;⇄ Clear vs. hidden: clear
 7|Bury the hatchet|🕊️|To stop arguing and become friends again.|To bury the small axe in the ground.|After the fight, they [buried the hatchet].|يتصالح وينهي الخلاف|يدفن الفأس|طوى صفحة الخلاف|ga;≈ Peace;⇄ Agree vs. disagree: agree
 """
