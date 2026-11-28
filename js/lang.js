@@ -18,6 +18,7 @@
     if (loaded) return loaded;
     loaded = (async () => {
       try {
+        try { await C().auth.getSession(); } catch (e) {}      // wait until the sign-in is ready: before that the database answers nothing
         const p = profile();
         const [l, s, c] = await Promise.all([
           C().from("languages").select("*").order("position"),
@@ -30,6 +31,7 @@
         const by = new Map(ALL.map(x => [x.code, x]));
         MINE = rows.filter(r => by.has(r.lang) && by.get(r.lang).enabled && r.lang !== "en").map(r => ({ ...by.get(r.lang), show: r.show !== false, hear: r.hear !== false }));
       } catch (e) { console.warn("languages", e); }
+      if (!ALL.length) loaded = null;      // nothing came back (not signed in yet?): ask again next time, never keep an empty answer
       return MINE;
     })();
     return loaded;
