@@ -138,6 +138,7 @@
 .castbody [data-cnew]{border:1.5px dashed var(--accent);background:transparent;color:var(--accent);border-radius:12px;padding:9px;font:800 .9rem var(--f-body);cursor:pointer}
 .bk .by select{flex:1;min-width:0;padding:4px 8px;border:1.5px solid var(--rule);border-radius:8px;font:600 .9rem var(--f-body);background:var(--paper);color:var(--ink)}
 .thw{position:relative;display:inline-flex;flex:none}
+.hq{font:800 1.15rem var(--f-body);margin:4px 0 2px}.hq+small{display:block;color:var(--muted);margin-bottom:10px}.hlg{display:flex;flex-direction:column;gap:8px;margin-top:8px}.hlg button{display:flex;align-items:center;gap:10px;text-align:start;border:2px solid var(--rule);background:var(--paper);color:var(--ink);border-radius:14px;padding:10px 14px;font:800 1rem var(--f-body);cursor:pointer}.hlg button.def{border-color:var(--accent);background:#eef1ff}.hlg button.on{background:var(--accent);border-color:var(--accent);color:#fff}.hlg button:disabled{opacity:.5;cursor:not-allowed}.hlg small{font-weight:600;opacity:.75;margin-inline-start:auto}.hlg .tx{flex:1}
 .hearbar{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:6px 0;font:700 .85rem var(--f-body);color:var(--muted)}
 .hearbar[hidden]{display:none}
 .hearbar button{border:1.5px solid var(--rule);background:var(--paper);color:var(--ink);border-radius:999px;padding:3px 12px;font:800 .85rem var(--f-body);cursor:pointer}
@@ -174,7 +175,7 @@
 .tchip{display:inline-block;margin-left:6px;font:800 .78rem var(--f-body);color:#4338ca;background:#e0e7ff;border-radius:999px;padding:1px 8px;vertical-align:middle}
 .wxdif{border-left:4px solid #f97316;padding:4px 0 4px 10px;margin:8px 0}.wxdif p{margin:2px 0 6px}.wxw.on{border-color:#fdba74;background:#fff7ed}
 </style>
-<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261128e"></script><script src="js/icons.js?v=20261128e"></script><script src="js/app.js?v=20261128e"></script><script src="js/sets.js?v=20261128e"></script><script src="js/weather.js?v=20261128e"></script><script src="js/fx.js?v=20261128e"></script><script src="js/speak.js?v=20261128e"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261128e"></script><script src="js/tense.js?v=20261128e"></script><script src="js/wordbox.js?v=20261128e"></script><script src="js/views.js?v=20261128e"></script><script src="js/joiners.js?v=20261128e"></script><script src="js/talk.js?v=20261128e"></script><script src="js/chars.js?v=20261128e"></script><script src="js/storycore.js?v=20261128e"></script><script src="js/montage.js?v=20261128e"></script>
+<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261128e"></script><script src="js/icons.js?v=20261128e"></script><script src="js/app.js?v=20261128e"></script><script src="js/sets.js?v=20261128e"></script><script src="js/lang.js?v=20261128e"></script><script src="js/weather.js?v=20261128e"></script><script src="js/fx.js?v=20261128e"></script><script src="js/speak.js?v=20261128e"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261128e"></script><script src="js/tense.js?v=20261128e"></script><script src="js/wordbox.js?v=20261128e"></script><script src="js/views.js?v=20261128e"></script><script src="js/joiners.js?v=20261128e"></script><script src="js/talk.js?v=20261128e"></script><script src="js/chars.js?v=20261128e"></script><script src="js/storycore.js?v=20261128e"></script><script src="js/montage.js?v=20261128e"></script>
 </head><body>
 <div class="wrap" style="max-width:1280px">
   <div class="head2">
@@ -211,6 +212,7 @@
   
 </div>
 <dialog id="vwDlg" aria-label="Word wheel"><div class="wxin"><button class="btn small close" type="button" id="vwClose">✕ Close</button><div class="seg" role="group" aria-label="Picture" id="vwSeg" style="margin-bottom:8px"><button type="button" data-vk="wheel" aria-pressed="true">🎡 Wheel</button><button type="button" data-vk="venn" aria-pressed="false">⭕ Venn</button></div><div id="vwBody"></div></div></dialog>
+<dialog id="hearDlg" aria-label="Hear this saying"><div class="wxin"><button class="btn small close" type="button" onclick="this.closest('dialog').close()">✕ Close</button><div id="hearBody"></div></div></dialog>
 <dialog id="shotDlg" aria-label="Scene shot"><div class="wxin"><button class="btn small close" type="button" onclick="this.closest('dialog').close()">✕ Close</button><div id="shotBody"></div></div></dialog>
 <dialog id="wxDlg" aria-label="Word explorer"><div class="wxin"><button class="btn small close" type="button" id="wxClose">✕ Close</button><div id="wxBody"></div></div></dialog>
 <dialog id="infoDlg" aria-labelledby="infoTitle"><div class="ib"><button class="btn small close" type="button" id="infoClose">✕ Close</button>
@@ -235,6 +237,7 @@
 </div></dialog>
 <script type="text/x-app">
 const $=id=>document.getElementById(id), esc=App.esc, D=window.WORDS, SET=window.CURRENT_SET, C=App.client;
+const LANGREADY=window.Lang?Lang.load().then(()=>Lang.attach(D)).catch(()=>{}):Promise.resolve();
 document.querySelectorAll("[data-i]").forEach(el=>el.insertAdjacentHTML("afterbegin",icon(el.dataset.i,16)));
 const UP=Sets.unitPicker($("unitMount"),()=>drawLib());
 let GP=Sets.groupPicker($("groupMount"),()=>drawLib());
@@ -365,13 +368,13 @@ function drawPreview(){const B=CUR?CUR.blocks:[];if(!B.some(b=>b.k!=="s")){$("pr
   $("preview").innerHTML=`<h3>My story so far</h3>`+sc.filter(s=>s.length).map((s,k)=>`<p><span class="muted">Scene ${k+1}:</span> ${s.join(" ")}</p>`).join("");}
 function move(k,d){const B=CUR.blocks,j=k+d;if(j<0||j>=B.length)return;[B[k],B[j]]=[B[j],B[k]];SEL=j;changed();drawBoard();}
 $("board").addEventListener("click",e=>{const b=e.target.closest("button");
-  if(b?.dataset.hearq!=null)return hearBlock(+b.dataset.hearq,true);
+  if(b?.dataset.hearq!=null)return hearBlock(+b.dataset.hearq);
   if(b?.dataset.wx!=null)return openWX(+b.dataset.wx);
   if(b?.dataset.up!=null)return move(+b.dataset.up,-1);if(b?.dataset.down!=null)return move(+b.dataset.down,1);
   if(b?.dataset.del!=null){CUR.blocks.splice(+b.dataset.del,1);SEL=Math.min(SEL,CUR.blocks.length-1);changed();return drawBoard();}
   const li=e.target.closest("li[data-k]");
-  if(li&&li.classList.contains("w")&&!e.target.closest("input,button")){const k=+li.dataset.k,now=Date.now();if(TAP.k===k&&now-TAP.t<450){TAP={};const bb=CUR.blocks[k];if(isSay(bb,D[wi(bb.w)]))return hearBlock(k,true);return openWX(k);}TAP={k,t:now};}
-  if(li&&li.classList.contains("q")&&!e.target.closest("input,button")){const k=+li.dataset.k,now=Date.now();if(TAP.k===k&&now-TAP.t<450){TAP={};return hearBlock(k,true);}TAP={k,t:now};}
+  if(li&&(li.classList.contains("q")||li.classList.contains("say"))&&!e.target.closest("input,button"))return hearBlock(+li.dataset.k);
+  if(li&&li.classList.contains("w")&&!e.target.closest("input,button")){const k=+li.dataset.k,now=Date.now();if(TAP.k===k&&now-TAP.t<450){TAP={};return openWX(k);}TAP={k,t:now};}
   if(li&&!e.target.closest("input")){SEL=+li.dataset.k===SEL?-1:+li.dataset.k;drawBoard();
     const v=li.querySelector("video.th");if(v&&SEL>=0){const w=CUR.blocks[SEL];Sets.playClip(v,D[wi(w.w)]);}}});
 $("board").addEventListener("focusin",e=>{const i=e.target.closest("input[data-t]");if(i){SEL=+i.dataset.t;document.querySelectorAll(".bk.sel").forEach(x=>x.classList.remove("sel"));i.closest(".bk").classList.add("sel");}});
@@ -728,37 +731,39 @@ $("wxBody").addEventListener("click",e=>{const b=CUR.blocks[WX.k];
   if(e.target.closest("[data-back]")){const j=wi(b.from);if(j>=0)replaceWord(j);}});
 $("wxClose").onclick=()=>$("wxDlg").close();
 $("wxDlg").addEventListener("click",e=>{if(e.target===$("wxDlg"))$("wxDlg").close();});
-// ---------- 🔊 hear a saying: English (recorded voice if there is one), Arabic (its translation), or both; double-click = hear it + its egg effect ----------
-const HLANG=()=>{try{return localStorage.getItem("sb-hear")||"en";}catch(e){return "en";}};
-const HLABEL={en:"English",ar:"العربية",both:"English + العربية"};
-function drawHearBar(){const el=$("hearbar");if(!el)return;const has=(CUR?CUR.blocks:[]).some(b=>b.k==="q"||(b.k==="w"&&isSay(b,D[wi(b.w)])));el.hidden=!has;if(!has)return;const h=HLANG();
-  el.innerHTML=`🔊 Hear sayings in: ${["en","ar","both"].map(x=>`<button type="button" data-hl="${x}" aria-pressed="${h===x}">${HLABEL[x]}</button>`).join("")}<small>(double-click a saying to hear it and see its effect)</small>`;}
-let HEARNOW=null;
+// ---------- 🔊 a saying: click it and a window asks which language to hear it in (hearing only). The story's own language is the default ----------
+const STORYLANG=()=>(CUR&&CUR.lang)||"en";
+function drawHearBar(){const el=$("hearbar");if(el)el.hidden=true;}
 function sbSpeak(text,lang,done){
   if(!("speechSynthesis" in window)){App.status("This browser can't read aloud.");return done&&done();}
   try{speechSynthesis.cancel();const vs=speechSynthesis.getVoices(),pre=lang.slice(0,2),vo=vs.find(x=>x.lang.toLowerCase().replace("_","-")===lang.toLowerCase())||vs.find(x=>x.lang.toLowerCase().startsWith(pre));
-    if(!vo&&vs.length&&pre==="ar")App.status("This device has no Arabic voice yet. Add one in its language settings, then try again.");
     const u=new SpeechSynthesisUtterance(text);u.lang=lang;u.rate=.85;if(vo)u.voice=vo;u.onend=u.onerror=()=>done&&done();speechSynthesis.speak(u);}catch(e){done&&done();}}
+let HEARNOW=null;
 function playEnglish(v,text,done){
-  if(v&&v.au&&v.au!=="tts"){try{const a=new Audio(v.au);a.onended=()=>done&&done();a.onerror=()=>sbSpeak(text,"en-US",done);a.play().catch(()=>sbSpeak(text,"en-US",done));return a;}catch(e){}}
+  try{if(HEARNOW)HEARNOW.pause();}catch(e){}
+  if(v&&v.au&&v.au!=="tts"){try{const a=new Audio(v.au);HEARNOW=a;a.onended=()=>done&&done();a.onerror=()=>sbSpeak(text,"en-US",done);a.play().catch(()=>sbSpeak(text,"en-US",done));return a;}catch(e){}}
   sbSpeak(text,"en-US",done);}
-// an effect for the saying: the whole text if it has one, otherwise its longest word that does
-function sayFx(text,li){if(li){li.classList.remove("pulse");void li.offsetWidth;li.classList.add("pulse");setTimeout(()=>li.classList.remove("pulse"),1500);}
-  if(!window.Weather||!Weather.variants)return;const toks=String(text).split(/[^A-Za-z'’-]+/).filter(x=>x.length>3).sort((a,b)=>b.length-a.length);
-  for(const t of [text,...toks]){try{if(Weather.variants(t).length){Weather.play(t,{force:1});return;}}catch(e){}}}
-function hearItem(v,text,fx,btn){
-  const mode=HLANG(),ar=v&&v.ar?v.ar:"",wantAr=mode!=="en",wantEn=mode!=="ar";
-  if(wantAr&&!ar&&!wantEn){App.status("No Arabic for this saying yet. Choose English or Both.");return;}
-  if(btn){document.querySelectorAll(".hearq.on").forEach(x=>x.classList.remove("on"));btn.classList.add("on");}
-  const off=()=>{if(btn)btn.classList.remove("on");};
-  if(fx)sayFx(text,btn&&btn.closest("li"));
-  const arPart=()=>{if(wantAr&&ar)sbSpeak(ar,"ar-SA",off);else off();};
-  if(wantEn)HEARNOW=playEnglish(v,text,arPart);else arPart();
-  if(wantAr&&!ar&&wantEn)App.status("English only: there is no Arabic for this one yet.");}
-function hearBlock(k,fx){const b=CUR&&CUR.blocks[k];if(!b)return;const j=wi(b.w),v=j>=0?D[j]:null;hearItem(v,clean(b.w),fx,document.querySelector(`#board [data-hearq="${k}"]`));}
-const hearBtn=k=>`<button type="button" class="hearq" data-hearq="${k}" title="Hear it (or double-click it): ${esc(HLABEL[HLANG()])}" aria-label="Hear this saying">🔊</button>`;
-document.addEventListener("click",e=>{const h=e.target.closest("[data-hl]");if(h){try{localStorage.setItem("sb-hear",h.dataset.hl);}catch(x){}drawHearBar();drawBoard();return;}
-  const f=e.target.closest("[data-fithear]");if(f){const q=D[+f.dataset.fithear];hearItem(q,clean(q.w),true,f);}});
+let HD=null;
+async function openHear(v,text,author){
+  await LANGREADY;
+  const langs=[{code:"en",flag:"🇬🇧",name:"English",has:true}];
+  if(window.Lang)Lang.all().filter(x=>x.code!=="en").forEach(L=>{const m=Lang.mine().some(x=>x.code===L.code);if(!m)return;const t=v&&v.trs&&v.trs[L.code];langs.push({code:L.code,flag:L.flag,name:L.native_name||L.name_en,dir:L.dir,has:!!(t&&t.term),text:t&&t.term});});
+  const def=langs.some(x=>x.code===STORYLANG()&&x.has)?STORYLANG():"en";
+  langs.sort((a,b)=>(a.code===def?-1:b.code===def?1:0));
+  HD={v,text,langs};
+  $("hearBody").innerHTML=`<div class="hq">“${esc(text)}”</div><small>${author?esc(author)+" · ":""}Which language do you want to hear it in?</small><div class="hlg">${langs.map(x=>`<button type="button" data-hearcode="${x.code}" class="${x.code===def?"def":""}"${x.has?"":" disabled"}><span>${x.flag||"🌍"}</span><span class="tx"${x.dir?` dir="${x.dir}"`:""}>${esc(x.name)}</span><small>${x.has?(x.code===def?"story language":"🔊"):"no translation yet"}</small></button>`).join("")}</div>`;
+  $("hearDlg").showModal();}
+function hearBlock(k){const b=CUR&&CUR.blocks[k];if(!b)return;const j=wi(b.w),v=j>=0?D[j]:null;openHear(v,clean(b.w),b.by||(v&&v.author)||"");}
+const hearBtn=k=>`<button type="button" class="hearq" data-hearq="${k}" title="Hear it in a language you choose" aria-label="Hear this saying">🔊</button>`;
+$("hearDlg").addEventListener("click",e=>{
+  if(e.target===$("hearDlg"))return $("hearDlg").close();
+  const b=e.target.closest("[data-hearcode]");if(!b||!HD)return;
+  document.querySelectorAll("#hearBody .hlg button.on").forEach(x=>x.classList.remove("on"));b.classList.add("on");
+  const done=()=>b.classList.remove("on"),c=b.dataset.hearcode;
+  try{speechSynthesis.cancel();}catch(x){}
+  if(c==="en")playEnglish(HD.v,HD.text,done);else if(!(window.Lang&&Lang.say(HD.v,c,{full:true,done})))done();});
+$("hearDlg").addEventListener("close",()=>{try{speechSynthesis.cancel();if(HEARNOW)HEARNOW.pause();}catch(e){}});
+document.addEventListener("click",e=>{const f=e.target.closest("[data-fithear]");if(f){const q=D[+f.dataset.fithear];openHear(q,clean(q.w),q.author||"");}});
 let TAP={};   // two quick taps on a word (a double-click) open the explorer
 let LP=null;   // long press on touch screens
 $("board").addEventListener("pointerdown",e=>{const li=e.target.closest("li.bk.w[data-k]");if(!li||e.target.closest("button,input"))return;const x=e.clientX,y=e.clientY;
