@@ -72,9 +72,11 @@ select{font:inherit;padding:8px 10px;border:1px solid var(--rule);border-radius:
   </header>
   <div class="bar">
     <div class="left"><label for="unitSel" class="eyebrow">Words</label><select id="unitSel"></select>
-      <label for="roundsSel" class="eyebrow">Rounds</label><select id="roundsSel"><option>6</option><option selected>10</option><option>15</option><option>20</option></select></div>
+      <label for="levelSel" class="eyebrow">Level</label><select id="levelSel"><option value="easy">🌱 Easy: listen and repeat</option><option value="mid">🌿 Middle: listen to all, then you</option><option value="hard">🌳 Hard: from memory</option></select>
+      <label for="roundsSel" class="eyebrow">Words</label><select id="roundsSel"><option>3</option><option>5</option><option>8</option><option>10</option><option>15</option><option>20</option></select></div>
     <button class="btn primary" id="go">Start the game</button>
   </div>
+  <p class="hint" id="lvlHint"></p>
   <div id="stage"></div>
 </div>
 <script type="text/x-app">
@@ -86,38 +88,68 @@ const clean=w=>String(w||"").replace(/\s*\(.*\)\s*$/,"");
 const FACE={ar:"👩🏽",fr:"👨🏼",it:"👩🏻",es:"👦🏽",pt:"👧🏾",zh:"🧑🏻"},RING=["#2347c5","#b5532a","#1e7f4f","#a855f7","#e11d48","#0891b2","#ca8a04","#475569"];
 const has=(v,c)=>{const t=v.trs&&v.trs[c];return !!(t&&t.term);};
 const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-let LANGS=[],QUEUE=[],q=0,score=0,missed=[],cur=null,angle=0,lastCode="",micOK=!!SR,busy=false;
+let LANGS=[],QUEUE=[],PLANS=[],q=0,score=0,total=0,missed=[],cur=null,angle=0,lastCode="",micOK=!!SR,busy=false,STEPS=[],si=0,LEVEL="easy",tok=0;
+const HINT={easy:"🌱 Easy: each friend says the word, then it's your turn to say it back, friend by friend.",mid:"🌿 Middle: every friend says the word first. Then you say it for each friend, in the same order.",hard:"🌳 Hard: nobody helps. The arrow points at a friend and you say it from memory."};
+const DEF={easy:3,mid:5,hard:10};
 const seatXY=(k,n)=>{const a=(-90+360*k/n)*Math.PI/180;return[50+41*Math.cos(a),50+41*Math.sin(a),-90+360*k/n];};
 function pool(){const u=$("#unitSel").value;return DATA.map((v,i)=>i).filter(i=>(u==="all"||String(DATA[i].u)===u)&&LANGS.some(L=>has(DATA[i],L.code)));}
 function table(){const n=LANGS.length;
   return `<div class="rt" id="rt"><div class="tbl"></div><div class="ptr" id="ptr" style="transform:rotate(${angle}deg)"><b></b></div>
   <div class="cc" id="cc"></div>${LANGS.map((L,k)=>{const[x,y]=seatXY(k,n);return `<div class="seat" id="s-${L.code}" style="left:${x}%;top:${y}%;--ring:${RING[k%RING.length]}"><div class="av" aria-hidden="true">${FACE[L.code]||"🙂"}</div><div class="nm">${L.flag||""} ${esc(L.native_name)}</div><div class="say" lang="${L.tts_lang||L.code}" dir="${L.dir||"ltr"}"></div></div>`;}).join("")}</div>`;}
 function ui(){$("#stage").innerHTML=`<div class="score" id="score"></div>${table()}<div class="ask" id="ask"></div><div class="ctl" id="ctl"></div><div class="fb" id="fb" aria-live="polite"></div>`;}
-function setScore(){$("#score").innerHTML=`<span>Round ${Math.min(q+1,QUEUE.length)} / ${QUEUE.length}</span><span>⭐ ${score}</span>`;}
+function setScore(){$("#score").innerHTML=`<span>Word ${Math.min(q+1,QUEUE.length)} / ${QUEUE.length}</span><span>⭐ ${score} / ${total}</span>`;}
+function plan(v){const fr=LANGS.filter(L=>has(v,L.code));
+  if(LEVEL==="hard"){const ok=fr.filter(L=>L.code!==lastCode),pk=ok.length?ok:fr,L=pk[Math.floor(Math.random()*pk.length)];lastCode=L.code;return[{c:L.code,m:"say"}];}
+  if(LEVEL==="easy")return fr.flatMap(L=>[{c:L.code,m:"hear"},{c:L.code,m:"say"}]);
+  return fr.map(L=>({c:L.code,m:"hear"})).concat(fr.map(L=>({c:L.code,m:"say"})));}
 function start(list){LANGS=Lang.mine().filter(L=>DATA.filter(v=>has(v,L.code)).length>=6);
   if(LANGS.length<2){$("#stage").innerHTML=`<div class="res"><b>Not enough translations yet</b><span class="hint">This game needs a set where the words have translations in at least two languages. Open “🌍 My languages” on the Word list to choose yours.</span></div>`;return;}
-  const base=list||shuffle(pool());QUEUE=base.slice(0,+$("#roundsSel").value);if(!QUEUE.length){$("#stage").innerHTML=`<div class="res">No words with translations in this unit.</div>`;return;}
-  q=0;score=0;missed=[];lastCode="";ui();next();}
-function next(){if(q>=QUEUE.length)return finish();const v=DATA[QUEUE[q]];
-  const opts=LANGS.filter(L=>has(v,L.code));const pick=(opts.filter(L=>L.code!==lastCode).length?opts.filter(L=>L.code!==lastCode):opts);const L=pick[Math.floor(Math.random()*pick.length)];
-  lastCode=L.code;cur={v,L,tries:0,done:false,k:LANGS.findIndex(x=>x.code===L.code)};busy=true;setScore();
-  document.querySelectorAll(".seat").forEach(s=>{s.classList.remove("on","dim");s.querySelector(".say").textContent="";});
+  LEVEL=$("#levelSel").value;const base=list||shuffle(pool());QUEUE=base.slice(0,+$("#roundsSel").value);if(!QUEUE.length){$("#stage").innerHTML=`<div class="res">No words with translations in this unit.</div>`;return;}
+  lastCode="";PLANS=QUEUE.map(i=>plan(DATA[i]));total=PLANS.reduce((a,p)=>a+p.filter(s=>s.m==="say").length,0);
+  q=0;score=0;missed=[];ui();nextWord();}
+function clearSeats(){document.querySelectorAll(".seat").forEach(s=>{s.classList.remove("on","dim");s.querySelector(".say").textContent="";});}
+function nextWord(){if(q>=QUEUE.length)return finish();const v=DATA[QUEUE[q]];STEPS=PLANS[q];si=0;clearSeats();setScore();
   $("#cc").innerHTML=`${v.emoji?`<div class="em">${esc(v.emoji)}</div>`:""}<div class="w">${esc(clean(v.w))}</div><button class="hear" type="button" id="hearEn" aria-label="Hear the English word">🔊</button>`;
-  $("#ask").innerHTML=`Who is it for?…`;$("#ctl").innerHTML="";$("#fb").textContent="";$("#fb").className="fb";
-  const n=LANGS.length,target=seatXY(cur.k,n)[2];let turn=((target-angle)%360+360)%360;angle+=720+turn;$("#ptr").style.transform=`rotate(${angle}deg)`;
-  const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
-  setTimeout(()=>{busy=false;document.querySelectorAll(".seat").forEach(s=>s.classList.toggle("dim",s.id!=="s-"+L.code));$("#s-"+L.code).classList.add("on");
-    $("#ask").innerHTML=`Say <b>“${esc(clean(v.w))}”</b> in ${L.flag||""} <b>${esc(L.name_en||L.native_name)}</b>`;controls();try{Sets.speak(clean(v.w));}catch(e){}},reduce?50:2000);}
+  $("#fb").textContent="";$("#fb").className="fb";try{Sets.speak(clean(v.w));}catch(e){}
+  stepRun(true);}
+function point(k,spin){const n=LANGS.length,target=seatXY(k,n)[2],turn=((target-angle)%360+360)%360;angle+=(spin?720:0)+turn;const p=$("#ptr");p.style.transitionDuration=spin?"1.9s":".8s";p.style.transform=`rotate(${angle}deg)`;
+  return matchMedia("(prefers-reduced-motion: reduce)").matches?50:(spin?2000:900);}
+function stepRun(first){if(si>=STEPS.length){q++;return nextWord();}
+  const s=STEPS[si],v=DATA[QUEUE[q]],L=LANGS.find(x=>x.code===s.c),k=LANGS.findIndex(x=>x.code===s.c),my=++tok;
+  cur={v,L,tries:0,done:false,k,mode:s.m};busy=true;$("#ctl").innerHTML="";$("#fb").textContent="";$("#fb").className="fb";
+  const turnToYou=LEVEL==="mid"&&s.m==="say"&&si>0&&STEPS[si-1].m==="hear";
+  if(turnToYou){clearSeats();$("#ask").innerHTML=`👏 Now it's <b>your</b> turn! Say it for each friend, in the same order.`;}
+  else $("#ask").innerHTML=first?`Who is it for?…`:"";
+  const wait=point(k,first)+(turnToYou?1500:0);
+  setTimeout(()=>{if(my!==tok)return;busy=false;
+    document.querySelectorAll(".seat").forEach(x=>{x.classList.toggle("dim",x.id!=="s-"+L.code);x.classList.remove("on");});$("#s-"+L.code).classList.add("on");
+    if(s.m==="hear"){const t=head(v.trs[L.code].term);$("#s-"+L.code+" .say").textContent=t+(v.trs[L.code].romanization?" · "+v.trs[L.code].romanization:"");
+      $("#ask").innerHTML=`🔊 ${L.flag||""} <b>${esc(L.name_en||L.native_name)}</b> says it…`;let go=false;const adv=()=>{if(go||my!==tok)return;go=true;setTimeout(()=>{if(my!==tok)return;si++;stepRun();},650);};
+      try{Lang.say(v,L.code,{done:adv});}catch(e){}setTimeout(adv,5000);}
+    else{$("#ask").innerHTML=`Say <b>“${esc(clean(v.w))}”</b> in ${L.flag||""} <b>${esc(L.name_en||L.native_name)}</b>`;controls();}},wait);}
 function controls(){const mic=micOK?`<button class="mic" id="mic" type="button">🎤 Say it</button>`:"";
   $("#ctl").innerHTML=`${mic}<button class="btn" id="show" type="button">👀 Show me</button>`;
   if(!micOK)$("#fb").innerHTML=`<span class="hint">No microphone listening here: say it out loud, tap “Show me”, then tell me how you did. (Chrome can listen.)</span>`;}
+function after(right){const last=si+1>=STEPS.length&&q+1>=QUEUE.length;setScore();
+  if(right&&LEVEL!=="hard"||right&&true){const my=tok;$("#ctl").innerHTML=`<button class="btn primary" id="nx" type="button">${last?"See my score":"Next ➜"}</button>`;setTimeout(()=>{if(my===tok&&cur&&cur.done&&$("#nx"))adv();},1400);return;}
+  $("#ctl").innerHTML=`<button class="btn primary" id="nx" type="button">${last?"See my score":"Next ➜"}</button>`;}
+function adv(){si++;stepRun();}
 function reveal(right){if(cur.done)return;cur.done=true;const t=head(cur.v.trs[cur.L.code].term);
-  const box=$("#s-"+cur.L.code+" .say");box.textContent=t+(cur.v.trs[cur.L.code].romanization?" · "+cur.v.trs[cur.L.code].romanization:"");
-  if(right===true){score++;}else if(right===false){missed.push(QUEUE[q]);}
+  $("#s-"+cur.L.code+" .say").textContent=t+(cur.v.trs[cur.L.code].romanization?" · "+cur.v.trs[cur.L.code].romanization:"");
+  if(right===true)score++;else if(right===false&&!missed.includes(QUEUE[q]))missed.push(QUEUE[q]);
   try{Lang.say(cur.v,cur.L.code);}catch(e){}
-  if(right==null){ // self-check
-    $("#ctl").innerHTML=`<button class="btn primary" id="ok" type="button">✓ I knew it</button><button class="btn" id="no" type="button">✗ Not yet</button>`;cur.done=false;cur.self=true;cur.shown=true;return;}
-  $("#ctl").innerHTML=`<button class="btn primary" id="nx" type="button">${q+1>=QUEUE.length?"See my score":"Next friend ➜"}</button>`;setScore();}
+  if(right==null){$("#ctl").innerHTML=`<button class="btn primary" id="ok" type="button">✓ I knew it</button><button class="btn" id="no" type="button">✗ Not yet</button>`;cur.done=false;return;}
+  after(right===true);}
+function say(){if(busy||!cur||cur.done)return;const b=$("#mic");if(b){b.classList.add("live");b.disabled=true;b.textContent="🎤 Listening…";}
+  $("#fb").className="fb";$("#fb").textContent="";
+  Lang.listen(cur.v,cur.L.code,{quiet:true,onDone:r=>{const b2=$("#mic");if(b2){b2.classList.remove("live");b2.disabled=false;b2.textContent="🎤 Say it";}
+    if(r.error){if(r.error==="unsupported"||r.error==="language-not-supported"){micOK=false;controls();$("#fb").innerHTML=`<span class="hint">This device can't listen in ${esc(cur.L.name_en||"this language")}. Say it out loud, tap “Show me”, then tell me how you did.</span>`;return;}
+      $("#fb").className="fb no";$("#fb").textContent=r.error==="not-allowed"||r.error==="service-not-allowed"?"🎤 Please allow the microphone, then try again.":"🎤 I didn't hear anything. Try again.";return;}
+    if(r.ok){$("#fb").className="fb ok";$("#fb").textContent=(r.score>=85?"🌟 Yes! ":"🙂 Good! ")+"I heard “"+r.heard+"” · "+r.score+"%";reveal(true);}
+    else{cur.tries++;$("#fb").className="fb no";$("#fb").textContent=`I heard “${r.heard}” (${r.score}%). ${cur.tries>=2?"Let's look at it together.":"Try again, or tap Show me."}`;if(cur.tries>=2)reveal(false);}}});}
+function finish(){const n=total;$("#stage").innerHTML=`<div class="res"><div class="big">${score>=n*.8?"🌟":score>=n*.5?"🙂":"💪"} ${score} / ${n}</div><div>${score>=n*.8?"You remembered almost everything!":score>=n*.5?"Nice memory! A few to look at again.":"Good try! Let's practise these again."}</div>
+  ${missed.length?`<div class="mlist"><b>To remember</b>${missed.map(i=>{const v=DATA[i];return `<div class="mrow"><b>${esc(clean(v.w))}</b>${LANGS.filter(L=>has(v,L.code)).map(L=>`<span lang="${L.tts_lang||L.code}" dir="${L.dir||"ltr"}">${L.flag||""} ${esc(head(v.trs[L.code].term))}</span>`).join("")}</div>`;}).join("")}</div>`:""}
+  <div class="ctl"><button class="btn primary" id="again" type="button">Play again</button>${missed.length?`<button class="btn" id="redo" type="button">Practise the ones I missed</button>`:""}</div></div>`;}
 const head=t=>window.Lang&&Lang.head?Lang.head(t):String(t).split(/[≈;/(]/)[0].trim();
 function say(){if(busy||!cur||cur.done)return;const b=$("#mic");if(b){b.classList.add("live");b.disabled=true;b.textContent="🎤 Listening…";}
   $("#fb").className="fb";$("#fb").textContent="";
@@ -133,12 +165,14 @@ document.addEventListener("click",e=>{const t=e.target.closest("button");if(!t)r
   if(t.id==="go"){start();return;}if(t.id==="again"){start();return;}if(t.id==="redo"){start(missed.slice());return;}
   if(t.id==="hearEn"){try{Sets.speak(clean(cur.v.w));}catch(x){}return;}
   if(t.id==="mic"){say();return;}
-  if(t.id==="show"){if(cur&&!cur.done){if(micOK){reveal(false);}else reveal(null);}return;}
-  if(t.id==="ok"){cur.done=true;score++;$("#ctl").innerHTML=`<button class="btn primary" id="nx" type="button">${q+1>=QUEUE.length?"See my score":"Next friend ➜"}</button>`;setScore();return;}
-  if(t.id==="no"){cur.done=true;missed.push(QUEUE[q]);$("#ctl").innerHTML=`<button class="btn primary" id="nx" type="button">${q+1>=QUEUE.length?"See my score":"Next friend ➜"}</button>`;return;}
-  if(t.id==="nx"){q++;if(q>=QUEUE.length)finish();else next();}});
+  if(t.id==="show"){if(cur&&!cur.done&&cur.mode==="say"){if(micOK){reveal(false);}else reveal(null);}return;}
+  if(t.id==="ok"){cur.done=true;score++;after(true);return;}
+  if(t.id==="no"){cur.done=true;if(!missed.includes(QUEUE[q]))missed.push(QUEUE[q]);after(false);return;}
+  if(t.id==="nx"){tok++;adv();}});
 (async()=>{$("#setEyebrow").textContent=(window.CURRENT_SET&&CURRENT_SET.name)||"";
   try{await Lang.load();await Lang.attach(DATA);}catch(e){}
+  let lv="easy";try{lv=localStorage.getItem("tableLevel")||"easy";}catch(e){}$("#levelSel").value=lv;$("#roundsSel").value=String(DEF[lv]);$("#lvlHint").textContent=HINT[lv];
+  $("#levelSel").onchange=()=>{const l=$("#levelSel").value;$("#roundsSel").value=String(DEF[l]);$("#lvlHint").textContent=HINT[l];try{localStorage.setItem("tableLevel",l);}catch(e){}};
   const us=[`<option value="all">All words</option>`].concat((UNITS||[]).map(u=>`<option value="${u.u}">${u.u?("Unit "+u.u+(u.name?" · "+esc(u.name):"")):(u.name||"General")} (${u.n})</option>`));$("#unitSel").innerHTML=us.join("");
   LANGS=Lang.mine().filter(L=>DATA.filter(v=>has(v,L.code)).length>=6);
   $("#stage").innerHTML=LANGS.length>=2?`<div class="res"><div class="big">🌍</div><div>${LANGS.length} friends are waiting at the table: ${LANGS.map(L=>L.flag).join(" ")}</div><div class="hint">Press “Start the game”. Turn your sound on and allow the microphone.</div></div>`:`<div class="res"><b>Not enough translations yet</b><span class="hint">This game needs a set where the words have translations in at least two languages.</span></div>`;})();
