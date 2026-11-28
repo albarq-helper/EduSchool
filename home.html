@@ -128,16 +128,18 @@ const ROOMS=FLOORS.flatMap(f=>f.rooms.map(r=>({...r,floor:f.id}))), ROOM_OF={};
 ROOMS.forEach(r=>r.ps.forEach(p=>ROOM_OF[p]=r));
 const MORE={k:"more",e:"🧩",ps:[],an:"m-more",floor:"floor"};
 
-// every phrasal verb of this set, grouped by verb: V.get("make") -> Map(room key -> [phrase,...])
-const items=(window.SET_ITEMS||[]).filter(x=>x.kind==="term");
-const pv=items.some(x=>(x.tags||[]).includes("Phrasal verb"))?items.filter(x=>(x.tags||[]).includes("Phrasal verb")):items;
+// every phrasal verb on the site (not only this set), grouped by verb: V.get("make").by.get(room key) -> Map(part -> [meanings])
 const V=new Map();
-pv.forEach(x=>{const t=String(x.term||"").toLowerCase().replace(/\(.*?\)/g,"").trim().split(/\s+/);if(t.length<2||t.length>4||!/^[a-z']+$/.test(t[0]))return;
+function add(x){const t=String(x.term||"").toLowerCase().replace(/\(.*?\)/g,"").trim().split(/\s+/);if(t.length<2||t.length>4||!/^[a-z']+$/.test(t[0]))return;
   const verb=t[0],part=t.slice(1).join(" "),room=ROOM_OF[t[1]]||MORE;
   if(!V.has(verb))V.set(verb,{n:0,by:new Map()});const e=V.get(verb);e.n++;
   if(!e.by.has(room.k))e.by.set(room.k,new Map());const ph=e.by.get(room.k);if(!ph.has(part))ph.set(part,[]);
-  ph.get(part).push({term:x.term,verb,part,meaning:x.meaning||"",example:x.example||"",ar:x.translation||""});});
-const verbs=[...V.entries()].filter(([,e])=>e.by.size>=2).sort((a,b)=>b[1].n-a[1].n).map(([v])=>v);
+  ph.get(part).push({term:x.term,verb,part,meaning:x.meaning||"",example:x.example||"",ar:x.translation||""});}
+async function loadAll(){const seen=new Set();let got=0;
+  for(let from=0;from<6000;from+=1000){const r=await App.client.from("words").select("id,headword,sense,meaning,example,translation").contains("tags",["Phrasal verb"]).order("headword").order("sense").range(from,from+999);
+    const d=r.data||[];d.forEach(w=>{if(seen.has(w.id))return;seen.add(w.id);add({term:w.headword,meaning:w.meaning,example:w.example,translation:w.translation});got++;});if(d.length<1000)break;}
+  if(!got)(window.SET_ITEMS||[]).filter(x=>x.kind==="term").forEach(add);}
+let verbs=[];
 const ST={verb:null,room:null,part:null,idx:0,mode:(()=>{try{return localStorage.getItem("vh-mode")||"house"}catch(e){return"house"}})()};
 const roomOf=k=>ROOMS.concat([MORE]).find(r=>r.k===k);
 const phrasesOf=(verb,rk)=>{const m=(V.get(verb)||{by:new Map()}).by.get(rk);return m?[...m.entries()]:[]};   // [[part,[meanings]],...]
@@ -146,8 +148,8 @@ function pickVerb(v){ST.verb=v;ST.room=null;ST.part=null;ST.idx=0;draw();}
 function pickRoom(rk){ST.room=rk;const ph=phrasesOf(ST.verb,rk);ST.part=ph.length?ph[0][0]:null;ST.idx=0;draw();}
 function pickPart(p){ST.part=p;ST.idx=0;drawCard();}
 
-function chips(){const top=verbs.slice(0,14);$("#vchips").innerHTML=top.map(v=>`<button type="button" class="vchip" data-v="${v}" aria-pressed="${v===ST.verb}">${v}<small>${V.get(v).n}</small></button>`).join("");
-  const rest=verbs.slice(14),sel=$("#vmore");sel.hidden=!rest.length;if(rest.length)sel.innerHTML=`<option value="">More verbs…</option>`+rest.map(v=>`<option value="${v}">${v} (${V.get(v).n})</option>`).join("");
+function chips(){const PIN=["make","get","take","go","put","give","look","turn","set","pick"],top=[...PIN.filter(v=>verbs.includes(v)),...verbs.filter(v=>!PIN.includes(v)).slice(0,6)];$("#vchips").innerHTML=top.map(v=>`<button type="button" class="vchip" data-v="${v}" aria-pressed="${v===ST.verb}">${v}<small>${V.get(v).n}</small></button>`).join("");
+  const rest=verbs.filter(v=>!top.includes(v)),sel=$("#vmore");sel.hidden=!rest.length;if(rest.length)sel.innerHTML=`<option value="">More verbs…</option>`+rest.map(v=>`<option value="${v}">${v} (${V.get(v).n})</option>`).join("");
   if(rest.length&&rest.includes(ST.verb))sel.value=ST.verb;}
 
 function house(){const e=V.get(ST.verb),has=k=>e.by.has(k);
@@ -185,6 +187,7 @@ document.addEventListener("click",e=>{const t=e.target.closest("button");if(!t)r
   else if(t.id==="spin"){const e2=V.get(ST.verb),ks=ROOMS.filter(r=>e2.by.has(r.k)&&r.k!==ST.room);if(ks.length){pickRoom(ks[Math.floor(Math.random()*ks.length)].k);const p=phrasesOf(ST.verb,ST.room);Sets.speak(ST.verb+" "+p[0][0]);}}
   else if(t.id==="mHouse"||t.id==="mWheel"){ST.mode=t.id==="mHouse"?"house":"wheel";try{localStorage.setItem("vh-mode",ST.mode)}catch(x){}draw();}});
 $("#vmore").addEventListener("change",e=>{if(e.target.value)pickVerb(e.target.value);});
-if(!verbs.length){$("#stage").innerHTML=`<div class="empty">This set has no phrasal verbs to put in a house yet. Open the “Phrasal verbs” set.</div>`;}
-else{const want=new URLSearchParams(location.search).get("verb");ST.verb=verbs.includes(want)?want:(verbs.includes("make")?"make":verbs[0]);draw();}
+(async()=>{await loadAll();verbs=[...V.entries()].filter(([,e])=>e.by.size>=2).sort((a,b)=>b[1].n-a[1].n).map(([v])=>v);
+if(!verbs.length){$("#stage").innerHTML=`<div class="empty">No phrasal verbs to put in a house yet.</div>`;return;}
+const want=new URLSearchParams(location.search).get("verb");ST.verb=verbs.includes(want)?want:(verbs.includes("make")?"make":verbs[0]);draw();})();
 </script><script>Sets.boot({min:4})</script></body></html>
