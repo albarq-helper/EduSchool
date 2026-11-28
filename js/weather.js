@@ -124,7 +124,7 @@
   const css = document.createElement("style");
   css.textContent = `.wx-stage{position:fixed;left:0;top:0;width:100vw;height:100vh;z-index:9990;pointer-events:none}
 .wx-layer{position:fixed;inset:0;z-index:9989;pointer-events:none;transition:opacity .8s}
-.wx-stage.wx-boxed{border-radius:14px}.wx-chip.inbox{position:absolute;bottom:6px;top:auto;left:50%;max-width:calc(100% - 12px);font-size:12px;padding:3px 6px 3px 10px}
+.wx-stage.wx-boxed{border-radius:14px}.wx-chip.inbox [data-off]{display:none}.wx-chip.inbox{flex-wrap:nowrap;position:absolute;bottom:6px;top:auto;left:50%;max-width:calc(100% - 12px);font-size:12px;padding:3px 6px 3px 10px}
 .wx-chip{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:9995;display:flex;gap:6px;align-items:center;background:#fff;border-radius:999px;padding:6px 8px 6px 12px;box-shadow:0 4px 18px #0003;font:700 14px var(--f-display,system-ui);color:#333}
 .wx-chip,.wx-chip *{cursor:auto;white-space:nowrap}.wx-chip{flex-wrap:wrap;justify-content:center;max-width:96vw}.wx-chip.top{bottom:auto;top:12px}.wx-chip button{cursor:pointer;border:0;border-radius:999px;padding:4px 10px;font:inherit;cursor:pointer;background:#F1F1F4}
 .wx-btn{border:0;background:none;cursor:pointer;font-size:.8em;padding:0 3px;vertical-align:middle;opacity:.85}
