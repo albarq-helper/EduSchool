@@ -1,0 +1,502 @@
+0|letárgico
+1|doentio
+2|olhadela
+3|intragável
+4|insistiu
+5|decapitar
+6|aroma
+7|fantástico (imaginário)
+8|fantástico
+9|euforia
+10|bebida
+11|impacto (golpe)
+12|impacto
+13|tônico
+14|distante
+15|concórdia
+16|que vicia
+17|região
+18|exótico
+19|mistura
+20|tradicional
+21|residir
+22|mortal
+23|crucial
+24|apelidado
+25|úmido
+26|espécie
+27|aparência
+28|alérgico
+29|organismo
+30|ecológico
+31|muda
+32|entomólogo
+33|crustáceo
+34|noturno
+35|contábil
+36|monótono
+37|publicado
+38|pseudônimo
+39|pensão
+40|rejuvenescido
+41|janelas de dobradiça
+42|telhado de palha
+43|reclinado
+44|canil
+45|sombrio
+46|colheita
+47|correndo de um lado para o outro
+48|lampejo
+49|juncos
+50|sapatos (palavra antiga)
+51|esquadrinha
+52|pombal
+53|que flui
+54|retirou-se
+55|dar uma espiada
+56|raio de luz
+57|embaixo de
+58|sem parar
+59|faminto (sem comida)
+60|morrendo de fome
+61|nervoso
+62|feroz
+63|deliberadamente
+64|brilhante (muito luminoso)
+65|brilhante
+66|farfalhou
+67|suspiro
+68|balançou
+69|precário
+70|distante
+71|observado
+72|separado
+73|simbolizava
+74|agachando-se
+75|galhos
+76|samambaia
+77|musgo
+78|vagabundo
+79|carriça
+80|abastado
+81|maioria
+82|simultaneamente
+83|renomado
+84|deteriorando-se
+85|fuzil
+86|admirar
+87|gigantesco
+88|fingiu
+89|peitoril
+90|rajada
+91|companheiro
+92|único
+93|pisoteou
+94|que colidem
+95|apreciar
+96|ritmo
+97|pedir desculpas
+98|cotovia
+99|fútil
+100|cochilou
+101|animado e corajoso
+102|companhia
+103|chicoteado
+104|deprimido
+105|torturar
+106|devoto
+107|estábulo
+108|empatia
+109|dependente
+110|horrível
+111|inspirado
+112|considerado
+113|constantemente
+114|conferido
+115|coloquial
+116|castigado pelo tempo
+117|recinto
+118|ratificado
+119|chefia
+120|insolência
+121|ressentimento
+122|insubordinação
+123|comemorar
+124|senador
+125|depósito de lixo
+126|decompor-se
+127|estimar
+128|lançar
+129|fera
+130|importante
+131|conhecido
+132|clássicos
+133|encantado
+134|transferido
+135|inacabado
+136|frustrado
+137|esgotamento
+138|familiar
+139|incomodar
+140|heroico
+141|inteligente
+142|nojento
+143|conectar
+144|ajudar
+145|sereno
+146|criar
+147|fabuloso
+148|resgatar
+149|perigoso
+150|lançar
+151|olhar
+152|erro
+153|egoísta
+154|sortudo
+155|evidente
+156|enorme
+157|silencioso
+158|estreito
+159|elegante
+160|permitir
+161|incomum
+162|comprar
+163|intrigante
+164|ansiar
+165|curiosidade
+166|mistura (poção)
+167|aparentemente
+168|departamento
+169|abreviação
+170|ter cuidado
+171|procurar
+172|ficar de olho
+173|meio indisposto
+174|repugnante
+175|detestável
+176|enérgico
+177|entediante
+178|interessante
+179|fascinante
+180|empolgante
+181|demais
+182|maravilhoso
+183|nojento
+184|saboroso
+185|delicioso
+186|requintado
+187|olhar
+188|encarar
+189|perfume
+190|doente
+191|exigiu
+192|saudável
+193|cansado
+194|esgotado
+195|terrível
+196|exausto
+197|devastado
+198|extasiado
+199|de coração partido
+200|esperar ansiosamente
+201|dar-se bem com
+202|muito feliz
+203|nas nuvens
+204|pular de alegria
+205|para baixo
+206|sentir-se triste
+207|magoado
+208|odioso
+209|fazer as pazes
+210|ressentido
+211|ciumento
+212|crítico
+213|crítico demais
+214|sarcástico
+215|vazio
+216|divertido
+217|brincalhão
+218|realizado
+219|carinhoso
+220|perto
+221|por perto
+222|sensível
+223|remoto
+224|decepcionado
+225|desiludido
+226|consternado
+227|mais ou menos
+228|bom
+229|provocador
+230|comum
+231|decepção
+232|decepcionar
+233|decepção
+234|infeliz
+235|sombrio
+236|contente
+237|alegre
+238|bebida
+239|harmonia
+240|zona
+241|discutir
+242|aprovado
+243|efeito
+244|entusiasmo
+245|perdoar
+246|gentil
+247|gentileza
+248|atencioso
+249|generoso
+250|compaixão
+251|indelicado
+252|cruel
+253|vingança
+254|ganancioso
+255|feliz
+256|alegria
+257|jubiloso
+258|satisfeito
+259|felicidade
+260|triste
+261|chove a cântaros
+262|muito de vez em quando
+263|menor
+264|importante
+265|essencial
+266|raro
+267|seco
+268|úmido
+269|molhado
+270|encharcado
+271|mistura
+272|morar
+273|gasto
+274|moderno
+275|seguro
+276|arriscado
+277|perigoso
+278|mortal
+279|apressar-se
+280|superar
+281|ocupado como uma abelha
+282|escuro
+283|fraco
+284|brilhante
+285|ofuscante
+286|andar na ponta dos pés
+287|piorando
+288|criatura
+289|cientista
+290|brilho suave
+291|agachado
+292|impresso
+293|ambiental
+294|trocar (pele, folhas)
+295|contador
+296|disparando
+297|melhorando
+298|semear
+299|diurno
+300|inseguro
+301|constantemente
+302|desistir
+303|seguir em frente
+304|continuar
+305|sobrecarregado
+306|ameaçado
+307|encerrar o expediente
+308|violado
+309|motivado
+310|hesitante
+311|frio na barriga
+312|desistir
+313|paralisado de medo
+314|calmo como um mar de rosas
+315|aterrorizado
+316|preocupado
+317|ansioso
+318|inquieto
+319|relaxado
+320|corajoso
+321|caminhar
+322|marchar
+323|retirou-se
+324|sapatos
+325|embaixo
+326|em cima
+327|assustado
+328|parado
+329|satisfeito
+330|estar com uma fome de leão
+331|com um pouco de fome
+332|faminto
+333|voraz
+334|esfomeado
+335|suave
+336|selvagem
+337|feroz
+338|petrificado
+339|coragem
+340|valente
+341|medo
+342|amedrontado
+343|covarde
+344|assustado
+345|tímido
+346|abandonar
+347|intencionalmente
+348|acidentalmente
+349|custar os olhos da cara
+350|minúsculo
+351|pequeno
+352|grande
+353|enorme
+354|desconhecido
+355|famoso
+356|pobre
+357|rico
+358|abastado
+359|magro
+360|esperto
+361|unir
+362|ligar
+363|enquanto isso
+364|enquanto
+365|galhos
+366|viajante
+367|balançou
+368|dividido
+369|representado
+370|minoria
+371|quieto
+372|alto
+373|retumbante
+374|ensurdecedor
+375|bobo
+376|adoração
+377|adorar
+378|afeição
+379|aborrecido
+380|importar-se com
+381|desprezar
+382|detestar
+383|devoção
+384|não gostar
+385|afeiçoado
+386|odiar
+387|gostar
+388|abominar
+389|paixão
+390|admirar
+391|guardar rancor
+392|ternura
+393|desaprovação
+394|repulsa
+395|ódio profundo
+396|aversão
+397|brisa
+398|fingido
+399|grosseria
+400|valorizar
+401|grosseiro
+402|indiferente
+403|ventania
+404|furacão
+405|amor
+406|insultar
+407|sinceridade
+408|educado
+409|respeitar
+410|acordar
+411|acelerar
+412|ajudar
+413|salvar
+414|inútil
+415|companheiro
+416|grupo
+417|velocidade
+418|atormentar
+419|bater
+420|compreensivo
+421|fiel
+422|tirou uma soneca
+423|útil
+424|acordado
+425|culpar
+426|amigo
+427|amizade
+428|leal
+429|família
+430|pai ou mãe
+431|solitário
+432|sozinho
+433|sempre
+434|animar-se
+435|acalmar-se
+436|jogar fora
+437|zangado
+438|enfurecido
+439|furioso
+440|hostil
+441|libertado
+442|furioso
+443|lívido de raiva
+444|indignado
+445|farto
+446|ver vermelho
+447|provocado
+448|tranquilo
+449|assustador
+450|apodrecer
+451|mudou-se
+452|lançar
+453|considerado
+454|adivinhar
+455|honrar
+456|concedido
+457|informal
+458|lixão
+459|terminado
+460|agarrar
+461|formal
+462|irritado
+463|irritado
+464|zangado
+465|seguro (afetivamente)
+466|grudento
+467|calmo
+468|ira
+469|bravo
+470|independente
+471|distante
+472|agressivo
+473|arrumar
+474|inventar
+475|participar
+476|cuidar de
+477|dar com a língua nos dentes
+478|dar uma mão
+479|abrir o jogo
+480|irritar
+481|fazer
+482|construir
+483|erro
+484|sortudo
+485|claro
+486|gracioso
+487|incompleto
+488|azarado
+489|destruir
+490|escondido
+491|correto
+492|desajeitado
+493|limpo
+494|sujo
+495|imundo
+496|aparentemente
+497|permitir
+498|comprar
+499|desejar
+500|proibir
+501|vender
