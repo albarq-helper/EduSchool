@@ -5,6 +5,7 @@
    Lang.attach(items)          → puts v.trs = { fr: {term, meaning, example, romanization, audio_url}, … } on each word (v.wid || v.id), keeping the old v.ar for Arabic
    Lang.lines(v)               → the translation lines to show for a word: [{code, flag, native, dir, term, rom, hear}]
    Lang.say(v, code, opts)     → hear it: a recorded voice if there is one, otherwise the browser voice for that language
+   Lang.listen(v, code)        → 🎤 the student says the word; the browser listens and we tell how close it was
    Lang.picker(mountEl, cb)    → the "🌍 My languages" panel (show / hear / order per language, with how many words are translated)
    Lang.hearLangs()            → the languages that have a 🔊 for this student */
 (function () {
@@ -104,6 +105,45 @@
       u.onend = u.onerror = () => done(); speechSynthesis.speak(u); return true;
     } catch (e) { done(); return false; }
   }
+
+  // 🎤 say it: the browser listens, we compare what it heard with the word and tell the student how close it was
+  const norm = s => String(s).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^\p{L}\p{N}\s]/gu, "").replace(/\s+/g, " ").trim();
+  function lev(a, b) { const m = a.length, n = b.length, d = Array.from({ length: m + 1 }, (_, i) => [i, ...Array(n).fill(0)]); for (let j = 1; j <= n; j++) d[0][j] = j;
+    for (let i = 1; i <= m; i++) for (let j = 1; j <= n; j++) d[i][j] = Math.min(d[i-1][j] + 1, d[i][j-1] + 1, d[i-1][j-1] + (a[i-1] === b[j-1] ? 0 : 1)); return d[m][n]; }
+  const sim = (a, b) => { a = norm(a); b = norm(b); if (!a || !b) return 0; return Math.round(100 * (1 - lev(a, b) / Math.max(a.length, b.length))); };
+  let toastEl = null, toastT = 0;
+  function toast(html, ms) {
+    if (!toastEl) { toastEl = document.createElement("div"); toastEl.setAttribute("role", "status"); toastEl.setAttribute("aria-live", "polite");
+      toastEl.style.cssText = "position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:99999;max-width:min(92vw,420px);background:#1f2540;color:#fff;border-radius:14px;padding:12px 16px;font:600 15px/1.35 system-ui,sans-serif;box-shadow:0 8px 28px rgba(0,0,0,.3);text-align:center";
+      document.body.appendChild(toastEl); }
+    toastEl.innerHTML = html; toastEl.style.display = "block"; clearTimeout(toastT); if (ms) toastT = setTimeout(() => { toastEl.style.display = "none"; }, ms);
+    return toastEl;
+  }
+  function listen(v, code) {
+    const L = ALL.find(x => x.code === code), t = v && v.trs && v.trs[code]; if (!L || !t || !t.term) return false;
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) { toast("🎤 This browser can't listen yet. Please open the site in Chrome.", 6000); return false; }
+    const target = head(t.term), esc = x => String(x).replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+    try { if (audio) audio.pause(); speechSynthesis.cancel(); } catch (e) {}
+    const r = new SR(); r.lang = L.tts_lang; r.maxAlternatives = 5; r.interimResults = false; r.continuous = false;
+    toast(`🎤 Say it now: <b lang="${code}" dir="${L.dir}">${esc(target)}</b>`);
+    let got = false;
+    const again = () => toast(`<div>🎤 …</div>`) && listen(v, code);
+    const buttons = () => `<div style="margin-top:8px;display:flex;gap:8px;justify-content:center"><button type="button" data-lgm="hear" style="font:inherit;border:0;border-radius:10px;padding:6px 12px;cursor:pointer">🔊 Hear it</button><button type="button" data-lgm="again" style="font:inherit;border:0;border-radius:10px;padding:6px 12px;cursor:pointer">🎤 Try again</button></div>`;
+    const wire = el => { el.onclick = e => { const b = e.target.closest("[data-lgm]"); if (!b) return; if (b.dataset.lgm === "hear") say(v, code); else listen(v, code); }; };
+    r.onresult = e => {
+      got = true;
+      const alts = [...e.results[0]].map(a => a.transcript.trim()).filter(Boolean);
+      let best = 0, heard = alts[0] || "";
+      alts.forEach(a => { const sc = Math.max(sim(a, target), ...a.split(/\s+/).map(w => sim(w, target))); if (sc > best) { best = sc; heard = a; } });
+      const head_ = best >= 85 ? "🌟 Great! That sounded right." : best >= 60 ? "🙂 Almost! Listen once more and try again." : "💪 Not yet. Listen first, then try again.";
+      wire(toast(`<div style="font-size:17px">${head_}</div><div style="opacity:.85;font-weight:500;margin-top:4px">I heard: <span lang="${code}" dir="${L.dir}">${esc(heard)}</span> · ${best}%</div>${buttons()}`));
+    };
+    r.onerror = e => { got = true; toast(e.error === "not-allowed" || e.error === "service-not-allowed" ? "🎤 Please allow the microphone to try this." : e.error === "no-speech" ? "🎤 I didn't hear anything. Try again." : e.error === "language-not-supported" ? "🎤 This device can't listen in this language yet." : "🎤 I couldn't listen. Try again.", 5000); };
+    r.onend = () => { if (!got) toast("🎤 I didn't hear anything. Try again.", 4000); };
+    try { r.start(); } catch (e) { toast("🎤 Couldn't start the microphone.", 4000); return false; }
+    return true;
+  }
   function notify(m) { try { if (window.App && App.status) App.status(m, false); } catch (e) {} }
 
   // 🌍 the student's panel
@@ -152,5 +192,5 @@
       [STATE[i], STATE[j]] = [STATE[j], STATE[i]]; draw(); persist();
     });
   }
-  window.Lang = { load, mine, hearLangs, attach, lines, cogLines, say, picker, head, all: () => ALL.slice(), coverage: () => COV };
+  window.Lang = { load, mine, hearLangs, attach, lines, cogLines, say, listen, picker, head, all: () => ALL.slice(), coverage: () => COV };
 })();
