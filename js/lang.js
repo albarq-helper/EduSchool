@@ -36,7 +36,6 @@
     })();
     return loaded;
   }
-  let FAM = new Map();
   const mine = () => MINE.slice();
   const hearLangs = () => MINE.filter(x => x.hear);
 
@@ -48,26 +47,10 @@
     const TR = new Map();
     if (want.length && ids.length && C()) {
       const parts = []; for (let k = 0; k < ids.length; k += 80) parts.push(ids.slice(k, k + 80));
-      const res = await Promise.all(parts.map(ch => C().from("word_translations").select("word_id,lang,term,meaning,example,romanization,audio_url").in("lang", want).in("word_id", ch).neq("term", "")));
+      const res = await Promise.all(parts.map(ch => C().from("word_translations").select("word_id,lang,term,meaning,example,romanization,audio_url,root_key,root_en,root_sim,root_kind,root_note").in("lang", want).in("word_id", ch).neq("term", "")));
       res.forEach(r => (r.data || []).forEach(x => { (TR.get(x.word_id) || TR.set(x.word_id, {}).get(x.word_id))[x.lang] = x; }));
     }
-    // 🧩 look-alikes: the foreign word that looks like an English word, with the family it belongs to
-    const CG = new Map(); FAM = new Map();
-    if (want.length && ids.length && C()) {
-      const parts = []; for (let k = 0; k < ids.length; k += 80) parts.push(ids.slice(k, k + 80));
-      try {
-        const res = await Promise.all(parts.map(ch => C().from("word_cognates").select("word_id,lang,term,en_word,kind,similarity,note,group_id,cognate_groups(key)").in("lang", want).in("word_id", ch)));
-        res.forEach(r => (r.data || []).forEach(x => {
-          (CG.get(x.word_id) || CG.set(x.word_id, []).get(x.word_id)).push(x);
-          if (x.group_id && x.kind === "cognate") {
-            const f = FAM.get(x.group_id) || FAM.set(x.group_id, { key: (x.cognate_groups || {}).key || "", en: new Set(), words: new Set() }).get(x.group_id);
-            f.en.add(x.en_word); f.words.add(x.lang + "|" + x.term);
-          }
-        }));
-      } catch (e) {}
-    }
     (items || []).forEach(v => {
-      v.cog = CG.get(v.wid || v.id) || [];
       const t = Object.assign({}, TR.get(v.wid || v.id) || {});
       if (!t.ar && v.ar && want.includes("ar")) t.ar = { term: v.ar, meaning: "", example: "", romanization: "", audio_url: "" };   // the old Arabic column, until every page moves over
       v.trs = t;
@@ -84,17 +67,16 @@
     });
     return out;
   }
-  // the look-alike lines for a word: [{code, flag, term, en, sim, kind, note, family}]
-  function cogLines(v, minSim) {
+  // the look-alike lines for a word, read from its own translations (root origin lives in the dictionary): the % and the root are kept in the database, not shown
+  function cogLines(v) {
     const out = [];
-    (v && v.cog || []).forEach(x => {
-      const L = MINE.find(m => m.code === x.lang && m.show); if (!L) return;
-      if (x.kind === "cognate" && x.similarity < (minSim == null ? 40 : minSim)) return;
-      const f = x.group_id && FAM.get(x.group_id);
-      const fam = f ? [...f.en].join(", ") + " · " + [...f.words].map(w => w.split("|")[1]).join(", ") : "";
-      out.push({ code: x.lang, flag: L.flag, term: x.term, en: x.en_word, sim: x.similarity, kind: x.kind, note: x.note || "", root: f ? f.key : "", family: fam, hear: L.hear });
+    MINE.forEach(L => {
+      const t = L.show && v && v.trs && v.trs[L.code]; if (!t || !t.root_en) return;
+      const ff = t.root_kind === "false_friend";
+      if (!ff && (t.root_sim == null || t.root_sim < 40)) return;     // too different to look alike
+      out.push({ code: L.code, flag: L.flag, term: t.term, en: t.root_en, kind: ff ? "false_friend" : "cognate", note: t.root_note || "", hear: L.hear });
     });
-    return out.sort((a, b) => (a.kind === "false_friend") - (b.kind === "false_friend") || b.sim - a.sim);
+    return out.sort((a, b) => (a.kind === "false_friend") - (b.kind === "false_friend"));
   }
   // "خيالي: غريب وكأنه من الأحلام" → the word part is what is read aloud for a single word
   const head = t => { const m = String(t).match(/^([^:：]{1,40})[:：]\s*\S/); return m && m[1].trim().split(/\s+/).length <= 4 ? m[1].trim() : String(t); };
