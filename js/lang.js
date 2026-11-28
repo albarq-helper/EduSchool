@@ -104,34 +104,35 @@
   }
   async function picker(mount, onChange) {
     await load();
+    // the picker keeps its own list (order + show/hear), redraws at once, and saves once things have settled: quick clicks never overwrite each other
+    const enabled = () => ALL.filter(x => x.enabled && x.code !== "en");
+    let STATE = [...MINE.map(x => ({ code: x.code, show: x.show, hear: x.hear })), ...enabled().filter(x => !MINE.some(m => m.code === x.code)).map(x => ({ code: x.code, show: false, hear: false }))];
+    let timer = null, chain = Promise.resolve();
+    const persist = () => { clearTimeout(timer); timer = setTimeout(() => { chain = chain.then(async () => { if (await save(STATE)) onChange && onChange(); }); }, 400); };
     const draw = () => {
-      const enabled = ALL.filter(x => x.enabled && x.code !== "en");
-      const order = [...MINE.map(x => x.code), ...enabled.filter(x => !MINE.some(m => m.code === x.code)).map(x => x.code)];
-      const rows = order.map(c => { const L = enabled.find(x => x.code === c); if (!L) return ""; const m = MINE.find(x => x.code === c), cv = COV[c] || {};
-        return `<div class="lg-row" data-c="${c}"><span class="lg-n">${L.flag} <b>${esc(L.native_name)}</b> <small>${esc(L.name_en)}</small></span>
-          <label title="Show it under each word"><input type="checkbox" data-lg="show" ${m && m.show ? "checked" : ""}> Show</label>
-          <label title="Add a 🔊 so I can hear it"><input type="checkbox" data-lg="hear" ${m && m.hear ? "checked" : ""}> 🔊 Hear</label>
+      const rows = STATE.map(st => { const L = enabled().find(x => x.code === st.code); if (!L) return ""; const cv = COV[st.code] || {};
+        return `<div class="lg-row" data-c="${st.code}"><span class="lg-n">${L.flag} <b>${esc(L.native_name)}</b> <small>${esc(L.name_en)}</small></span>
+          <label title="Show it under each word"><input type="checkbox" data-lg="show" ${st.show ? "checked" : ""}> Show</label>
+          <label title="Add a 🔊 so I can hear it"><input type="checkbox" data-lg="hear" ${st.hear ? "checked" : ""}> 🔊 Hear</label>
           <span class="lg-mv"><button type="button" data-lgmv="-1" aria-label="Move up">▲</button><button type="button" data-lgmv="1" aria-label="Move down">▼</button></span>
           <small class="lg-cov">${cv.words_translated || 0} of ${cv.words_total || 0} words</small></div>`; }).join("");
-      const n = MINE.filter(x => x.show || x.hear).length;
-      mount.innerHTML = `<details class="lg-box"><summary>🌍 My languages <span class="lg-count">${n}</span></summary>
+      const n = STATE.filter(x => x.show || x.hear).length, open = mount.querySelector("details") ? mount.querySelector("details").open : false;
+      mount.innerHTML = `<details class="lg-box"${open ? " open" : ""}><summary>🌍 My languages <span class="lg-count">${n}</span></summary>
         <p class="lg-help">Tick the languages you want under every word, and 🔊 to hear them. The order here is the order on the cards.</p>${rows || "<p>No other languages are turned on yet.</p>"}</details>`;
     };
     if (!document.getElementById("lg-css")) { const s = document.createElement("style"); s.id = "lg-css";
       s.textContent = `.lg-box{border:1.5px solid var(--rule,#ddd);border-radius:12px;padding:6px 12px;background:var(--paper,#fff)}.lg-box summary{cursor:pointer;font:800 .95rem var(--f-body,system-ui)}.lg-count{background:var(--accent,#7c3aed);color:#fff;border-radius:999px;padding:0 8px;font-size:.8rem;margin-left:4px}
 .lg-help{margin:.4rem 0;color:var(--muted,#666);font-size:.85rem}.lg-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:5px 0;border-top:1px solid var(--rule,#eee)}.lg-n{flex:1 1 160px}.lg-n small{color:var(--muted,#666)}.lg-row label{font-size:.85rem;white-space:nowrap}.lg-mv button{border:0;background:var(--chip,#eee);border-radius:6px;cursor:pointer;padding:2px 7px}.lg-cov{color:var(--muted,#666);font-size:.78rem}`; document.head.appendChild(s); }
     draw();
-    mount.addEventListener("change", async e => {
-      if (!e.target.dataset.lg) return;
-      const sel = [...mount.querySelectorAll(".lg-row")].map(r => ({ code: r.dataset.c, show: r.querySelector('[data-lg="show"]').checked, hear: r.querySelector('[data-lg="hear"]').checked }));
-      if (await save(sel)) { draw(); mount.querySelector("details").open = true; onChange && onChange(); }
+    mount.addEventListener("change", e => {
+      const k = e.target.dataset && e.target.dataset.lg; if (!k) return;
+      const st = STATE.find(x => x.code === e.target.closest(".lg-row").dataset.c); if (!st) return;
+      st[k] = e.target.checked; draw(); persist();
     });
-    mount.addEventListener("click", async e => {
+    mount.addEventListener("click", e => {
       const b = e.target.closest("[data-lgmv]"); if (!b) return;
-      const rows = [...mount.querySelectorAll(".lg-row")], i = rows.findIndex(r => r.contains(b)), j = i + +b.dataset.lgmv; if (j < 0 || j >= rows.length) return;
-      const sel = rows.map(r => ({ code: r.dataset.c, show: r.querySelector('[data-lg="show"]').checked, hear: r.querySelector('[data-lg="hear"]').checked }));
-      [sel[i], sel[j]] = [sel[j], sel[i]];
-      if (await save(sel)) { draw(); mount.querySelector("details").open = true; onChange && onChange(); }
+      const c = b.closest(".lg-row").dataset.c, i = STATE.findIndex(x => x.code === c), j = i + +b.dataset.lgmv; if (j < 0 || j >= STATE.length) return;
+      [STATE[i], STATE[j]] = [STATE[j], STATE[i]]; draw(); persist();
     });
   }
   window.Lang = { load, mine, hearLangs, attach, lines, say, picker, head, all: () => ALL.slice(), coverage: () => COV };
