@@ -1021,5 +1021,25 @@
         if (T > 4000) { ctx.globalAlpha = clamp((T - 4000) / 500, 0, 1); ctx.fillStyle = "#fff"; ctx.strokeStyle = O; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(R.x + R.w * .5, gy - u * 4.2, u * 1.1, 0, 7); ctx.fill(); ctx.stroke(); em(ctx, "🦊", R.x + R.w * .46, gy - u * 4.2, u * .9); em(ctx, "🍇", R.x + R.w * .54, gy - u * 4.2, u * .9); ctx.globalAlpha = 1; }
         say(ctx, "That's sour grapes!", R.x + R.w * .5, gy - u * 5.6, Math.max(14, u * .6), T > 4600 ? 1 : 0); } } });
 
+  // 🍰 PIECE OF CAKE
+  idiomEgg("a piece of cake,piece of cake,a piece of cake.", { e: "🍰", name: "Piece of cake", correct: 1, hint: "👆 Tap: eat!",
+    litCap: "Word for word: one kid eats a brick, the other eats a piece of cake 🧱🍰", realCap: "A piece of cake = something very, very easy 😎 (like a test you can do with no trouble)", hook: "Easy as eating cake: a piece of cake!",
+    options: [["🍰", "A slice of cake to eat"], ["😎", "Something very easy to do"]] }, {
+    lit: { tap(x, y, R, T, sc) { return true; },
+      draw(ctx, R, T, sc, A, since) { bg(ctx, R, "#fef3c7", "#fde68a"); floor(ctx, R, "#d6a56b"); const u = Math.min(R.w / 10, R.h / 6.5), gy = R.y + R.h * .8, lx = R.x + R.w * .26, rx = R.x + R.w * .74, sz = u * 1.7;
+        const eat = since < 0 ? 0 : clamp(since / 1800, 0, 1), shake = since > 0 && since < 2600 ? Math.sin(since / 45) * u * .1 : 0;
+        em(ctx, since > 600 ? "😖" : "😐", lx + shake, gy - u * 1.1, sz); em(ctx, since > 600 ? "😋" : "😐", rx, gy - u * 1.1, sz);
+        em(ctx, "🧱", lx, gy - u * .15, u * 1.2); if (eat < 1) em(ctx, "🍰", rx, gy - u * .15, u * 1.2 * (1 - eat * .9)); else em(ctx, "✨", rx, gy - u * .15, u * .6);
+        if (since < 0) say(ctx, "Eat it!", R.x + R.w * .5, gy - u * 3.4, Math.max(13, u * .55), 1);
+        else { say(ctx, "Ouch! So hard! 😖", lx, gy - u * 2.9, Math.max(12, u * .5), since > 500 && since < 5000 ? 1 : 0); say(ctx, "Mmm, a piece of cake! 😋", rx, gy - u * 3.8, Math.max(12, u * .5), since > 700 && since < 5000 ? 1 : 0); } } },
+    real: { len: 6500, draw(ctx, R, T) { bg(ctx, R, "#dbeafe", "#bfdbfe"); floor(ctx, R, "#93c5fd"); const u = Math.min(R.w / 10, R.h / 6.5), gy = R.y + R.h * .8, cx = R.x + R.w * .5;
+        const k = clamp((T - 1200) / 1200, 0, 1);
+        if (k < 1) em(ctx, "🍰", cx, gy - u * 2.2 + Math.sin(T / 300) * 4, u * 2 * (1 - k));
+        if (k > 0) em(ctx, "📝", cx, gy - u * 2.2, u * 2.2 * k);
+        if (T > 2600) { const a = clamp((T - 2600) / 400, 0, 1); ctx.save(); ctx.globalAlpha = a; ctx.translate(cx + u * 1.1, gy - u * 2.9); ctx.rotate(-.25); ctx.fillStyle = "#dc2626"; ctx.font = `900 ${u * 1.1}px system-ui`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("A+", 0, 0); ctx.restore(); }
+        kid(ctx, T < 2600 ? "🤔" : "😎", R.x + R.w * .2, gy - u * 1.1, u * 1.7);
+        say(ctx, "A test? Easy!", R.x + R.w * .24, gy - u * 3.1, Math.max(13, u * .5), T > 3200 && T < 5000 ? 1 : 0);
+        say(ctx, "That's a piece of cake!", cx, gy - u * 4.8, Math.max(14, u * .6), T > 4000 ? 1 : 0); } } });
+
   Weather.rescan();
 })();
