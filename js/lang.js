@@ -5,7 +5,7 @@
    Lang.attach(items)          → puts v.trs = { fr: {term, meaning, example, romanization, audio_url}, … } on each word (v.wid || v.id), keeping the old v.ar for Arabic
    Lang.lines(v)               → the translation lines to show for a word: [{code, flag, native, dir, term, rom, hear}]
    Lang.say(v, code, opts)     → hear it: a recorded voice if there is one, otherwise the browser voice for that language
-   Lang.listen(v, code)        → 🎤 the student says the word; the browser listens and we tell how close it was
+   Lang.listen(v, code, opts)  → 🎤 the student says the word; the browser listens and we tell how close it was. opts {quiet:true, onDone({score,heard,ok}|{error})} = no pop-up, the page shows the result
    Lang.picker(mountEl, cb)    → the "🌍 My languages" panel (show / hear / order per language, with how many words are translated)
    Lang.hearLangs()            → the languages that have a 🔊 for this student */
 (function () {
@@ -119,16 +119,17 @@
     toastEl.innerHTML = html; toastEl.style.display = "block"; clearTimeout(toastT); if (ms) toastT = setTimeout(() => { toastEl.style.display = "none"; }, ms);
     return toastEl;
   }
-  function listen(v, code) {
+  function listen(v, code, opts) {
+    const q = !!(opts && opts.quiet), done = r => { try { opts && opts.onDone && opts.onDone(r); } catch (e) {} }, tt = (h, ms) => q ? {} : toast(h, ms);   // quiet: no pop-up, the page shows the result itself
     const L = ALL.find(x => x.code === code), t = v && v.trs && v.trs[code]; if (!L || !t || !t.term) return false;
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) { toast("🎤 This browser can't listen yet. Please open the site in Chrome.", 6000); return false; }
+    if (!SR) { tt("🎤 This browser can't listen yet. Please open the site in Chrome.", 6000); if (q) done({ error: "unsupported" }); return false; }
     const target = head(t.term), esc = x => String(x).replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
     try { if (audio) audio.pause(); speechSynthesis.cancel(); } catch (e) {}
     const r = new SR(); r.lang = L.tts_lang; r.maxAlternatives = 5; r.interimResults = false; r.continuous = false;
-    toast(`🎤 Say it now: <b lang="${code}" dir="${L.dir}">${esc(target)}</b>`);
+    tt(`🎤 Say it now: <b lang="${code}" dir="${L.dir}">${esc(target)}</b>`);
     let got = false;
-    const again = () => toast(`<div>🎤 …</div>`) && listen(v, code);
+    const again = () => tt(`<div>🎤 …</div>`) && listen(v, code);
     const buttons = () => `<div style="margin-top:8px;display:flex;gap:8px;justify-content:center"><button type="button" data-lgm="hear" style="font:inherit;border:0;border-radius:10px;padding:6px 12px;cursor:pointer">🔊 Hear it</button><button type="button" data-lgm="again" style="font:inherit;border:0;border-radius:10px;padding:6px 12px;cursor:pointer">🎤 Try again</button></div>`;
     const wire = el => { el.onclick = e => { const b = e.target.closest("[data-lgm]"); if (!b) return; if (b.dataset.lgm === "hear") say(v, code); else listen(v, code); }; };
     r.onresult = e => {
@@ -137,11 +138,12 @@
       let best = 0, heard = alts[0] || "";
       alts.forEach(a => { const sc = Math.max(sim(a, target), ...a.split(/\s+/).map(w => sim(w, target))); if (sc > best) { best = sc; heard = a; } });
       const head_ = best >= 85 ? "🌟 Great! That sounded right." : best >= 60 ? "🙂 Almost! Listen once more and try again." : "💪 Not yet. Listen first, then try again.";
-      wire(toast(`<div style="font-size:17px">${head_}</div><div style="opacity:.85;font-weight:500;margin-top:4px">I heard: <span lang="${code}" dir="${L.dir}">${esc(heard)}</span> · ${best}%</div>${buttons()}`));
+      if (q) { done({ score: best, heard, ok: best >= 65 }); return; }
+      wire(tt(`<div style="font-size:17px">${head_}</div><div style="opacity:.85;font-weight:500;margin-top:4px">I heard: <span lang="${code}" dir="${L.dir}">${esc(heard)}</span> · ${best}%</div>${buttons()}`));
     };
-    r.onerror = e => { got = true; toast(e.error === "not-allowed" || e.error === "service-not-allowed" ? "🎤 Please allow the microphone to try this." : e.error === "no-speech" ? "🎤 I didn't hear anything. Try again." : e.error === "language-not-supported" ? "🎤 This device can't listen in this language yet." : "🎤 I couldn't listen. Try again.", 5000); };
-    r.onend = () => { if (!got) toast("🎤 I didn't hear anything. Try again.", 4000); };
-    try { r.start(); } catch (e) { toast("🎤 Couldn't start the microphone.", 4000); return false; }
+    r.onerror = e => { got = true; if (q) { done({ error: e.error || "error" }); return; } tt(e.error === "not-allowed" || e.error === "service-not-allowed" ? "🎤 Please allow the microphone to try this." : e.error === "no-speech" ? "🎤 I didn't hear anything. Try again." : e.error === "language-not-supported" ? "🎤 This device can't listen in this language yet." : "🎤 I couldn't listen. Try again.", 5000); };
+    r.onend = () => { if (!got) { if (q) { done({ error: "no-speech" }); return; } } if (!got) tt("🎤 I didn't hear anything. Try again.", 4000); };
+    try { r.start(); } catch (e) { tt("🎤 Couldn't start the microphone.", 4000); if (q) done({ error: "start" }); return false; }
     return true;
   }
   function notify(m) { try { if (window.App && App.status) App.status(m, false); } catch (e) {} }
