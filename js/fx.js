@@ -1132,9 +1132,12 @@
         // word labels
         labels = []; const act = REACT.filter(z => z[1](d)), shown = boxed ? [d < 15 ? act[0] : act[act.length - 1]].filter(Boolean) : act;
         const fs = Math.max(11, Math.min(15, u * .27)), yOf = { mouth: headY + headR * .5, body: shY + u * .4, arm: shY + u * .62, hip: hipY - u * .12, head: headY - headR * .7, face: headY - headR * .05, feet: fy0 - u * .22 };
-        shown.forEach(z => { const [wd, , sd, part, cl] = z, yy = yOf[part], ax = part === "feet" ? kx - u * .3 : sd < 0 ? kx - headR * 1.0 : kx + headR * 1.0;
-          ctx.save(); ctx.font = `800 ${fs}px system-ui`; const w = ctx.measureText(wd).width + fs * 1.2, h = fs * 1.8, pulse = labels.length >= 0 ? 0 : 0;
-          let lx = sd < 0 ? kx - u * 1.05 - w : kx + u * 1.05; lx = clamp(lx, sx + 6, (boxed ? sx + sw - 44 : thermo().tx - 30) - w); const ly = clamp(yy - h / 2, sy + 44, sy + sh - h - 10);
+        const items = shown.map(z => { const [wd, , sd, part, cl] = z; ctx.save(); ctx.font = `800 ${fs}px system-ui`; const w = ctx.measureText(wd).width + fs * 1.2, h = fs * 1.8; ctx.restore();
+          return { wd, sd, part, cl, w, h, yy: yOf[part], ax: part === "feet" ? kx - u * .3 : sd < 0 ? kx - headR * 1.0 : kx + headR * 1.0, ly: clamp(yOf[part] - h / 2, sy + 44, sy + sh - h - 10) }; });
+        [-1, 1].forEach(sd => { const col = items.filter(z => z.sd === sd).sort((a, b) => a.ly - b.ly); col.forEach((z, q) => { if (q && z.ly < col[q - 1].ly + z.h + 4) z.ly = col[q - 1].ly + z.h + 4; });
+          for (let q = col.length - 1; q >= 0; q--) { const lim = sy + sh - col[q].h - 8 - (col.length - 1 - q) * 0; if (col[q].ly > lim) { col[q].ly = lim; if (q) col[q - 1].ly = Math.min(col[q - 1].ly, col[q].ly - col[q].h - 4); } } });
+        items.forEach(z => { const { wd, sd, cl, w, h, yy, ax } = z; ctx.save(); ctx.font = `800 ${fs}px system-ui`;
+          let lx = sd < 0 ? kx - u * 1.05 - w : kx + u * 1.05; lx = clamp(lx, sx + 6, (boxed ? sx + sw - 44 : thermo().tx - 30) - w); const ly = z.ly;
           ctx.strokeStyle = cl ? "#1e40af" : "#991b1b"; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(ax, yy); ctx.lineTo(sd < 0 ? lx + w : lx, ly + h / 2); ctx.stroke(); dot(ax, yy, 3, cl ? "#1e40af" : "#991b1b");
           ctx.fillStyle = cl ? "#dbeafe" : "#fee2e2"; ctx.strokeStyle = cl ? "#1e40af" : "#991b1b"; ctx.lineWidth = 2; rr(ctx, lx, ly, w, h, h / 2); ctx.fill(); ctx.stroke(); ctx.fillStyle = cl ? "#1e3a8a" : "#7f1d1d"; ctx.textAlign = "left"; ctx.textBaseline = "middle"; ctx.fillText(wd, lx + fs * .6, ly + h / 2 + 1); ctx.restore();
           if (!boxed) labels.push({ x: lx, y: ly, w, h, word: wd, t: 0 }); });
