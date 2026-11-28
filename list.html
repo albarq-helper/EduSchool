@@ -144,11 +144,11 @@ input.ok,textarea.ok{border-color:var(--good)!important;background:var(--good-so
 .mcard{--k:0;background:linear-gradient(160deg,var(--c1),var(--c2));border-radius:22px;padding:12px 14px 14px;box-shadow:0 6px 18px #0002;border:3px solid #fff8;display:grid;gap:8px;transition:box-shadow .3s}
 .mcard.open{grid-column:1/-1}.mcard:hover{box-shadow:0 10px 24px #0003}
 .mc-top{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}.mc-name{font:900 1.25rem var(--f-display);color:#1f2937}.mc-sub{font:700 .78rem var(--f-body);color:#1f2937aa}
-.mc-stage{height:104px;border-radius:16px;background:#ffffff66;display:grid;place-items:center;overflow:hidden}
+.mc-stage{height:150px;border-radius:16px;background:#ffffff66;display:grid;grid-template-rows:1fr auto;place-items:center;padding:6px 6px 8px;overflow:hidden}.mc-word{font:900 1.35rem var(--f-display);color:#1f2937;background:#fffc;border-radius:999px;padding:1px 14px;min-height:1.6em}.mc-word.pop{animation:mcpop .6s cubic-bezier(.2,1.6,.4,1)}
 .mc-big{font-size:3.6rem;line-height:1;display:block}.mc-big.pop{animation:mcpop .7s cubic-bezier(.2,1.6,.4,1)}
 @keyframes mcpop{0%{transform:scale(.2) rotate(-25deg);opacity:0}60%{transform:scale(1.25) rotate(8deg);opacity:1}100%{transform:scale(1) rotate(0)}}
 .mc-rail{display:flex;justify-content:space-between;align-items:center;background:#ffffff80;border-radius:999px;padding:4px 10px}
-.mc-dot{font-size:1.15rem;opacity:.45;filter:grayscale(.6);transition:transform .35s,opacity .35s,filter .35s}.mc-dot.on{opacity:1;filter:none;transform:scale(1.55) translateY(-1px)}
+.mc-dot{border:0;background:none;cursor:pointer;padding:0;font-size:1.15rem;opacity:.45;filter:grayscale(.6);transition:transform .35s,opacity .35s,filter .35s}.mc-dot.on{opacity:1;filter:none;transform:scale(1.55) translateY(-1px)}
 .mc-ends{display:flex;justify-content:space-between;align-items:center;font:800 .8rem var(--f-body);color:#1f2937}.mc-arrow{opacity:.5}
 .mc-btns{display:flex;gap:6px;flex-wrap:wrap}.mc-btn{border:2px solid #fff;background:#fffc;border-radius:999px;padding:6px 12px;font:800 .85rem var(--f-body);cursor:pointer;color:#1e3a8a;transition:transform .15s}.mc-btn:hover{transform:translateY(-2px) scale(1.04)}.mc-btn.on{background:#1e40af;color:#fff}
 .mcard .pmeter{margin-top:6px;background:#fffd;border-radius:16px;padding:6px}
@@ -404,12 +404,15 @@ function card(i,view){const v=D[i], hid=wordHidden(i);
     <td>${meanHTML(i,v)}${idiomHTML(i,v)}${exploreHTML(i,v)}${coverBtns(i)}</td>${SHOW.tr&&D.some(x=>x.ar||x.trs&&Object.keys(x.trs).length)?`<td class="trs">${S(i).cm&&!S(i).mrev?"":(trLines(i,v)||esc(v.ar))}</td>`:""}<td>${unitTag(v)}</td></tr>`;}
 function visible(){const q=$("q").value.trim().toLowerCase();
   return ORDER.filter(i=>{const v=D[i];return UP.match(v)&&GP.match(v)&&(!q||(v.w+" "+v.d+" "+v.ar+" "+(v.lit||"")+" "+(v.eq||"")).toLowerCase().includes(q));});}
-const PM_ART={rain:{e:["🌤️","🌦️","🌧️","⛈️","🌊"],c:["#e0f2fe","#93c5fd"]},"rain · how long":{e:["💧","🌦️","🌧️","☔","🌊"],c:["#e0f2fe","#a5b4fc"]},wind:{e:["🌪️","💨","🌬️","🍃"],c:["#ecfccb","#86efac"]},storm:{e:["🌀","⛈️","🌩️","🌦️"],c:["#e0e7ff","#a78bfa"]},sun:{e:["🌥️","⛅","🌤️","☀️","🥵"],c:["#fef9c3","#fdba74"]},snow:{e:["❄️","🌨️","☃️","🏔️"],c:["#f0f9ff","#bae6fd"]},noise:{e:["📢","🔊","🔉","🔈","🤫"],c:["#fce7f3","#f9a8d4"]},temperature:{e:["🥶","🧣","😌","😎","🥵","🌋"],c:["#bfdbfe","#fecaca"]}};
-function pmArt(g,emoji){const k=/how long/.test(g)?"rain · how long":g.split(" · ")[0].toLowerCase();return PM_ART[k]||{e:[emoji||"🎚️","✨","🌟"],c:["#ede9fe","#c4b5fd"]};}
-let PM_T=0;function pmAnimate(){clearInterval(PM_T);if(window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches)return;let tick=0;
-  PM_T=setInterval(()=>{const st=document.querySelectorAll(".mc-stage");if(!st.length){clearInterval(PM_T);return;}tick++;
-    st.forEach(el=>{const a=el.dataset.art.split("|"),n=a.length,cyc=n*2-2,p=(tick+(el.parentElement.dataset.off|0))%cyc,k=p<n?p:cyc-p,big=el.firstElementChild;if(big.textContent!==a[k]){big.textContent=a[k];big.classList.remove("pop");void big.offsetWidth;big.classList.add("pop");}
-      el.parentElement.querySelectorAll(".mc-dot").forEach((d,q)=>d.classList.toggle("on",q===k));el.parentElement.style.setProperty("--k",k/(n-1));});},1300);}
+const PM_ART={rain:{e:["🌤️","🌦️","🌧️","⛈️","🌊"],w:["light","a drizzle","steady","heavy","pouring"],c:["#e0f2fe","#93c5fd"]},"rain · how long":{e:["💧","🌦️","🌧️","☔","🌊"],w:["briefly","on and off","steadily","all day","relentlessly"],c:["#e0f2fe","#a5b4fc"]},wind:{e:["🌪️","💨","🌬️","🍃"],w:["howling","strong","a breeze","gentle"],c:["#ecfccb","#86efac"]},storm:{e:["🌀","⛈️","🌩️","🌦️"],w:["violent","heavy","stormy","mild"],c:["#e0e7ff","#a78bfa"]},sun:{e:["🌥️","⛅","🌤️","☀️","🥵"],w:["weak","bright","hot","blazing","scorching"],c:["#fef9c3","#fdba74"]},snow:{e:["❄️","🌨️","☃️","🏔️"],w:["a snowflake","light","steady","heavy"],c:["#f0f9ff","#bae6fd"]},noise:{e:["📢","🔊","🔉","🔈","🤫"],w:["deafening","loud","noisy","a murmur","faint"],c:["#fce7f3","#f9a8d4"]},temperature:{e:["🥶","🧣","😌","😎","🥵","🌋"],w:["freezing","chilly","cool","warm","hot","boiling"],c:["#bfdbfe","#fecaca"]}};
+function pmArt(g,emoji){const k=/how long/.test(g)?"rain · how long":g.split(" · ")[0].toLowerCase();return PM_ART[k]||{e:[emoji||"🎚️","✨","🌟"],w:["","",""],c:["#ede9fe","#c4b5fd"]};}
+let PM_T=0,PM_TICK=0;function pmShow(card,k){const el=card.querySelector(".mc-stage"),a=el.dataset.art.split("|"),w=(el.dataset.words||"").split("|"),big=el.querySelector(".mc-big"),wd=el.querySelector(".mc-word");
+  if(big.textContent!==a[k]){big.textContent=a[k];big.classList.remove("pop");void big.offsetWidth;big.classList.add("pop");wd.textContent=w[k]||"";wd.classList.remove("pop");void wd.offsetWidth;wd.classList.add("pop");}
+  card.querySelectorAll(".mc-dot").forEach((d,q)=>d.classList.toggle("on",q===k));card.style.setProperty("--k",k/Math.max(1,a.length-1));}
+function pmAnimate(){clearInterval(PM_T);if(window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches){document.querySelectorAll(".mcard").forEach(c=>pmShow(c,0));return;}
+  document.querySelectorAll(".mcard").forEach(c=>pmShow(c,0));
+  PM_T=setInterval(()=>{const st=document.querySelectorAll(".mc-stage");if(!st.length){clearInterval(PM_T);return;}PM_TICK++;
+    st.forEach(el=>{const c=el.parentElement,n=el.dataset.art.split("|").length,cyc=n*2-2,p=(PM_TICK+(c.dataset.off|0))%cyc;let k=p<n?p:cyc-p;if((+c.dataset.hu||0)>PM_TICK)k=+c.dataset.hk;pmShow(c,k);});},1300);}
 function render(){const L=visible();
   $("count").textContent=L.length+(L.length===1?" word":" words");
   if(!L.length){$("out").innerHTML='<div class="card empty-l">No words match.</div>';score();return;}
@@ -425,8 +428,8 @@ function render(){const L=visible();
       const ART=pmArt;
       $("out").insertAdjacentHTML("beforeend",`<div class="pmx-wrap"><h3>🎚️ Word-partner meters</h3><p class="hint">Watch the picture change from one condition to the next, then pick a word type to play with the meter.</p><div class="pmx-grid">${[...by].map(([g,rs],qi)=>{const a=ART(g,D[rs[0][0]].emoji),ends=g.replace(/^[^·]*·\s*(how long\s*·\s*)?/,"").split(/\s*(?:→|⇄)\s*/);
         return `<div class="mcard" data-off="${qi}" style="--c1:${a.c[0]};--c2:${a.c[1]}"><div class="mc-top"><span class="mc-name">${esc(g.split(" · ")[0])}</span><span class="mc-sub">${esc(g.split(" · ").slice(1).join(" · "))}</span></div>
-        <div class="mc-stage" data-art="${esc(a.e.join("|"))}"><span class="mc-big">${a.e[0]}</span></div>
-        <div class="mc-rail">${a.e.map((x,k)=>`<span class="mc-dot${k?"":" on"}">${x}</span>`).join("")}</div>
+        <div class="mc-stage" data-art="${esc(a.e.join("|"))}" data-words="${esc(a.w.join("|"))}"><span class="mc-big">${a.e[0]}</span><span class="mc-word">${esc(a.w[0]||"")}</span></div>
+        <div class="mc-rail">${a.e.map((x,k)=>`<button type="button" class="mc-dot${k?"":" on"}" data-dot="${k}" aria-label="${esc(a.w[k]||"")}">${x}</button>`).join("")}</div>
         <div class="mc-ends"><span>${esc(ends[0]||"")}</span><span class="mc-arrow">➜</span><span>${esc(ends[1]||"")}</span></div>
         <div class="mc-btns">${rs.map(([i,n,x])=>`<button type="button" class="mc-btn" data-pmx="${i}|${n}">${(KLX[x.kind]||["🎚️",x.kind])[0]} ${(KLX[x.kind]||["",x.kind])[1]}</button>`).join("")}</div>
         ${rs.map(([i,n])=>`<div class="pmeter" id="pmx-${i}-${n}" hidden></div>`).join("")}</div>`;}).join("")}</div></div>`);pmAnimate();}}
@@ -452,6 +455,7 @@ $("out").addEventListener("click",e=>{const b=e.target.closest("[data-ex]");if(!
 $("out").addEventListener("click",e=>{const b=e.target.closest("[data-pw]");if(!b)return;showWord(+b.dataset.pw);});
 $("out").addEventListener("click",e=>{const b=e.target.closest("[data-pm]");if(!b)return;const [i,n]=b.dataset.pm.split("|").map(Number),el=$(`pm-${i}-${n}`);if(!el)return;
   el.hidden=!el.hidden;b.textContent=el.hidden?"🎚️ Open meter":"✕ Close meter";if(!el.hidden&&!el.dataset.on){el.dataset.on=1;const v=D[i],sc=Sets.partnerScales(PARTNERS.get(v.wid).own).filter(s=>s.items.length>1)[n];Sets.mountPartnerMeter(el,sc,{emoji:v.emoji});}});
+$("out").addEventListener("click",e=>{const d=e.target.closest("[data-dot]");if(!d)return;const c=d.closest(".mcard");c.dataset.hk=d.dataset.dot;c.dataset.hu=PM_TICK+4;pmShow(c,+d.dataset.dot);});
 $("out").addEventListener("click",e=>{const b=e.target.closest("[data-pmx]");if(!b)return;const [i,n]=b.dataset.pmx.split("|").map(Number),el=$(`pmx-${i}-${n}`);if(!el)return;
   if(el.hidden&&el.closest(".mcard"))el.closest(".mcard").querySelectorAll(".pmeter").forEach(x=>{if(x!==el)x.hidden=true;});el.hidden=!el.hidden;{const c=el.closest(".mcard");if(c){const any=[...c.querySelectorAll(".pmeter")].some(x=>!x.hidden);c.classList.toggle("open",any);c.querySelectorAll(".mc-btn").forEach(x=>x.classList.toggle("on",x===b&&!el.hidden));}}if(!el.hidden&&!el.dataset.on){el.dataset.on=1;const v=D[i],sc=Sets.partnerScales(PARTNERS.get(v.wid).own).filter(x=>x.items.length>1)[n];Sets.mountPartnerMeter(el,sc,{emoji:v.emoji});}});
 $("out").addEventListener("click",e=>{const mc=e.target.closest("[data-mic]");if(mc){const [c,i]=mc.dataset.mic.split("|");Lang.listen(D[+i],c);return;}const hl=e.target.closest("[data-hearlang]");if(hl){const [c,i]=hl.dataset.hearlang.split("|");Lang.say(D[+i],c);return;}
