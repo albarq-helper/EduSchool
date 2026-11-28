@@ -209,7 +209,7 @@
         if (Weather.load) await Weather.load(); if (my !== fxTok) return;
         const r = Weather.recipe(w), how = Weather.behaviour ? Weather.behaviour(w) : "full"; lastW = w; $full.prop("hidden", false);
         if (how === "full") { fxLab(`${r.e} ${r.name}<br><small>plays on the whole screen</small>`); Weather.play(w, { force: 1 }); }
-        else if (how === "box" && Weather.play(w, { force: 1, box })) fxLab("");
+        else if (how === "box" && Weather.play(w, { force: 1, box, rank: l.rank })) fxLab("");
         else fxLab(`${r.e} ${r.name}<br><small>tap ⤢ to see it on the whole screen</small>`); }, 380); }
     $m.on("click", "[data-fxfull]", function () { if (lastW) { Weather.stop(); Weather.play(lastW, { force: 1 }); } });
     $m.on("click", "[data-mfx]", function () { if (Weather.mode && Weather.mode() === "off") return; try { localStorage.setItem(FXK, fxOn() ? "0" : "1"); } catch (e) {} if (!fxOn()) Weather.stop(); fxBtn(); });

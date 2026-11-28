@@ -779,5 +779,112 @@
     Weather.also("ferocious,beast,beasts,predator,roar,roared", "stomp");
   }
 
+
+  // 🍽️ HUNGER: a man goes from Full → Peckish → Hungry → Ravenous → Starving over 10 hours, then collapses on the floor.
+  //   On the page (full screen) there is a timeline that plays by itself and that you can drag; in a meter box only the man shows,
+  //   at the level of the meter (he eases from the level before, so moving the meter walks him through the hours).
+  let hungerH = 0;
+  Weather.add("full,peckish,hungry,ravenous,famished,starving,starve,starved,hunger,appetite,underfed,empty stomach", { e: "🍽️", name: "Hunger", dur: 52000, track: 1, capture: 1, top: 1 }, A => {
+    const HRS = [0, 2, 3.5, 5, 8, 10], rk = r => { r = Math.max(0, Math.min(5, +r || 0)); const i = Math.floor(r); return i >= 5 ? 10 : HRS[i] + (HRS[i + 1] - HRS[i]) * (r - i); };
+    const STATES = [[1, "Full", "😌"], [3.5, "Peckish", "🍎"], [6.5, "Hungry", "😋"], [9, "Ravenous", "🍝"], [99, "Starving", "😵"]];
+    const stOf = h => STATES.find(x => h < x[0]);
+    const clamp = (v, a, b) => Math.max(a, Math.min(b, v)), lerp = (a, b, k) => a + (b - a) * k;
+    const mix = (c1, c2, k) => `rgb(${[0, 1, 2].map(i => Math.round(lerp(c1[i], c2[i], k))).join(",")})`;
+    const boxed = !!A.boxed, o = A.opts || {};
+    let h = boxed ? hungerH : 0, target = boxed ? rk(o.rank) : 10, playing = !boxed, drag = false, last = null, prevH = h, startT = null, lay = null;
+    const growl = () => A.noise(.9, .2, "lowpass", 150, 70, 1);
+    A.setChip(boxed ? "🍽️ hunger" : "⏱️ watch the hours go by, or drag the timeline");
+    const layout = () => { const W = A.W(), H = A.H();
+      if (boxed) return { cx: 0, cy: 0, cw: W, ch: H, th: 0, sx: 0, sy: 0, sw: W, sh: H };
+      const cw = Math.min(W - 20, 660), ch = Math.min(H - 20, 480), cx = (W - cw) / 2, cy = (H - ch) / 2, th = 92;
+      return { cx, cy, cw, ch, th, sx: cx, sy: cy, sw: cw, sh: ch - th, bx0: cx + 66, bx1: cx + cw - 30, by: cy + ch - 40 }; };
+    const hOfX = x => clamp((x - lay.bx0) / (lay.bx1 - lay.bx0), 0, 1) * 10;
+    const onBar = (x, y) => lay && !boxed && y > lay.by - 30 && y < lay.by + 30 && x > lay.bx0 - 14 && x < lay.bx1 + 14;
+    const onPlay = (x, y) => lay && !boxed && Math.hypot(x - (lay.cx + 34), y - lay.by) < 26;
+    const person = (ctx, mx, gy, S, h, t, ang, reach, calm) => {
+      const hh = h / 10, s2 = clamp((h - 3) / 6, 0, 1), hb = clamp((h - 2.5) / 1.5, 0, 1) * (1 - clamp((h - 8.6) / .6, 0, 1));
+      const skin = mix([242, 201, 160], [214, 214, 170], Math.min(1, hh * 1.1)), shirt = mix([249, 115, 22], [176, 160, 142], Math.min(1, hh * 1.2)), pants = "#334155", O = "#1f2937";
+      const tw = .34 - .12 * hh, shY = -.78 + .035 * s2, hy = -.93 + .05 * s2, br = 1 + (calm ? 0 : Math.sin(t / (520 + h * 70)) * .012 * (1 - hh));
+      ctx.save(); ctx.translate(mx, gy); ctx.rotate(ang); ctx.scale(S, S); ctx.lineCap = "round"; ctx.lineJoin = "round";
+      const line = (w, c, pts) => { ctx.strokeStyle = c; ctx.lineWidth = w; ctx.beginPath(); pts.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.stroke(); };
+      const kb = s2 * .03;
+      [-1, 1].forEach(sd => { line(.09, pants, [[sd * .07, -.46], [sd * (.085 - kb * 2), -.23], [sd * .09, -.02]]); ctx.fillStyle = "#111827"; ctx.beginPath(); ctx.ellipse(sd * .105, -.005, .075, .035, 0, 0, 7); ctx.fill(); });
+      ctx.save(); ctx.translate(0, shY); ctx.scale(1, br); ctx.translate(0, -shY);
+      ctx.fillStyle = shirt; ctx.strokeStyle = O; ctx.lineWidth = .014; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(-tw / 2, shY, tw, -.42 - shY, .08) : ctx.rect(-tw / 2, shY, tw, -.42 - shY); ctx.fill(); ctx.stroke();
+      const bellyR = lerp(.13, 0, clamp(h / 3, 0, 1)); if (bellyR > .012) { ctx.beginPath(); ctx.ellipse(0, -.55, tw / 2 + bellyR * .55, .1 + bellyR * .5, 0, 0, 7); ctx.fill(); ctx.stroke(); }
+      ctx.fillStyle = pants; ctx.fillRect(-tw / 2, -.46, tw, .045); ctx.restore();
+      [-1, 1].forEach(sd => { const shx = sd * (tw / 2 - .01), shy = shY + .03, hang = [sd * (tw / 2 + .055), -.5 + .03 * s2];
+        let hand = hang; if (sd < 0) { hand = [lerp(hang[0], -.02, hb), lerp(hang[1], -.57, hb)]; hand = [lerp(hand[0], -(tw / 2 + .06), reach), lerp(hand[1], -.42, reach)]; }
+        else hand = [lerp(hang[0], tw / 2 + .04, reach), lerp(hang[1], shY - .24, reach)];
+        const el = [(shx + hand[0]) / 2 + sd * .035, (shy + hand[1]) / 2];
+        line(.075, O, [[shx, shy], el, hand]); line(.058, shirt, [[shx, shy], el]); line(.05, skin, [el, hand]); ctx.fillStyle = skin; ctx.beginPath(); ctx.arc(hand[0], hand[1], .04, 0, 7); ctx.fill(); });
+      ctx.save(); ctx.translate(0, hy); ctx.rotate(s2 * .14 + (calm ? 0 : Math.sin(t / 900) * s2 * .08));
+      ctx.fillStyle = skin; ctx.strokeStyle = O; ctx.lineWidth = .014; ctx.beginPath(); ctx.arc(0, 0, .13, 0, 7); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = "#3b2a1a"; ctx.beginPath(); ctx.arc(0, -.015, .137, Math.PI * 1.03, Math.PI * 1.97); ctx.fill();
+      const stroke = (w, pts) => { ctx.strokeStyle = O; ctx.lineWidth = w; ctx.beginPath(); pts.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.stroke(); };
+      const dot = (x, y, r, c) => { ctx.fillStyle = c || O; ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill(); };
+      if (h < 1) { dot(-.05, -.01, .018); dot(.05, -.01, .018); dot(-.045, -.017, .006, "#fff"); dot(.055, -.017, .006, "#fff"); dot(-.085, .035, .022, "rgba(244,114,182,.45)"); dot(.085, .035, .022, "rgba(244,114,182,.45)");
+        ctx.strokeStyle = O; ctx.lineWidth = .014; ctx.beginPath(); ctx.arc(0, .02, .05, .2, Math.PI - .2); ctx.stroke(); }
+      else if (h < 3.5) { dot(-.05, -.01, .018); dot(.05, -.01, .018); dot(-.04, -.01, .008, "#fff"); dot(.06, -.01, .008, "#fff"); stroke(.012, [[-.07, -.05], [-.03, -.055]]); stroke(.012, [[.03, -.055], [.07, -.05]]); stroke(.014, [[-.035, .05], [.035, .045]]); }
+      else if (h < 6.5) { dot(-.05, -.005, .018); dot(.05, -.005, .018); stroke(.013, [[-.078, -.04], [-.03, -.065]]); stroke(.013, [[.03, -.065], [.078, -.04]]);
+        ctx.strokeStyle = O; ctx.lineWidth = .014; ctx.beginPath(); ctx.arc(0, .075, .04, Math.PI + .3, 2 * Math.PI - .3); ctx.stroke(); }
+      else if (h < 9.3) { [-1, 1].forEach(sd => { dot(sd * .05, -.005, .03, "#fff"); ctx.strokeStyle = O; ctx.lineWidth = .008; ctx.beginPath(); ctx.arc(sd * .05, -.005, .03, 0, 7); ctx.stroke(); dot(sd * .05 + .006, -.003, .011); });
+        stroke(.013, [[-.085, -.05], [-.03, -.075]]); stroke(.013, [[.03, -.075], [.085, -.05]]);
+        const mo = .03 + .008 * Math.sin(t / 120); ctx.fillStyle = "#7f1d1d"; ctx.strokeStyle = O; ctx.lineWidth = .01; ctx.beginPath(); ctx.ellipse(0, .06, .036, mo, 0, 0, 7); ctx.fill(); ctx.stroke(); dot(0, .07, .017, "#f87171");
+        const dl = .03 + .03 * (Math.sin(t / 380) * .5 + .5); ctx.strokeStyle = "rgba(125,211,252,.9)"; ctx.lineWidth = .012; ctx.beginPath(); ctx.moveTo(.03, .075); ctx.lineTo(.03, .075 + dl); ctx.stroke(); dot(.03, .08 + dl, .012, "rgba(125,211,252,.95)"); }
+      else { if (h > 9.6) { [-1, 1].forEach(sd => { stroke(.014, [[sd * .05 - .022, -.03], [sd * .05 + .022, .012]]); stroke(.014, [[sd * .05 + .022, -.03], [sd * .05 - .022, .012]]); }); }
+        else { stroke(.014, [[-.075, -.005], [-.025, .004]]); stroke(.014, [[.025, .004], [.075, -.005]]); }
+        const pts = []; for (let k = 0; k <= 8; k++) pts.push([-.045 + k * .011, .07 + Math.sin(k * 1.4) * .008]); stroke(.013, pts); }
+      ctx.restore(); ctx.restore(); };
+    const world = (mx, gy, S, ang, x, y) => [mx + (x * Math.cos(ang) - y * Math.sin(ang)) * S, gy + (x * Math.sin(ang) + y * Math.cos(ang)) * S];
+    return {
+      down(x, y) { if (boxed) return; if (onPlay(x, y)) { if (h >= 10) { h = 0; prevH = 0; } playing = !playing || h < 10 ? !playing : true; return; }
+        if (onBar(x, y)) { drag = true; playing = false; h = hOfX(x); } },
+      move(x, y) { if (drag) h = hOfX(x); },
+      up() { drag = false; },
+      stop() { if (boxed) hungerH = h; },
+      frame(t) { const { ctx } = A, W = A.W(), H = A.H(); if (startT == null) startT = t; const dt = last == null ? 16 : Math.min(60, t - last); last = t;
+        lay = layout();
+        if (boxed) h += (target - h) * (1 - Math.exp(-dt / 380)); else if (playing && t - startT > 1200 && !drag) { h = Math.min(10, h + dt / 1000 * .62); if (h >= 10) playing = false; }
+        [3.2, 5.5, 7.5, 8.8].forEach(k => { if (prevH < k && h >= k) growl(); }); if (prevH < 9.55 && h >= 9.55) A.boom(0); prevH = h;
+        const { cx, cy, cw, ch, th, sx, sy, sw, sh } = lay, hh = h / 10, st = stOf(h);
+        if (!boxed) { ctx.fillStyle = "rgba(15,23,42,.55)"; ctx.fillRect(0, 0, W, H); }
+        ctx.save(); ctx.beginPath(); ctx.roundRect ? ctx.roundRect(cx, cy, cw, ch, boxed ? 14 : 22) : ctx.rect(cx, cy, cw, ch); ctx.clip();
+        const sky = ctx.createLinearGradient(0, sy, 0, sy + sh); sky.addColorStop(0, mix([150, 210, 255], [255, 170, 110], hh)); sky.addColorStop(1, mix([225, 242, 255], [255, 223, 180], hh)); ctx.fillStyle = sky; ctx.fillRect(cx, cy, cw, sh);
+        const sunX = sx + sw * (.1 + .8 * hh), sunY = sy + sh * (.34 - .2 * Math.sin(Math.PI * hh) + .22 * hh * hh); const S = Math.min(sh * .74, sw * .46);
+        em(ctx, hh > .93 ? "🌇" : "☀️", sunX, sunY, S * .22);
+        const gy = sy + sh * .86; ctx.fillStyle = mix([222, 190, 140], [190, 160, 120], hh); ctx.fillRect(cx, gy, cw, sh - sh * .86 + (boxed ? 0 : 0)); ctx.fillStyle = "rgba(0,0,0,.08)"; ctx.fillRect(cx, gy, cw, 3);
+        // the table with food that stays out of reach
+        const tx = sx + sw * .84; ctx.fillStyle = "#a16207"; ctx.fillRect(tx - S * .22, gy - S * .3, S * .44, S * .045); ctx.fillRect(tx - S * .19, gy - S * .26, S * .035, S * .26); ctx.fillRect(tx + S * .155, gy - S * .26, S * .035, S * .26);
+        em(ctx, h < 6.5 ? "🍲" : "🍗", tx, gy - S * .4, S * .24);
+        const mx = sx + sw * .36, f = clamp((h - 9) / .9, 0, 1), ang = (Math.PI / 2) * (f * f) * 1.0 + (A.reduce ? 0 : Math.sin(t / 260) * (.012 + .07 * clamp((h - 6) / 3.2, 0, 1)) * (1 - f));
+        person(ctx, mx, gy, S, h, t, ang, f, !!A.reduce);
+        // rumbling belly, sweat, dizzy stars, thought bubble
+        const head = world(mx, gy, S, ang, 0, -.93 + .05 * clamp((h - 3) / 6, 0, 1));
+        if (h > 3 && h < 9.7) { const k = (Math.sin(t / (600 - 25 * h)) + 1) / 2; if (k > .55) { const b = world(mx, gy, S, ang, -.26, -.5); big(ctx, h < 7 ? "grr…" : "GRRR!", b[0] + Math.sin(t / 40) * 2, b[1], S * (.1 + hh * .05), "#b91c1c"); } }
+        if (h > 4.5 && h < 9.6) em(ctx, "💧", head[0] + S * .17, head[1] - S * .03 + ((t / 9) % (S * .16)), S * .08);
+        if (h > 8.2) { for (let k = 0; k < 3; k++) { const a = t / 380 + k * 2.1; em(ctx, h > 9.5 ? "⭐" : "💫", head[0] + Math.cos(a) * S * .22, head[1] - S * .2 + Math.sin(a) * S * .06, S * .1); } }
+        if (h >= 9.9) { for (let k = 0; k < 3; k++) { const a = t / 260 + k * 2.2; em(ctx, "🪰", head[0] + S * .3 + Math.cos(a) * S * .16, head[1] - S * .22 + Math.sin(a * 1.3) * S * .08, S * .07); } }
+        if (h >= 1 && h < 9.95) { const food = h < 3.5 ? ["🍎"] : h < 6.5 ? ["🍔"] : h < 9 ? ["🍝", "🍗", "🍕"] : ["🍞"], fe = food[Math.floor(t / 750) % food.length], bx = head[0] + S * .45, by = head[1] - S * .42 + Math.sin(t / 500) * 4, bR = S * .24;
+          ctx.fillStyle = "#fff"; ctx.strokeStyle = "#1f2937"; [[head[0] + S * .2, head[1] - S * .2, S * .03], [head[0] + S * .3, head[1] - S * .3, S * .05]].forEach(([x, y, r]) => { ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill(); ctx.lineWidth = 1.5; ctx.stroke(); });
+          ctx.beginPath(); ctx.ellipse(bx, by, bR, bR * .8, 0, 0, 7); ctx.fill(); ctx.lineWidth = 2; ctx.stroke(); ctx.globalAlpha *= h >= 9 ? .45 + .3 * Math.sin(t / 200) : 1; em(ctx, fe, bx, by, bR * 1.1, Math.sin(t / 300) * (h > 6.5 ? .25 : .06)); ctx.globalAlpha = 1; }
+        if (h >= 9.95) { const hd = world(mx, gy, S, ang, 0, -.93); bubble(ctx, "so… hungry… 🍞", hd[0] - S * .1, hd[1] - S * .42, Math.max(13, S * .1)); }
+        // labels
+        const pill = (txt, x, y, size, bg) => { ctx.save(); ctx.font = `800 ${size}px system-ui`; const w = ctx.measureText(txt).width + size * 1.1, hgt = size * 1.8; ctx.fillStyle = bg || "rgba(255,255,255,.92)"; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x, y, w, hgt, hgt / 2) : ctx.rect(x, y, w, hgt); ctx.fill(); ctx.fillStyle = "#1f2937"; ctx.textAlign = "left"; ctx.textBaseline = "middle"; ctx.fillText(txt, x + size * .55, y + hgt / 2 + 1); ctx.restore(); };
+        pill(`${st[2]} ${st[1]}`, cx + 10, cy + 10, boxed ? 13 : 17); pill(`${Math.round(h)} h without food`, cx + 10, cy + (boxed ? 38 : 48), boxed ? 11 : 13, "rgba(255,255,255,.75)");
+        if (!boxed) { // the timeline
+          ctx.fillStyle = "rgba(255,255,255,.96)"; ctx.fillRect(cx, cy + sh, cw, th);
+          const by = lay.by, x0 = lay.bx0, x1 = lay.bx1, g = ctx.createLinearGradient(x0, 0, x1, 0); g.addColorStop(0, "#4ade80"); g.addColorStop(.35, "#facc15"); g.addColorStop(.7, "#fb923c"); g.addColorStop(1, "#ef4444");
+          ctx.lineCap = "round"; ctx.strokeStyle = "#e2e8f0"; ctx.lineWidth = 12; ctx.beginPath(); ctx.moveTo(x0, by); ctx.lineTo(x1, by); ctx.stroke();
+          ctx.strokeStyle = g; ctx.beginPath(); ctx.moveTo(x0, by); ctx.lineTo(x0 + (x1 - x0) * hh, by); ctx.stroke();
+          ctx.fillStyle = "#475569"; ctx.font = "700 11px system-ui"; ctx.textAlign = "center"; ctx.textBaseline = "top"; for (let k = 0; k <= 10; k++) { const x = x0 + (x1 - x0) * k / 10; ctx.fillRect(x - 1, by + 10, 2, 5); if (k % 2 === 0) ctx.fillText(k + "h", x, by + 17); }
+          [[0, "😌"], [2, "🍎"], [5, "😋"], [8, "🍝"], [10, "😵"]].forEach(([k, e]) => em(ctx, e, x0 + (x1 - x0) * k / 10, by - 26, 22));
+          const hx = x0 + (x1 - x0) * hh; ctx.fillStyle = "#fff"; ctx.strokeStyle = "#1f2937"; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(hx, by, 13, 0, 7); ctx.fill(); ctx.stroke();
+          ctx.fillStyle = playing ? "#fee2e2" : "#dcfce7"; ctx.strokeStyle = "#1f2937"; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(cx + 34, by, 20, 0, 7); ctx.fill(); ctx.stroke(); ctx.fillStyle = "#1f2937"; ctx.font = "800 17px system-ui"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(h >= 10 ? "↻" : playing ? "⏸" : "▶", cx + 34, by + 1);
+        }
+        ctx.restore(); ctx.strokeStyle = "rgba(31,41,55,.55)"; ctx.lineWidth = boxed ? 0 : 3; if (!boxed) { ctx.beginPath(); ctx.roundRect ? ctx.roundRect(cx, cy, cw, ch, 22) : ctx.rect(cx, cy, cw, ch); ctx.stroke(); }
+        A.setChip(boxed ? "🍽️ hunger" : `⏱️ hour ${h.toFixed(1)} · ${st[1]}`); } };
+  });
+
   Weather.rescan();
 })();
