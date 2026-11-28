@@ -10,6 +10,7 @@
     const ids = [...new Set(list.map(v => v.wid || v.id).filter(Boolean))];
     if (!ids.length) return list;
     try {
+      await c.auth.getSession();     // wait until the sign-in is ready, or the first answer is empty
       const key = new Map();
       const parts = []; for (let k = 0; k < ids.length; k += 80) parts.push(ids.slice(k, k + 80));
       (await Promise.all(parts.map(ch => c.from("words").select("id,synonym_key").in("id", ch).not("synonym_key", "is", null)))).forEach(r => (r.data || []).forEach(x => key.set(x.id, x.synonym_key)));
