@@ -63,6 +63,9 @@ select{font:inherit;padding:8px 10px;border:1px solid var(--rule);border-radius:
 .res{display:grid;gap:10px;background:var(--sheet);border:1px solid var(--rule);border-radius:14px;padding:16px;text-align:center}
 .res .big{font-size:clamp(1.6rem,6vw,2.4rem)}.mlist{display:grid;gap:6px;text-align:left}.mrow{display:flex;gap:8px;flex-wrap:wrap;align-items:baseline;border-top:1px solid var(--rule);padding-top:6px}.mrow b{min-width:7em}.mrow span{background:var(--accent-soft);border-radius:999px;padding:1px 9px;font-weight:700}
 @media (prefers-reduced-motion:reduce){.ptr{transition:none}.mic.live{animation:none}}
+.rootbar{display:grid;gap:6px;margin:6px 0}.rootchk{display:flex;gap:8px;align-items:center;font-weight:700;cursor:pointer}.rootchk small{font-weight:500;color:var(--muted)}
+.mustbox{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:8px 10px;background:var(--accent-soft);border-radius:12px}.mustbox label{display:inline-flex;gap:5px;align-items:center;background:#fff;border:1.5px solid var(--rule);border-radius:999px;padding:3px 10px;font-weight:700;cursor:pointer}
+.seat.out{opacity:.22;filter:grayscale(1)}
 </style>
 <div class="wrap">
   <header>
@@ -76,6 +79,8 @@ select{font:inherit;padding:8px 10px;border:1px solid var(--rule);border-radius:
       <label for="roundsSel" class="eyebrow">Words</label><select id="roundsSel"><option>3</option><option>5</option><option>8</option><option>10</option><option>15</option><option>20</option></select></div>
     <button class="btn primary" id="go">Start the game</button>
   </div>
+  <div class="rootbar"><label class="rootchk"><input type="checkbox" id="rootOnly"> 🌱 Only words that share a root with other languages <small>(like <i>lethargic</i> and <i>léthargique</i>)</small></label>
+    <div id="mustBox" class="mustbox" hidden><span class="hint">Always invite, even when the word does not share a root:</span> <span id="mustList"></span></div></div>
   <p class="hint" id="lvlHint"></p>
   <div id="stage"></div>
 </div>
@@ -87,28 +92,32 @@ const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(M
 const clean=w=>String(w||"").replace(/\s*\(.*\)\s*$/,"");
 const FACE={ar:"👩🏽",fr:"👨🏼",it:"👩🏻",es:"👦🏽",pt:"👧🏾",zh:"🧑🏻"},RING=["#2347c5","#b5532a","#1e7f4f","#a855f7","#e11d48","#0891b2","#ca8a04","#475569"];
 const has=(v,c)=>{const t=v.trs&&v.trs[c];return !!(t&&t.term);};
+// does this language's word come from the same root as the English word? (same rule as the look-alike lines: not a false friend, and related or at least 40% alike)
+const root=(v,c)=>{const t=v.trs&&v.trs[c];return !!(t&&t.term&&t.root_en&&t.root_kind!=="false_friend"&&(t.root_kind==="related"||(t.root_sim!=null&&t.root_sim>=40)));};
+let ROOTONLY=false,MUST=new Set();
+const friends=v=>LANGS.filter(L=>has(v,L.code)&&(!ROOTONLY||root(v,L.code)||MUST.has(L.code)));
 const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
 let LANGS=[],QUEUE=[],PLANS=[],q=0,score=0,total=0,missed=[],cur=null,angle=0,lastCode="",micOK=!!SR,busy=false,STEPS=[],si=0,LEVEL="easy",tok=0;
 const HINT={easy:"🌱 Easy: each friend says the word, then it's your turn to say it back, friend by friend.",mid:"🌿 Middle: every friend says the word first. Then you say it for each friend, in the same order.",hard:"🌳 Hard: nobody helps. The arrow points at a friend and you say it from memory."};
 const DEF={easy:3,mid:5,hard:10};
 const seatXY=(k,n)=>{const a=(-90+360*k/n)*Math.PI/180;return[50+41*Math.cos(a),50+41*Math.sin(a),-90+360*k/n];};
-function pool(){const u=$("#unitSel").value;return DATA.map((v,i)=>i).filter(i=>(u==="all"||String(DATA[i].u)===u)&&LANGS.some(L=>has(DATA[i],L.code)));}
+function pool(){const u=$("#unitSel").value;return DATA.map((v,i)=>i).filter(i=>(u==="all"||String(DATA[i].u)===u)&&(ROOTONLY?LANGS.some(L=>root(DATA[i],L.code)):LANGS.some(L=>has(DATA[i],L.code))));}
 function table(){const n=LANGS.length;
   return `<div class="rt" id="rt"><div class="tbl"></div><div class="ptr" id="ptr" style="transform:rotate(${angle}deg)"><b></b></div>
   <div class="cc" id="cc"></div>${LANGS.map((L,k)=>{const[x,y]=seatXY(k,n);return `<div class="seat" id="s-${L.code}" style="left:${x}%;top:${y}%;--ring:${RING[k%RING.length]}"><div class="av" aria-hidden="true">${FACE[L.code]||"🙂"}</div><div class="nm">${L.flag||""} ${esc(L.native_name)}</div><div class="say" lang="${L.tts_lang||L.code}" dir="${L.dir||"ltr"}"></div></div>`;}).join("")}</div>`;}
 function ui(){$("#stage").innerHTML=`<div class="score" id="score"></div>${table()}<div class="ask" id="ask"></div><div class="ctl" id="ctl"></div><div class="fb" id="fb" aria-live="polite"></div>`;}
 function setScore(){$("#score").innerHTML=`<span>Word ${Math.min(q+1,QUEUE.length)} / ${QUEUE.length}</span><span>⭐ ${score} / ${total}</span>`;}
-function plan(v){const fr=LANGS.filter(L=>has(v,L.code));
+function plan(v){const fr=friends(v);
   if(LEVEL==="hard"){const ok=fr.filter(L=>L.code!==lastCode),pk=ok.length?ok:fr,L=pk[Math.floor(Math.random()*pk.length)];lastCode=L.code;return[{c:L.code,m:"say"}];}
   if(LEVEL==="easy")return fr.flatMap(L=>[{c:L.code,m:"hear"},{c:L.code,m:"say"}]);
   return fr.map(L=>({c:L.code,m:"hear"})).concat(fr.map(L=>({c:L.code,m:"say"})));}
 function start(list){LANGS=Lang.mine().filter(L=>DATA.filter(v=>has(v,L.code)).length>=6);
   if(LANGS.length<2){$("#stage").innerHTML=`<div class="res"><b>Not enough translations yet</b><span class="hint">This game needs a set where the words have translations in at least two languages. Open “🌍 My languages” on the Word list to choose yours.</span></div>`;return;}
-  LEVEL=$("#levelSel").value;const base=list||shuffle(pool());QUEUE=base.slice(0,+$("#roundsSel").value);if(!QUEUE.length){$("#stage").innerHTML=`<div class="res">No words with translations in this unit.</div>`;return;}
+  LEVEL=$("#levelSel").value;ROOTONLY=$("#rootOnly").checked;MUST=new Set([...document.querySelectorAll("#mustList input:checked")].map(x=>x.value));const base=list||shuffle(pool());QUEUE=base.slice(0,+$("#roundsSel").value);if(!QUEUE.length){$("#stage").innerHTML=`<div class="res">${ROOTONLY?"No words in this unit share a root with the languages you chose. Try another unit, or untick the root filter.":"No words with translations in this unit."}</div>`;return;}
   lastCode="";PLANS=QUEUE.map(i=>plan(DATA[i]));total=PLANS.reduce((a,p)=>a+p.filter(s=>s.m==="say").length,0);
   q=0;score=0;missed=[];ui();nextWord();}
 function clearSeats(){document.querySelectorAll(".seat").forEach(s=>{s.classList.remove("on","dim");s.querySelector(".say").textContent="";});}
-function nextWord(){if(q>=QUEUE.length)return finish();const v=DATA[QUEUE[q]];STEPS=PLANS[q];si=0;clearSeats();setScore();
+function nextWord(){if(q>=QUEUE.length)return finish();const v=DATA[QUEUE[q]];STEPS=PLANS[q];si=0;clearSeats();const inPlay=new Set(friends(v).map(L=>L.code));document.querySelectorAll(".seat").forEach(x=>x.classList.toggle("out",!inPlay.has(x.id.slice(2))));setScore();
   $("#cc").innerHTML=`${v.emoji?`<div class="em">${esc(v.emoji)}</div>`:""}<div class="w">${esc(clean(v.w))}</div><button class="hear" type="button" id="hearEn" aria-label="Hear the English word">🔊</button>`;
   $("#fb").textContent="";$("#fb").className="fb";try{Sets.speak(clean(v.w));}catch(e){}
   stepRun(true);}
@@ -148,7 +157,7 @@ function say(){if(busy||!cur||cur.done)return;const b=$("#mic");if(b){b.classLis
     if(r.ok){$("#fb").className="fb ok";$("#fb").textContent=(r.score>=85?"🌟 Yes! ":"🙂 Good! ")+"I heard “"+r.heard+"” · "+r.score+"%";reveal(true);}
     else{cur.tries++;$("#fb").className="fb no";$("#fb").textContent=`I heard “${r.heard}” (${r.score}%). ${cur.tries>=2?"Let's look at it together.":"Try again, or tap Show me."}`;if(cur.tries>=2)reveal(false);}}});}
 function finish(){const n=total;$("#stage").innerHTML=`<div class="res"><div class="big">${score>=n*.8?"🌟":score>=n*.5?"🙂":"💪"} ${score} / ${n}</div><div>${score>=n*.8?"You remembered almost everything!":score>=n*.5?"Nice memory! A few to look at again.":"Good try! Let's practise these again."}</div>
-  ${missed.length?`<div class="mlist"><b>To remember</b>${missed.map(i=>{const v=DATA[i];return `<div class="mrow"><b>${esc(clean(v.w))}</b>${LANGS.filter(L=>has(v,L.code)).map(L=>`<span lang="${L.tts_lang||L.code}" dir="${L.dir||"ltr"}">${L.flag||""} ${esc(head(v.trs[L.code].term))}</span>`).join("")}</div>`;}).join("")}</div>`:""}
+  ${missed.length?`<div class="mlist"><b>To remember</b>${missed.map(i=>{const v=DATA[i];return `<div class="mrow"><b>${esc(clean(v.w))}</b>${friends(v).map(L=>`<span lang="${L.tts_lang||L.code}" dir="${L.dir||"ltr"}">${L.flag||""} ${esc(head(v.trs[L.code].term))}</span>`).join("")}</div>`;}).join("")}</div>`:""}
   <div class="ctl"><button class="btn primary" id="again" type="button">Play again</button>${missed.length?`<button class="btn" id="redo" type="button">Practise the ones I missed</button>`:""}</div></div>`;}
 const head=t=>window.Lang&&Lang.head?Lang.head(t):String(t).split(/[≈;/(]/)[0].trim();
 document.addEventListener("click",e=>{const t=e.target.closest("button");if(!t)return;
@@ -162,6 +171,11 @@ document.addEventListener("click",e=>{const t=e.target.closest("button");if(!t)r
 (async()=>{$("#setEyebrow").textContent=(window.CURRENT_SET&&CURRENT_SET.name)||"";
   try{await Lang.load();await Lang.attach(DATA);}catch(e){}
   let lv="easy";try{lv=localStorage.getItem("tableLevel")||"easy";}catch(e){}$("#levelSel").value=lv;$("#roundsSel").value=String(DEF[lv]);$("#lvlHint").textContent=HINT[lv];
+  const buildMust=()=>{let sel;try{sel=JSON.parse(localStorage.getItem("tableMust")||"null");}catch(e){}const L0=Lang.mine().filter(L=>DATA.filter(v=>has(v,L.code)).length>=6);if(!sel)sel=L0.some(L=>L.code==="ar")?["ar"]:[];
+    $("#mustList").innerHTML=L0.map(L=>`<label><input type="checkbox" value="${L.code}"${sel.includes(L.code)?" checked":""}> ${L.flag||""} ${esc(L.name_en||L.native_name)}</label>`).join("");};
+  buildMust();let ro=false;try{ro=localStorage.getItem("tableRoot")==="1";}catch(e){}$("#rootOnly").checked=ro;$("#mustBox").hidden=!ro;
+  $("#rootOnly").onchange=()=>{$("#mustBox").hidden=!$("#rootOnly").checked;try{localStorage.setItem("tableRoot",$("#rootOnly").checked?"1":"0");}catch(e){}};
+  $("#mustList").onchange=()=>{try{localStorage.setItem("tableMust",JSON.stringify([...document.querySelectorAll("#mustList input:checked")].map(x=>x.value)));}catch(e){}};
   $("#levelSel").onchange=()=>{const l=$("#levelSel").value;$("#roundsSel").value=String(DEF[l]);$("#lvlHint").textContent=HINT[l];try{localStorage.setItem("tableLevel",l);}catch(e){}};
   const us=[`<option value="all">All words</option>`].concat((UNITS||[]).map(u=>`<option value="${u.u}">${u.u?("Unit "+u.u+(u.name?" · "+esc(u.name):"")):(u.name||"General")} (${u.n})</option>`));$("#unitSel").innerHTML=us.join("");
   LANGS=Lang.mine().filter(L=>DATA.filter(v=>has(v,L.code)).length>=6);
