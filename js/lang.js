@@ -63,7 +63,8 @@
     const out = [];
     MINE.forEach(L => {
       const t = v && v.trs && v.trs[L.code]; if (!t || !t.term) return;
-      out.push({ code: L.code, flag: L.flag, native: L.native_name, dir: L.dir, term: t.term, rom: t.romanization || "", hear: L.hear, meaning: t.meaning || "" });
+      const ff = t.root_kind === "false_friend", near = t.root_en && (ff || (t.root_sim != null && t.root_sim >= 40)) ? t.root_en : "";   // the English look-alike, only when there is a root
+      out.push({ code: L.code, flag: L.flag, native: L.native_name, dir: L.dir, term: t.term, rom: t.romanization || "", hear: L.hear, meaning: t.meaning || "", near, ff, note: t.root_note || "" });
     });
     return out;
   }
