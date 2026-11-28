@@ -143,6 +143,7 @@
 .hearbar button{border:1.5px solid var(--rule);background:var(--paper);color:var(--ink);border-radius:999px;padding:3px 12px;font:800 .85rem var(--f-body);cursor:pointer}
 .hearbar button[aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:#fff}
 .hearbar small{font-weight:600}
+.bk.pulse{animation:sbpulse 1.4s ease-out}@keyframes sbpulse{0%{box-shadow:0 0 0 0 rgba(124,58,237,.55);transform:scale(1)}30%{transform:scale(1.025)}100%{box-shadow:0 0 0 18px rgba(124,58,237,0);transform:scale(1)}}@media(prefers-reduced-motion:reduce){.bk.pulse{animation:none}}
 .bk .hearq{border:0;background:var(--chip);cursor:pointer;font-size:1.05rem;padding:5px 8px;border-radius:999px;line-height:1}
 .bk .hearq.on{background:var(--accent);color:#fff}
 .bk.q .tx,.bk.w.say .tx{user-select:none}
@@ -173,7 +174,7 @@
 .tchip{display:inline-block;margin-left:6px;font:800 .78rem var(--f-body);color:#4338ca;background:#e0e7ff;border-radius:999px;padding:1px 8px;vertical-align:middle}
 .wxdif{border-left:4px solid #f97316;padding:4px 0 4px 10px;margin:8px 0}.wxdif p{margin:2px 0 6px}.wxw.on{border-color:#fdba74;background:#fff7ed}
 </style>
-<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261128a"></script><script src="js/icons.js?v=20261128a"></script><script src="js/app.js?v=20261128a"></script><script src="js/sets.js?v=20261128a"></script><script src="js/weather.js?v=20261128a"></script><script src="js/fx.js?v=20261128a"></script><script src="js/speak.js?v=20261128a"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261128a"></script><script src="js/tense.js?v=20261128a"></script><script src="js/wordbox.js?v=20261128a"></script><script src="js/views.js?v=20261128a"></script><script src="js/joiners.js?v=20261128a"></script><script src="js/talk.js?v=20261128a"></script><script src="js/chars.js?v=20261128a"></script><script src="js/storycore.js?v=20261128a"></script><script src="js/montage.js?v=20261128a"></script>
+<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261128b"></script><script src="js/icons.js?v=20261128b"></script><script src="js/app.js?v=20261128b"></script><script src="js/sets.js?v=20261128b"></script><script src="js/weather.js?v=20261128b"></script><script src="js/fx.js?v=20261128b"></script><script src="js/speak.js?v=20261128b"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261128b"></script><script src="js/tense.js?v=20261128b"></script><script src="js/wordbox.js?v=20261128b"></script><script src="js/views.js?v=20261128b"></script><script src="js/joiners.js?v=20261128b"></script><script src="js/talk.js?v=20261128b"></script><script src="js/chars.js?v=20261128b"></script><script src="js/storycore.js?v=20261128b"></script><script src="js/montage.js?v=20261128b"></script>
 </head><body>
 <div class="wrap" style="max-width:1280px">
   <div class="head2">
@@ -742,14 +743,15 @@ function playEnglish(v,text,done){
   if(v&&v.au&&v.au!=="tts"){try{const a=new Audio(v.au);a.onended=()=>done&&done();a.onerror=()=>sbSpeak(text,"en-US",done);a.play().catch(()=>sbSpeak(text,"en-US",done));return a;}catch(e){}}
   sbSpeak(text,"en-US",done);}
 // an effect for the saying: the whole text if it has one, otherwise its longest word that does
-function sayFx(text){if(!window.Weather||!Weather.variants)return;const toks=String(text).split(/[^A-Za-z'’-]+/).filter(x=>x.length>3).sort((a,b)=>b.length-a.length);
+function sayFx(text,li){if(li){li.classList.remove("pulse");void li.offsetWidth;li.classList.add("pulse");setTimeout(()=>li.classList.remove("pulse"),1500);}
+  if(!window.Weather||!Weather.variants)return;const toks=String(text).split(/[^A-Za-z'’-]+/).filter(x=>x.length>3).sort((a,b)=>b.length-a.length);
   for(const t of [text,...toks]){try{if(Weather.variants(t).length){Weather.play(t,{force:1});return;}}catch(e){}}}
 function hearItem(v,text,fx,btn){
   const mode=HLANG(),ar=v&&v.ar?v.ar:"",wantAr=mode!=="en",wantEn=mode!=="ar";
   if(wantAr&&!ar&&!wantEn){App.status("No Arabic for this saying yet. Choose English or Both.");return;}
   if(btn){document.querySelectorAll(".hearq.on").forEach(x=>x.classList.remove("on"));btn.classList.add("on");}
   const off=()=>{if(btn)btn.classList.remove("on");};
-  if(fx)sayFx(text);
+  if(fx)sayFx(text,btn&&btn.closest("li"));
   const arPart=()=>{if(wantAr&&ar)sbSpeak(ar,"ar-SA",off);else off();};
   if(wantEn)HEARNOW=playEnglish(v,text,arPart);else arPart();
   if(wantAr&&!ar&&wantEn)App.status("English only: there is no Arabic for this one yet.");}
