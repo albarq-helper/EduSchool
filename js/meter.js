@@ -207,7 +207,7 @@
       for (let n = t.length - 1; n >= 1; n--) for (let a = 0; a + n <= t.length; a++) { const k = t.slice(a, a + n).join(" "); if (Weather.recipe(k)) return k; } return null; };
     function playLevel(l) { if (!window.Weather || !fxOn() || (Weather.mode && Weather.mode() === "off")) return; clearTimeout(fxTimer);
       fxTimer = setTimeout(async () => { const my = ++fxTok, box = $m.find("[data-fxbox]")[0], $full = $m.find("[data-fxfull]");
-        const w = l.items.map(i => fxKey(D[i] && D[i].w)).find(Boolean); Weather.stop();
+        const ks = l.items.map(i => fxKey(D[i] && D[i].w)).filter(Boolean), w = ks.includes("temperature") ? "temperature" : ks[0]; Weather.stop();
         if (!w) { lastW = null; $full.prop("hidden", true); fxLab("✨ No scene for these words"); return; }
         if (Weather.load) await Weather.load(); if (my !== fxTok) return;
         const r = Weather.recipe(w), how = Weather.behaviour ? Weather.behaviour(w) : "full"; lastW = w; $full.prop("hidden", false);
