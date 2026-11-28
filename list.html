@@ -138,6 +138,22 @@ input.ok,textarea.ok{border-color:var(--good)!important;background:var(--good-so
 .dx{color:#9a3412}.dn{color:var(--muted);font-size:.82rem!important}.linkb{background:none;border:0;padding:0;font:inherit;font-weight:800;color:var(--accent);cursor:pointer}
 </style>
 <script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261128e"></script><script src="js/icons.js?v=20261128e"></script><script src="js/app.js?v=20261128e"></script><script src="js/sets.js?v=20261128u"></script><script src="js/lang.js?v=20261128k"></script><script src="js/syn.js?v=20261128f"></script><script src="js/weather.js?v=20261128w"></script><script src="js/fx.js?v=20261128v"></script><script src="js/speak.js?v=20261128e"></script><script src="js/eggs.js?v=20261128e"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261128x"></script><script src="js/tense.js?v=20261128e"></script><script src="js/views.js?v=20261128e"></script>
+<style>
+.pmx-wrap{margin-top:16px}.pmx-wrap h3{margin:0 0 4px;font:800 1.3rem var(--f-display)}.pmx-wrap .hint{margin:0 0 12px}
+.pmx-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+.mcard{--k:0;background:linear-gradient(160deg,var(--c1),var(--c2));border-radius:22px;padding:12px 14px 14px;box-shadow:0 6px 18px #0002;border:3px solid #fff8;display:grid;gap:8px;transition:box-shadow .3s}
+.mcard.open{grid-column:1/-1}.mcard:hover{box-shadow:0 10px 24px #0003}
+.mc-top{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}.mc-name{font:900 1.25rem var(--f-display);color:#1f2937}.mc-sub{font:700 .78rem var(--f-body);color:#1f2937aa}
+.mc-stage{height:104px;border-radius:16px;background:#ffffff66;display:grid;place-items:center;overflow:hidden}
+.mc-big{font-size:3.6rem;line-height:1;display:block}.mc-big.pop{animation:mcpop .7s cubic-bezier(.2,1.6,.4,1)}
+@keyframes mcpop{0%{transform:scale(.2) rotate(-25deg);opacity:0}60%{transform:scale(1.25) rotate(8deg);opacity:1}100%{transform:scale(1) rotate(0)}}
+.mc-rail{display:flex;justify-content:space-between;align-items:center;background:#ffffff80;border-radius:999px;padding:4px 10px}
+.mc-dot{font-size:1.15rem;opacity:.45;filter:grayscale(.6);transition:transform .35s,opacity .35s,filter .35s}.mc-dot.on{opacity:1;filter:none;transform:scale(1.55) translateY(-1px)}
+.mc-ends{display:flex;justify-content:space-between;align-items:center;font:800 .8rem var(--f-body);color:#1f2937}.mc-arrow{opacity:.5}
+.mc-btns{display:flex;gap:6px;flex-wrap:wrap}.mc-btn{border:2px solid #fff;background:#fffc;border-radius:999px;padding:6px 12px;font:800 .85rem var(--f-body);cursor:pointer;color:#1e3a8a;transition:transform .15s}.mc-btn:hover{transform:translateY(-2px) scale(1.04)}.mc-btn.on{background:#1e40af;color:#fff}
+.mcard .pmeter{margin-top:6px;background:#fffd;border-radius:16px;padding:6px}
+@media (prefers-reduced-motion:reduce){.mc-big.pop{animation:none}}
+</style>
 </head><body>
 <div class="wrap" style="max-width:1180px">
   <div class="head2">
@@ -388,6 +404,12 @@ function card(i,view){const v=D[i], hid=wordHidden(i);
     <td>${meanHTML(i,v)}${idiomHTML(i,v)}${exploreHTML(i,v)}${coverBtns(i)}</td>${SHOW.tr&&D.some(x=>x.ar||x.trs&&Object.keys(x.trs).length)?`<td class="trs">${S(i).cm&&!S(i).mrev?"":(trLines(i,v)||esc(v.ar))}</td>`:""}<td>${unitTag(v)}</td></tr>`;}
 function visible(){const q=$("q").value.trim().toLowerCase();
   return ORDER.filter(i=>{const v=D[i];return UP.match(v)&&GP.match(v)&&(!q||(v.w+" "+v.d+" "+v.ar+" "+(v.lit||"")+" "+(v.eq||"")).toLowerCase().includes(q));});}
+const PM_ART={rain:{e:["🌤️","🌦️","🌧️","⛈️","🌊"],c:["#e0f2fe","#93c5fd"]},"rain · how long":{e:["💧","🌦️","🌧️","☔","🌊"],c:["#e0f2fe","#a5b4fc"]},wind:{e:["🌪️","💨","🌬️","🍃"],c:["#ecfccb","#86efac"]},storm:{e:["🌀","⛈️","🌩️","🌦️"],c:["#e0e7ff","#a78bfa"]},sun:{e:["🌥️","⛅","🌤️","☀️","🥵"],c:["#fef9c3","#fdba74"]},snow:{e:["❄️","🌨️","☃️","🏔️"],c:["#f0f9ff","#bae6fd"]},noise:{e:["📢","🔊","🔉","🔈","🤫"],c:["#fce7f3","#f9a8d4"]},temperature:{e:["🥶","🧣","😌","😎","🥵","🌋"],c:["#bfdbfe","#fecaca"]}};
+function pmArt(g,emoji){const k=/how long/.test(g)?"rain · how long":g.split(" · ")[0].toLowerCase();return PM_ART[k]||{e:[emoji||"🎚️","✨","🌟"],c:["#ede9fe","#c4b5fd"]};}
+let PM_T=0;function pmAnimate(){clearInterval(PM_T);if(window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches)return;let tick=0;
+  PM_T=setInterval(()=>{const st=document.querySelectorAll(".mc-stage");if(!st.length){clearInterval(PM_T);return;}tick++;
+    st.forEach(el=>{const a=el.dataset.art.split("|"),n=a.length,cyc=n*2-2,p=(tick+(el.parentElement.dataset.off|0))%cyc,k=p<n?p:cyc-p,big=el.firstElementChild;if(big.textContent!==a[k]){big.textContent=a[k];big.classList.remove("pop");void big.offsetWidth;big.classList.add("pop");}
+      el.parentElement.querySelectorAll(".mc-dot").forEach((d,q)=>d.classList.toggle("on",q===k));el.parentElement.style.setProperty("--k",k/(n-1));});},1300);}
 function render(){const L=visible();
   $("count").textContent=L.length+(L.length===1?" word":" words");
   if(!L.length){$("out").innerHTML='<div class="card empty-l">No words match.</div>';score();return;}
@@ -399,8 +421,15 @@ function render(){const L=visible();
   Sets.mountMeters($("out"),secs,{follow:vo.follow,start:METER_AT,onLevel:(t,r)=>{METER_AT[t]=r;}});
   // 🌡️ meters of word partners (Temperature, Rain, Sun…) live on their word: list them here too when the Meters view is open
   if(GP.state().kind==="scale"){const rows=[];ORDER.filter(i=>UP.match(D[i])).forEach(i=>{const v=D[i],P=v.wid&&PARTNERS.get(v.wid);if(!P)return;Sets.partnerScales(P.own).filter(x=>x.items.length>1).forEach((x,n)=>rows.push([i,n,x]));});
-    if(rows.length){const KLX={adjective:"adjectives",adverb:"adverbs",idiom:"idioms",verb:"verbs",noun:"nouns",preposition:"little words"},by=new Map();rows.forEach(r=>{if(!by.has(r[2].g))by.set(r[2].g,[]);by.get(r[2].g).push(r);});
-      $("out").insertAdjacentHTML("beforeend",`<div class="card" style="margin-top:12px"><h3 style="margin:0 0 8px">🎚️ Word-partner meters</h3><p class="hint" style="margin:0 0 8px">Words that go with a word, from weakest to strongest. Pick a word type to open its meter.</p>${[...by].map(([g,rs])=>`<div class="pr" style="margin:6px 0"><span class="pk"><b>${esc(D[rs[0][0]].emoji||"🎚️")} ${esc(g)}</b></span>${rs.map(([i,n,x])=>`<button type="button" class="pc pmb" data-pmx="${i}|${n}">${KLX[x.kind]||x.kind}</button>`).join("")}</div>${rs.map(([i,n])=>`<div class="pmeter" id="pmx-${i}-${n}" hidden></div>`).join("")}`).join("")}</div>`);}}
+    if(rows.length){const KLX={adjective:["🎨","adjectives"],adverb:["🏃","adverbs"],idiom:["💬","idioms"],verb:["⚡","verbs"],noun:["📦","nouns"],preposition:["🔗","little words"]},by=new Map();rows.forEach(r=>{if(!by.has(r[2].g))by.set(r[2].g,[]);by.get(r[2].g).push(r);});
+      const ART=pmArt;
+      $("out").insertAdjacentHTML("beforeend",`<div class="pmx-wrap"><h3>🎚️ Word-partner meters</h3><p class="hint">Watch the picture change from one condition to the next, then pick a word type to play with the meter.</p><div class="pmx-grid">${[...by].map(([g,rs],qi)=>{const a=ART(g,D[rs[0][0]].emoji),ends=g.replace(/^[^·]*·\s*(how long\s*·\s*)?/,"").split(/\s*(?:→|⇄)\s*/);
+        return `<div class="mcard" data-off="${qi}" style="--c1:${a.c[0]};--c2:${a.c[1]}"><div class="mc-top"><span class="mc-name">${esc(g.split(" · ")[0])}</span><span class="mc-sub">${esc(g.split(" · ").slice(1).join(" · "))}</span></div>
+        <div class="mc-stage" data-art="${esc(a.e.join("|"))}"><span class="mc-big">${a.e[0]}</span></div>
+        <div class="mc-rail">${a.e.map((x,k)=>`<span class="mc-dot${k?"":" on"}">${x}</span>`).join("")}</div>
+        <div class="mc-ends"><span>${esc(ends[0]||"")}</span><span class="mc-arrow">➜</span><span>${esc(ends[1]||"")}</span></div>
+        <div class="mc-btns">${rs.map(([i,n,x])=>`<button type="button" class="mc-btn" data-pmx="${i}|${n}">${(KLX[x.kind]||["🎚️",x.kind])[0]} ${(KLX[x.kind]||["",x.kind])[1]}</button>`).join("")}</div>
+        ${rs.map(([i,n])=>`<div class="pmeter" id="pmx-${i}-${n}" hidden></div>`).join("")}</div>`;}).join("")}</div></div>`);pmAnimate();}}
   score();}
 function rerender(i,focus){const all=$("out").querySelectorAll(`[data-i="${i}"]`),el=all[0];if(!el||all.length>1){render();return;}
   const t=document.createElement(VIEW==="list"?"tbody":"div");t.innerHTML=card(i,VIEW);const n=t.firstElementChild;el.replaceWith(n);score();
@@ -424,7 +453,7 @@ $("out").addEventListener("click",e=>{const b=e.target.closest("[data-pw]");if(!
 $("out").addEventListener("click",e=>{const b=e.target.closest("[data-pm]");if(!b)return;const [i,n]=b.dataset.pm.split("|").map(Number),el=$(`pm-${i}-${n}`);if(!el)return;
   el.hidden=!el.hidden;b.textContent=el.hidden?"🎚️ Open meter":"✕ Close meter";if(!el.hidden&&!el.dataset.on){el.dataset.on=1;const v=D[i],sc=Sets.partnerScales(PARTNERS.get(v.wid).own).filter(s=>s.items.length>1)[n];Sets.mountPartnerMeter(el,sc,{emoji:v.emoji});}});
 $("out").addEventListener("click",e=>{const b=e.target.closest("[data-pmx]");if(!b)return;const [i,n]=b.dataset.pmx.split("|").map(Number),el=$(`pmx-${i}-${n}`);if(!el)return;
-  el.hidden=!el.hidden;if(!el.hidden&&!el.dataset.on){el.dataset.on=1;const v=D[i],sc=Sets.partnerScales(PARTNERS.get(v.wid).own).filter(x=>x.items.length>1)[n];Sets.mountPartnerMeter(el,sc,{emoji:v.emoji});}});
+  if(el.hidden&&el.closest(".mcard"))el.closest(".mcard").querySelectorAll(".pmeter").forEach(x=>{if(x!==el)x.hidden=true;});el.hidden=!el.hidden;{const c=el.closest(".mcard");if(c){const any=[...c.querySelectorAll(".pmeter")].some(x=>!x.hidden);c.classList.toggle("open",any);c.querySelectorAll(".mc-btn").forEach(x=>x.classList.toggle("on",x===b&&!el.hidden));}}if(!el.hidden&&!el.dataset.on){el.dataset.on=1;const v=D[i],sc=Sets.partnerScales(PARTNERS.get(v.wid).own).filter(x=>x.items.length>1)[n];Sets.mountPartnerMeter(el,sc,{emoji:v.emoji});}});
 $("out").addEventListener("click",e=>{const mc=e.target.closest("[data-mic]");if(mc){const [c,i]=mc.dataset.mic.split("|");Lang.listen(D[+i],c);return;}const hl=e.target.closest("[data-hearlang]");if(hl){const [c,i]=hl.dataset.hearlang.split("|");Lang.say(D[+i],c);return;}
   const b=e.target.closest("[data-hear],[data-check],[data-giveup],[data-again],[data-mshow],[data-self],[data-cw],[data-cm]");if(!b)return;
   if(b.dataset.hear!==undefined){hear(+b.dataset.hear);return;}
