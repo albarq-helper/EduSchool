@@ -203,7 +203,7 @@
     let lastW = null, fxTok = 0;
     const fxLab = h => $m.find("[data-fxbox] .fxl").html(h);
     // a phrase on a meter (hot temperature, heavy rain) plays the scene of the longest part of it that has one
-    const fxKey = w => { if (!w || !window.Weather) return null; if (Weather.recipe(w)) return w; const t = String(w).toLowerCase().replace(/[^\p{L}' ]/gu, " ").split(/\s+/).filter(Boolean);
+    const fxKey = w => { if (!w || !window.Weather) return null; if (Weather.recipe(w)) return w; const t = String(w).toLowerCase().replace(/[^\p{L}' ]/gu, " ").split(/\s+/).filter(Boolean); if (t.length > 1 && Weather.recipe(t[t.length - 1])) return t[t.length - 1];
       for (let n = t.length - 1; n >= 1; n--) for (let a = 0; a + n <= t.length; a++) { const k = t.slice(a, a + n).join(" "); if (Weather.recipe(k)) return k; } return null; };
     function playLevel(l) { if (!window.Weather || !fxOn() || (Weather.mode && Weather.mode() === "off")) return; clearTimeout(fxTimer);
       fxTimer = setTimeout(async () => { const my = ++fxTok, box = $m.find("[data-fxbox]")[0], $full = $m.find("[data-fxfull]");

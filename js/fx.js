@@ -1041,5 +1041,103 @@
         say(ctx, "A test? Easy!", R.x + R.w * .24, gy - u * 3.1, Math.max(13, u * .5), T > 3200 && T < 5000 ? 1 : 0);
         say(ctx, "That's a piece of cake!", cx, gy - u * 4.8, Math.max(14, u * .6), T > 4000 ? 1 : 0); } } });
 
+  // 🌡️ HOT STREET: a barefoot kid on the street; the thermometer decides how it feels (drag it!). Whole screen = full game, meter box = the kid at that level.
+  let streetD = 21;
+  Weather.add("temperature,thermometer,degrees,celsius,fahrenheit", { e: "🌡️", name: "Hot street", dur: 70000, track: 1, capture: 1, top: 1 }, A => {
+    const clamp = (v, a, b) => Math.max(a, Math.min(b, v)), lerp = (a, b, k) => a + (b - a) * k, O = "#1f2937";
+    const mix = (c1, c2, k) => `rgb(${[0, 1, 2].map(i => Math.round(lerp(c1[i], c2[i], clamp(k, 0, 1)))).join(",")})`;
+    const mixA = (c1, c2, k) => [0, 1, 2].map(i => lerp(c1[i], c2[i], clamp(k, 0, 1)));
+    const rr = (ctx, x, y, w, h, r) => { ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x, y, w, h, r) : ctx.rect(x, y, w, h); };
+    const boxed = !!A.boxed, o = A.opts || {};
+    const TD = [-12, -3, 6, 11, 16, 21, 25, 28, 36, 44, 54], rankD = r => { r = clamp(+r || 0, -5, 5); const i = Math.min(9, Math.floor(r + 5)), f = r + 5 - i; return lerp(TD[i], TD[i + 1], f); };
+    const STATES = [[0, "Freezing", "🥶", "Brrr… I'm freezing!"], [10, "Chilly", "🧣", "Brr, it's a bit cold"], [20, "Cool", "😌", "Nice and cool"], [28, "Warm", "😎", "What a lovely day!"], [38, "Hot", "🥵", "Phew… so hot!"], [48, "Scorching", "🔥", "Ouch! Ouch! My feet!"], [999, "BOILING", "🌋", "TOO HOT!!!"]];
+    const stOf = x => STATES.find(z => x < z[0]);
+    const SKY_T = [[186, 205, 230], [96, 190, 250], [253, 186, 116], [239, 68, 68]], SKY_B = [[235, 242, 250], [190, 235, 255], [254, 215, 170], [252, 165, 130]];
+    const sky = (A4, d) => d < 18 ? mix(A4[0], A4[1], (d + 15) / 33) : d < 38 ? mix(A4[1], A4[2], (d - 18) / 20) : mix(A4[2], A4[3], (d - 38) / 18);
+    let d = boxed ? streetD : -14, target = boxed ? rankD(o.rank) : null, auto = !boxed, drag = 0, last = null, ph = 0, aT = 0, lay = null, touched = false;
+    A.setChip(boxed ? "" : "🌡️ drag the thermometer: how does the barefoot kid feel?");
+    const layout = () => { const W = A.W(), H = A.H();
+      if (boxed) return { cx: 0, cy: 0, cw: W, ch: H, sx: 0, sy: 0, sw: W, sh: H };
+      const cw = Math.min(W - 20, 660), ch = Math.min(H - 20, 480), cx = (W - cw) / 2, cy = (H - ch) / 2, th = 84;
+      return { cx, cy, cw, ch, sx: cx, sy: cy, sw: cw, sh: ch - th, bx0: cx + 64, bx1: cx + cw - 64, by: cy + ch - 36 }; };
+    const thermo = () => ({ tx: lay.sx + lay.sw - 30, y0: lay.sy + 52, y1: lay.sy + lay.sh * .72 });
+    const dOfX = x => -15 + 70 * clamp((x - lay.bx0) / (lay.bx1 - lay.bx0), 0, 1);
+    const dOfY = y => { const T = thermo(); return -15 + 70 * clamp((T.y1 - y) / (T.y1 - T.y0), 0, 1); };
+    const onBar = (x, y) => lay && !boxed && y > lay.by - 30 && y < lay.by + 30 && x > lay.bx0 - 18 && x < lay.bx1 + 18;
+    const onTh = (x, y) => { if (!lay || boxed) return false; const T = thermo(); return Math.abs(x - T.tx) < 26 && y > T.y0 - 12 && y < T.y1 + 12; };
+    const onAgain = (x, y) => lay && !boxed && x > lay.cx + lay.cw - 96 && x < lay.cx + lay.cw - 8 && y > lay.cy + 8 && y < lay.cy + 40;
+    return {
+      down(x, y) { if (boxed) return; if (onAgain(x, y)) { auto = true; aT = 0; d = -14; touched = false; return; } if (onBar(x, y)) { drag = 1; auto = false; touched = true; d = dOfX(x); } else if (onTh(x, y)) { drag = 2; auto = false; touched = true; d = dOfY(y); } },
+      move(x, y) { if (drag === 1) d = dOfX(x); else if (drag === 2) d = dOfY(y); },
+      up() { drag = 0; },
+      stop() { if (boxed) streetD = d; },
+      frame(t, life, fade) { const { ctx } = A, W = A.W(), H = A.H(); ctx.globalAlpha = life > .85 ? fade : 1; const dt = last == null ? 16 : Math.min(60, t - last); last = t; lay = layout();
+        if (boxed) { if (target != null) d += (target - d) * Math.min(1, dt / 260); } else if (auto) { aT += dt; const k = clamp(aT / 20000, 0, 1); d = lerp(-14, 56, k * k * (3 - 2 * k)); if (k >= 1) auto = false; }
+        const { sx, sy, sw, sh } = lay, hot = clamp((d - 24) / 32, 0, 1), cold = clamp((6 - d) / 20, 0, 1), k01 = clamp((d + 15) / 70, 0, 1), st = stOf(d);
+        if (!boxed) { ctx.fillStyle = "rgba(15,23,42,.55)"; ctx.fillRect(0, 0, W, H); }
+        ctx.save(); ctx.beginPath(); if (boxed) ctx.rect(0, 0, W, H); else { rr(ctx, lay.cx, lay.cy, lay.cw, lay.ch, 22); } ctx.clip();
+        // sky
+        const g = ctx.createLinearGradient(0, sy, 0, sy + sh); g.addColorStop(0, sky(SKY_T, d)); g.addColorStop(1, sky(SKY_B, d)); ctx.fillStyle = g; ctx.fillRect(lay.cx, lay.cy, lay.cw, lay.ch);
+        const gy = sy + sh * .8, u = Math.min(sw / 8.5, sh / 5), sunX = sx + sw * .2, sunY = sy + sh * .27;
+        if (d < 8) { em(ctx, "☁️", sunX, sunY, u * 1.3); em(ctx, "☁️", sunX + u * 1.4, sunY + u * .35, u * .9);
+          const n = Math.round(34 * cold); for (let i = 0; i < n; i++) { const fx = sx + ((i * 97) % 1000) / 1000 * sw + Math.sin(t / 700 + i) * 6, fy = sy + ((i * 53 % 400) + t * .035 * (1 + i % 3)) % (gy - sy); ctx.fillStyle = "rgba(255,255,255,.92)"; ctx.beginPath(); ctx.arc(fx, fy, 1.6 + (i % 3), 0, 7); ctx.fill(); } }
+        if (d > 4) { const a = clamp((d - 4) / 12, 0, 1), r = u * (.42 + .75 * clamp(d / 55, 0, 1)); ctx.save(); ctx.globalAlpha *= a;
+          const gl = ctx.createRadialGradient(sunX, sunY, r * .3, sunX, sunY, r * (2.2 + hot * 2.4)); gl.addColorStop(0, `rgba(255,${Math.round(210 - hot * 110)},60,${.55 + hot * .25})`); gl.addColorStop(1, "rgba(255,200,60,0)"); ctx.fillStyle = gl; ctx.beginPath(); ctx.arc(sunX, sunY, r * (2.2 + hot * 2.4), 0, 7); ctx.fill();
+          ctx.strokeStyle = mix([253, 224, 71], [239, 68, 68], hot); ctx.lineWidth = Math.max(3, r * .13); ctx.lineCap = "round"; for (let i = 0; i < 12; i++) { const an = i / 12 * 6.283 + t / 1800; ctx.beginPath(); ctx.moveTo(sunX + Math.cos(an) * r * 1.2, sunY + Math.sin(an) * r * 1.2); ctx.lineTo(sunX + Math.cos(an) * r * (1.5 + .35 * Math.sin(t / 250 + i)), sunY + Math.sin(an) * r * (1.5 + .35 * Math.sin(t / 250 + i))); ctx.stroke(); }
+          ctx.fillStyle = mix([253, 224, 71], [239, 68, 68], hot); ctx.beginPath(); ctx.arc(sunX, sunY, r, 0, 7); ctx.fill(); ctx.restore(); }
+        // street
+        ctx.fillStyle = mix([107, 114, 128], [185, 28, 28], (d - 34) / 20); ctx.fillRect(lay.cx, gy, lay.cw, sy + sh - gy + 1);
+        if (cold > .05) { ctx.fillStyle = `rgba(255,255,255,${cold * .75})`; ctx.fillRect(lay.cx, gy, lay.cw, 7 + cold * 9); for (let i = 0; i < 6; i++) { ctx.beginPath(); ctx.ellipse(sx + (i + .5) / 6 * sw, gy + 4, u * .55, 5 + cold * 6, 0, 0, 7); ctx.fill(); } }
+        const spd = d < 0 ? .5 : d < 25 ? .9 + d / 25 * .3 : 1.2 + hot * 3.6; ph += dt * spd * .006;
+        ctx.fillStyle = "rgba(255,255,255,.55)"; for (let i = -1; i < 9; i++) { const dx = lay.cx + ((i * 70 - ph * 55) % (70 * 9) + 70 * 9) % (70 * 9) - 40; ctx.fillRect(dx, gy + (sy + sh - gy) * .55, 34, 5); }
+        if (hot > .22) for (let j = 0; j < 6; j++) { ctx.strokeStyle = `rgba(255,255,255,${.3 * hot})`; ctx.lineWidth = 2; ctx.beginPath(); for (let x = 0; x <= sw; x += 12) { const yy = gy - 6 - j * 9 + Math.sin(x / 18 + t / 180 + j) * 3 * hot; x ? ctx.lineTo(sx + x, yy) : ctx.moveTo(sx + x, yy); } ctx.stroke(); }
+        if (d > 46) for (let i = 0; i < 7; i++) em(ctx, "🔥", sx + (i + .5) / 7 * sw, gy + 6 + Math.sin(t / 130 + i * 2) * 3, u * .5 + 4);
+        // the kid
+        const kx0 = sx + sw * .5, shake = cold > .15 ? Math.sin(t / 32) * cold * 2.4 : 0, kx = kx0 + shake, fy0 = gy + u * .3, L = u * 1.05;
+        const hop = d > 38 ? clamp((d - 38) / 14, 0, 1) * u * .5 * Math.abs(Math.sin(ph * 1.0)) : 0, hipY = fy0 - L - hop, shY = hipY - u * .95, headR = u * .4, headY = shY - headR * 1.15;
+        const skinB = [242, 201, 160], skin = hot > 0 ? mix(skinB, [239, 68, 68], hot * 1.15) : mix(skinB, [147, 197, 253], cold), shirt = "#22c55e", shorts = "#3b82f6";
+        ctx.lineCap = "round"; ctx.lineJoin = "round";
+        const stride = (.3 + .25 * Math.min(1, spd / 2)) * u, lift = (.12 + hot * .5) * u; const feet = [];
+        [-1, 1].forEach(sd => { const a = ph + (sd > 0 ? 0 : Math.PI), fx = kx + sd * .12 * u + Math.sin(a) * stride, fyy = fy0 - Math.max(0, Math.cos(a)) * lift - hop * .3, hx = kx + sd * .12 * u;
+          feet.push([fx, fyy, Math.cos(a) <= .15]); ctx.strokeStyle = skin; ctx.lineWidth = u * .17; ctx.beginPath(); ctx.moveTo(hx, hipY); ctx.lineTo((hx + fx) / 2 + (sd > 0 ? 1 : -1) * 0 + u * .09 * Math.cos(a), (hipY + fyy) / 2); ctx.lineTo(fx, fyy - u * .04); ctx.stroke();
+          ctx.fillStyle = skin; ctx.beginPath(); ctx.ellipse(fx + u * .08, fyy, u * .15, u * .065, 0, 0, 7); ctx.fill(); });
+        feet.forEach(([fx, fyy, down]) => { if (down && d > 40) { ctx.fillStyle = `rgba(251,146,60,${.5 * hot})`; ctx.beginPath(); ctx.ellipse(fx + u * .08, fyy + 3, u * .26, u * .1, 0, 0, 7); ctx.fill(); if (d > 46) em(ctx, "♨️", fx + u * .1, fyy - u * .3 - ((t / 14) % 30), u * .3); } });
+        ctx.fillStyle = shorts; rr(ctx, kx - u * .27, hipY - u * .26, u * .54, u * .3, u * .08); ctx.fill();
+        ctx.fillStyle = shirt; rr(ctx, kx - u * .27, shY, u * .54, hipY - shY - u * .08, u * .12); ctx.fill();
+        // arms
+        const arm = (sd, hx, hy) => { ctx.strokeStyle = skin; ctx.lineWidth = u * .13; ctx.beginPath(); ctx.moveTo(kx + sd * u * .27, shY + u * .1); ctx.lineTo(hx, hy); ctx.stroke(); ctx.fillStyle = skin; ctx.beginPath(); ctx.arc(hx, hy, u * .075, 0, 7); ctx.fill(); };
+        if (cold > .3) { arm(-1, kx + u * .12, shY + u * .45); arm(1, kx - u * .12, shY + u * .5); }
+        else { const sw1 = Math.sin(ph) * .35 * u; arm(-1, kx - u * .42 + sw1, shY + u * .75); if (hot > .45) arm(1, kx + u * .5 + Math.sin(t / 90) * u * .12, headY + u * .12 + Math.sin(t / 90) * u * .1); else arm(1, kx + u * .42 - sw1, shY + u * .75); }
+        // head
+        ctx.fillStyle = skin; ctx.strokeStyle = O; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(kx, headY, headR, 0, 7); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = "#3b2a1a"; ctx.beginPath(); ctx.arc(kx, headY - headR * .08, headR * 1.04, Math.PI * 1.05, Math.PI * 1.95); ctx.fill();
+        const ln = (pts, w) => { ctx.strokeStyle = O; ctx.lineWidth = w || 2; ctx.beginPath(); pts.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.stroke(); }, dot = (x, y, r, c) => { ctx.fillStyle = c || O; ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill(); };
+        const ex = headR * .42, ey = headY - headR * .02;
+        if (d < 8) { ln([[kx - ex - 5, ey], [kx - ex + 5, ey + 3]]); ln([[kx + ex - 5, ey + 3], [kx + ex + 5, ey]]); dot(kx, headY + headR * .2, headR * .1, "#f87171"); ln([[kx - 8, headY + headR * .55], [kx - 3, headY + headR * .5], [kx + 3, headY + headR * .6], [kx + 8, headY + headR * .5]]);
+          ctx.globalAlpha *= .8; em(ctx, "💨", kx + headR * 1.5 + ((t / 25) % 14), headY + headR * .6 - ((t / 40) % 10), u * .32); ctx.globalAlpha /= .8; }
+        else if (d < 28) { dot(kx - ex, ey, 3); dot(kx + ex, ey, 3); ctx.strokeStyle = O; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(kx, headY + headR * .28, headR * .35, .2, Math.PI - .2); ctx.stroke(); }
+        else if (d < 40) { dot(kx - ex, ey, 3); dot(kx + ex, ey, 3); ctx.fillStyle = "#7f1d1d"; ctx.beginPath(); ctx.ellipse(kx, headY + headR * .45, headR * .2, headR * .17 + Math.sin(t / 150) * 1.5, 0, 0, 7); ctx.fill(); }
+        else { ln([[kx - ex - 6, ey - 4], [kx - ex + 2, ey], [kx - ex - 6, ey + 4]]); ln([[kx + ex + 6, ey - 4], [kx + ex - 2, ey], [kx + ex + 6, ey + 4]]); ctx.fillStyle = "#7f1d1d"; ctx.strokeStyle = O; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.ellipse(kx, headY + headR * .5, headR * .3, headR * .3 + Math.sin(t / 90) * 2, 0, 0, 7); ctx.fill(); ctx.stroke(); dot(kx, headY + headR * .62, headR * .14, "#f87171"); }
+        if (d > 29) { const n = 1 + Math.round(hot * 4); for (let i = 0; i < n; i++) { const px = kx + (i % 2 ? 1 : -1) * (headR * (.7 + (i % 3) * .12)), py = headY - headR * .6 + ((t / 9 + i * 37) % (headR * 2.3)); ctx.fillStyle = "rgba(96,200,250,.95)"; ctx.beginPath(); ctx.arc(px, py, 2.6 + hot * 1.6, 0, 7); ctx.fill(); } }
+        if (d > 46) for (let i = 0; i < 4; i++) { const pp = ((t / 12 + i * 24) % 96) / 96; ctx.fillStyle = `rgba(255,255,255,${.7 * (1 - pp)})`; ctx.beginPath(); ctx.arc(kx + Math.sin(i * 2 + t / 300) * headR * .6, headY - headR - pp * u * 1.2, headR * (.28 + pp * .3), 0, 7); ctx.fill(); }
+        idiomBox = { x: sx, y: sy, w: sw }; say(ctx, st[3], kx, headY - headR - u * .9, Math.max(12, u * .36), 1);
+        // pills + thermometer
+        const pill = (txt, x, y, size, bg, color) => { ctx.save(); ctx.font = `800 ${size}px system-ui`; const w = ctx.measureText(txt).width + size * 1.1; ctx.fillStyle = bg; rr(ctx, x, y, w, size * 1.8, size * .9); ctx.fill(); ctx.fillStyle = color || O; ctx.textAlign = "left"; ctx.textBaseline = "middle"; ctx.fillText(txt, x + size * .55, y + size * .9); ctx.restore(); return w; };
+        pill(`${st[2]} ${st[1]}`, sx + 10, sy + 10, Math.max(13, Math.min(17, sw / 26)), "rgba(255,255,255,.9)");
+        const T = thermo(), tw = 15; ctx.fillStyle = "rgba(255,255,255,.92)"; rr(ctx, T.tx - tw / 2, T.y0, tw, T.y1 - T.y0, tw / 2); ctx.fill(); ctx.strokeStyle = O; ctx.lineWidth = 2; ctx.stroke();
+        const mh = (T.y1 - T.y0) * k01, mc = mix([59, 130, 246], [239, 68, 68], k01); ctx.fillStyle = mc; rr(ctx, T.tx - tw / 2 + 3, T.y1 - mh, tw - 6, mh + 4, 5); ctx.fill(); ctx.beginPath(); ctx.arc(T.tx, T.y1 + 10, 14, 0, 7); ctx.fill(); ctx.strokeStyle = O; ctx.stroke();
+        ctx.fillStyle = O; ctx.font = "800 15px system-ui"; ctx.textAlign = "center"; ctx.textBaseline = "alphabetic"; ctx.fillText(`${Math.round(d)}°C`, T.tx, T.y0 - 10);
+        if (!boxed) { if (!touched && !auto) pill("👆 Drag the thermometer or the slider", sx + sw / 2 - 130, sy + sh - 34, 13, "rgba(255,255,255,.92)");
+          // slider
+          const bx0 = lay.bx0, bx1 = lay.bx1, by = lay.by; ctx.fillStyle = "rgba(255,255,255,.55)"; ctx.fillRect(lay.cx, sy + sh, lay.cw, lay.ch - sh);
+          const tg = ctx.createLinearGradient(bx0, 0, bx1, 0); tg.addColorStop(0, "#60a5fa"); tg.addColorStop(.35, "#67e8f9"); tg.addColorStop(.55, "#fde047"); tg.addColorStop(.8, "#fb923c"); tg.addColorStop(1, "#dc2626");
+          ctx.fillStyle = tg; rr(ctx, bx0, by - 8, bx1 - bx0, 16, 8); ctx.fill(); ctx.strokeStyle = O; ctx.lineWidth = 2; ctx.stroke(); em(ctx, "🥶", bx0 - 28, by, 28); em(ctx, "🌋", bx1 + 28, by, 28);
+          const kxn = bx0 + (bx1 - bx0) * k01; ctx.fillStyle = "#fff"; ctx.strokeStyle = O; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(kxn, by, 16, 0, 7); ctx.fill(); ctx.stroke(); em(ctx, "🌡️", kxn, by + 1, 20);
+          ctx.fillStyle = O; ctx.font = "800 14px system-ui"; ctx.textAlign = "center"; ctx.fillText(`${st[2]} ${st[1]} · ${Math.round(d)}°C`, kxn, by - 22);
+          pill("↻ Again", lay.cx + lay.cw - 90, lay.cy + 10, 14, "#fff"); }
+        ctx.restore(); if (!boxed) { ctx.strokeStyle = "rgba(31,41,55,.55)"; ctx.lineWidth = 3; rr(ctx, lay.cx, lay.cy, lay.cw, lay.ch, 22); ctx.stroke(); }
+        A.setChip(`${st[2]} ${st[1]} · ${Math.round(d)}°C`); } };
+  });
+
   Weather.rescan();
 })();
