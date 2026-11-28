@@ -843,7 +843,7 @@
       move(x, y) { if (drag) h = hOfX(x); },
       up() { drag = false; },
       stop() { if (boxed) hungerH = h; },
-      frame(t) { const { ctx } = A, W = A.W(), H = A.H(); if (startT == null) startT = t; const dt = last == null ? 16 : Math.min(60, t - last); last = t;
+      frame(t, life, fade) { const { ctx } = A, W = A.W(), H = A.H(); ctx.globalAlpha = life > .85 ? fade : 1; if (startT == null) startT = t; const dt = last == null ? 16 : Math.min(60, t - last); last = t;
         lay = layout();
         if (boxed) h += (target - h) * (1 - Math.exp(-dt / 380)); else if (playing && t - startT > 1200 && !drag) { h = Math.min(10, h + dt / 1000 * .62); if (h >= 10) playing = false; }
         [3.2, 5.5, 7.5, 8.8].forEach(k => { if (prevH < k && h >= k) growl(); }); if (prevH < 9.55 && h >= 9.55) A.boom(0); prevH = h;
@@ -903,7 +903,7 @@
         if (h) { if (h.id === "flip") { startFlip(t); return; } if (h.id === "again") { restart(t); return; }
           if (h.id.startsWith("q")) { if (st.pick != null && st.pick === +h.id[1]) return; const k = +h.id[1]; if (k === meta.correct) { st.pick = k; st.solvedAt = t; st.phase = 4; A.chirp(0); for (let i = 0; i < 40; i++) st.bits.push({ x: R.x + R.w / 2, y: R.y + R.h * .55, vx: (Math.random() - .5) * 12, vy: -Math.random() * 11 - 3, c: ["#f43f5e", "#f59e0b", "#22c55e", "#3b82f6", "#a855f7", "#fde047"][i % 6], a: 1 }); } else { st.wrong = k + 1; st.wrongAt = t; A.noise(.18, .25, "band", 300, 200, 2); } return; } }
         if (st.phase === 0 && st.trig == null && scene.lit.tap && scene.lit.tap(x, y, R, t - st.t0, st.sc, A)) st.trig = t; },
-      frame(t) { const { ctx } = A, W = A.W(), H = A.H(); lastT = t; if (st.t0 == null) restart(t); R = card(); const T = t - st.t0; hits = [];
+      frame(t, life, fade) { const { ctx } = A, W = A.W(), H = A.H(); lastT = t; ctx.globalAlpha = life > .85 ? fade : 1; if (st.t0 == null) restart(t); R = card(); const T = t - st.t0; hits = [];
         ctx.fillStyle = "rgba(15,23,42,.55)"; ctx.fillRect(0, 0, W, H); ctx.save(); rrect(ctx, R.x, R.y, R.w, R.h, 22); ctx.clip();
         const body = { x: R.x, y: R.y, w: R.w, h: R.h - 54 };
         if (st.phase === 0 && st.trig == null && T > 6500 && scene.lit.tap && scene.lit.tap(null, null, R, T, st.sc, A)) st.trig = t;
