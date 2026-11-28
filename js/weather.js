@@ -43,6 +43,10 @@
   add("hail,hailstorm", { e: "🧊", name: "Hail", drops: ["🧊"], dropN: 3 });
   add("sun,sunny,sunshine,sunlight,warmth", { e: "☀️", name: "Sun", sun: 1 });
   add("scorching,sweltering,heatwave,boiling", { e: "🥵", name: "Heat", sun: 2, heat: 1 });
+  add("freezing,frozen,icy,frosty,cold as ice,chilled to the bone", { e: "🥶", name: "Freezing", snow: 2, tint: "rgba(120,170,255,.22)" });
+  add("chilly,chill,nippy", { e: "🧣", name: "Chilly", snow: 1, tint: "rgba(150,190,255,.14)" });
+  add("warm,balmy", { e: "🌤️", name: "Warm", sun: 1 });
+  add("hot,baking,hot as an oven", { e: "🔥", name: "Hot", sun: 2 });
   add("golden hour,sunset,sunrise", { e: "🌅", name: "Golden hour", sun: 1, tint: "rgba(255,150,40,.18)" });
   add("fog,foggy,mist,misty,haze,hazy", { e: "🌫️", name: "Fog", fog: 1 });
   add("night,midnight", { e: "🌙", name: "Night", night: 0.7, stars: 1 });
