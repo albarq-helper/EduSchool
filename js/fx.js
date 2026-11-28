@@ -906,7 +906,7 @@
         if (st.phase === 0 && st.trig == null && scene.lit.tap && scene.lit.tap(x, y, R, t - st.t0, st.sc, A)) st.trig = t; },
       frame(t, life, fade) { const { ctx } = A, W = A.W(), H = A.H(); lastT = t; ctx.globalAlpha = life > .85 ? fade : 1; if (st.t0 == null) restart(t); R = card(); const T = t - st.t0; hits = [];
         ctx.fillStyle = "rgba(15,23,42,.55)"; ctx.fillRect(0, 0, W, H); ctx.save(); rrect(ctx, R.x, R.y, R.w, R.h, 22); ctx.clip();
-        const body = { x: R.x, y: R.y, w: R.w, h: R.h - 54 };
+        const body = { x: R.x, y: R.y, w: R.w, h: R.h - 54 }; idiomBox = body;
         if (st.phase === 0 && st.trig == null && T > 6500 && scene.lit.tap && scene.lit.tap(null, null, R, T, st.sc, A)) st.trig = t;
         if (st.phase === 0 && st.trig != null && t - st.trig > 5200) startFlip(t);
         let showReal = st.phase >= 2;
@@ -938,7 +938,10 @@
   const kid = (ctx, e, x, y, size, a) => { if (a != null) ctx.globalAlpha *= a; em(ctx, e, x, y, size); if (a != null) ctx.globalAlpha /= a; };
   const bg = (ctx, R, c1, c2) => { const g = ctx.createLinearGradient(0, R.y, 0, R.y + R.h); g.addColorStop(0, c1); g.addColorStop(1, c2); ctx.fillStyle = g; ctx.fillRect(R.x, R.y, R.w, R.h); };
   const floor = (ctx, R, c) => { ctx.fillStyle = c; ctx.fillRect(R.x, R.y + R.h * .8, R.w, R.h * .2); };
-  const say = (ctx, txt, x, y, size, a) => { if (a <= 0) return; ctx.globalAlpha *= a; bubble(ctx, txt, x, y, size); ctx.globalAlpha /= a; };
+  let idiomBox = { x: 0, y: 0, w: 400 };   // the scene area, set every frame: speech bubbles are kept inside it (not under the label, not off the sides)
+  const say = (ctx, txt, x, y, size, a) => { if (a <= 0) return; ctx.save(); ctx.font = `800 ${size}px system-ui`; const need = ctx.measureText(txt).width + size * 1.2, room = idiomBox.w - 20; ctx.restore(); if (need > room) size = Math.max(10, size * room / need);
+    const half = (need > room ? room : need) / 2 + 4, bx = Math.max(idiomBox.x + half + 6, Math.min(idiomBox.x + idiomBox.w - half - 6, x)), by = Math.max(idiomBox.y + 46 + size * .9, y);
+    ctx.globalAlpha *= a; bubble(ctx, txt, bx, by, size); ctx.globalAlpha /= a; };
 
   // 🫘 SPILL THE BEANS
   idiomEgg("spill the beans,spilled the beans,spilling the beans", { e: "🫘", name: "Spill the beans", correct: 1, hint: "👆 Tap the jar!",
