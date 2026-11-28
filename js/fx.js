@@ -889,6 +889,7 @@
 
   // 😂 IDIOM EGGS: first the silly WORD-FOR-WORD version (tap it!), then a flip to what it REALLY means, then a one-question check
   //   and a rhyme to remember. Each idiom is { lit: {draw, tap}, real: {draw} }; the stage, flip, quiz and rhyme are shared.
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v)), ease = k => 1 - Math.pow(1 - clamp(k, 0, 1), 3), O = "#1f2937";
   const idiomEgg = (words, meta, scene) => Weather.add(words, { e: meta.e, name: meta.name, dur: 90000, track: 1, capture: 1, top: 1 }, A => {
     const clamp = (v, a, b) => Math.max(a, Math.min(b, v)), ease = k => 1 - Math.pow(1 - clamp(k, 0, 1), 3), O = "#1f2937";
     const st = { phase: 0, t0: null, trig: null, flipAt: null, realAt: null, pick: null, wrong: 0, wrongAt: 0, solvedAt: 0, bits: [] }; let hits = [], R = null, lastT = 0;
