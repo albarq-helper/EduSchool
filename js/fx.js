@@ -1043,7 +1043,7 @@
 
   // 🌡️ HOT STREET: a barefoot kid on the street; the thermometer decides how it feels (drag it!). Whole screen = full game, meter box = the kid at that level.
   let streetD = 21;
-  Weather.add("temperature,thermometer,degrees,celsius,fahrenheit", { e: "🌡️", name: "Hot street", dur: 70000, track: 1, capture: 1, top: 1 }, A => {
+  Weather.add("temperature,thermometer,degrees,celsius,fahrenheit,teeth chatter,chattering,shiver,shivering,goosebumps,get goosebumps,hug yourself,see your breath,flush,flushed,sweat,sweating,pant,panting,drip with sweat", { e: "🌡️", name: "Hot street", dur: 70000, track: 1, capture: 1, top: 1 }, A => {
     const clamp = (v, a, b) => Math.max(a, Math.min(b, v)), lerp = (a, b, k) => a + (b - a) * k, O = "#1f2937";
     const mix = (c1, c2, k) => `rgb(${[0, 1, 2].map(i => Math.round(lerp(c1[i], c2[i], clamp(k, 0, 1)))).join(",")})`;
     const mixA = (c1, c2, k) => [0, 1, 2].map(i => lerp(c1[i], c2[i], clamp(k, 0, 1)));
@@ -1054,6 +1054,10 @@
     const stOf = x => STATES.find(z => x < z[0]);
     const SKY_T = [[186, 205, 230], [96, 190, 250], [253, 186, 116], [239, 68, 68]], SKY_B = [[235, 242, 250], [190, 235, 255], [254, 215, 170], [252, 165, 130]];
     const sky = (A4, d) => d < 18 ? mix(A4[0], A4[1], (d + 15) / 33) : d < 38 ? mix(A4[1], A4[2], (d - 18) / 20) : mix(A4[2], A4[3], (d - 38) / 18);
+    // body reactions: [word, shown when, side of the man, where on the body, cold?]
+    const REACT = [["chattering", d => d < -4, -1, "mouth", 1], ["shivering", d => d < 3, 1, "body", 1], ["goosebumps", d => d < 9, -1, "arm", 1], ["hugging yourself", d => d < 6, 1, "hip", 1], ["see your breath", d => d < 11, 1, "head", 1],
+      ["flushed", d => d > 29 && d < 47, -1, "face", 0], ["sweating", d => d > 32, 1, "head", 0], ["fanning", d => d > 34 && d < 48, 1, "arm", 0], ["panting", d => d > 38, -1, "mouth", 0], ["hopping", d => d > 40, -1, "feet", 0], ["dripping", d => d > 47, 1, "hip", 0]];
+    let labels = [];
     let d = boxed ? streetD : -14, target = boxed ? rankD(o.rank) : null, auto = !boxed, drag = 0, last = null, ph = 0, aT = 0, lay = null, touched = false;
     A.setChip(boxed ? "" : "🌡️ drag the thermometer: how does the barefoot kid feel?");
     const layout = () => { const W = A.W(), H = A.H();
@@ -1067,7 +1071,7 @@
     const onTh = (x, y) => { if (!lay || boxed) return false; const T = thermo(); return Math.abs(x - T.tx) < 26 && y > T.y0 - 12 && y < T.y1 + 12; };
     const onAgain = (x, y) => lay && !boxed && x > lay.cx + lay.cw - 96 && x < lay.cx + lay.cw - 8 && y > lay.cy + 8 && y < lay.cy + 40;
     return {
-      down(x, y) { if (boxed) return; if (onAgain(x, y)) { auto = true; aT = 0; d = -14; touched = false; return; } if (onBar(x, y)) { drag = 1; auto = false; touched = true; d = dOfX(x); } else if (onTh(x, y)) { drag = 2; auto = false; touched = true; d = dOfY(y); } },
+      down(x, y) { if (boxed) return; const lb = labels.find(z => x >= z.x && x <= z.x + z.w && y >= z.y && y <= z.y + z.h); if (lb) { try { window.Sets && Sets.speak && Sets.speak(lb.word); } catch (e) {} lb.t = last; return; } if (onAgain(x, y)) { auto = true; aT = 0; d = -14; touched = false; return; } if (onBar(x, y)) { drag = 1; auto = false; touched = true; d = dOfX(x); } else if (onTh(x, y)) { drag = 2; auto = false; touched = true; d = dOfY(y); } },
       move(x, y) { if (drag === 1) d = dOfX(x); else if (drag === 2) d = dOfY(y); },
       up() { drag = 0; },
       stop() { if (boxed) streetD = d; },
@@ -1121,6 +1125,19 @@
         if (d > 29) { const n = 1 + Math.round(hot * 4); for (let i = 0; i < n; i++) { const px = kx + (i % 2 ? 1 : -1) * (headR * (.7 + (i % 3) * .12)), py = headY - headR * .6 + ((t / 9 + i * 37) % (headR * 2.3)); ctx.fillStyle = "rgba(96,200,250,.95)"; ctx.beginPath(); ctx.arc(px, py, 2.6 + hot * 1.6, 0, 7); ctx.fill(); } }
         if (d > 46) for (let i = 0; i < 4; i++) { const pp = ((t / 12 + i * 24) % 96) / 96; ctx.fillStyle = `rgba(255,255,255,${.7 * (1 - pp)})`; ctx.beginPath(); ctx.arc(kx + Math.sin(i * 2 + t / 300) * headR * .6, headY - headR - pp * u * 1.2, headR * (.28 + pp * .3), 0, 7); ctx.fill(); }
         idiomBox = { x: sx, y: sy, w: sw }; if (!boxed) say(ctx, st[3], kx, headY - headR - u * .9, Math.max(12, u * .36), 1);
+        // more body signs: bumps on the arm, chattering teeth, flushed cheeks
+        if (d < 9) { ctx.fillStyle = `rgba(147,197,253,${.9 * clamp((9 - d) / 10, 0, 1)})`; for (let i = 0; i < 7; i++) { ctx.beginPath(); ctx.arc(kx - u * .36 + (i % 4) * u * .06, shY + u * .22 + Math.floor(i / 4) * u * .15 + (i % 2) * u * .05, 2, 0, 7); ctx.fill(); } }
+        if (d < -4) { const jig = Math.sin(t / 28) * 1.6; ctx.fillStyle = "#fff"; ctx.strokeStyle = O; ctx.lineWidth = 1; rr(ctx, kx - headR * .38, headY + headR * .42 + jig, headR * .76, headR * .26, 2); ctx.fill(); ctx.stroke(); for (let i = 1; i < 5; i++) ln([[kx - headR * .38 + i * headR * .152, headY + headR * .42 + jig], [kx - headR * .38 + i * headR * .152, headY + headR * .68 + jig]], 1); }
+        if (d > 29 && d < 40) { ctx.fillStyle = `rgba(244,114,182,${.55 * clamp((d - 29) / 6, 0, 1)})`; [-1, 1].forEach(sd => { ctx.beginPath(); ctx.arc(kx + sd * headR * .62, headY + headR * .22, headR * .2, 0, 7); ctx.fill(); }); }
+        // word labels
+        labels = []; const act = REACT.filter(z => z[1](d)), shown = boxed ? [d < 15 ? act[0] : act[act.length - 1]].filter(Boolean) : act;
+        const fs = Math.max(11, Math.min(15, u * .27)), yOf = { mouth: headY + headR * .5, body: shY + u * .4, arm: shY + u * .62, hip: hipY - u * .12, head: headY - headR * .7, face: headY - headR * .05, feet: fy0 - u * .22 };
+        shown.forEach(z => { const [wd, , sd, part, cl] = z, yy = yOf[part], ax = part === "feet" ? kx - u * .3 : sd < 0 ? kx - headR * 1.0 : kx + headR * 1.0;
+          ctx.save(); ctx.font = `800 ${fs}px system-ui`; const w = ctx.measureText(wd).width + fs * 1.2, h = fs * 1.8, pulse = labels.length >= 0 ? 0 : 0;
+          let lx = sd < 0 ? kx - u * 1.05 - w : kx + u * 1.05; lx = clamp(lx, sx + 6, (boxed ? sx + sw - 44 : thermo().tx - 30) - w); const ly = clamp(yy - h / 2, sy + 44, sy + sh - h - 10);
+          ctx.strokeStyle = cl ? "#1e40af" : "#991b1b"; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(ax, yy); ctx.lineTo(sd < 0 ? lx + w : lx, ly + h / 2); ctx.stroke(); dot(ax, yy, 3, cl ? "#1e40af" : "#991b1b");
+          ctx.fillStyle = cl ? "#dbeafe" : "#fee2e2"; ctx.strokeStyle = cl ? "#1e40af" : "#991b1b"; ctx.lineWidth = 2; rr(ctx, lx, ly, w, h, h / 2); ctx.fill(); ctx.stroke(); ctx.fillStyle = cl ? "#1e3a8a" : "#7f1d1d"; ctx.textAlign = "left"; ctx.textBaseline = "middle"; ctx.fillText(wd, lx + fs * .6, ly + h / 2 + 1); ctx.restore();
+          if (!boxed) labels.push({ x: lx, y: ly, w, h, word: wd, t: 0 }); });
         // pills + thermometer
         const pill = (txt, x, y, size, bg, color) => { ctx.save(); ctx.font = `800 ${size}px system-ui`; const w = ctx.measureText(txt).width + size * 1.1; ctx.fillStyle = bg; rr(ctx, x, y, w, size * 1.8, size * .9); ctx.fill(); ctx.fillStyle = color || O; ctx.textAlign = "left"; ctx.textBaseline = "middle"; ctx.fillText(txt, x + size * .55, y + size * .9); ctx.restore(); return w; };
         pill(`${st[2]} ${st[1]}`, sx + 10, sy + 10, Math.max(13, Math.min(17, sw / 26)), "rgba(255,255,255,.9)");
