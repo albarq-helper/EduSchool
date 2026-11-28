@@ -471,7 +471,7 @@
     const here = location.pathname.split("/").pop();
     const I = n => (window.icon ? window.icon(n, 16) : "");
     const acts = [["set.html", "layout-grid", "Overview", true], ["list.html", "list-checks", "Word list", words.length > 0], ["cards.html", "layers", "Flashcards", words.length > 0],
-      ["exam.html", "clipboard-check", "Exam", words.length >= 4], ["games.html", "puzzle", "Games", words.length >= 4], ["table.html", "users", "Around the table", words.length >= 4],
+      ["exam.html", "clipboard-check", "Exam", words.length >= 4], ["games.html", "puzzle", "Games", words.length >= 4],
       ["spelling.html", "spell-check-2", "Spelling", words.length >= 2], ["quiz.html", "circle-help", "Quiz", questions.length > 0], ["songs.html", "music", "Songs & dialogs", !!window.HAS_SONGS], ["story.html", "sparkles", "Story builder", words.length >= 2], ["studio.html", "drama", "Director's Studio", !!(window.App && App.profile && App.profile.role === "teacher")]];
     const css = `#setbar{background:var(--ink,#1B2333);color:#fff;padding:10px 16px;display:flex;gap:10px 18px;align-items:center;flex-wrap:wrap;font:14px var(--f-body,system-ui)}
       #setbar .t{display:flex;flex-direction:column;min-width:0;flex:1 1 240px}#setbar .t b{font:800 1.02rem var(--f-display,system-ui);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -481,7 +481,7 @@
       @media (max-width:600px){#setbar nav a span{display:none}}`;
     document.head.insertAdjacentHTML("beforeend", `<style>${css}</style>`);
     const meta = [set.subjects?.name, set.levels?.name, set.curricula?.short_name, `${words.length} terms`, questions.length ? `${questions.length} questions` : ""].filter(Boolean).join(" · ");
-    const nav = acts.filter(a => a[3]).map(a => `<a href="${a[0]}?${a[0] === "set.html" ? "id" : "set"}=${set.id}" class="${here === a[0] ? "on" : ""}">${I(a[1])}<span>${a[2]}</span></a>`).join("");
+    const nav = acts.filter(a => a[3]).map(a => `<a href="${a[0]}?${a[0] === "set.html" ? "id" : "set"}=${set.id}" class="${here === a[0] || (a[0] === "games.html" && here === "table.html") ? "on" : ""}">${I(a[1])}<span>${a[2]}</span></a>`).join("");
     const bar = `<div id="setbar"><div class="t"><b>${esc(set.title)}</b><span>${esc(meta)}</span></div><nav aria-label="Activities for this set">${nav}</nav></div>`;
     const ab = document.getElementById("appbar");
     if (ab) ab.insertAdjacentHTML("afterend", bar); else document.body.insertAdjacentHTML("afterbegin", bar);

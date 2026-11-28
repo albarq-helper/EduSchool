@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Around the table · Helper Academy</title><link rel="icon" href="assets/icons/brilliant.png"><style>*,*::before,*::after{box-sizing:border-box}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style><script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261128e"></script><script src="js/icons.js?v=20261128e"></script><script src="js/app.js?v=20261128e"></script><script src="js/sets.js?v=20261128k"></script><script src="js/lang.js?v=20261128k"></script></head><body><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=Noto+Naskh+Arabic:wght@600&display=swap">
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Around the table · Helper Academy</title><link rel="icon" href="assets/icons/brilliant.png"><style>*,*::before,*::after{box-sizing:border-box}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style><script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261128e"></script><script src="js/icons.js?v=20261128e"></script><script src="js/app.js?v=20261128e"></script><script src="js/sets.js?v=20261128u"></script><script src="js/lang.js?v=20261128k"></script></head><body><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=Noto+Naskh+Arabic:wght@600&display=swap">
 <style>
 :root{
   --paper:#F7F8FB; --sheet:#FFFFFF; --ink:#1B2333; --muted:#5E6A80; --rule:#DCE1EA;
@@ -69,10 +69,10 @@ select{font:inherit;padding:8px 10px;border:1px solid var(--rule);border-radius:
 </style>
 <div class="wrap">
   <header>
-    <span class="eyebrow" id="setEyebrow">&nbsp;</span>
+    <span class="eyebrow" id="setEyebrow">&nbsp;</span><a href="games.html" id="backG" style="font-size:.85rem;font-weight:700">← Games</a>
     <h1>🌍 Around the table</h1>
     <p class="sub">Friends from different countries sit around a table. An English word appears and the arrow points at one friend. Say the word in <b>their</b> language, from memory!</p>
-  </header>
+  </header><script>document.getElementById("backG").href="games.html"+location.search;</script>
   <div class="bar">
     <div class="left"><label for="unitSel" class="eyebrow">Words</label><select id="unitSel"></select>
       <label for="levelSel" class="eyebrow">Level</label><select id="levelSel"><option value="easy">🌱 Easy: listen and repeat</option><option value="mid">🌿 Middle: listen to all, then you</option><option value="hard">🌳 Hard: from memory</option></select>

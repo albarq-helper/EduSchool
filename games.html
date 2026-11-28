@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Word Games · Helper Academy</title><link rel="icon" href="assets/icons/brilliant.png"><style>*,*::before,*::after{box-sizing:border-box}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style><script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261128e"></script><script src="js/icons.js?v=20261128e"></script><script src="js/app.js?v=20261128e"></script><script src="js/sets.js?v=20261128k"></script></head><body><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=Noto+Naskh+Arabic:wght@600&display=swap">
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Word Games · Helper Academy</title><link rel="icon" href="assets/icons/brilliant.png"><style>*,*::before,*::after{box-sizing:border-box}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style><script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261128e"></script><script src="js/icons.js?v=20261128e"></script><script src="js/app.js?v=20261128e"></script><script src="js/sets.js?v=20261128u"></script></head><body><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=Noto+Naskh+Arabic:wght@600&display=swap">
 <style>
 /* Layout: one column; game tabs; a board of target cards above a sticky word tray. Same ink-and-paper tokens as the exam page. */
 :root{
@@ -461,13 +461,14 @@ async function setupNewGames(){
   const mine=DATA.map((v,i)=>i).filter(i=>!DATA[i].companion),tabs=document.querySelector(".tabs");
   Object.keys(NG).forEach(k=>{const n=k==="meter"?meterQs(mine,2).length:GEN[k](mine,2).length;if(n<1)return;
     tabs.insertAdjacentHTML("beforeend",`<button class="tab" role="tab" data-g="${k}" aria-selected="false">${esc(NG[k])}</button>`);});
+  if(mine.length>=4)tabs.insertAdjacentHTML("beforeend",`<button class="tab" role="tab" data-href="table.html" aria-selected="false">🌍 Around the table</button>`);
   if(mine.filter(i=>/\s/.test(nm(i))).length>mine.length/2){const u=document.querySelector('[data-g="uns"]');if(u)u.hidden=true;}
   const want=new URLSearchParams(location.search).get("game");const t=want&&document.querySelector(`.tab[data-g="${want}"]`);if(t)t.click();}
 /* ---------- shell ---------- */
 function start(){ sel=null; Q=null; if(!pool().length){$("#wordSet").value="all";} if(GEN[game]||game==="meter")newRound(game); else game==="uns"?unsRound():matchRound(game); timerStart(); }
 try{const tv=localStorage.getItem("gameTimer");if(tv&&$("#timerSel").querySelector(`option[value="${tv}"]`))$("#timerSel").value=tv;}catch(e){}
 $("#timerSel").onchange=()=>{try{localStorage.setItem("gameTimer",$("#timerSel").value);}catch(e){}start();};
-document.querySelector(".tabs").onclick=e=>{const t=e.target.closest(".tab");if(!t)return;game=t.dataset.g;
+document.querySelector(".tabs").onclick=e=>{const t=e.target.closest(".tab");if(!t)return;if(t.dataset.href){location.href=t.dataset.href+location.search;return;}game=t.dataset.g;
   document.querySelectorAll(".tab").forEach(x=>x.setAttribute("aria-selected",x===t));start();};
 document.addEventListener("click",e=>{const b=e.target.closest("[data-say]");if(b){e.stopPropagation();playWord(+b.dataset.say);}},true);
 $("#newRound").onclick=start;
