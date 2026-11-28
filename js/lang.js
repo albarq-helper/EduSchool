@@ -63,8 +63,8 @@
     const out = [];
     MINE.forEach(L => {
       const t = v && v.trs && v.trs[L.code]; if (!t || !t.term) return;
-      const ff = t.root_kind === "false_friend", near = t.root_en && (ff || (t.root_sim != null && t.root_sim >= 40)) ? t.root_en : "";   // the English look-alike, only when there is a root
-      out.push({ code: L.code, flag: L.flag, native: L.native_name, dir: L.dir, term: t.term, rom: t.romanization || "", hear: L.hear, meaning: t.meaning || "", near, ff, note: t.root_note || "" });
+      const ff = t.root_kind === "false_friend", rel = t.root_kind === "related", near = t.root_en && (ff || rel || (t.root_sim != null && t.root_sim >= 40)) ? t.root_en : "";   // the English look-alike, only when there is a root
+      out.push({ code: L.code, flag: L.flag, native: L.native_name, dir: L.dir, term: t.term, rom: t.romanization || "", hear: L.hear, meaning: t.meaning || "", near, ff, rel, note: t.root_note || "" });
     });
     return out;
   }
@@ -74,7 +74,7 @@
     MINE.forEach(L => {
       const t = L.show && v && v.trs && v.trs[L.code]; if (!t || !t.root_en) return;
       const ff = t.root_kind === "false_friend";
-      if (!ff && (t.root_sim == null || t.root_sim < 40)) return;     // too different to look alike
+      if (!ff && t.root_kind !== "related" && (t.root_sim == null || t.root_sim < 40)) return;     // too different to look alike
       out.push({ code: L.code, flag: L.flag, term: t.term, en: t.root_en, kind: ff ? "false_friend" : "cognate", note: t.root_note || "", hear: L.hear });
     });
     return out.sort((a, b) => (a.kind === "false_friend") - (b.kind === "false_friend"));
