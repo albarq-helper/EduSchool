@@ -44,7 +44,7 @@
 .ans textarea{min-height:56px;flex:1 1 220px}
 .res{font-weight:700;font-size:.9rem}.res.ok{color:var(--good)}.res.no{color:var(--bad)}
 input.ok,textarea.ok{border-color:var(--good)!important;background:var(--good-soft)!important}input.no{border-color:var(--bad)!important;background:var(--bad-soft)!important}
-.near{color:var(--muted);font-weight:700;margin-inline-start:2px}.near.ff{color:#8a4b00}.cogs{margin-top:4px}.cog{font-size:.9rem;color:var(--ink)}.cog.ff{color:#8a4b00}.cog small{color:var(--muted);font-weight:600}.sim{display:inline-block;border-radius:999px;padding:0 7px;font:800 .75rem var(--f-body);background:#eef1ff;color:#2f3fbf}.sim[data-s=hi]{background:#e3f6e8;color:#177a3a}.sim[data-s=lo]{background:#fff1dd;color:#9a5b00}.lgf{font-size:.95rem}.rom{color:var(--muted);font-style:italic}.lgh{border:0;background:var(--chip,#eee);border-radius:999px;cursor:pointer;font-size:.85rem;padding:1px 7px;margin-inline-start:4px;vertical-align:middle}.trs{display:flex;flex-direction:column;gap:2px}.mean{line-height:1.45}.ex{color:var(--muted);font-size:.93rem}.tr{font-family:var(--f-ar);font-size:1.12rem;align-self:flex-start;unicode-bidi:plaintext;text-align:start}
+.syn{margin:2px 0 4px;font-size:.9rem}.synw{display:inline-block;margin:0 4px 2px 0;padding:0 8px;border-radius:999px;background:#eef1ff;color:#2f3fbf;font-weight:700}.near{color:var(--muted);font-weight:700;margin-inline-start:2px}.near.ff{color:#8a4b00}.cogs{margin-top:4px}.cog{font-size:.9rem;color:var(--ink)}.cog.ff{color:#8a4b00}.cog small{color:var(--muted);font-weight:600}.sim{display:inline-block;border-radius:999px;padding:0 7px;font:800 .75rem var(--f-body);background:#eef1ff;color:#2f3fbf}.sim[data-s=hi]{background:#e3f6e8;color:#177a3a}.sim[data-s=lo]{background:#fff1dd;color:#9a5b00}.lgf{font-size:.95rem}.rom{color:var(--muted);font-style:italic}.lgh{border:0;background:var(--chip,#eee);border-radius:999px;cursor:pointer;font-size:.85rem;padding:1px 7px;margin-inline-start:4px;vertical-align:middle}.trs{display:flex;flex-direction:column;gap:2px}.mean{line-height:1.45}.ex{color:var(--muted);font-size:.93rem}.tr{font-family:var(--f-ar);font-size:1.12rem;align-self:flex-start;unicode-bidi:plaintext;text-align:start}
 .utag{font:700 .75rem var(--f-body);padding:3px 9px;border-radius:999px;background:var(--accent-soft);color:var(--accent);white-space:nowrap}
 /* Detail */
 .v-detail{display:flex;flex-direction:column;gap:12px}
@@ -137,7 +137,7 @@ input.ok,textarea.ok{border-color:var(--good)!important;background:var(--good-so
 .dp{display:grid;gap:2px;background:var(--paper);border-radius:10px;padding:6px 8px;font-size:.88rem}.dp.me{background:#fff7ed;border:1px solid #fdba74}.dp b{font-size:.95rem}.dp .ar,.dar{font-size:.88rem;color:var(--muted)}
 .dx{color:#9a3412}.dn{color:var(--muted);font-size:.82rem!important}.linkb{background:none;border:0;padding:0;font:inherit;font-weight:800;color:var(--accent);cursor:pointer}
 </style>
-<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261128e"></script><script src="js/icons.js?v=20261128e"></script><script src="js/app.js?v=20261128e"></script><script src="js/sets.js?v=20261128e"></script><script src="js/lang.js?v=20261128e"></script><script src="js/weather.js?v=20261128e"></script><script src="js/fx.js?v=20261128e"></script><script src="js/speak.js?v=20261128e"></script><script src="js/eggs.js?v=20261128e"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261128e"></script><script src="js/tense.js?v=20261128e"></script><script src="js/views.js?v=20261128e"></script>
+<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261128e"></script><script src="js/icons.js?v=20261128e"></script><script src="js/app.js?v=20261128e"></script><script src="js/sets.js?v=20261128e"></script><script src="js/lang.js?v=20261128e"></script><script src="js/syn.js?v=20261128e"></script><script src="js/weather.js?v=20261128e"></script><script src="js/fx.js?v=20261128e"></script><script src="js/speak.js?v=20261128e"></script><script src="js/eggs.js?v=20261128e"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261128e"></script><script src="js/tense.js?v=20261128e"></script><script src="js/views.js?v=20261128e"></script>
 </head><body>
 <div class="wrap" style="max-width:1180px">
   <div class="head2">
@@ -189,6 +189,7 @@ const GP=Sets.groupPicker($("groupMount"),()=>render(),{view:"both",follow:true}
 Sets.loadCompanions().then(n=>{if(n)render();}).catch(()=>{});
 // 🌍 languages: the student's own choice (which to show, which to hear); the translations come from word_translations
 const gotLang=()=>{const lb=document.querySelector('[data-t="tr"]');if(lb)lb.closest("label").hidden=!D.some(v=>v.ar||(v.trs&&Object.keys(v.trs).length));};
+if(window.Syn){Syn.attach(D).then(()=>render()).catch(e=>console.warn("syn",e));}
 if(window.Lang){Lang.load().then(()=>{Lang.picker($("langMount"),()=>Lang.attach(D).then(()=>{gotLang();render();}));return Lang.attach(D);}).then(()=>{gotLang();render();}).catch(e=>console.warn("lang",e));}
 Sets.loadPartners(D).then(m=>{PARTNERS=m;if(m.size)render();}).catch(e=>console.warn("partners",e));
 // 🧩 real word parts + 💡 memory tricks (from the dictionary)
@@ -262,10 +263,11 @@ function senseHTML(v){const k=SK[v.sk];if(!k&&!(v.others||[]).length)return "";
 const PARENT=()=>!!(App.profile&&(App.profile.role==="teacher"||App.profile.is_admin));
 function mediaCheckHTML(v){if(!PARENT()||v.mc==="ok"||(!v.mc&&!v.mp))return "";const L={ok:"✅ Video fits",partial:"🟠 Video only partly shows the meaning",wrong:"🔴 Video doesn't show the meaning"};
   return `<details class="mchk mc-${v.mc||"none"}"><summary>${v.mc?L[v.mc]:"🎬 No video yet"}</summary>${v.mn?`<p>${esc(v.mn)}</p>`:""}${v.mp?`<p class="muted"><b>Prompt for a new clip:</b> ${esc(v.mp)}</p><button type="button" class="btn small" data-copyprompt="${esc(v.mp)}">📋 Copy prompt</button>`:""}</details>`;}
+const synHTML=v=>v.syn&&v.syn.length?`<div class="syn"><span class="muted">Same meaning:</span> ${v.syn.map(x=>`<span class="synw">${esc(x)}</span>`).join("")}</div>`:"";
 function meanHTML(i,v){const s=S(i);
-  if(!s.cm)return SHOW.mean?`<div class="mean">${esc(v.d)}</div>${senseHTML(v)}${mediaCheckHTML(v)}`:"";
+  if(!s.cm)return SHOW.mean?`<div class="mean">${esc(v.d)}</div>${synHTML(v)}${senseHTML(v)}${mediaCheckHTML(v)}`:"";
   if(!s.mrev)return `<div class="ans"><textarea data-mean="${i}" placeholder="Write what it means, in your own words" aria-label="Write the meaning">${esc(s.mtyped||"")}</textarea><button class="btn small" type="button" data-mshow="${i}">${icon("eye",14)}Check meaning</button></div>`;
-  return `${s.mtyped?`<div class="mine"><span class="muted">You wrote:</span> ${esc(s.mtyped)}</div>`:""}<div class="mean"><b>Meaning:</b> ${esc(v.d)}</div>${senseHTML(v)}
+  return `${s.mtyped?`<div class="mine"><span class="muted">You wrote:</span> ${esc(s.mtyped)}</div>`:""}<div class="mean"><b>Meaning:</b> ${esc(v.d)}</div>${synHTML(v)}${senseHTML(v)}
     <div class="ans">${s.self===undefined?`<span class="muted" style="font-size:.88rem">Did you get it?</span><button class="btn small" type="button" data-self="${i}" data-val="1">${icon("check",14)}I got it</button><button class="btn small" type="button" data-self="${i}" data-val="0">${icon("x",14)}Not yet</button>`
       :s.self?`<span class="res ok">${icon("check",15)} Got it</span>`:`<span class="res no">${icon("rotate-ccw",15)} Practise again</span>`}</div>`;}
 const agePill=v=>v.minAge?`<span class="utag agepill" title="Only shown to students aged ${v.minAge} or older">${v.minAge}+</span>`:"";
