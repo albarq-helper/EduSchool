@@ -138,6 +138,15 @@
 .castbody [data-cnew]{border:1.5px dashed var(--accent);background:transparent;color:var(--accent);border-radius:12px;padding:9px;font:800 .9rem var(--f-body);cursor:pointer}
 .bk .by select{flex:1;min-width:0;padding:4px 8px;border:1.5px solid var(--rule);border-radius:8px;font:600 .9rem var(--f-body);background:var(--paper);color:var(--ink)}
 .thw{position:relative;display:inline-flex;flex:none}
+.hearbar{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:6px 0;font:700 .85rem var(--f-body);color:var(--muted)}
+.hearbar[hidden]{display:none}
+.hearbar button{border:1.5px solid var(--rule);background:var(--paper);color:var(--ink);border-radius:999px;padding:3px 12px;font:800 .85rem var(--f-body);cursor:pointer}
+.hearbar button[aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:#fff}
+.hearbar small{font-weight:600}
+.bk .hearq{border:0;background:var(--chip);cursor:pointer;font-size:1.05rem;padding:5px 8px;border-radius:999px;line-height:1}
+.bk .hearq.on{background:var(--accent);color:#fff}
+.bk.q .tx,.bk.w.say .tx{user-select:none}
+.fq .hearq{border:0;background:var(--chip);cursor:pointer;font-size:1rem;padding:4px 8px;border-radius:999px}
 .spk{position:absolute;right:-6px;bottom:-6px;width:28px;height:28px;border-radius:50%;border:2px dashed var(--accent);background:var(--paper);color:var(--accent);font:800 .95rem/1 var(--f-body);display:grid;place-items:center;cursor:pointer;padding:0;box-shadow:0 1px 3px rgba(0,0,0,.15)}
 .thw.nopic .spk{position:static;width:34px;height:34px}
 .spk.on{border-style:solid;font-size:1.05rem;background:var(--sheet)}
@@ -164,7 +173,7 @@
 .tchip{display:inline-block;margin-left:6px;font:800 .78rem var(--f-body);color:#4338ca;background:#e0e7ff;border-radius:999px;padding:1px 8px;vertical-align:middle}
 .wxdif{border-left:4px solid #f97316;padding:4px 0 4px 10px;margin:8px 0}.wxdif p{margin:2px 0 6px}.wxw.on{border-color:#fdba74;background:#fff7ed}
 </style>
-<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261126z"></script><script src="js/icons.js?v=20261126z"></script><script src="js/app.js?v=20261126z"></script><script src="js/sets.js?v=20261126z"></script><script src="js/weather.js?v=20261126z"></script><script src="js/fx.js?v=20261126z"></script><script src="js/speak.js?v=20261126z"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261126z"></script><script src="js/tense.js?v=20261126z"></script><script src="js/wordbox.js?v=20261126z"></script><script src="js/views.js?v=20261126z"></script><script src="js/joiners.js?v=20261126z"></script><script src="js/talk.js?v=20261126z"></script><script src="js/chars.js?v=20261126z"></script><script src="js/storycore.js?v=20261126z"></script><script src="js/montage.js?v=20261126z"></script>
+<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261128a"></script><script src="js/icons.js?v=20261128a"></script><script src="js/app.js?v=20261128a"></script><script src="js/sets.js?v=20261128a"></script><script src="js/weather.js?v=20261128a"></script><script src="js/fx.js?v=20261128a"></script><script src="js/speak.js?v=20261128a"></script><script src="js/vendor/jquery.min.js"></script><script src="js/meter.js?v=20261128a"></script><script src="js/tense.js?v=20261128a"></script><script src="js/wordbox.js?v=20261128a"></script><script src="js/views.js?v=20261128a"></script><script src="js/joiners.js?v=20261128a"></script><script src="js/talk.js?v=20261128a"></script><script src="js/chars.js?v=20261128a"></script><script src="js/storycore.js?v=20261128a"></script><script src="js/montage.js?v=20261128a"></script>
 </head><body>
 <div class="wrap" style="max-width:1280px">
   <div class="head2">
@@ -186,6 +195,7 @@
       <input id="title" maxlength="120" aria-label="Story title" placeholder="My story title">
       <div class="cast" id="cast"></div>
       <div class="fb" id="fb" hidden></div>
+      <div class="hearbar" id="hearbar" hidden></div>
       <ol class="board" id="board" aria-label="Story steps"></ol>
       <div class="adds"><button class="chipb" type="button" id="addText">✏️ Add my own words</button><button class="chipb" type="button" id="addJoin" aria-haspopup="menu">🔗 Joiners</button><button class="chipb" type="button" id="addTalk">💬 Conversation</button><button class="chipb" type="button" id="addScene">🎬 New scene</button>
         <span id="quick"></span></div>
@@ -336,15 +346,15 @@ function drawBoard(){if(ACT&&!(CUR&&CUR.blocks[ACT[0]]&&/^[jd]$/.test(CUR.blocks
     n++;const cls=`bk ${b.k}${k===SEL?" sel":""}`,grip=`<span class="grip" title="Drag to move">${icon("grip-vertical",16)}</span><span class="num">${n}</span>`;
     if(b.k==="w"){const i=wi(b.w),v=D[i];
       const say=isSay(b,v),pic=v?(v.vid?`<video class="th" src="${esc(v.vid)}" muted loop playsinline preload="none" data-auto></video>`:`<img class="th" src="${esc(v.img)}" alt="">`):"";
-      rows.push(`<li class="${cls}" data-k="${k}" draggable="true">${grip}${say?`<span class="thw${pic?"":" nopic"}">${pic}${spkDot(b,k)}</span>`:pic}<span class="tx"><b>${esc(clean(b.w))}</b>${b.tw?`<span class="tchip" title="Who, when and how: the sentence you built">🧱 ${esc(b.ph||b.tw)}</span>`:""}${say?spkLine(b):""}${b.from?`<span class="was">↺ instead of ${esc(clean(b.from))}</span>`:""}<small>${esc(v?v.d:"")}</small>${(b.p||[]).length?`<span class="subs">${b.p.map(x=>`<span>${esc(x)}</span>`).join("")}</span>`:""}</span><button type="button" class="wxbtn" data-wx="${k}" title="Explore: stronger, softer, similar, opposite, partners" aria-label="Explore this word">🔍</button>${ctl}</li>`);}
+      rows.push(`<li class="${cls}${say?" say":""}" data-k="${k}" draggable="true">${grip}${say?`<span class="thw${pic?"":" nopic"}">${pic}${spkDot(b,k)}</span>`:pic}<span class="tx"><b>${esc(clean(b.w))}</b>${b.tw?`<span class="tchip" title="Who, when and how: the sentence you built">🧱 ${esc(b.ph||b.tw)}</span>`:""}${say?spkLine(b):""}${b.from?`<span class="was">↺ instead of ${esc(clean(b.from))}</span>`:""}<small>${esc(v?v.d:"")}</small>${(b.p||[]).length?`<span class="subs">${b.p.map(x=>`<span>${esc(x)}</span>`).join("")}</span>`:""}</span><button type="button" class="wxbtn" data-wx="${k}" title="Explore: stronger, softer, similar, opposite, partners" aria-label="Explore this word">🔍</button>${say?hearBtn(k):""}${ctl}</li>`);}
     else if(b.k==="c"){const v=D[wi(b.w)];rows.push(`<li class="${cls}" data-k="${k}" draggable="true">${grip}<span class="th qth">${b.m?"🎵":b.tr?"🎞️":"🎥"}</span><span class="tx"><b>${esc(v&&v.emoji?v.emoji+" ":"")}${esc(b.w)}</b><small>${b.m?"Music":b.tr?"Transition":"Camera"} · ${esc(v?v.d:"")}</small></span>${ctl}</li>`);}
     else if(b.k==="d")rows.push(`<li class="${cls}" data-k="${k}" draggable="true">${grip}${Talk.frame(b,k,ACT,cast())}${ctl}</li>`);
     else if(b.k==="j")rows.push(`<li class="${cls}" data-k="${k}" draggable="true">${grip}${Joiners.frame(b,k,ACT,cast().map(castName).filter(Boolean))}${ctl}</li>`);
-    else if(b.k==="q")rows.push(`<li class="${cls}" data-k="${k}" draggable="true">${grip}<span class="thw"><span class="th qth">📜</span>${spkDot(b,k)}</span><span class="tx"><b class="qt">“${esc(b.w)}”</b>${spkLine(b)}<small>${esc(b.a||"")}</small></span>${ctl}</li>`);
+    else if(b.k==="q")rows.push(`<li class="${cls}" data-k="${k}" draggable="true">${grip}<span class="thw"><span class="th qth">📜</span>${spkDot(b,k)}</span><span class="tx"><b class="qt">“${esc(b.w)}”</b>${spkLine(b)}<small>${esc(b.a||"")}</small></span>${hearBtn(k)}${ctl}</li>`);
     else rows.push(`<li class="${cls}" data-k="${k}" draggable="true">${grip}<input value="${esc(b.t||"")}" maxlength="300" placeholder="Type your own words…" aria-label="My own words" data-t="${k}">${ctl}</li>`);});
   let SL=$("speakerList");if(!SL){SL=document.createElement("datalist");SL.id="speakerList";document.body.appendChild(SL);}
   SL.innerHTML=speakers().map(x=>`<option value="${esc(x)}">`).join("");
-  $("board").innerHTML=B.length?rows.join(""):`<li class="empty">Your story is empty.<br>Add words from the library, or press <b>✏️ Add my own words</b>.</li>`;
+  drawHearBar();$("board").innerHTML=B.length?rows.join(""):`<li class="empty">Your story is empty.<br>Add words from the library, or press <b>✏️ Add my own words</b>.</li>`;
   Sets.watchClips();drawPreview();drawLib();drawWrite();drawFit();}
 function drawPreview(){const B=CUR?CUR.blocks:[];if(!B.some(b=>b.k!=="s")){$("preview").innerHTML=`<h3>My story so far</h3><p class="muted">Your words will appear here as you build.</p>`;return;}
   const S_=CUR.sentences||{},L=LV();
@@ -354,11 +364,13 @@ function drawPreview(){const B=CUR?CUR.blocks:[];if(!B.some(b=>b.k!=="s")){$("pr
   $("preview").innerHTML=`<h3>My story so far</h3>`+sc.filter(s=>s.length).map((s,k)=>`<p><span class="muted">Scene ${k+1}:</span> ${s.join(" ")}</p>`).join("");}
 function move(k,d){const B=CUR.blocks,j=k+d;if(j<0||j>=B.length)return;[B[k],B[j]]=[B[j],B[k]];SEL=j;changed();drawBoard();}
 $("board").addEventListener("click",e=>{const b=e.target.closest("button");
+  if(b?.dataset.hearq!=null)return hearBlock(+b.dataset.hearq,true);
   if(b?.dataset.wx!=null)return openWX(+b.dataset.wx);
   if(b?.dataset.up!=null)return move(+b.dataset.up,-1);if(b?.dataset.down!=null)return move(+b.dataset.down,1);
   if(b?.dataset.del!=null){CUR.blocks.splice(+b.dataset.del,1);SEL=Math.min(SEL,CUR.blocks.length-1);changed();return drawBoard();}
   const li=e.target.closest("li[data-k]");
-  if(li&&li.classList.contains("w")&&!e.target.closest("input,button")){const k=+li.dataset.k,now=Date.now();if(TAP.k===k&&now-TAP.t<450){TAP={};return openWX(k);}TAP={k,t:now};}
+  if(li&&li.classList.contains("w")&&!e.target.closest("input,button")){const k=+li.dataset.k,now=Date.now();if(TAP.k===k&&now-TAP.t<450){TAP={};const bb=CUR.blocks[k];if(isSay(bb,D[wi(bb.w)]))return hearBlock(k,true);return openWX(k);}TAP={k,t:now};}
+  if(li&&li.classList.contains("q")&&!e.target.closest("input,button")){const k=+li.dataset.k,now=Date.now();if(TAP.k===k&&now-TAP.t<450){TAP={};return hearBlock(k,true);}TAP={k,t:now};}
   if(li&&!e.target.closest("input")){SEL=+li.dataset.k===SEL?-1:+li.dataset.k;drawBoard();
     const v=li.querySelector("video.th");if(v&&SEL>=0){const w=CUR.blocks[SEL];Sets.playClip(v,D[wi(w.w)]);}}});
 $("board").addEventListener("focusin",e=>{const i=e.target.closest("input[data-t]");if(i){SEL=+i.dataset.t;document.querySelectorAll(".bk.sel").forEach(x=>x.classList.remove("sel"));i.closest(".bk").classList.add("sel");}});
@@ -513,7 +525,7 @@ function fitQuotes(){const B=CUR?CUR.blocks:[],words=B.filter(b=>b.k==="w").map(
   return out.sort((a,b)=>b.sc-a.sc);}
 function drawFit(){const el=$("fitq");if(!el)return;const L=fitQuotes();if(!L.length){el.hidden=true;return;}el.hidden=false;
   const xs=L.slice(0,FITALL?12:3);
-  el.innerHTML=`<h3>💡 Quotes that fit your story <span class="muted">(${L.length})</span></h3>${xs.map(o=>{const q=D[o.j];return `<div class="fq"><div><b>“${esc(q.w)}”</b>${q.author?`<small> — ${esc(q.author)}</small>`:""}<span class="muted">${o.lesson?"💡 The lesson for ":"About "}${esc(o.why.slice(0,3).join(", "))}</span></div><button type="button" class="btn small" data-fitadd="${o.j}">+ Add</button></div>`;}).join("")}
+  el.innerHTML=`<h3>💡 Quotes that fit your story <span class="muted">(${L.length})</span></h3>${xs.map(o=>{const q=D[o.j];return `<div class="fq"><div><b>“${esc(q.w)}”</b>${q.author?`<small> — ${esc(q.author)}</small>`:""}<span class="muted">${o.lesson?"💡 The lesson for ":"About "}${esc(o.why.slice(0,3).join(", "))}</span></div><span style="display:flex;gap:6px;align-items:center"><button type="button" class="hearq" data-fithear="${o.j}" title="Hear it" aria-label="Hear this quote">🔊</button><button type="button" class="btn small" data-fitadd="${o.j}">+ Add</button></span></div>`;}).join("")}
     ${L.length>3?`<button type="button" class="linkb" data-fitall="1">${FITALL?"Show fewer":"Show more"}</button>`:""}`;}
 document.addEventListener("click",e=>{const a=e.target.closest("[data-fitadd]");if(a){const q=D[+a.dataset.fitadd];addBlock({k:"q",w:q.w,a:q.author||"",by:defaultSpeaker()});App.status("Quote added. Tap its little circle to choose who says it.",true);return;}
   if(e.target.closest("[data-fitall]")){FITALL=!FITALL;drawFit();return;}
@@ -715,6 +727,36 @@ $("wxBody").addEventListener("click",e=>{const b=CUR.blocks[WX.k];
   if(e.target.closest("[data-back]")){const j=wi(b.from);if(j>=0)replaceWord(j);}});
 $("wxClose").onclick=()=>$("wxDlg").close();
 $("wxDlg").addEventListener("click",e=>{if(e.target===$("wxDlg"))$("wxDlg").close();});
+// ---------- 🔊 hear a saying: English (recorded voice if there is one), Arabic (its translation), or both; double-click = hear it + its egg effect ----------
+const HLANG=()=>{try{return localStorage.getItem("sb-hear")||"en";}catch(e){return "en";}};
+const HLABEL={en:"English",ar:"العربية",both:"English + العربية"};
+function drawHearBar(){const el=$("hearbar");if(!el)return;const has=(CUR?CUR.blocks:[]).some(b=>b.k==="q"||(b.k==="w"&&isSay(b,D[wi(b.w)])));el.hidden=!has;if(!has)return;const h=HLANG();
+  el.innerHTML=`🔊 Hear sayings in: ${["en","ar","both"].map(x=>`<button type="button" data-hl="${x}" aria-pressed="${h===x}">${HLABEL[x]}</button>`).join("")}<small>(double-click a saying to hear it and see its effect)</small>`;}
+let HEARNOW=null;
+function sbSpeak(text,lang,done){
+  if(!("speechSynthesis" in window)){App.status("This browser can't read aloud.");return done&&done();}
+  try{speechSynthesis.cancel();const vs=speechSynthesis.getVoices(),pre=lang.slice(0,2),vo=vs.find(x=>x.lang.toLowerCase().replace("_","-")===lang.toLowerCase())||vs.find(x=>x.lang.toLowerCase().startsWith(pre));
+    if(!vo&&vs.length&&pre==="ar")App.status("This device has no Arabic voice yet. Add one in its language settings, then try again.");
+    const u=new SpeechSynthesisUtterance(text);u.lang=lang;u.rate=.85;if(vo)u.voice=vo;u.onend=u.onerror=()=>done&&done();speechSynthesis.speak(u);}catch(e){done&&done();}}
+function playEnglish(v,text,done){
+  if(v&&v.au&&v.au!=="tts"){try{const a=new Audio(v.au);a.onended=()=>done&&done();a.onerror=()=>sbSpeak(text,"en-US",done);a.play().catch(()=>sbSpeak(text,"en-US",done));return a;}catch(e){}}
+  sbSpeak(text,"en-US",done);}
+// an effect for the saying: the whole text if it has one, otherwise its longest word that does
+function sayFx(text){if(!window.Weather||!Weather.variants)return;const toks=String(text).split(/[^A-Za-z'’-]+/).filter(x=>x.length>3).sort((a,b)=>b.length-a.length);
+  for(const t of [text,...toks]){try{if(Weather.variants(t).length){Weather.play(t,{force:1});return;}}catch(e){}}}
+function hearItem(v,text,fx,btn){
+  const mode=HLANG(),ar=v&&v.ar?v.ar:"",wantAr=mode!=="en",wantEn=mode!=="ar";
+  if(wantAr&&!ar&&!wantEn){App.status("No Arabic for this saying yet. Choose English or Both.");return;}
+  if(btn){document.querySelectorAll(".hearq.on").forEach(x=>x.classList.remove("on"));btn.classList.add("on");}
+  const off=()=>{if(btn)btn.classList.remove("on");};
+  if(fx)sayFx(text);
+  const arPart=()=>{if(wantAr&&ar)sbSpeak(ar,"ar-SA",off);else off();};
+  if(wantEn)HEARNOW=playEnglish(v,text,arPart);else arPart();
+  if(wantAr&&!ar&&wantEn)App.status("English only: there is no Arabic for this one yet.");}
+function hearBlock(k,fx){const b=CUR&&CUR.blocks[k];if(!b)return;const j=wi(b.w),v=j>=0?D[j]:null;hearItem(v,clean(b.w),fx,document.querySelector(`#board [data-hearq="${k}"]`));}
+const hearBtn=k=>`<button type="button" class="hearq" data-hearq="${k}" title="Hear it (or double-click it): ${esc(HLABEL[HLANG()])}" aria-label="Hear this saying">🔊</button>`;
+document.addEventListener("click",e=>{const h=e.target.closest("[data-hl]");if(h){try{localStorage.setItem("sb-hear",h.dataset.hl);}catch(x){}drawHearBar();drawBoard();return;}
+  const f=e.target.closest("[data-fithear]");if(f){const q=D[+f.dataset.fithear];hearItem(q,clean(q.w),true,f);}});
 let TAP={};   // two quick taps on a word (a double-click) open the explorer
 let LP=null;   // long press on touch screens
 $("board").addEventListener("pointerdown",e=>{const li=e.target.closest("li.bk.w[data-k]");if(!li||e.target.closest("button,input"))return;const x=e.clientX,y=e.clientY;
