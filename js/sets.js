@@ -471,7 +471,7 @@
     const here = location.pathname.split("/").pop();
     const I = n => (window.icon ? window.icon(n, 16) : "");
     const acts = [["set.html", "layout-grid", "Overview", true], ["list.html", "list-checks", "Word list", words.length > 0], ["cards.html", "layers", "Flashcards", words.length > 0],
-      ["exam.html", "clipboard-check", "Exam", words.length >= 4], ["games.html", "puzzle", "Games", words.length >= 4],
+      ["exam.html", "clipboard-check", "Exam", words.length >= 4], ["games.html", "puzzle", "Games", words.length >= 4], ["home.html", "house", "Verb home", words.filter(w => (w.tags || []).includes("Phrasal verb")).length >= 20],
       ["spelling.html", "spell-check-2", "Spelling", words.length >= 2], ["quiz.html", "circle-help", "Quiz", questions.length > 0], ["songs.html", "music", "Songs & dialogs", !!window.HAS_SONGS], ["story.html", "sparkles", "Story builder", words.length >= 2], ["studio.html", "drama", "Director's Studio", !!(window.App && App.profile && App.profile.role === "teacher")]];
     const css = `#setbar{background:var(--ink,#1B2333);color:#fff;padding:10px 16px;display:flex;gap:10px 18px;align-items:center;flex-wrap:wrap;font:14px var(--f-body,system-ui)}
       #setbar .t{display:flex;flex-direction:column;min-width:0;flex:1 1 240px}#setbar .t b{font:800 1.02rem var(--f-display,system-ui);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}

@@ -1,0 +1,190 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Verb home · Helper Academy</title><link rel="icon" href="assets/icons/brilliant.png"><style>*,*::before,*::after{box-sizing:border-box}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style><script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261128e"></script><script src="js/icons.js?v=20261128e"></script><script src="js/app.js?v=20261128e"></script><script src="js/sets.js?v=20261129f"></script></head><body><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=Noto+Naskh+Arabic:wght@600&display=swap">
+<style>
+:root{--paper:#F7F8FB;--sheet:#FFFFFF;--ink:#1B2333;--muted:#5E6A80;--rule:#DCE1EA;--accent:#2347C5;--accent-soft:#E6ECFB;--sun:#FFC94D;
+  --f-display:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif;--f-body:"Atkinson Hyperlegible",ui-sans-serif,system-ui,sans-serif;--f-ar:"Noto Naskh Arabic","Geeza Pro",Arial,serif}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--paper:#11141B;--sheet:#181C25;--ink:#E7EAF1;--muted:#9AA4B8;--rule:#2B3140;--accent:#7D9BFF;--accent-soft:#1F2846;color-scheme:dark}}
+body{background:var(--paper);color:var(--ink);font:16px/1.5 var(--f-body);padding-inline:16px;padding-block:20px 56px}
+.wrap{max-width:900px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+h1{font:800 clamp(1.6rem,4.5vw,2.3rem)/1.1 var(--f-display);margin:0}
+.eyebrow{font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700}
+header{display:flex;flex-direction:column;gap:6px;padding-bottom:12px;border-bottom:2px solid var(--ink)}
+.hint{color:var(--muted);font-size:.93rem;margin:0}
+.top{display:flex;gap:10px 14px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+.vchips{display:flex;gap:6px;flex-wrap:wrap}
+.vchip{font:800 1rem var(--f-display);padding:8px 14px;border-radius:999px;border:2px solid var(--rule);background:var(--sheet);color:var(--ink);cursor:pointer}
+.vchip[aria-pressed="true"]{background:var(--ink);color:var(--sheet);border-color:var(--ink)}
+.vchip small{font:700 .72rem var(--f-body);opacity:.65;margin-left:4px}
+select{font:inherit;padding:7px 10px;border:1px solid var(--rule);border-radius:8px;background:var(--sheet);color:var(--ink)}
+.seg{display:inline-flex;border:2px solid var(--ink);border-radius:999px;overflow:hidden}
+.seg button{font:800 .9rem var(--f-body);padding:7px 14px;border:0;background:var(--sheet);color:var(--ink);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--sheet)}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+
+/* ---------- the house ---------- */
+.house{position:relative;display:flex;flex-direction:column;align-items:stretch}
+.roof{height:78px;background:linear-gradient(#D9573F,#B8402C);clip-path:polygon(50% 0,100% 100%,0 100%);margin-inline:-2%;display:flex;align-items:flex-end;justify-content:center;position:relative}
+.roof b{font:800 clamp(1.1rem,4vw,1.6rem) var(--f-display);color:#fff;padding-bottom:8px;letter-spacing:.02em;text-shadow:0 2px 0 rgba(0,0,0,.2)}
+.chimney{position:absolute;right:14%;top:-18px;width:26px;height:44px;background:#8E3323;border-radius:4px 4px 0 0}
+.chimney::after{content:"";position:absolute;left:4px;top:-26px;width:18px;height:18px;border-radius:50%;background:rgba(160,170,190,.5);animation:smoke 3s ease-out infinite}
+@keyframes smoke{0%{transform:translate(0,0) scale(.6);opacity:.8}100%{transform:translate(14px,-30px) scale(1.4);opacity:0}}
+.floors{border:3px solid var(--ink);border-top:0;background:var(--sheet);border-radius:0 0 14px 14px;overflow:hidden}
+.floor{display:grid;grid-template-columns:78px 1fr;border-top:3px solid var(--ink)}
+.floor:first-child{border-top:0}
+.floor .lab{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font:800 .72rem var(--f-body);letter-spacing:.08em;text-transform:uppercase;color:var(--ink);padding:6px 4px;text-align:center}
+.floor .lab span{font-size:1.5rem}
+.floor .rooms{display:grid;grid-template-columns:repeat(auto-fit,minmax(104px,1fr));gap:8px;padding:10px}
+.f-attic{background:#FFF1D6}.f-floor{background:#E5F3EA}.f-door{background:#E3EEFB}.f-cellar{background:#EADFF2}
+.room{position:relative;display:flex;flex-direction:column;align-items:center;gap:2px;padding:10px 6px 8px;border-radius:14px;border:2.5px solid var(--ink);background:var(--sheet);color:var(--ink);cursor:pointer;font:inherit;min-height:96px;transition:transform .12s,box-shadow .12s}
+.room .ico{font-size:2rem;line-height:1.1;display:block}
+.room .pn{font:800 1.05rem var(--f-display)}
+.room .nn{position:absolute;top:-8px;right:-6px;min-width:22px;height:22px;border-radius:11px;background:var(--accent);color:#fff;font:800 .75rem/22px var(--f-body);text-align:center;padding-inline:5px}
+.room:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 5px 0 rgba(0,0,0,.18)}
+.room.lit{box-shadow:0 0 0 4px rgba(255,201,77,.65),0 0 18px rgba(255,201,77,.6)}
+.room.on{background:var(--ink);color:var(--sheet);box-shadow:0 0 0 4px var(--sun)}
+.room:disabled{border:2px dashed var(--rule);background:transparent;color:var(--muted);opacity:.5;cursor:default}
+.room:disabled .ico{filter:grayscale(1);opacity:.6}
+.kid{position:absolute;left:50%;top:-18px;font-size:1.6rem;transform:translateX(-50%);animation:hop .7s ease-out}
+@keyframes hop{0%{transform:translate(-50%,-30px) scale(.4);opacity:0}60%{transform:translate(-50%,4px) scale(1.15)}100%{transform:translate(-50%,0)}}
+.room.on .ico{animation:var(--an,none) 1.6s ease-in-out infinite}
+
+/* ---------- the wheel ---------- */
+.wheelbox{display:flex;justify-content:center}
+.wheel{position:relative;width:min(92vw,420px);aspect-ratio:1;border-radius:50%;background:radial-gradient(circle,var(--sheet) 0 33%,var(--accent-soft) 34% 100%);border:3px solid var(--ink)}
+.wheel .hub{position:absolute;inset:30%;border-radius:50%;background:var(--ink);color:var(--sheet);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;font:800 clamp(1.3rem,6vw,2rem)/1.05 var(--f-display);padding:6px}
+.wheel .hub small{font:700 .8rem var(--f-body);color:var(--sun);margin-top:2px}
+.wheel .sp{position:absolute;width:21%;aspect-ratio:1;margin:-10.5%;border-radius:50%;border:2.5px solid var(--ink);background:var(--sheet);color:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;font:inherit;padding:0;line-height:1.05;transition:transform .15s}
+.wheel .sp .ico{font-size:clamp(1.1rem,5vw,1.6rem)}
+.wheel .sp b{font:800 clamp(.68rem,3vw,.9rem) var(--f-display)}
+.wheel .sp.lit{box-shadow:0 0 0 3px rgba(255,201,77,.8)}
+.wheel .sp.on{background:var(--sun);transform:scale(1.22);z-index:2}
+.wheel .sp:disabled{opacity:.3;border-style:dashed;cursor:default}
+.spin{align-self:center;font:800 .95rem var(--f-body);padding:8px 16px;border-radius:999px;border:2px solid var(--ink);background:var(--sheet);color:var(--ink);cursor:pointer}
+
+/* ---------- the card ---------- */
+.card{background:var(--sheet);border:3px solid var(--ink);border-radius:16px;padding:16px;display:grid;grid-template-columns:auto 1fr;gap:6px 16px;align-items:center}
+.card .stage{width:92px;height:92px;border-radius:14px;background:var(--accent-soft);display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative}
+.card .stage .mv{font-size:3rem;animation:var(--an,none) 1.6s ease-in-out infinite}
+.card h2{font:800 clamp(1.6rem,6vw,2.4rem)/1 var(--f-display);margin:0}
+.card h2 .pt{color:var(--accent)}
+.card .body{grid-column:1/-1;display:flex;flex-direction:column;gap:8px}
+.card .mean{font-size:1.15rem;margin:0}
+.card .ex{margin:0;padding:10px 12px;border-left:4px solid var(--sun);background:var(--accent-soft);border-radius:0 10px 10px 0}
+.card mark{background:var(--sun);color:#1B2333;border-radius:4px;padding:0 3px;font-weight:700}
+.card .ar{font:600 1.1rem var(--f-ar);color:var(--muted);direction:rtl;text-align:right;margin:0}
+.card .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.btn{font:800 .92rem var(--f-body);border-radius:999px;padding:8px 14px;cursor:pointer;border:2px solid var(--accent);background:transparent;color:var(--accent)}
+.btn.p{background:var(--accent);color:#fff}
+.dots{display:flex;gap:6px;margin-left:auto}
+.dot{width:26px;height:26px;border-radius:50%;border:2px solid var(--ink);background:var(--sheet);color:var(--ink);font:800 .8rem var(--f-body);cursor:pointer;padding:0}
+.dot.on{background:var(--ink);color:var(--sheet)}
+.empty{text-align:center;color:var(--muted);padding:22px}
+
+/* little motions that show the particle */
+@keyframes m-up{0%,100%{transform:translateY(10px)}50%{transform:translateY(-14px)}}
+@keyframes m-down{0%,100%{transform:translateY(-12px)}50%{transform:translateY(12px)}}
+@keyframes m-in{0%{transform:translateX(-46px);opacity:0}45%,80%{transform:translateX(0);opacity:1}100%{transform:translateX(0);opacity:0}}
+@keyframes m-out{0%,20%{transform:translateX(0);opacity:1}80%{transform:translateX(46px);opacity:0}100%{opacity:0}}
+@keyframes m-over{0%,100%{transform:translate(-24px,8px) rotate(-30deg)}50%{transform:translate(0,-18px) rotate(0)}75%{transform:translate(24px,8px) rotate(30deg)}}
+@keyframes m-around{to{transform:rotate(360deg)}}
+@keyframes m-on{0%,100%{filter:brightness(.7);transform:scale(.9)}50%{filter:brightness(1.3) drop-shadow(0 0 8px #FFC94D);transform:scale(1.12)}}
+@keyframes m-off{0%,45%{filter:brightness(1.3) drop-shadow(0 0 8px #FFC94D)}50%,95%{filter:brightness(.35)}}
+@keyframes m-away{0%,15%{transform:translateX(-10px) scale(1);opacity:1}85%,100%{transform:translateX(44px) scale(.4);opacity:0}}
+@keyframes m-back{0%,15%{transform:translateX(44px) scale(.4);opacity:0}85%,100%{transform:translateX(-4px) scale(1);opacity:1}}
+@keyframes m-at{0%,100%{transform:scale(1)}50%{transform:scale(1.28)}}
+@keyframes m-with{0%,100%{transform:translateX(-8px) rotate(-8deg)}50%{transform:translateX(8px) rotate(8deg)}}
+@keyframes m-for{0%,100%{transform:translateY(0)}30%{transform:translateY(-16px)}50%{transform:translateY(0)}65%{transform:translateY(-6px)}}
+@keyframes m-after{0%{transform:translateX(-38px)}100%{transform:translateX(38px)}}
+@keyframes m-under{0%,100%{transform:translateY(-4px) scaleY(1)}50%{transform:translateY(14px) scaleY(.8)}}
+@keyframes m-more{0%,100%{transform:rotate(-10deg)}50%{transform:rotate(10deg)}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+@media (max-width:520px){.floor{grid-template-columns:60px 1fr}.card{grid-template-columns:1fr}.card .stage{width:100%;height:84px}}
+</style>
+
+<div class="wrap">
+  <header>
+    <span class="eyebrow" id="setEyebrow">&nbsp;</span>
+    <h1>🏠 Verb home</h1>
+    <p class="hint">Every verb has a home. Pick a verb, then walk into a room to see what it means with <b>up</b>, <b>down</b>, <b>in</b>, <b>out</b>…</p>
+  </header>
+  <div class="top">
+    <div class="vchips" id="vchips" role="group" aria-label="Verb"></div>
+    <div class="seg" role="group" aria-label="View"><button type="button" id="mHouse" aria-pressed="true">🏠 House</button><button type="button" id="mWheel" aria-pressed="false">🎡 Wheel</button></div>
+  </div>
+  <select id="vmore" aria-label="More verbs" hidden></select>
+  <main id="stage"></main>
+  <section id="card" aria-live="polite"></section>
+</div>
+
+<script type="text/x-app">
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+// the rooms of the house. ps = the little words that live in each room
+const FLOORS=[
+ {id:"attic",name:"Attic",e:"🪜",rooms:[{k:"up",e:"⬆️",ps:["up"],an:"m-up"},{k:"over",e:"🌉",ps:["over","across"],an:"m-over"},{k:"on",e:"🔛",ps:["on","onto","upon"],an:"m-on"}]},
+ {id:"floor",name:"Living floor",e:"🛋️",rooms:[{k:"in",e:"🚪",ps:["in","into"],an:"m-in"},{k:"at",e:"🎯",ps:["at","by","from"],an:"m-at"},{k:"with",e:"🤝",ps:["with"],an:"m-with"},{k:"for",e:"🎁",ps:["for","to","of"],an:"m-for"},{k:"around",e:"🔄",ps:["around","round","about","along","through"],an:"m-around"},{k:"after",e:"🏃",ps:["after"],an:"m-after"}]},
+ {id:"door",name:"Door & garden",e:"🌳",rooms:[{k:"out",e:"📤",ps:["out"],an:"m-out"},{k:"off",e:"📴",ps:["off"],an:"m-off"},{k:"away",e:"👋",ps:["away"],an:"m-away"},{k:"back",e:"↩️",ps:["back"],an:"m-back"}]},
+ {id:"cellar",name:"Cellar",e:"🕳️",rooms:[{k:"down",e:"⬇️",ps:["down"],an:"m-down"},{k:"under",e:"⛏️",ps:["under"],an:"m-under"}]}];
+const ROOMS=FLOORS.flatMap(f=>f.rooms.map(r=>({...r,floor:f.id}))), ROOM_OF={};
+ROOMS.forEach(r=>r.ps.forEach(p=>ROOM_OF[p]=r));
+const MORE={k:"more",e:"🧩",ps:[],an:"m-more",floor:"floor"};
+
+// every phrasal verb of this set, grouped by verb: V.get("make") -> Map(room key -> [phrase,...])
+const items=(window.SET_ITEMS||[]).filter(x=>x.kind==="term");
+const pv=items.some(x=>(x.tags||[]).includes("Phrasal verb"))?items.filter(x=>(x.tags||[]).includes("Phrasal verb")):items;
+const V=new Map();
+pv.forEach(x=>{const t=String(x.term||"").toLowerCase().replace(/\(.*?\)/g,"").trim().split(/\s+/);if(t.length<2||t.length>4||!/^[a-z']+$/.test(t[0]))return;
+  const verb=t[0],part=t.slice(1).join(" "),room=ROOM_OF[t[1]]||MORE;
+  if(!V.has(verb))V.set(verb,{n:0,by:new Map()});const e=V.get(verb);e.n++;
+  if(!e.by.has(room.k))e.by.set(room.k,new Map());const ph=e.by.get(room.k);if(!ph.has(part))ph.set(part,[]);
+  ph.get(part).push({term:x.term,verb,part,meaning:x.meaning||"",example:x.example||"",ar:x.translation||""});});
+const verbs=[...V.entries()].filter(([,e])=>e.by.size>=2).sort((a,b)=>b[1].n-a[1].n).map(([v])=>v);
+const ST={verb:null,room:null,part:null,idx:0,mode:(()=>{try{return localStorage.getItem("vh-mode")||"house"}catch(e){return"house"}})()};
+const roomOf=k=>ROOMS.concat([MORE]).find(r=>r.k===k);
+const phrasesOf=(verb,rk)=>{const m=(V.get(verb)||{by:new Map()}).by.get(rk);return m?[...m.entries()]:[]};   // [[part,[meanings]],...]
+
+function pickVerb(v){ST.verb=v;ST.room=null;ST.part=null;ST.idx=0;draw();}
+function pickRoom(rk){ST.room=rk;const ph=phrasesOf(ST.verb,rk);ST.part=ph.length?ph[0][0]:null;ST.idx=0;draw();}
+function pickPart(p){ST.part=p;ST.idx=0;drawCard();}
+
+function chips(){const top=verbs.slice(0,14);$("#vchips").innerHTML=top.map(v=>`<button type="button" class="vchip" data-v="${v}" aria-pressed="${v===ST.verb}">${v}<small>${V.get(v).n}</small></button>`).join("");
+  const rest=verbs.slice(14),sel=$("#vmore");sel.hidden=!rest.length;if(rest.length)sel.innerHTML=`<option value="">More verbs…</option>`+rest.map(v=>`<option value="${v}">${v} (${V.get(v).n})</option>`).join("");
+  if(rest.length&&rest.includes(ST.verb))sel.value=ST.verb;}
+
+function house(){const e=V.get(ST.verb),has=k=>e.by.has(k);
+  return `<div class="house"><div class="roof"><i class="chimney"></i><b>Home of “${esc(ST.verb)}”</b></div><div class="floors">`+
+  FLOORS.map(f=>`<div class="floor f-${f.id}"><div class="lab"><span>${f.e}</span>${f.name}</div><div class="rooms">`+f.rooms.map(r=>{const n=has(r.k)?[...e.by.get(r.k).values()].reduce((a,m)=>a+m.length,0):0;
+    return `<button type="button" class="room${n?" lit":""}${ST.room===r.k?" on":""}" data-r="${r.k}" ${n?"":"disabled"} style="--an:${r.an}" aria-label="${esc(ST.verb)} ${r.k}${n?"":" (none)"}">${ST.room===r.k?'<span class="kid">🧒</span>':""}${n?`<i class="nn">${n}</i>`:""}<span class="ico">${r.e}</span><span class="pn">${r.k}</span></button>`;}).join("")+`</div></div>`).join("")+
+  (has("more")?`<div class="floor f-floor"><div class="lab"><span>🧩</span>Other</div><div class="rooms"><button type="button" class="room lit${ST.room==="more"?" on":""}" data-r="more" style="--an:m-more"><i class="nn">${[...e.by.get("more").values()].reduce((a,m)=>a+m.length,0)}</i><span class="ico">🧩</span><span class="pn">other</span></button></div></div>`:"")+
+  `</div></div>`;}
+
+function wheel(){const e=V.get(ST.verb),R=ROOMS,N=R.length,cur=ST.room;
+  const pos=R.map((r,i)=>{const a=(i/N)*2*Math.PI-Math.PI/2,x=50+39*Math.cos(a),y=50+39*Math.sin(a),n=e.by.has(r.k);
+    return `<button type="button" class="sp${n?" lit":""}${cur===r.k?" on":""}" data-r="${r.k}" ${n?"":"disabled"} style="left:${x}%;top:${y}%" aria-label="${esc(ST.verb)} ${r.k}"><span class="ico">${r.e}</span><b>${r.k}</b></button>`;}).join("");
+  const sub=cur?ST.verb+" "+cur:"turn the wheel";
+  return `<div class="wheelbox"><div class="wheel">${pos}<div class="hub">${esc(ST.verb)}<small>${cur?"+ "+cur:"tap a word"}</small></div></div></div><div style="display:flex;justify-content:center;margin-top:10px"><button type="button" class="spin" id="spin">🎲 Spin the wheel</button></div>`;}
+
+function drawCard(){const el=$("#card");if(!ST.room){el.innerHTML=`<div class="empty">${ST.mode==="house"?"Tap a lit room to walk in.":"Tap a word on the wheel."}</div>`;return;}
+  const r=roomOf(ST.room),ph=phrasesOf(ST.verb,ST.room);if(!ph.length){el.innerHTML="";return;}
+  const cur=ph.find(([p])=>p===ST.part)||ph[0],ms=cur[1],m=ms[Math.min(ST.idx,ms.length-1)];
+  const ex=esc(m.example).replace(/\[(.+?)\]/g,"<mark>$1</mark>");
+  el.innerHTML=`<div class="card" style="--an:${r.an}"><div class="stage"><span class="mv">${r.e}</span></div>
+   <div><h2>${esc(ST.verb)} <span class="pt">${esc(cur[0])}</span></h2>
+   ${ph.length>1?`<div class="row" style="margin-top:6px">${ph.map(([p])=>`<button type="button" class="btn${p===cur[0]?" p":""}" data-p="${esc(p)}">${esc(ST.verb)} ${esc(p)}</button>`).join("")}</div>`:""}</div>
+   <div class="body"><p class="mean">${esc(m.meaning)}</p>${m.example?`<p class="ex">${ex}</p>`:""}${m.ar?`<p class="ar">${esc(m.ar)}</p>`:""}
+   <div class="row"><button type="button" class="btn p" data-say="${esc(m.term)}">🔊 Hear it</button>${m.example?`<button type="button" class="btn" data-say="${esc(m.example.replace(/[\[\]]/g,""))}">🔊 Hear the sentence</button>`:""}
+   ${ms.length>1?`<div class="dots" aria-label="Meanings">${ms.map((_,i)=>`<button type="button" class="dot${i===ST.idx?" on":""}" data-i="${i}" aria-label="Meaning ${i+1}">${i+1}</button>`).join("")}</div>`:""}</div></div></div>`;}
+
+function draw(){chips();$("#stage").innerHTML=ST.mode==="house"?house():wheel();$("#mHouse").setAttribute("aria-pressed",ST.mode==="house");$("#mWheel").setAttribute("aria-pressed",ST.mode==="wheel");drawCard();}
+
+document.addEventListener("click",e=>{const t=e.target.closest("button");if(!t)return;
+  if(t.dataset.v)pickVerb(t.dataset.v);
+  else if(t.dataset.r){pickRoom(t.dataset.r);const p=phrasesOf(ST.verb,ST.room);if(p.length)Sets.speak(ST.verb+" "+p[0][0]);}
+  else if(t.dataset.p)pickPart(t.dataset.p);
+  else if(t.dataset.i!=null){ST.idx=+t.dataset.i;drawCard();}
+  else if(t.dataset.say)Sets.speak(t.dataset.say);
+  else if(t.id==="spin"){const e2=V.get(ST.verb),ks=ROOMS.filter(r=>e2.by.has(r.k)&&r.k!==ST.room);if(ks.length){pickRoom(ks[Math.floor(Math.random()*ks.length)].k);const p=phrasesOf(ST.verb,ST.room);Sets.speak(ST.verb+" "+p[0][0]);}}
+  else if(t.id==="mHouse"||t.id==="mWheel"){ST.mode=t.id==="mHouse"?"house":"wheel";try{localStorage.setItem("vh-mode",ST.mode)}catch(x){}draw();}});
+$("#vmore").addEventListener("change",e=>{if(e.target.value)pickVerb(e.target.value);});
+if(!verbs.length){$("#stage").innerHTML=`<div class="empty">This set has no phrasal verbs to put in a house yet. Open the “Phrasal verbs” set.</div>`;}
+else{const want=new URLSearchParams(location.search).get("verb");ST.verb=verbs.includes(want)?want:(verbs.includes("make")?"make":verbs[0]);draw();}
+</script><script>Sets.boot({min:4})</script></body></html>
