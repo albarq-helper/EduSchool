@@ -35,22 +35,23 @@ THEMES = [
  (r"\b(money|pay|buy|sell|cost|price|job|work|business|sales?|tax|customer|company|bank|spend|earn)\b", "Money & work"),
  (r"\b(sick|ill|body|health|pain|medicine|injur|disease|illness|faint|hurt|tired|sleep)\b", "Health & body"),
  (r"\b(food|eat|drink|cook|meal|hungry|bake)\b", "Food & drink"),
- (r"\b(move|walk|run|jump|enter|leave|arrive|climb|fall|go\b|come\b|rush|travel|escape|get away)\b", "Ways of moving"),
+ (r"\b(move|walk|run|jump|enter|leave|arrive|climb|fall|rush|travel|escape|get away|return|go away|go into|go out|come in|reach|approach|follow|pass|carry|push|pull|throw|drop|lift|hold|touch|step)\b", "Ways of moving"),
  (r"\b(say|tell|speak|talk|explain|suggest|ask|answer|argue|shout|mention|discuss|complain)\b", "Saying & thinking"),
  (r"\b(think|remember|forget|decide|idea|understand|realise|realize|plan|guess|believe)\b", "Saying & thinking"),
  (r"\b(feel|angry|happy|sad|upset|calm|worry|worried|nervous|afraid|excited|embarrass|proud)\b", "Feelings & moods"),
  (r"\b(friend|quarrel|relationship|support|forgive|trust|get on|dislike|like each|visit)\b", "Getting along"),
- (r"\b(time|late|delay|change|become|start|begin|stop|finish|end|continue|wait|later|soon|before)\b", "Time & change"),
+ (r"\b(time|delay|change|become|finish|continue|wait|later|soon|delay|postpone|late|become|change|turn into)\b", "Time & change"),
  (r"\b(danger|safe|protect|risk|accident|escape)\b", "Danger & safety"),
  (r"\b(light|sound|noise|loud|bright)\b", "Light & sound"),
- (r"\b(see|look|watch|examine|notice|search|find)\b", "Looking & seeing"),
+ (r"\b(see|look|watch|examine|notice|search|discover|visit)\b", "Looking & seeing"),
  (r"\b(book|word|write|read|letter|list|page|document|text|paper)\b", "Words & books"),
  (r"\b(place|travel|journey|car|drive|vehicle|road|trip|town|airport)\b", "Places & travel"),
  (r"\b(law|police|crime|punish|court|prison|rule|government)\b", "Government & law"),
  (r"\b(house|room|building|clean|tidy|door|window|home)\b", "Homes & buildings"),
  (r"\b(weather|plant|nature|fire|rain|wind|water|sea|garden)\b", "Plants, nature & weather"),
  (r"\b(animal|dog|bird|horse|fish)\b", "Animals"),
- (r"\b(increase|decrease|reduce|more|less|bigger|smaller|amount|distance|size|add|remove|raise|lower)\b", "Size, amount & distance"),
+ (r"\b(make|do|fix|repair|use|operate|prepare|produce|build|organi[sz]e|arrange|manage|deal with|handle|complete|finish|attach|connect|fill|cut|break|open|close|cover|remove|add|put|place|set|take|give|get|keep)\b", "How things are done"),
+ (r"\b(increase|decrease|reduce|bigger|smaller|amount|distance|size|rise|grow|shrink|lift|lower|extra|total)\b", "Size, amount & distance"),
  (r"\b(behave|polite|rude|kind|brave|honest|lazy|proud)\b", "Character"),
 ]
 def fix_head(h):
@@ -79,6 +80,9 @@ for h0, m, e in raw:
     tags += list(dict.fromkeys(g for rx, g in GROUPS if re.search(rx, ml)))[:2]
     rows.append((h, sense, u, m, e, EMO[u], tags))
 START = 53
+open(os.path.join(root, "supabase_v93_pv_tags.sql"), "w").write("-- v93: sharper link tags for the imported phrasal verbs. Safe to re-run.\n" + "".join(
+ ("update public.words w set tags = v.tg from (values\n" + ",\n".join(f"  ({q(r[0].lower())}, {q(r[1])}, {arr(r[6])})" for r in rows[i:i+500]) +
+  "\n) as v(h, s, tg) where w.lang = 'en' and lower(w.headword) = v.h and w.sense = v.s and 'Phrasal verb' = any(w.tags);\n\n") for i in range(0, len(rows), 500)) + "select count(*) from public.words where 'Phrasal verb' = any(tags);\n")
 parts = [rows[i::1] for i in range(1)][0]
 size = -(-len(rows) // 6)
 unitsql = f"""update public.study_sets set units = units || (
