@@ -999,5 +999,27 @@
         if (T > 4000) { em(ctx, "🤝", R.x + R.w / 2, gy - u * 1.4, u * 1.8 + Math.sin(T / 150) * 3); em(ctx, "✨", R.x + R.w / 2 + u, gy - u * 2.4, u * .8); }
         say(ctx, "They broke the ice! 🧊", R.x + R.w / 2, gy - u * 4.4, Math.max(14, u * .6), T > 5000 ? 1 : 0); } } });
 
+
+  // 🍇 SOUR GRAPES (Aesop's fable): the hungry fox jumps and jumps but cannot reach the grapes, then walks off saying they are sour anyway
+  idiomEgg("sour grapes,sour grape", { e: "🍇", name: "Sour grapes", correct: 1, hint: "👆 Tap to make the fox jump! (3 times)",
+    litCap: "Aesop's fable: the hungry fox cannot reach the grapes! 🦊🍇", realCap: "Sour grapes = pretending you don't want something because you can't have it 😒", hook: "Can't reach the prize? Don't call it sour, be wise!",
+    options: [["🍇", "Grapes that taste sour"], ["😒", "Pretending you don't want what you couldn't get"]] }, {
+    lit: { tap(x, y, R, T, sc) { sc.n = (sc.n || 0) + 1; sc.jumpAt = T; return x == null ? ((sc.n = 3), true) : sc.n >= 3; },
+      draw(ctx, R, T, sc, A, since) { bg(ctx, R, "#dcfce7", "#bbf7d0"); floor(ctx, R, "#7ab55c"); const u = Math.min(R.w / 10, R.h / 6.5), gy = R.y + R.h * .8, gx = R.x + R.w * .7, gyy = R.y + R.h * .2;
+        ctx.strokeStyle = "#78350f"; ctx.lineWidth = u * .28; ctx.lineCap = "round"; ctx.beginPath(); ctx.moveTo(R.x + R.w * .98, R.y - 6); ctx.quadraticCurveTo(R.x + R.w * .9, gyy - u * .6, gx, gyy - u * .5); ctx.stroke(); ctx.fillStyle = "#16a34a"; ctx.beginPath(); ctx.ellipse(gx - u * .7, gyy - u * .5, u * .5, u * .25, -.5, 0, 7); ctx.ellipse(gx + u * .7, gyy - u * .6, u * .5, u * .25, .4, 0, 7); ctx.fill();
+        em(ctx, "🍇", gx, gyy + Math.sin(T / 500) * 3, u * 2);
+        const jk = sc.jumpAt == null ? 1 : (T - sc.jumpAt) / 650, jh = jk < 1 ? Math.sin(Math.PI * jk) * u * 2.4 : 0; let fx = R.x + R.w * .42, fy = gy - u * .8 - jh, rot = 0, flip = 1;
+        if (since >= 0 && since > 700) { if (since < 1400) { rot = 1.35; fy = gy - u * .4; } else { const k = clamp((since - 1400) / 2600, 0, 1); fx = R.x + R.w * .42 - k * R.w * .38; flip = -1; fy = gy - u * .8 - Math.abs(Math.sin(since / 140)) * u * .25; } }
+        if (sc.n && !sc.n2 && jk < .2) sc.n2 = 1; if (jk >= 1) sc.n2 = 0;
+        em(ctx, "🦊", fx, fy, u * 1.7, rot, flip);
+        if (sc.n && jk < 1 && since < 0) say(ctx, ["", "Hop!", "Hop! Hop!"][Math.min(2, sc.n)] , fx + u * 1.2, fy - u * 1.4, Math.max(13, u * .55), 1);
+        if (since > 700 && since < 1400) say(ctx, "Pant… pant…", fx + u * 1.3, fy - u * 1.6, Math.max(13, u * .55), 1);
+        if (since > 1500) say(ctx, "They're probably sour anyway! 😒", R.x + R.w * .45, gy - u * 3.3, Math.max(13, u * .55), 1); } },
+    real: { len: 6500, draw(ctx, R, T) { bg(ctx, R, "#fef9c3", "#fde68a"); floor(ctx, R, "#86c26a"); const u = Math.min(R.w / 10, R.h / 6.5), gy = R.y + R.h * .8, sz = u * 1.8;
+        kid(ctx, T < 1500 ? "😞" : "😒", R.x + R.w * .22, gy - u * 1.2, sz); kid(ctx, "😎", R.x + R.w * .78, gy - u * 1.2, sz); em(ctx, "🏆", R.x + R.w * .78, gy - u * 3.2 + Math.sin(T / 300) * 4, u * 1.4); if (T > 600) em(ctx, "✨", R.x + R.w * .78 + u, gy - u * 3.6, u * .7);
+        say(ctx, "I lost the race… I want that trophy!", R.x + R.w * .36, gy - u * 3.4, Math.max(13, u * .5), T < 1700 ? 1 : 0); say(ctx, "I didn't want it anyway! It's silly.", R.x + R.w * .36, gy - u * 3.4, Math.max(13, u * .5), T >= 1700 && T < 4000 ? 1 : 0);
+        if (T > 4000) { ctx.globalAlpha = clamp((T - 4000) / 500, 0, 1); ctx.fillStyle = "#fff"; ctx.strokeStyle = O; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(R.x + R.w * .5, gy - u * 4.2, u * 1.1, 0, 7); ctx.fill(); ctx.stroke(); em(ctx, "🦊", R.x + R.w * .46, gy - u * 4.2, u * .9); em(ctx, "🍇", R.x + R.w * .54, gy - u * 4.2, u * .9); ctx.globalAlpha = 1; }
+        say(ctx, "That's sour grapes!", R.x + R.w * .5, gy - u * 5.6, Math.max(14, u * .6), T > 4600 ? 1 : 0); } } });
+
   Weather.rescan();
 })();
