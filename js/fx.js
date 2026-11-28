@@ -791,9 +791,9 @@
     const clamp = (v, a, b) => Math.max(a, Math.min(b, v)), lerp = (a, b, k) => a + (b - a) * k;
     const mix = (c1, c2, k) => `rgb(${[0, 1, 2].map(i => Math.round(lerp(c1[i], c2[i], k))).join(",")})`;
     const boxed = !!A.boxed, o = A.opts || {};
-    let h = boxed ? hungerH : 0, target = boxed ? rk(o.rank) : 10, playing = !boxed, drag = false, last = null, prevH = h, startT = null, lay = null;
+    let h = boxed ? hungerH : 0, target = boxed ? rk(Math.abs(+o.rank || 0)) : 10, playing = !boxed, drag = false, last = null, prevH = h, startT = null, lay = null;
     const growl = () => A.noise(.9, .2, "lowpass", 150, 70, 1);
-    A.setChip(boxed ? "🍽️ hunger" : "⏱️ watch the hours go by, or drag the timeline");
+    A.setChip(boxed ? "" : "⏱️ watch the hours go by, or drag the timeline");
     const layout = () => { const W = A.W(), H = A.H();
       if (boxed) return { cx: 0, cy: 0, cw: W, ch: H, th: 0, sx: 0, sy: 0, sw: W, sh: H };
       const cw = Math.min(W - 20, 660), ch = Math.min(H - 20, 480), cx = (W - cw) / 2, cy = (H - ch) / 2, th = 92;
@@ -851,7 +851,7 @@
         if (!boxed) { ctx.fillStyle = "rgba(15,23,42,.55)"; ctx.fillRect(0, 0, W, H); }
         ctx.save(); ctx.beginPath(); ctx.roundRect ? ctx.roundRect(cx, cy, cw, ch, boxed ? 14 : 22) : ctx.rect(cx, cy, cw, ch); ctx.clip();
         const sky = ctx.createLinearGradient(0, sy, 0, sy + sh); sky.addColorStop(0, mix([150, 210, 255], [255, 170, 110], hh)); sky.addColorStop(1, mix([225, 242, 255], [255, 223, 180], hh)); ctx.fillStyle = sky; ctx.fillRect(cx, cy, cw, sh);
-        const sunX = sx + sw * (.1 + .8 * hh), sunY = sy + sh * (.34 - .2 * Math.sin(Math.PI * hh) + .22 * hh * hh); const S = Math.min(sh * .74, sw * .46);
+        const sunX = sx + sw * (.1 + .62 * hh), sunY = sy + sh * (.34 - .2 * Math.sin(Math.PI * hh) + .22 * hh * hh); const S = Math.min(sh * .74, sw * .46);
         em(ctx, hh > .93 ? "🌇" : "☀️", sunX, sunY, S * .22);
         const gy = sy + sh * .86; ctx.fillStyle = mix([222, 190, 140], [190, 160, 120], hh); ctx.fillRect(cx, gy, cw, sh - sh * .86 + (boxed ? 0 : 0)); ctx.fillStyle = "rgba(0,0,0,.08)"; ctx.fillRect(cx, gy, cw, 3);
         // the table with food that stays out of reach
@@ -883,7 +883,7 @@
           ctx.fillStyle = playing ? "#fee2e2" : "#dcfce7"; ctx.strokeStyle = "#1f2937"; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(cx + 34, by, 20, 0, 7); ctx.fill(); ctx.stroke(); ctx.fillStyle = "#1f2937"; ctx.font = "800 17px system-ui"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(h >= 10 ? "↻" : playing ? "⏸" : "▶", cx + 34, by + 1);
         }
         ctx.restore(); ctx.strokeStyle = "rgba(31,41,55,.55)"; ctx.lineWidth = boxed ? 0 : 3; if (!boxed) { ctx.beginPath(); ctx.roundRect ? ctx.roundRect(cx, cy, cw, ch, 22) : ctx.rect(cx, cy, cw, ch); ctx.stroke(); }
-        A.setChip(boxed ? "🍽️ hunger" : `⏱️ hour ${h.toFixed(1)} · ${st[1]}`); } };
+        A.setChip(boxed ? "" : `⏱️ hour ${h.toFixed(1)} · ${st[1]}`); } };
   });
 
   Weather.rescan();
