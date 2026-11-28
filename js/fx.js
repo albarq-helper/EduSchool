@@ -886,5 +886,114 @@
         A.setChip(boxed ? "" : `⏱️ hour ${h.toFixed(1)} · ${st[1]}`); } };
   });
 
+
+  // 😂 IDIOM EGGS: first the silly WORD-FOR-WORD version (tap it!), then a flip to what it REALLY means, then a one-question check
+  //   and a rhyme to remember. Each idiom is { lit: {draw, tap}, real: {draw} }; the stage, flip, quiz and rhyme are shared.
+  const idiomEgg = (words, meta, scene) => Weather.add(words, { e: meta.e, name: meta.name, dur: 90000, track: 1, capture: 1, top: 1 }, A => {
+    const clamp = (v, a, b) => Math.max(a, Math.min(b, v)), ease = k => 1 - Math.pow(1 - clamp(k, 0, 1), 3), O = "#1f2937";
+    const st = { phase: 0, t0: null, trig: null, flipAt: null, realAt: null, pick: null, wrong: 0, wrongAt: 0, solvedAt: 0, bits: [] }; let hits = [], R = null, lastT = 0;
+    A.setChip("tap the picture!");
+    const card = () => { const W = A.W(), H = A.H(), cw = Math.min(W - 20, 660), ch = Math.min(H - 20, 480); return { x: (W - cw) / 2, y: (H - ch) / 2, w: cw, h: ch }; };
+    const rrect = (ctx, x, y, w, h, r) => { ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x, y, w, h, r) : ctx.rect(x, y, w, h); };
+    const pill = (ctx, txt, x, y, size, bg, align) => { ctx.save(); ctx.font = `800 ${size}px system-ui`; const w = ctx.measureText(txt).width + size * 1.2, hh = size * 1.9, px = align === "right" ? x - w : align === "center" ? x - w / 2 : x; ctx.fillStyle = bg || "rgba(255,255,255,.94)"; rrect(ctx, px, y, w, hh, hh / 2); ctx.fill(); ctx.fillStyle = O; ctx.textAlign = "left"; ctx.textBaseline = "middle"; ctx.fillText(txt, px + size * .6, y + hh / 2 + 1); ctx.restore(); return { x: px, y, w, h: hh }; };
+    const startFlip = t => { if (st.phase !== 0) return; st.phase = 1; st.flipAt = t; A.plink(0); };
+    const restart = t => { st.phase = 0; st.t0 = t; st.trig = null; st.flipAt = null; st.realAt = null; st.pick = null; st.wrong = 0; st.solvedAt = 0; st.bits = []; st.sc = {}; };
+    return {
+      down(x, y) { if (!R) return; const h = hits.find(k => x >= k.x && x <= k.x + k.w && y >= k.y && y <= k.y + k.h); const t = lastT;
+        if (h) { if (h.id === "flip") { startFlip(t); return; } if (h.id === "again") { restart(t); return; }
+          if (h.id.startsWith("q")) { if (st.pick != null && st.pick === +h.id[1]) return; const k = +h.id[1]; if (k === meta.correct) { st.pick = k; st.solvedAt = t; st.phase = 4; A.chirp(0); for (let i = 0; i < 40; i++) st.bits.push({ x: R.x + R.w / 2, y: R.y + R.h * .55, vx: (Math.random() - .5) * 12, vy: -Math.random() * 11 - 3, c: ["#f43f5e", "#f59e0b", "#22c55e", "#3b82f6", "#a855f7", "#fde047"][i % 6], a: 1 }); } else { st.wrong = k + 1; st.wrongAt = t; A.noise(.18, .25, "band", 300, 200, 2); } return; } }
+        if (st.phase === 0 && st.trig == null && scene.lit.tap && scene.lit.tap(x, y, R, t - st.t0, st.sc, A)) st.trig = t; },
+      frame(t) { const { ctx } = A, W = A.W(), H = A.H(); lastT = t; if (st.t0 == null) restart(t); R = card(); const T = t - st.t0; hits = [];
+        ctx.fillStyle = "rgba(15,23,42,.55)"; ctx.fillRect(0, 0, W, H); ctx.save(); rrect(ctx, R.x, R.y, R.w, R.h, 22); ctx.clip();
+        const body = { x: R.x, y: R.y, w: R.w, h: R.h - 54 };
+        if (st.phase === 0 && st.trig == null && T > 6500 && scene.lit.tap && scene.lit.tap(null, null, R, T, st.sc, A)) st.trig = t;
+        if (st.phase === 0 && st.trig != null && t - st.trig > 5200) startFlip(t);
+        let showReal = st.phase >= 2;
+        if (st.phase === 1) { const k = (t - st.flipAt) / 950; if (k >= 1) { st.phase = 2; st.realAt = t; showReal = true; } }
+        const clipScene = fn => { ctx.save(); ctx.beginPath(); ctx.rect(body.x, body.y, body.w, body.h); ctx.clip(); fn(); ctx.restore(); };
+        if (!showReal) clipScene(() => scene.lit.draw(ctx, body, T, st.sc, A, st.trig == null ? -1 : t - st.trig));
+        if (st.phase === 1) { const k = ease((t - st.flipAt) / 950), rad = Math.hypot(body.w, body.h) * .62 * k; clipScene(() => { ctx.save(); ctx.beginPath(); ctx.arc(body.x + body.w / 2, body.y + body.h / 2, rad, 0, 7); ctx.clip(); scene.real.draw(ctx, body, 0, st.sc, A); ctx.restore(); ctx.strokeStyle = "#fff"; ctx.lineWidth = 8; ctx.beginPath(); ctx.arc(body.x + body.w / 2, body.y + body.h / 2, rad, 0, 7); ctx.stroke(); }); }
+        const RT = st.realAt == null ? 0 : t - st.realAt;
+        if (st.phase >= 2) clipScene(() => scene.real.draw(ctx, body, RT, st.sc, A));
+        // caption bar
+        ctx.fillStyle = st.phase >= 2 ? "#0f766e" : "#b45309"; ctx.fillRect(R.x, R.y + R.h - 54, R.w, 54); ctx.fillStyle = "#fff"; ctx.font = "800 " + Math.max(13, Math.min(19, R.w / 30)) + "px system-ui"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        const cap = st.phase >= 2 ? meta.realCap : meta.litCap; const words = cap.split(" "), lines = []; let ln = ""; words.forEach(w => { if (ctx.measureText(ln + " " + w).width > R.w - 28) { lines.push(ln); ln = w; } else ln = (ln + " " + w).trim(); }); lines.push(ln);
+        lines.forEach((l, i) => ctx.fillText(l, R.x + R.w / 2, R.y + R.h - 27 + (i - (lines.length - 1) / 2) * 20));
+        pill(ctx, st.phase >= 2 ? "💡 What it really means" : "😂 Word for word", R.x + 10, R.y + 10, 15, st.phase >= 2 ? "#ccfbf1" : "#fef3c7");
+        if (st.phase === 0) { if (st.trig == null) { ctx.globalAlpha *= .75 + .25 * Math.sin(t / 220); pill(ctx, meta.hint || "👆 Tap!", R.x + R.w / 2, R.y + R.h - 112, 16, "rgba(255,255,255,.95)", "center"); ctx.globalAlpha = 1; }
+          else if (t - st.trig > 1800) { const b = pill(ctx, "💡 What does it really mean? ➜", R.x + R.w - 10, R.y + R.h - 112, 15, "#fde047", "right"); hits.push({ ...b, id: "flip" }); } }
+        if (st.phase >= 3 || (st.phase === 2 && RT > scene.real.len)) { if (st.phase === 2) st.phase = 3;
+          const qy = R.y + R.h - 54 - 112, bw = (R.w - 36) / 2, bh = 64; ctx.fillStyle = "rgba(255,255,255,.92)"; rrect(ctx, R.x + 8, qy - 34, R.w - 16, 150, 16); ctx.fill();
+          ctx.fillStyle = O; ctx.font = "800 15px system-ui"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(st.phase === 4 ? meta.hook : "Which one is the REAL meaning?", R.x + R.w / 2, qy - 14);
+          meta.options.forEach((op, k) => { const x = R.x + 12 + k * (bw + 12), shake = st.wrong === k + 1 && t - st.wrongAt < 500 ? Math.sin(t / 30) * 5 : 0, good = st.pick === k, bad = st.wrong === k + 1 && st.pick == null;
+            ctx.fillStyle = good ? "#bbf7d0" : bad ? "#fecaca" : "#e0f2fe"; ctx.strokeStyle = good ? "#16a34a" : bad ? "#dc2626" : "#38bdf8"; ctx.lineWidth = 3; rrect(ctx, x + shake, qy + 6, bw, bh + 18, 14); ctx.fill(); ctx.stroke();
+            ctx.font = "30px system-ui"; ctx.fillStyle = O; ctx.fillText(op[0], x + shake + bw / 2, qy + 28); ctx.font = "700 " + Math.max(11, Math.min(14, bw / 15)) + "px system-ui"; const ws = op[1].split(" "), ls = []; let l2 = ""; ws.forEach(w => { if (ctx.measureText(l2 + " " + w).width > bw - 14) { ls.push(l2); l2 = w; } else l2 = (l2 + " " + w).trim(); }); ls.push(l2); ls.forEach((q, i) => ctx.fillText(q, x + shake + bw / 2, qy + 54 + i * 15));
+            if (st.phase !== 4) hits.push({ x, y: qy + 6, w: bw, h: bh + 18, id: "q" + k }); });
+          if (st.phase === 4) { const b = pill(ctx, "↻ Again", R.x + R.w - 10, R.y + 10, 14, "#fff", "right"); hits.push({ ...b, id: "again" }); } }
+        st.bits.forEach((p, i) => { p.x += p.vx; p.y += p.vy; p.vy += .35; p.a -= .008; if (p.a <= 0) { st.bits.splice(i, 1); return; } ctx.globalAlpha = p.a; ctx.fillStyle = p.c; ctx.fillRect(p.x, p.y, 8, 5); ctx.globalAlpha = 1; });
+        ctx.restore(); ctx.strokeStyle = "rgba(31,41,55,.55)"; ctx.lineWidth = 3; rrect(ctx, R.x, R.y, R.w, R.h, 22); ctx.stroke(); A.setChip(st.phase >= 2 ? "💡 the real meaning" : "😂 the silly version"); } };
+  });
+  // small drawing helpers shared by the idiom scenes
+  const kid = (ctx, e, x, y, size, a) => { if (a != null) ctx.globalAlpha *= a; em(ctx, e, x, y, size); if (a != null) ctx.globalAlpha /= a; };
+  const bg = (ctx, R, c1, c2) => { const g = ctx.createLinearGradient(0, R.y, 0, R.y + R.h); g.addColorStop(0, c1); g.addColorStop(1, c2); ctx.fillStyle = g; ctx.fillRect(R.x, R.y, R.w, R.h); };
+  const floor = (ctx, R, c) => { ctx.fillStyle = c; ctx.fillRect(R.x, R.y + R.h * .8, R.w, R.h * .2); };
+  const say = (ctx, txt, x, y, size, a) => { if (a <= 0) return; ctx.globalAlpha *= a; bubble(ctx, txt, x, y, size); ctx.globalAlpha /= a; };
+
+  // 🫘 SPILL THE BEANS
+  idiomEgg("spill the beans,spilled the beans,spilling the beans", { e: "🫘", name: "Spill the beans", correct: 1, hint: "👆 Tap the jar!",
+    litCap: "Word for word: the beans really spill out of the jar! 🫘", realCap: "Spill the beans = tell a secret by mistake 🤫", hook: "Beans on the floor = secret out the door!",
+    options: [["🫘", "Beans fall out of a jar"], ["🤫", "Telling a secret by mistake"]] }, {
+    lit: { tap(x, y, R, T, sc) { if (x != null && (x < R.x + R.w * .25 || x > R.x + R.w * .75)) return false; sc.pour = performance.now(); sc.beans = []; return true; },
+      draw(ctx, R, T, sc, A, since) { bg(ctx, R, "#fff7d6", "#fde68a"); floor(ctx, R, "#d6a15f"); const u = Math.min(R.w / 10, R.h / 6.5), cx = R.x + R.w * .42, gy = R.y + R.h * .8, jw = u * 2.6, jh = u * 3.3;
+        const k = since < 0 ? 0 : ease(since / 800), ang = since < 0 ? Math.sin(T / 300) * .03 : k * 1.95; const level = since < 0 ? 1 : clamp(1 - (since - 500) / 1700, 0, 1);
+        if (since > 500 && since < 2200) { for (let i = 0; i < 3; i++) { const mx = cx + Math.sin(ang) * (-jh / 2) * -1 + 0, my = gy - jh / 2 - u * .3 - Math.cos(ang) * jh / 2; (sc.beans = sc.beans || []).push({ x: cx + jh / 2 * Math.sin(ang) + jw * .3, y: gy - jh / 2 - u * .3 - jh / 2 * Math.cos(ang) + jh * .12, vx: 2 + Math.random() * 4, vy: -2 - Math.random() * 3, r: u * .1 + Math.random() * u * .05, rest: 0 }); } if (since < 560 || Math.random() < .2) A.noise(.12, .12, "band", 2500, 1800, 2); }
+        (sc.beans || []).forEach(b => { if (!b.rest) { b.vy += .5; b.x += b.vx; b.y += b.vy; if (b.y > gy + u * .5 + Math.random() * u * .4) { b.y = gy + u * .2 + Math.random() * u * .7; b.rest = 1; } if (b.x > R.x + R.w - 12) { b.x = R.x + R.w - 12; b.vx *= -1; } } ctx.fillStyle = "#7c3f12"; ctx.beginPath(); ctx.ellipse(b.x, b.y, b.r * 1.5, b.r, .5, 0, 7); ctx.fill(); ctx.fillStyle = "rgba(255,255,255,.35)"; ctx.beginPath(); ctx.ellipse(b.x - b.r * .3, b.y - b.r * .3, b.r * .5, b.r * .25, .5, 0, 7); ctx.fill(); });
+        ctx.save(); ctx.translate(cx, gy - jh / 2 - u * .3); ctx.rotate(ang); ctx.fillStyle = "rgba(186,230,253,.5)"; ctx.strokeStyle = "#64748b"; ctx.lineWidth = 4; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(-jw / 2, -jh / 2, jw, jh, u * .35) : ctx.rect(-jw / 2, -jh / 2, jw, jh); ctx.fill(); ctx.stroke();
+        if (level > 0) { ctx.fillStyle = "#7c3f12"; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(-jw / 2 + 4, jh / 2 - 4 - (jh - 12) * .8 * level, jw - 8, (jh - 12) * .8 * level, u * .25) : ctx.rect(-jw / 2 + 4, jh / 2 - 4 - (jh - 12) * .8 * level, jw - 8, (jh - 12) * .8 * level); ctx.fill(); ctx.fillStyle = "rgba(255,255,255,.3)"; for (let i = 0; i < 8; i++) { ctx.beginPath(); ctx.ellipse(-jw * .3 + (i % 4) * jw * .2, jh * .3 - Math.floor(i / 4) * jh * .25, u * .12, u * .08, i, 0, 7); ctx.fill(); } }
+        if (since < 0) { ctx.fillStyle = "#dc2626"; ctx.fillRect(-jw / 2 - 3, -jh / 2 - u * .22, jw + 6, u * .24); }
+        ctx.restore(); em(ctx, since > 400 ? "🙀" : "🙂", R.x + R.w * .78, gy - u * 1.1, u * 1.5); say(ctx, "Oops!", R.x + R.w * .78, gy - u * 2.3, Math.max(14, u * .55), since > 600 ? 1 : 0); } },
+    real: { len: 6500, draw(ctx, R, T) { bg(ctx, R, "#e0f2fe", "#bae6fd"); floor(ctx, R, "#86c26a"); const u = Math.min(R.w / 10, R.h / 6.5), gy = R.y + R.h * .8, ax = R.x + R.w * .18, sz = u * 1.7, rise = a => clamp((T - a) / 400, 0, 1);
+        kid(ctx, T < 1500 ? "🤫" : "😬", ax, gy - u * 1.2, sz); [["👧", .5, 2300], ["🧑", .64, 2800], ["👦", .78, 3300], ["👩", .91, 3800]].forEach(([e, fx, at]) => { const a = rise(at); kid(ctx, a > 0 && T > at + 150 ? "😲" : "🙂", R.x + R.w * fx, gy - u * 1.2, sz * .9, 1); if (T < at) { ctx.globalAlpha = 1; } });
+        say(ctx, "Shh! The surprise party is Friday! 🎂", ax + u * 1.2, gy - u * 3.2, Math.max(13, u * .5), T < 1500 ? 1 : 0); say(ctx, "Oops… I told them!", ax + u * 1.2, gy - u * 3.2, Math.max(13, u * .5), T >= 1500 && T < 4300 ? 1 : 0);
+        if (T > 2000 && T < 4200) { const x = ax + u * 1.5 + (R.w * .7) * clamp((T - 2000) / 1400, 0, 1); em(ctx, "💬", x, gy - u * 2.2, u * 1.1); }
+        say(ctx, "He spilled the beans! 🫘", R.x + R.w * .7, gy - u * 3.3, Math.max(13, u * .5), T > 4200 ? 1 : 0); } } });
+
+  // 🐈 LET THE CAT OUT OF THE BAG
+  idiomEgg("let the cat out of the bag,lets the cat out of the bag,let the cat out", { e: "🐈", name: "Cat out of the bag", correct: 0, hint: "👆 Tap the bag!",
+    litCap: "Word for word: the cat jumps out of the bag! 🐈", realCap: "Let the cat out of the bag = tell a secret by accident 🤐", hook: "Cat is out, no more doubt: the secret is out!",
+    options: [["🤐", "Telling a secret by accident"], ["🐈", "A cat runs out of a bag"]] }, {
+    lit: { tap(x, y, R) { if (x != null && (x < R.x + R.w * .2 || x > R.x + R.w * .6)) return false; return true; },
+      draw(ctx, R, T, sc, A, since) { bg(ctx, R, "#ede9fe", "#ddd6fe"); floor(ctx, R, "#b9a2e0"); const u = Math.min(R.w / 10, R.h / 6.5), cx = R.x + R.w * .36, gy = R.y + R.h * .8, o = since < 0 ? 0 : ease(since / 500);
+        ctx.save(); ctx.translate(cx, gy); const wob = since < 0 ? Math.sin(T / 130) * .05 * (1 + Math.sin(T / 700)) : 0; ctx.rotate(wob); ctx.scale(1, 1 - o * .25); ctx.fillStyle = "#c28a4f"; ctx.strokeStyle = O; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(-u * 1.4, 0); ctx.quadraticCurveTo(-u * 1.9, -u * 2.2, -u * .5 - o * u * .4, -u * 3); ctx.lineTo(u * .5 + o * u * .4, -u * 3); ctx.quadraticCurveTo(u * 1.9, -u * 2.2, u * 1.4, 0); ctx.closePath(); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = "#a16207"; ctx.beginPath(); ctx.ellipse(0, -u * 3, u * (.5 + o * .45), u * .2, 0, 0, 7); ctx.fill(); ctx.stroke(); if (!o) { ctx.strokeStyle = "#7c2d12"; ctx.lineWidth = 6; ctx.beginPath(); ctx.moveTo(-u * .6, -u * 2.7); ctx.lineTo(u * .6, -u * 2.9); ctx.stroke(); } ctx.restore();
+        if (since < 0) { say(ctx, "m-meow…", cx + u * 1.4, gy - u * 3.6, Math.max(13, u * .5), Math.sin(T / 400) > 0 ? 1 : .3); }
+        else { const k = clamp((since - 200) / 1700, 0, 1), x = cx + k * R.w * .5 + u * .5, y = gy - u * 3 - Math.sin(Math.PI * Math.min(1, k * 1.6)) * u * 3.6 + (k > .62 ? (k - .62) * u * 3.2 : 0); em(ctx, "🐈", x, Math.min(y, gy - u * .4), u * 1.5, 0, k > .62 ? -1 : 1); say(ctx, "MEOW!", cx + u * 1.5, gy - u * 4.2, Math.max(14, u * .6), since < 1300 ? 1 : 0); } } },
+    real: { len: 6500, draw(ctx, R, T) { bg(ctx, R, "#fce7f3", "#fbcfe8"); floor(ctx, R, "#86c26a"); const u = Math.min(R.w / 10, R.h / 6.5), gy = R.y + R.h * .8, sz = u * 1.7, a = k => clamp((T - k) / 500, 0, 1);
+        em(ctx, "🎁", R.x + R.w * .1, gy - u * .7, u * 1.4); ctx.fillStyle = "#fff"; ctx.font = `800 ${Math.max(11, u * .38)}px system-ui`; ctx.textAlign = "center"; ctx.fillText("SECRET 🤐", R.x + R.w * .1, gy + u * .45);
+        kid(ctx, T < 1800 ? "🤐" : "😬", R.x + R.w * .3, gy - u * 1.2, sz); say(ctx, "Mia's present is a KITTEN!", R.x + R.w * .38, gy - u * 3.2, Math.max(13, u * .5), T > 1800 && T < 4300 ? 1 : 0);
+        [["👧", .55, 2500], ["🧑", .7, 3000], ["👦", .85, 3500]].forEach(([e, fx, at]) => { const x = R.x + R.w * fx, ak = a(at); kid(ctx, ak > 0 ? "😲" : "🙂", x, gy - u * 1.2, sz * .9); if (ak > 0) { ctx.globalAlpha = ak; ctx.fillStyle = "#fff"; ctx.strokeStyle = O; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, gy - u * 3.2, u * .8, 0, 7); ctx.fill(); ctx.stroke(); em(ctx, "🐈", x, gy - u * 3.2, u * 1); ctx.globalAlpha = 1; } });
+        say(ctx, "Oh no… the cat is out of the bag!", R.x + R.w * .5, gy - u * 5.1, Math.max(13, u * .5), T > 4300 ? 1 : 0); } } });
+
+  // 🧊 BREAK THE ICE
+  idiomEgg("break the ice,broke the ice,breaking the ice", { e: "🧊", name: "Break the ice", correct: 1, hint: "👆 Tap the ice 3 times!",
+    litCap: "Word for word: you really break the ice! 🧊", realCap: "Break the ice = make people feel relaxed together 😄", hook: "Crack a joke, melt the cold!",
+    options: [["🧊", "Hitting ice with a hammer"], ["😄", "Helping new people feel relaxed"]] }, {
+    lit: { tap(x, y, R, T, sc, A) { sc.cr = sc.cr || []; const cx = R.x + R.w / 2, cy = R.y + (R.h - 54) * .62; if (x == null) { sc.n = 3; return true; } if (Math.hypot((x - cx) / (R.w * .3), (y - cy) / (R.h * .16)) > 1.1) return false; sc.n = (sc.n || 0) + 1; const lines = []; for (let i = 0; i < 7; i++) { const a = Math.random() * 6.28, l = 30 + Math.random() * 70; lines.push([x, y, x + Math.cos(a) * l, y + Math.sin(a) * l * .6]); } sc.cr.push(...lines); A.noise(.15, .3, "band", 3200, 1400, 3); if (sc.n >= 3) { A.boom(0); A.noise(.6, .3, "band", 1800, 600, 1); return true; } return false; },
+      draw(ctx, R, T, sc, A, since) { bg(ctx, R, "#e0f7ff", "#bfe9ff"); const u = Math.min(R.w / 10, R.h / 6.5), cx = R.x + R.w / 2, cy = R.y + R.h * .62, rx = R.w * .3, ry = R.h * .16;
+        ctx.fillStyle = "#38a3d8"; ctx.beginPath(); ctx.ellipse(cx, cy, rx + 6, ry + 6, 0, 0, 7); ctx.fill();
+        if (since < 0) { ctx.fillStyle = "#d9f3ff"; ctx.beginPath(); ctx.ellipse(cx, cy, rx, ry, 0, 0, 7); ctx.fill(); ctx.strokeStyle = "rgba(255,255,255,.9)"; ctx.lineWidth = 6; ctx.beginPath(); ctx.ellipse(cx, cy - 3, rx * .85, ry * .6, 0, Math.PI * 1.1, Math.PI * 1.6); ctx.stroke(); ctx.strokeStyle = "#3b6f8f"; ctx.lineWidth = 2.5; (sc.cr || []).forEach(l => { ctx.beginPath(); ctx.moveTo(l[0], l[1]); ctx.lineTo(l[2], l[3]); ctx.stroke(); }); }
+        else { const k = clamp(since / 1400, 0, 1); for (let i = 0; i < 9; i++) { const a = i / 9 * 6.28 + .3, d = k * rx * .4 * (1 + i % 3 * .25); ctx.save(); ctx.translate(cx + Math.cos(a) * (rx * .35 + d), cy + Math.sin(a) * (ry * .35 + d * .4) - Math.sin(k * 3.14) * 24); ctx.rotate(a + k * (i % 2 ? 1 : -1)); ctx.fillStyle = "#e6f8ff"; ctx.strokeStyle = "#6bb7dd"; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(-rx * .2, -ry * .2); ctx.lineTo(rx * .22, -ry * .1); ctx.lineTo(rx * .05, ry * .25); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.restore(); }
+          if (since < 1500) em(ctx, "💦", cx, cy - ry - u * .3 - k * u, u * 1.4); }
+        const gy = R.y + R.h * .84; em(ctx, since > 300 ? "😲" : "🥶", R.x + R.w * .1, gy - u * .6, u * 1.6); em(ctx, since > 300 ? "😲" : "🥶", R.x + R.w * .9, gy - u * .6, u * 1.6);
+        if (since < 0 && sc.n) say(ctx, ["", "Crack!", "CRACK!"][Math.min(2, sc.n)], cx, cy - ry - u * 1.2, Math.max(14, u * .6), 1); if (since >= 0) say(ctx, "CRAAACK!", cx, cy - ry - u * 1.6, Math.max(15, u * .7), since < 1400 ? 1 : 0); } },
+    real: { len: 7000, draw(ctx, R, T) { const u = Math.min(R.w / 10, R.h / 6.5), gy = R.y + R.h * .8, warm = clamp((T - 2600) / 1500, 0, 1);
+        bg(ctx, R, `rgb(${Math.round(190 + 60 * warm)},${Math.round(225 + 15 * warm)},${Math.round(255 - 70 * warm)})`, `rgb(${Math.round(160 + 90 * warm)},${Math.round(205 + 25 * warm)},${Math.round(245 - 100 * warm)})`); floor(ctx, R, warm > .5 ? "#86c26a" : "#cfe9f5");
+        if (warm < 1) for (let i = 0; i < 14; i++) { ctx.globalAlpha = 1 - warm; em(ctx, "❄️", R.x + ((i * 97 + T / 14) % R.w), R.y + ((i * 53 + T / 9) % (R.h * .8)), u * .5); } ctx.globalAlpha = 1;
+        const ax = R.x + R.w * .25, bx = R.x + R.w * .75; kid(ctx, T < 2600 ? "😶" : "😄", ax, gy - u * 1.2, u * 1.8); kid(ctx, T < 2800 ? "😶" : "😆", bx, gy - u * 1.2, u * 1.8);
+        say(ctx, "…", ax + u, gy - u * 3.2, Math.max(14, u * .6), T < 1600 ? 1 : 0); say(ctx, "…", bx - u, gy - u * 3.2, Math.max(14, u * .6), T < 1600 ? 1 : 0);
+        say(ctx, "Nice shoes! 👟", ax + u * 1.3, gy - u * 3.2, Math.max(13, u * .55), T > 1700 && T < 3800 ? 1 : 0); say(ctx, "Ha! Yours too!", bx - u * 1.2, gy - u * 3.2, Math.max(13, u * .55), T > 3000 && T < 5000 ? 1 : 0);
+        if (T > 4000) { em(ctx, "🤝", R.x + R.w / 2, gy - u * 1.4, u * 1.8 + Math.sin(T / 150) * 3); em(ctx, "✨", R.x + R.w / 2 + u, gy - u * 2.4, u * .8); }
+        say(ctx, "They broke the ice! 🧊", R.x + R.w / 2, gy - u * 4.4, Math.max(14, u * .6), T > 5000 ? 1 : 0); } } });
+
   Weather.rescan();
 })();
