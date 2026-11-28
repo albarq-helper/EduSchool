@@ -151,16 +151,6 @@ function finish(){const n=total;$("#stage").innerHTML=`<div class="res"><div cla
   ${missed.length?`<div class="mlist"><b>To remember</b>${missed.map(i=>{const v=DATA[i];return `<div class="mrow"><b>${esc(clean(v.w))}</b>${LANGS.filter(L=>has(v,L.code)).map(L=>`<span lang="${L.tts_lang||L.code}" dir="${L.dir||"ltr"}">${L.flag||""} ${esc(head(v.trs[L.code].term))}</span>`).join("")}</div>`;}).join("")}</div>`:""}
   <div class="ctl"><button class="btn primary" id="again" type="button">Play again</button>${missed.length?`<button class="btn" id="redo" type="button">Practise the ones I missed</button>`:""}</div></div>`;}
 const head=t=>window.Lang&&Lang.head?Lang.head(t):String(t).split(/[≈;/(]/)[0].trim();
-function say(){if(busy||!cur||cur.done)return;const b=$("#mic");if(b){b.classList.add("live");b.disabled=true;b.textContent="🎤 Listening…";}
-  $("#fb").className="fb";$("#fb").textContent="";
-  Lang.listen(cur.v,cur.L.code,{quiet:true,onDone:r=>{const b2=$("#mic");if(b2){b2.classList.remove("live");b2.disabled=false;b2.textContent="🎤 Say it";}
-    if(r.error){if(r.error==="unsupported"||r.error==="language-not-supported"){micOK=false;controls();$("#fb").innerHTML=`<span class="hint">This device can't listen in ${esc(cur.L.name_en||"this language")}. Say it out loud, tap “Show me”, then tell me how you did.</span>`;return;}
-      $("#fb").className="fb no";$("#fb").textContent=r.error==="not-allowed"||r.error==="service-not-allowed"?"🎤 Please allow the microphone, then try again.":"🎤 I didn't hear anything. Try again.";return;}
-    if(r.ok){$("#fb").className="fb ok";$("#fb").textContent=(r.score>=85?"🌟 Yes! ":"🙂 Good! ")+"I heard “"+r.heard+"” · "+r.score+"%";reveal(true);}
-    else{cur.tries++;$("#fb").className="fb no";$("#fb").textContent=`I heard “${r.heard}” (${r.score}%). ${cur.tries>=2?"Let's look at it together.":"Try again, or tap Show me."}`;if(cur.tries>=2){reveal(false);}}}});}
-function finish(){const n=QUEUE.length;$("#stage").innerHTML=`<div class="res"><div class="big">${score>=n*.8?"🌟":score>=n*.5?"🙂":"💪"} ${score} / ${n}</div><div>${score>=n*.8?"You remembered almost everything!":score>=n*.5?"Nice memory! A few to look at again.":"Good try! Let's practise these again."}</div>
-  ${missed.length?`<div class="mlist"><b>To remember</b>${missed.map(i=>{const v=DATA[i];return `<div class="mrow"><b>${esc(clean(v.w))}</b>${LANGS.filter(L=>has(v,L.code)).map(L=>`<span lang="${L.tts_lang||L.code}" dir="${L.dir||"ltr"}">${L.flag||""} ${esc(head(v.trs[L.code].term))}</span>`).join("")}</div>`;}).join("")}</div>`:""}
-  <div class="ctl"><button class="btn primary" id="again" type="button">Play again</button>${missed.length?`<button class="btn" id="redo" type="button">Practise the ones I missed</button>`:""}</div></div>`;}
 document.addEventListener("click",e=>{const t=e.target.closest("button");if(!t)return;
   if(t.id==="go"){start();return;}if(t.id==="again"){start();return;}if(t.id==="redo"){start(missed.slice());return;}
   if(t.id==="hearEn"){try{Sets.speak(clean(cur.v.w));}catch(x){}return;}
