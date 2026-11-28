@@ -70,6 +70,17 @@
   const recipe = w => R[keyOf(w)] || null;
   const variants = w => { const k = keyOf(w), out = []; [...(R[k] ? [R[k]] : []), ...(V[k] || []), ...(ALSO[k] || []).flatMap(a => V[a] || [])].forEach(r => { if (!out.includes(r) && !out.some(o => o.name === r.name)) out.push(r); }); return out; };
 
+  // 📦 Meters: where an effect plays while a kid moves the meter. "full" = the whole screen, "box" = inside the box under the meter,
+  // "off" = only when the kid taps ⤢. Set per effect in the word_effects table (effects.html); these are the defaults.
+  const PAGE_NAMES = new Set(["Storm swallows the page"]);
+  const boxable = r => !!r && !(r.vortex || r.split || r.far || r.stomp || r.sway || r.wind || r.mag || r.rifle || r.torch || r.laser || r.puddle || r.drip || r.nocursor || PAGE_NAMES.has(r.name));
+  const FULL_BY_DEFAULT = new Set("Hurricane,Gale,Wind,Gust,Breeze,Storm,Thunder,Rain,Drizzle,Shower,Downpour,Flood,Snow,Blizzard,Sleet,Hail,Sun,Heat,Golden hour,Rainbow,Raining cats and dogs,Sway,Storm swallows the page,Soaked,Stomp,Separated,Far away".split(","));
+  const BEH = {};
+  let behLoaded = null;
+  const loadBehaviours = () => behLoaded || (behLoaded = new Promise(res => { const done = () => res(BEH); setTimeout(done, 1500);
+    try { if (window.App && App.client) { App.client.from("word_effects").select("effect,in_meter").then(x => { (x.data || []).forEach(e => BEH[e.effect] = e.in_meter); done(); }, done); return; } } catch (e) {} done(); }));
+  const behaviour = w => { const r = typeof w === "object" ? w : recipe(w); if (!r) return "off"; const b = BEH[r.name] || (FULL_BY_DEFAULT.has(r.name) ? "full" : boxable(r) ? "box" : "off"); return b === "box" && !boxable(r) ? "off" : b; };
+
   // 🔊 sounds (synthesized, no files)
   let AC = null;
   const ac = () => { try { AC = AC || new (window.AudioContext || window.webkitAudioContext)(); if (AC.state === "suspended") AC.resume(); } catch (e) { AC = null; } return AC; };
@@ -113,6 +124,7 @@
   const css = document.createElement("style");
   css.textContent = `.wx-stage{position:fixed;left:0;top:0;width:100vw;height:100vh;z-index:9990;pointer-events:none}
 .wx-layer{position:fixed;inset:0;z-index:9989;pointer-events:none;transition:opacity .8s}
+.wx-stage.wx-boxed{border-radius:14px}.wx-chip.inbox{position:absolute;bottom:6px;top:auto;left:50%;max-width:calc(100% - 12px);font-size:12px;padding:3px 6px 3px 10px}
 .wx-chip{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:9995;display:flex;gap:6px;align-items:center;background:#fff;border-radius:999px;padding:6px 8px 6px 12px;box-shadow:0 4px 18px #0003;font:700 14px var(--f-display,system-ui);color:#333}
 .wx-chip,.wx-chip *{cursor:auto;white-space:nowrap}.wx-chip{flex-wrap:wrap;justify-content:center;max-width:96vw}.wx-chip.top{bottom:auto;top:12px}.wx-chip button{cursor:pointer;border:0;border-radius:999px;padding:4px 10px;font:inherit;cursor:pointer;background:#F1F1F4}
 .wx-btn{border:0;background:none;cursor:pointer;font-size:.8em;padding:0 3px;vertical-align:middle;opacity:.85}
@@ -142,13 +154,18 @@ article.d .wx-picwrap{width:min-content;max-width:100%}.wx-strip{min-width:0;max
   function play(word, opts) {
     const r = typeof word === "object" ? word : recipe(word);
     if (!r || (isOff() && !(opts && opts.force))) return false;
+    const bx = (opts && opts.box && boxable(r)) ? opts.box : null; // a box on the page: play inside it, not over everything
+    if (opts && opts.box && !bx) return false;
     stop();
     const dur = (opts && opts.dur) || r.dur || (r.long ? (r.torch && !r.torch.flicker ? 25000 : 14000) : r.vortex ? 6500 : 6000), t0 = performance.now();
-    const cv = document.createElement("canvas"); cv.className = "wx-stage"; cv.setAttribute("aria-hidden", "true");
+    const cv = document.createElement("canvas"); cv.className = "wx-stage" + (bx ? " wx-boxed" : ""); cv.setAttribute("aria-hidden", "true");
     const ctx = cv.getContext("2d"); document.body.appendChild(cv);
-    const W = () => innerWidth, H = () => innerHeight, dpr = Math.min(2, devicePixelRatio || 1);
+    const W = () => bx ? Math.max(80, Math.round(bx.clientWidth)) : innerWidth, H = () => bx ? Math.max(80, Math.round(bx.clientHeight)) : innerHeight, dpr = Math.min(2, devicePixelRatio || 1);
     const size = () => { cv.width = W() * dpr; cv.height = H() * dpr; cv.style.width = W() + "px"; cv.style.height = H() + "px"; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); }; size();
     const layers = [];
+    const OX = () => bx ? bx.getBoundingClientRect().left : 0, OY = () => bx ? bx.getBoundingClientRect().top : 0;
+    const inBx = e => { if (!bx) return true; const q = e.touches && e.touches[0] ? e.touches[0] : e, b = bx.getBoundingClientRect(); return q.clientX >= b.left && q.clientX <= b.right && q.clientY >= b.top && q.clientY <= b.bottom; };
+    const place = () => { if (!bx) return; const b = bx.getBoundingClientRect(); cv.style.left = b.left + "px"; cv.style.top = b.top + "px"; layers.forEach(l => { if (l.classList && l.classList.contains("wx-layer")) Object.assign(l.style, { inset: "auto", left: b.left + "px", top: b.top + "px", width: b.width + "px", height: b.height + "px" }); }); };
     const layer = (bg, op) => { const d = document.createElement("div"); d.className = "wx-layer"; d.style.background = bg; d.style.opacity = 0; document.body.appendChild(d); layers.push(d); requestAnimationFrame(() => d.style.opacity = op); return d; };
     if (r.night) layer("radial-gradient(ellipse at 50% 30%, rgba(10,15,40," + (r.night * .7) + "), rgba(5,8,25," + r.night + "))", 1);
     if (r.tint) layer(r.tint, 1);
@@ -159,7 +176,7 @@ article.d .wx-picwrap{width:min-content;max-width:100%}.wx-strip{min-width:0;max
     if (r.glass) { const g = layer(`rgba(236,242,248,${.35 * r.glass})`, 1); g.style.transition = "opacity 2.5s"; g.style.backdropFilter = g.style.webkitBackdropFilter = `blur(${(r.glass * 5).toFixed(1)}px)`; }
     // 👆 where the finger or mouse is (the torch and laser follow it; until it moves, they sweep by themselves)
     const ptr = { x: W() / 2, y: H() / 2, moved: 0 };
-    const onMove = e => { if (e.target && e.target.closest && e.target.closest(".wx-chip")) return; const q = e.touches ? e.touches[0] : e; if (!q) return; ptr.x = q.clientX; ptr.y = q.clientY; ptr.moved = performance.now(); };
+    const onMove = e => { if (e.target && e.target.closest && e.target.closest(".wx-chip")) return; if (!inBx(e)) return; const q = e.touches ? e.touches[0] : e; if (!q) return; ptr.x = q.clientX - OX(); ptr.y = q.clientY - OY(); ptr.moved = performance.now(); };
     const track = r.torch || r.laser || r.eyes || r.bino || r.mag || r.peep || r.rifle || r.track;
     if (track) { addEventListener("pointermove", onMove, { passive: true }); addEventListener("touchmove", onMove, { passive: true }); addEventListener("pointerdown", onMove, { passive: true }); }
     const dark = r.torch ? layer("rgba(3,5,18,.94)", 1) : null;
@@ -223,17 +240,18 @@ article.d .wx-picwrap{width:min-content;max-width:100%}.wx-strip{min-width:0;max
     const sfx = soundFor(r, dur / 1000);
     flashes.forEach(t => thunder(t / 1000 + .25));
     // 🌀 the page itself moves
-    const moved = movePage(r, dur, typeof word === "string" ? word : "");
+    const moved = bx ? { stop() {} } : movePage(r, dur, typeof word === "string" ? word : "");
     // 🧩 effects from js/fx.js: { frame(t, life, fade), down(x, y), move(x, y), up(x, y), stop() }
-    let plug = null, chipText = ""; const kidsOf = () => [...document.body.children].filter(el => !/^(SCRIPT|STYLE|CANVAS|DIALOG)$/.test(el.tagName) && !/(wx-|egg-)/.test(el.className || ""));
+    let plug = null, chipText = ""; const kidsOf = () => bx ? [] : [...document.body.children].filter(el => !/^(SCRIPT|STYLE|CANVAS|DIALOG)$/.test(el.tagName) && !/(wx-|egg-)/.test(el.className || ""));
     if (r.fx && FX[r.fx]) { try { plug = FX[r.fx]({ ctx, W, H, dur, ptr, rnd, noise, boom, plink, chirp, ani: (el, kf, o) => { try { const a = el.animate(kf, o); return a; } catch (e) { return null; } }, kids: kidsOf, word: typeof word === "string" ? word : "", setChip: html => { chipText = html; const c = document.querySelector(".wx-chip [data-fx]"); if (c) c.innerHTML = html; }, reduce: reduce() }) || null; } catch (e) { plug = null; } }
-    const pDown = e => { if (!plug || (e.target && e.target.closest && e.target.closest(".wx-chip"))) return; if (r.capture) { e.preventDefault(); e.stopPropagation(); } if (e.type === "pointerdown" && plug.down) plug.down(e.clientX, e.clientY); };
-    const pMove = e => { if (plug && plug.move) plug.move(e.clientX, e.clientY); };
-    const pUp = e => { if (!plug || (e.target && e.target.closest && e.target.closest(".wx-chip"))) return; if (r.capture) { e.preventDefault(); e.stopPropagation(); } if (e.type === "pointerup" && plug.up) plug.up(e.clientX, e.clientY); };
+    const pDown = e => { if (!plug || (e.target && e.target.closest && e.target.closest(".wx-chip")) || !inBx(e)) return; if (r.capture) { e.preventDefault(); e.stopPropagation(); } if (e.type === "pointerdown" && plug.down) plug.down(e.clientX - OX(), e.clientY - OY()); };
+    const pMove = e => { if (plug && plug.move && inBx(e)) plug.move(e.clientX - OX(), e.clientY - OY()); };
+    const pUp = e => { if (!plug || (e.target && e.target.closest && e.target.closest(".wx-chip")) || !inBx(e)) return; if (r.capture) { e.preventDefault(); e.stopPropagation(); } if (e.type === "pointerup" && plug.up) plug.up(e.clientX - OX(), e.clientY - OY()); };
     if (plug) { ["pointerdown", "mousedown", "click", "touchstart"].forEach(ev => addEventListener(ev, pDown, { capture: true, passive: false })); addEventListener("pointermove", pMove, { passive: true }); ["pointerup", "mouseup", "touchend"].forEach(ev => addEventListener(ev, pUp, { capture: true, passive: false })); }
     let raf = 0, ended = false;
     function frame(now) {
       const t = now - t0, life = t / dur, fade = life < .1 ? life / .1 : life > .85 ? Math.max(0, (1 - life) / .15) : 1;
+      if (bx) { if (!document.body.contains(bx)) { stop(); return; } place(); if (cv.width !== Math.round(W() * dpr)) size(); }
       ctx.clearRect(0, 0, W(), H());
       ctx.globalAlpha = fade;
       if (stars.length) stars.forEach(s => { ctx.fillStyle = `rgba(255,255,230,${.5 + .5 * Math.sin(t / 300 + s.ph)})`; ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, 7); ctx.fill(); });
@@ -390,12 +408,14 @@ article.d .wx-picwrap{width:min-content;max-width:100%}.wx-strip{min-width:0;max
     if (r.torch && !r.torch.flicker) { const c = document.createElement("span"); c.style.display = "flex"; c.style.gap = "4px";
       [["↺", "Tilt left", () => tiltBy(-.2)], ["➖", "Shorter beam", () => lenBy(-40)], ["➕", "Longer beam", () => lenBy(40)], ["↻", "Tilt right", () => tiltBy(.2)]].forEach(([t, l, f]) => { const b = document.createElement("button"); b.type = "button"; b.textContent = t; b.title = l; b.setAttribute("aria-label", l); b.onpointerdown = e => { e.stopPropagation(); f(); }; c.appendChild(b); });
       chip.insertBefore(c, chip.querySelector("[data-x]")); }
-    if (r.torch || r.laser || r.eyes || r.bino || r.mag || r.peep || r.rifle || r.top) chip.classList.add("top");
+    if (!bx && (r.torch || r.laser || r.eyes || r.bino || r.mag || r.peep || r.rifle || r.top)) chip.classList.add("top");
+    if (bx) chip.classList.add("inbox");
     if (r.fx) { const fxs = document.createElement("b"); fxs.dataset.fx = "1"; fxs.style.padding = "0 4px"; fxs.innerHTML = chipText; chip.insertBefore(fxs, chip.querySelector("[data-x]")); }
     if (r.rifle) { const sc = document.createElement("b"); sc.dataset.score = "1"; sc.textContent = "🎈 0"; sc.style.padding = "0 6px"; chip.insertBefore(sc, chip.querySelector("[data-x]")); }
     chip.querySelector("[data-x]").onclick = () => stop();
     chip.querySelector("[data-off]").onclick = () => { setMode("tap"); stop(); };
-    document.body.appendChild(chip);
+    (bx || document.body).appendChild(chip);
+    place();
     addEventListener("resize", size);
     current = { stop() { if (ended) return; ended = true; if (plug && plug.stop) { try { plug.stop(); } catch (e) {} } ["pointerdown", "mousedown", "click", "touchstart"].forEach(ev => removeEventListener(ev, pDown, { capture: true })); removeEventListener("pointermove", pMove); ["pointerup", "mouseup", "touchend"].forEach(ev => removeEventListener(ev, pUp, { capture: true })); cancelAnimationFrame(raf); sfx.stop(); moved.stop(); removeEventListener("resize", size); if (r.torch || r.laser || r.mag || r.rifle || r.nocursor) document.documentElement.style.cursor = oldCur; removeEventListener("pointermove", onMove); if (r.rifle) ["pointerdown", "click", "mousedown", "touchstart"].forEach(ev => removeEventListener(ev, fire, { capture: true })); removeEventListener("keydown", onKey); removeEventListener("wheel", onWheel); removeEventListener("touchmove", onMove); removeEventListener("pointerdown", onMove); cv.remove(); chip.remove(); layers.forEach(l => { l.style.opacity = 0; if (l === puddle) l.style.height = "0"; setTimeout(() => l.remove(), 900); }); } };
     raf = requestAnimationFrame(frame);
@@ -528,5 +548,5 @@ article.d .wx-picwrap{width:min-content;max-width:100%}.wx-strip{min-width:0;max
   addEventListener("keydown", e => { if (e.key === "Escape") stop(); });
   // js/fx.js adds effects: Weather.add("word,word", recipe, fxFunction)
   const addFx = (words, rec, fn) => { const name = rec.fx || (rec.fx = "fx" + Object.keys(FX).length); if (fn) FX[name] = fn; add(words, rec); };
-  window.Weather = { play, stop, recipe, variants, R, FX, add: addFx, mode, setMode, also: (ws, keys) => ws.split(",").forEach(w => { w = w.trim(); ALSO[w] = [...new Set([...(ALSO[w] || []), ...keys.split(",").map(k => k.trim())])]; }), rescan: () => { document.querySelectorAll("[data-wx-done]").forEach(el => { if (!el.dataset.wxWord) delete el.dataset.wxDone; }); scan(); } };
+  window.Weather = { play, stop, recipe, behaviour, load: loadBehaviours, boxable, BEH, variants, R, FX, add: addFx, mode, setMode, also: (ws, keys) => ws.split(",").forEach(w => { w = w.trim(); ALSO[w] = [...new Set([...(ALSO[w] || []), ...keys.split(",").map(k => k.trim())])]; }), rescan: () => { document.querySelectorAll("[data-wx-done]").forEach(el => { if (!el.dataset.wxWord) delete el.dataset.wxDone; }); scan(); } };
 })();

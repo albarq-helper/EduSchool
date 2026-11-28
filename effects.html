@@ -1,0 +1,43 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Word effects · Helper Academy</title><link rel="icon" href="assets/icons/brilliant.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<link rel="stylesheet" href="css/app.css">
+<script src="js/vendor/supabase.js"></script><script src="js/config.js?v=20261128e"></script><script src="js/icons.js?v=20261128e"></script><script src="js/app.js?v=20261128e"></script><script src="js/weather.js?v=20261128i"></script><script src="js/fx.js?v=20261128i"></script>
+<style>
+.ehead h1{margin:0}.ehead p{margin:4px 0 12px;color:var(--muted);max-width:75ch}
+.tbl{display:grid;gap:6px}.er{display:grid;grid-template-columns:minmax(150px,1.2fr) 2fr auto auto;gap:10px;align-items:center;background:var(--sheet);border:1.5px solid var(--rule);border-radius:12px;padding:8px 12px}
+.er b{font:800 1rem var(--f-display)}.er small{color:var(--muted);display:block;font:600 .78rem var(--f-body);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.er select{font:700 .9rem var(--f-body);padding:6px 8px;border-radius:9px;border:1.5px solid var(--rule);background:var(--paper);color:var(--ink)}
+.er .try{border:1.5px solid var(--rule);background:#fff;border-radius:999px;padding:4px 10px;font:700 .82rem var(--f-body);cursor:pointer}
+.er.saved{border-color:#16a34a}.badge2{display:inline-block;font:800 .68rem var(--f-body);text-transform:uppercase;letter-spacing:.05em;border-radius:999px;padding:1px 8px;background:#ede9fe;color:#5b21b6;margin-left:6px}
+.bar2{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}.bar2 input{font:600 .93rem var(--f-body);padding:7px 10px;border:1.5px solid var(--rule);border-radius:10px;min-width:220px}
+.key{display:flex;flex-wrap:wrap;gap:6px 16px;font:600 .85rem var(--f-body);color:var(--muted);margin-bottom:10px}
+@media (max-width:720px){.er{grid-template-columns:1fr auto}.er .d{display:none}}
+</style></head><body>
+<div class="wrap" style="max-width:1000px">
+<div class="ehead"><h1>✨ Word effects</h1>
+<p>Each word with a little scene (hurricane, watching eyes, muddy shoes…) is one row here. Choose where it plays while a child moves a meter: <b>Whole screen</b> (as before), <b>Box under the meter</b> (small, with a ⤢ button to go full screen) or <b>Only on ⤢</b> (never starts by itself). In the word lists nothing changes.</p></div>
+<div class="bar2"><input id="q" type="search" placeholder="Filter effects or words…"><select id="k"><option value="">All kinds</option><option>weather</option><option>light</option><option>watch</option><option>game</option><option>scene</option></select><span id="msg" class="muted"></span></div>
+<div class="key"><span>🖥️ Whole screen</span><span>📦 Box under the meter</span><span>⤢ Only on the corner button</span></div>
+<div id="out" class="tbl"></div></div>
+<script>
+const $=id=>document.getElementById(id),C=()=>App.client;let ROWS=[],EDIT=false;
+const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function draw(){const q=$("q").value.trim().toLowerCase(),k=$("k").value;
+  const rs=ROWS.filter(r=>(!k||r.kind===k)&&(!q||(r.effect+" "+r.trigger_words).toLowerCase().includes(q)));
+  $("out").innerHTML=rs.map(r=>`<div class="er" data-e="${esc(r.effect)}"><div><b>${esc(r.emoji)} ${esc(r.effect)}</b><span class="badge2">${esc(r.kind)}</span>${r.page_bound?`<span class="badge2" title="It moves the whole page, so it cannot live in a small box">page</span>`:""}<small>${esc(r.trigger_words)}</small></div>
+    <span class="d"></span>
+    <select ${EDIT?"":"disabled"} data-sel><option value="full"${r.in_meter==="full"?" selected":""}>🖥️ Whole screen</option><option value="box"${r.in_meter==="box"?" selected":""}${r.page_bound?" disabled":""}>📦 Box under the meter</option><option value="off"${r.in_meter==="off"?" selected":""}>⤢ Only on the corner button</option></select>
+    <button type="button" class="try" data-try>▶ Try</button></div>`).join("")||`<div class="empty">No effects match.</div>`;}
+document.addEventListener("change",async e=>{const s=e.target.closest("[data-sel]");if(!s)return;const row=s.closest(".er"),name=row.dataset.e;
+  const {error}=await C().from("word_effects").update({in_meter:s.value,updated_at:new Date().toISOString()}).eq("effect",name);
+  if(error){App.status("Not saved: "+error.message,false);return;}ROWS.find(r=>r.effect===name).in_meter=s.value;row.classList.add("saved");setTimeout(()=>row.classList.remove("saved"),900);App.status("Saved",true);});
+document.addEventListener("click",e=>{const t=e.target.closest("[data-try]");if(!t)return;const name=t.closest(".er").dataset.e,r=ROWS.find(x=>x.effect===name),w=(r.trigger_words||"").split(",")[0].trim();
+  if(window.Weather){Weather.stop();if(!Weather.play(w,{force:1}))App.status("This effect did not start",false);}});
+$("q").oninput=draw;$("k").onchange=draw;
+App.requireUser().then(async()=>{EDIT=!!(App.profile&&(App.profile.role==="teacher"||App.profile.is_admin));
+  const {data,error}=await C().from("word_effects").select("*").order("kind").order("effect");
+  if(error){$("out").innerHTML=`<div class="empty">Could not load the effects: ${esc(error.message)}</div>`;return;}ROWS=data||[];
+  if(!EDIT)$("msg").textContent="You can look, but only a parent can change these.";draw();});
+</script></body></html>

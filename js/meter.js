@@ -51,6 +51,8 @@
 .mtr-w button{font:800 .8rem var(--f-body,system-ui);border-radius:999px;border:1.5px solid var(--accent,#2347c5);background:#fff;color:var(--accent,#2347c5);padding:4px 10px;cursor:pointer}
 .mtr-w button.add{background:var(--accent,#2347c5);color:#fff}
 .mtr-track{position:relative;padding:6px 0 2px}
+.mtr-fxbox{position:relative;height:210px;border-radius:16px;background:rgba(255,255,255,.62);border:1.5px dashed #cbd5e1;display:grid;place-items:center;overflow:hidden;color:#64748b;font:700 13px system-ui;text-align:center;padding:10px 44px}.mtr-fxbox[hidden]{display:none}
+.mtr-fxbox .fxl{max-width:30ch;line-height:1.35}.mtr-fxfull{position:absolute;right:8px;top:8px;z-index:9996;width:34px;height:34px;border-radius:10px;border:1.5px solid #cbd5e1;background:#fff;font:800 18px system-ui;cursor:pointer;color:#334155;display:grid;place-items:center;padding:0}.mtr-fxfull[hidden]{display:none}.mtr-fxfull:hover{border-color:#6d28d9;color:#6d28d9}
 .mtr-fxrow{display:flex;justify-content:center;margin-top:6px}.mtr-fx{border:1.5px solid #e2e8f0;border-radius:999px;background:#fff;padding:4px 12px;font:700 13px system-ui;cursor:pointer;color:#334155}.mtr-fx[aria-pressed=true]{border-color:#a78bfa;background:#f5f3ff;color:#5b21b6}
 .mtr-track input[type=range]{width:100%;-webkit-appearance:none;appearance:none;height:16px;border-radius:99px;outline:none;cursor:pointer;background:var(--grad)}
 .mtr-track input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:38px;height:38px;border-radius:50%;background:#fff;border:4px solid #1f2937;box-shadow:0 3px 8px rgba(0,0,0,.25);cursor:grab}
@@ -130,6 +132,7 @@
       <div class="mtr-track" style="--grad:${grad}"><input type="range" min="0" max="${L.length - 1}" step="1" value="${k}" aria-label="Strength">
         <div class="mtr-ticks">${L.map((l, j) => `<button type="button" data-j="${j}" title="${esc(l.items.map(i => clean(D[i] && D[i].w)).join(", "))}">${l.rank > 0 ? "+" : ""}${l.rank}</button>`).join("")}</div></div>
       <div class="mtr-nav"><button type="button" data-step="-1">◀ ${esc(o.left ? "more " + o.left : "less")}</button><span class="mid"></span><button type="button" data-step="1">${esc(o.right ? "more " + o.right : "more")} ▶</button></div>
+      <div class="mtr-fxbox" data-fxbox hidden><span class="fxl"></span><button type="button" class="mtr-fxfull" data-fxfull title="Play it on the whole screen" aria-label="Play it on the whole screen" hidden>⤢</button></div>
       <div class="mtr-fxrow"><button type="button" class="mtr-fx" data-mfx aria-pressed="true"></button></div></div>`);
     $(el).empty().append($m);
     const N = L.length, PI = Math.PI, P = (r, a) => [+(r * Math.cos(a)).toFixed(1), +(r * Math.sin(a)).toFixed(1)];
@@ -195,10 +198,20 @@
     }
     // ✨ effects as you move: the first word on the new level that has an effect plays it (waits until a drag stops)
     const FXK = "meter-fx", fxOn = () => { try { return localStorage.getItem(FXK) !== "0"; } catch (e) { return true; } };
-    const fxBtn = () => { const $b = $m.find("[data-mfx]"), off = !window.Weather || (Weather.mode && Weather.mode() === "off"); $b.closest(".mtr-fxrow").toggle(!!window.Weather); $b.attr("aria-pressed", String(fxOn() && !off)).text(off ? "✨ Effects are off (corner switch)" : fxOn() ? "✨ Effects as I move: On" : "✨ Effects as I move: Off"); };
+    const fxBtn = () => { const $b = $m.find("[data-mfx]"), off = !window.Weather || (Weather.mode && Weather.mode() === "off"); $b.closest(".mtr-fxrow").toggle(!!window.Weather); const on = !!window.Weather && fxOn() && !off, $bx = $m.find("[data-fxbox]"); $bx.prop("hidden", !on); if (on && !$bx.data("seen")) { $bx.data("seen", 1); $bx.find(".fxl").text("✨ Move the meter: a little scene plays here"); } $b.attr("aria-pressed", String(fxOn() && !off)).text(off ? "✨ Effects are off (corner switch)" : fxOn() ? "✨ Effects as I move: On" : "✨ Effects as I move: Off"); };
     let fxTimer = 0;
+    let lastW = null, fxTok = 0;
+    const fxLab = h => $m.find("[data-fxbox] .fxl").html(h);
     function playLevel(l) { if (!window.Weather || !fxOn() || (Weather.mode && Weather.mode() === "off")) return; clearTimeout(fxTimer);
-      fxTimer = setTimeout(() => { const w = l.items.map(i => D[i] && D[i].w).find(w => w && Weather.recipe(w)); if (w) Weather.play(w, { force: 1 }); else Weather.stop(); }, 380); }
+      fxTimer = setTimeout(async () => { const my = ++fxTok, box = $m.find("[data-fxbox]")[0], $full = $m.find("[data-fxfull]");
+        const w = l.items.map(i => D[i] && D[i].w).find(w => w && Weather.recipe(w)); Weather.stop();
+        if (!w) { lastW = null; $full.prop("hidden", true); fxLab("✨ No scene for these words"); return; }
+        if (Weather.load) await Weather.load(); if (my !== fxTok) return;
+        const r = Weather.recipe(w), how = Weather.behaviour ? Weather.behaviour(w) : "full"; lastW = w; $full.prop("hidden", false);
+        if (how === "full") { fxLab(`${r.e} ${r.name}<br><small>plays on the whole screen</small>`); Weather.play(w, { force: 1 }); }
+        else if (how === "box" && Weather.play(w, { force: 1, box })) fxLab("");
+        else fxLab(`${r.e} ${r.name}<br><small>tap ⤢ to see it on the whole screen</small>`); }, 380); }
+    $m.on("click", "[data-fxfull]", function () { if (lastW) { Weather.stop(); Weather.play(lastW, { force: 1 }); } });
     $m.on("click", "[data-mfx]", function () { if (Weather.mode && Weather.mode() === "off") return; try { localStorage.setItem(FXK, fxOn() ? "0" : "1"); } catch (e) {} if (!fxOn()) Weather.stop(); fxBtn(); });
     setTimeout(fxBtn, 0);
     $range.on("input", function () { show(+this.value, true); });
