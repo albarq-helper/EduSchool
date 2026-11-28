@@ -98,8 +98,13 @@
   async function save(sel) {
     const p = profile(); if (!p.id) return;
     const items = sel.filter(x => x.show || x.hear).map(x => ({ lang: x.code, show: !!x.show, hear: !!x.hear }));
-    const r = await C().rpc("set_my_languages", { p_student: p.id, p: items });
-    if (r.error) { notify(r.error.message); return false; }
+    let r = null;
+    for (let t = 0; t < 3; t++) {            // a dropped connection should not lose the choice: try again
+      try { r = await C().rpc("set_my_languages", { p_student: p.id, p: items }); } catch (e) { r = { error: e }; }
+      if (!r.error) break;
+      await new Promise(z => setTimeout(z, 700 * (t + 1)));
+    }
+    if (r.error) { notify("Could not save your languages: " + (r.error.message || r.error)); return false; }
     loaded = null; await load(); return true;
   }
   async function picker(mount, onChange) {
